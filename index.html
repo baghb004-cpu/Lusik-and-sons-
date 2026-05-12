@@ -9223,15 +9223,32 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     return defaultLetterFg;
   };
 
-  // Faded version of the outline color for the 3D depth shadow.
-  // Shadow offset scales with the grid size — at small thumbnail sizes (e.g.
-  // 44-60px) a 2px shadow extends past row boundaries and gets clipped by
-  // overflow: hidden, hiding cells in the bottom row. We use 1px for small
-  // previews, 2px for larger ones.
-  const shadowOffset = size < 80 ? 1 : 2;
-  const depthShadow = blockColor
-    ? `${shadowOffset}px ${shadowOffset}px 0 0 ${blockColor}66`
-    : `${shadowOffset}px ${shadowOffset}px 0 0 rgba(176,136,66,0.4)`;
+  // Build a multi-step shadow staircase going UP-AND-TO-THE-RIGHT
+  // to suggest the back-top-right corner of a 3D alphabet block.
+  // Matches the way Lusik stitches the cubes on the real blanket
+  // — each block has a visible top + right face extending behind
+  // the lettered front face. The staircase is the simplest CSS
+  // primitive that reads as 3D depth without using SVG or
+  // transform-based isometric tricks (which would re-skew the
+  // letter glyphs inside).
+  //
+  // Step count scales with `size`: tiny thumbnails get a 2-step
+  // wedge so the depth is visible but doesn't overwhelm; the
+  // live preview at ~140px gets a 4-step wedge that reads
+  // unambiguously as 3D. Color is the cube's outline color at
+  // ~73% opacity (BB hex), so the depth lines read as paler
+  // siblings of the front-face outline.
+  const depthSteps = size < 70 ? 2 : (size < 110 ? 3 : (size < 160 ? 4 : 5));
+  const depthColor = blockColor ? `${blockColor}BB` : "rgba(176,136,66,0.7)";
+  const depthShadow = Array.from({ length: depthSteps }, (_, i) =>
+    `${i + 1}px ${-(i + 1)}px 0 0 ${depthColor}`
+  ).join(", ");
+
+  // Extra padding goes on the TOP and RIGHT of the grid container
+  // since that's where the depth wedges of the top-row and
+  // rightmost-column cells extend. Bottom + left can be tighter.
+  const padTopRight = depthSteps + (size < 80 ? 3 : 6);
+  const padBotLeft  = depthSteps + (size < 80 ? 1 : 2);
 
   return (
     <div
@@ -9242,12 +9259,11 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
         gridTemplateRows: "repeat(5, 1fr)",
         gap: size < 80 ? "2px" : "3px",
         border: `1px solid ${borderColor}`,
-        // Generous padding on all four sides ensures cells (with their depth
-        // shadows) have room to render fully without touching the grid frame.
-        // Larger right + bottom padding accommodates the down-right shadow.
-        padding: size < 80
-          ? `${shadowOffset + 2}px ${shadowOffset + 3}px ${shadowOffset + 3}px ${shadowOffset + 2}px`
-          : `${shadowOffset + 4}px ${shadowOffset + 6}px ${shadowOffset + 6}px ${shadowOffset + 4}px`,
+        // Generous padding on top + right (where the depth wedge
+        // extends after this commit) plus a smaller cushion on
+        // bottom + left so the cells have visual breathing room
+        // from the grid frame without dead space at the depth side.
+        padding: `${padTopRight}px ${padTopRight}px ${padBotLeft}px ${padBotLeft}px`,
         maxWidth: `${size}px`,
         background: darkMode ? "transparent" : "#FFFFFF",
         // overflow stays VISIBLE so depth shadows can extend naturally without
