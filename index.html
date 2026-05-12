@@ -1259,17 +1259,17 @@ const CONFIG = {
   // ============================================================
   // FREE-SHIPPING PROGRESS BAR
   // ============================================================
-  // ⚠️ TODO_LUSIK: Decision before launch. The site currently
-  // charges $9.99–$16.99 for shipping (see SHIPPING_CARRIERS).
-  // If Lusik offers free shipping above a threshold, flip ENABLED
-  // to `true` and the cart drawer renders a progress bar nudging
-  // customers toward it. Off by default — we don't want to imply
-  // free shipping if it hasn't been agreed to.
+  // Lusik offers free U.S. shipping on orders at or above this
+  // threshold. The cart drawer renders a progress bar nudging
+  // customers toward it. Set ENABLED to `false` to hide the bar
+  // entirely if she ever decides not to run the promotion.
   //
-  // Suggested threshold once she decides: $75. The blanket is
-  // $65, so adding any bib pushes the cart over and lifts AOV.
-  FREE_SHIPPING_ENABLED: false,
-  FREE_SHIPPING_THRESHOLD_CENTS: 7500,
+  // Threshold is in cents to match the rest of the order math.
+  // 15000 cents = $150 → roughly two blankets, or a blanket + a
+  // bib + a bib. Adjust here when the promotion changes; nothing
+  // else needs to be touched.
+  FREE_SHIPPING_ENABLED: true,
+  FREE_SHIPPING_THRESHOLD_CENTS: 15000,
 
   // Gallery indexes whose source files are sideways and need a CSS-rotation
   // band-aid until the actual image files are replaced. Applies wherever
@@ -2852,8 +2852,12 @@ function FreeShippingProgress({ subtotalCents }) {
         <span className="text-[0.65rem] opacity-50 tabular-nums">{pct}%</span>
       </div>
       <div
-        className="w-full h-1"
-        style={{ background: "rgba(26,22,18,0.08)" }}
+        className="w-full overflow-hidden"
+        style={{
+          background: "rgba(26,22,18,0.08)",
+          height: "6px",
+          borderRadius: "3px",
+        }}
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -2862,7 +2866,12 @@ function FreeShippingProgress({ subtotalCents }) {
       >
         <div
           className="h-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: "#B08842" }}
+          style={{
+            width: `${pct}%`,
+            background: "#B08842",
+            borderRadius: "3px",
+            minWidth: pct > 0 ? "6px" : "0",  // round end is always visible even at 1%
+          }}
         />
       </div>
     </div>
