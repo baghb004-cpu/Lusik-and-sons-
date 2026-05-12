@@ -1,0 +1,35 @@
+# ============================================================
+# Lusik & Sons — Netlify project config
+# ============================================================
+# This file tells Netlify two things:
+#   1. Where the serverless functions live (netlify/functions).
+#   2. That the site itself is just static files at the repo root
+#      (no build command — index.html is hand-edited, period).
+#
+# Everything else is a Netlify dashboard concern:
+#   - Netlify Identity is enabled in Site settings -> Identity
+#   - Netlify Database connection string is auto-injected as
+#     NETLIFY_DATABASE_URL by `netlify database init`
+#   - Stripe keys (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+#     STRIPE_PRICE_*) are set in Site settings -> Environment
+# ============================================================
+
+[build]
+  # No build step. The static site is one file: index.html at the repo root.
+  # Functions installed automatically from their own package.json.
+  publish     = "."
+  command     = ""
+
+[functions]
+  directory = "netlify/functions"
+  # Functions use Node 20+. `@netlify/neon` and `@netlify/blobs` need it.
+  node_bundler = "esbuild"
+
+# Pretty URL for the Stripe webhook so the dashboard URL is clean.
+[[redirects]]
+  from   = "/api/stripe-webhook"
+  to     = "/.netlify/functions/stripe-webhook"
+  status = 200
+
+# Don't redirect /index.html or static files — the default behavior already
+# serves them correctly from `publish`.

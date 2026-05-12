@@ -69,7 +69,11 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<!-- Netlify Identity widget. Replaces @supabase/supabase-js. Provides
+     email/password signup, login, password reset, and JWT issuance.
+     The widget is invisible by default; we drive it programmatically
+     via the `auth` wrapper below. -->
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   body { font-family: 'DM Sans', system-ui, sans-serif; background: #F5EFE3; color: #1A1612; }
@@ -1082,12 +1086,19 @@ const CATALOG = {
 // Adjust here rather than hunting through the codebase.
 // ============================================================
 const CONFIG = {
-  // Supabase project credentials. The anon key is designed to be public —
-  // it goes in browser code by design. Row-Level Security (configured in
-  // the Supabase project) is what protects customer data, NOT this key
-  // being secret. Do NOT put the service_role key here; that one IS secret.
-  SUPABASE_URL: "https://gvxnvpyzgwbigpopuhis.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2eG52cHl6Z3diaWdwb3B1aGlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMDI2MjEsImV4cCI6MjA5Mzc3ODYyMX0.3grkGPqGstsdASIkUi3MTQJCoVuahOFm8cgejZjuqa8",
+  // ============================================================
+  // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
+  // ============================================================
+  // No URLs or anon keys live here anymore. Identity reads its
+  // config from <link rel="netlify-identity"> and from the site
+  // it's deployed to; Netlify Functions are reached at the
+  // relative /.netlify/functions/* path, so they work in local
+  // dev (netlify dev) and production with zero changes.
+  //
+  // Base path for serverless functions. The leading slash is
+  // intentional — browser-relative, so localhost and production
+  // behave identically.
+  FN_BASE: "/.netlify/functions",
 
   // File-upload caps for custom-embroidery image uploads.
   UPLOAD_MAX_BYTES: 5 * 1024 * 1024,
@@ -2210,183 +2221,278 @@ function BetaTranslationBadge() {
 const STRIPE_PAYMENT_LINK = "";
 
 // ============================================================
-// SUPABASE CLIENT + AUTH HELPERS
+// AUTH (Netlify Identity) + DB (Netlify Functions) wrappers
 // ============================================================
-// `supa` is a namespace wrapping every Supabase call we make. Components
-// shouldn't import the raw client directly — go through here, so error
-// handling, table names, and bucket paths stay consistent.
+// Replaces the old `supa` namespace. Two objects now, because the
+// concerns are cleanly separable on the Netlify stack:
 //
-// Initialization is lazy: the client is created on first access, not at
-// page load. This keeps the initial page render fast for visitors who
-// never sign in. Once initialized, the same instance is reused.
+//   auth — Netlify Identity widget, runs entirely in the browser.
+//          Handles signup / signin / signout / password reset.
+//          Issues a JWT we attach to every db.* call.
+//
+//   db   — fetch() wrappers around our Netlify Functions. Every
+//          call automatically includes the current Identity JWT,
+//          so the Function knows who's asking. If the user is
+//          signed out, the JWT is omitted and the Function
+//          returns 401 (handled gracefully at call sites).
+//
+// Components shouldn't reach for window.netlifyIdentity directly
+// — go through `auth` so error handling, event shape, and
+// retries stay consistent.
 // ============================================================
-const supa = (() => {
-  let client = null;
-
+const auth = (() => {
   const get = () => {
-    if (client) return client;
-    if (typeof window === "undefined" || !window.supabase) {
-      throw new Error("Supabase script not loaded");
+    if (typeof window === "undefined" || !window.netlifyIdentity) {
+      throw new Error("Netlify Identity widget not loaded");
     }
-    client = window.supabase.createClient(
-      CONFIG.SUPABASE_URL,
-      CONFIG.SUPABASE_ANON_KEY,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true, // handle email-confirmation callbacks automatically
-        },
-      }
-    );
-    return client;
+    return window.netlifyIdentity;
   };
 
-  // --- AUTH ---
-  const signUp = async ({ email, password, fullName, phone }) => {
-    const { data, error } = await get().auth.signUp({
-      email,
-      password,
-      options: {
-        // These land in raw_user_meta_data and our handle_new_user trigger
-        // copies them into the profiles row automatically.
-        data: { full_name: fullName, phone },
+  // Internal subscriber list. We notify these from BOTH our own
+  // signIn/signUp/signOut wrappers AND the widget's native "login"
+  // and "logout" events. Why both: the widget's events fire when
+  // the user signs in via the widget's modal UI (e.g. clicking the
+  // confirmation link in their email), but they do NOT reliably
+  // fire when we call gotrue.login() directly from our custom
+  // AuthDrawer form. Having one notification path covers both.
+  const subscribers = new Set();
+  const notify = (event, session) => {
+    for (const cb of subscribers) {
+      try { cb(event, session); } catch (err) { console.warn(err); }
+    }
+  };
+
+  // Initialize once at page load. Idempotent — safe to call again.
+  // Also wires the widget's native events into our `notify` channel
+  // so anything the widget UI does still propagates to subscribers.
+  let initialized = false;
+  const init = () => {
+    if (initialized) return;
+    try {
+      const widget = get();
+      widget.init();
+      widget.on("login",  (u) => notify("SIGNED_IN",  userToSession(u)));
+      widget.on("logout", ()  => notify("SIGNED_OUT", null));
+      initialized = true;
+    } catch (err) {
+      console.warn("Identity init failed:", err);
+    }
+  };
+
+  // Translate the widget's user shape into the same `session.user`
+  // shape the old code expected, so call sites can keep using
+  // `session.user.id` and `session.user.email`.
+  const userToSession = (u) => {
+    if (!u) return null;
+    return {
+      user: {
+        id: u.id,
+        email: u.email,
+        user_metadata: u.user_metadata ?? {},
       },
-    });
-    return { data, error };
+      token: u.token ?? null,
+    };
+  };
+
+  // --- AUTH ACTIONS ---
+  const signUp = async ({ email, password, fullName, phone }) => {
+    init();
+    try {
+      // gotrue-js (what the widget wraps) signup(): returns user on success.
+      // user_metadata is attached so we can hydrate the profile row on first
+      // /profile GET. Phone is optional.
+      const u = await get().gotrue.signup(email, password, {
+        full_name: fullName,
+        phone: phone || null,
+      });
+      // With email confirmation required (the default), gotrue.signup
+      // returns a user object but the user is NOT yet logged in. Don't
+      // notify SIGNED_IN here; that fires when they confirm + log in.
+      return { data: { user: u }, error: null };
+    } catch (err) {
+      return { data: null, error: { message: err?.message || "Sign up failed" } };
+    }
   };
 
   const signIn = async ({ email, password }) => {
-    const { data, error } = await get().auth.signInWithPassword({ email, password });
-    return { data, error };
+    init();
+    try {
+      const u = await get().gotrue.login(email, password, true);
+      // Manually fire SIGNED_IN so the App's session state updates
+      // even if the widget's native "login" event doesn't fire from
+      // a direct gotrue.login (it sometimes only fires from the
+      // widget's own modal UI).
+      notify("SIGNED_IN", userToSession(u));
+      return { data: { user: u }, error: null };
+    } catch (err) {
+      return { data: null, error: { message: err?.message || "Sign in failed" } };
+    }
   };
 
   const signOut = async () => {
-    const { error } = await get().auth.signOut();
-    return { error };
+    try {
+      await get().logout();
+      // Belt-and-suspenders: native event SHOULD fire on widget.logout()
+      // but emitting our own makes us resilient if it doesn't.
+      notify("SIGNED_OUT", null);
+      return { error: null };
+    } catch (err) {
+      return { error: { message: err?.message || "Sign out failed" } };
+    }
   };
 
   const sendPasswordReset = async (email) => {
-    const { data, error } = await get().auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-    });
-    return { data, error };
+    init();
+    try {
+      await get().gotrue.requestPasswordRecovery(email);
+      return { data: { ok: true }, error: null };
+    } catch (err) {
+      return { data: null, error: { message: err?.message || "Reset failed" } };
+    }
   };
 
   const getSession = async () => {
-    const { data, error } = await get().auth.getSession();
-    return { session: data?.session ?? null, error };
+    init();
+    const u = get().currentUser();
+    return { session: userToSession(u), error: null };
   };
 
+  // Subscribe to login/logout events. Adapts to the same
+  // (event, session) callback the App component already uses.
   const onAuthStateChange = (callback) => {
-    return get().auth.onAuthStateChange(callback);
+    init();
+    subscribers.add(callback);
+    return {
+      data: {
+        subscription: {
+          unsubscribe: () => { subscribers.delete(callback); },
+        },
+      },
+    };
+  };
+
+  // Fetch a current, valid JWT. The widget refreshes proactively;
+  // we still ask for a fresh token before every authed call so a
+  // long-idle tab doesn't fall off the cliff. Returns null when
+  // there's no user.
+  const getToken = async () => {
+    const u = get().currentUser();
+    if (!u) return null;
+    try {
+      // jwt(true) forces a refresh if the token is near expiry.
+      return await u.jwt(true);
+    } catch (err) {
+      console.warn("JWT refresh failed:", err);
+      return null;
+    }
+  };
+
+  return {
+    init, signUp, signIn, signOut, sendPasswordReset,
+    getSession, onAuthStateChange, getToken,
+    // Expose the raw widget for one-off use cases (e.g. opening the
+    // social-login modal). Prefer the named methods above.
+    raw: () => get(),
+  };
+})();
+
+// ============================================================
+// db — fetch wrappers around Netlify Functions
+// ============================================================
+// One method per Function. Every call attaches the current
+// Identity JWT (when available) as Authorization: Bearer …, which
+// is how the Functions know who's asking.
+//
+// Shape mirrors the old `supa` namespace so call sites stay short
+// and readable: `await db.getProfile(userId)` etc.
+// ============================================================
+const db = (() => {
+  const call = async (path, { method = "GET", body, auth: needAuth = true } = {}) => {
+    const headers = { "Content-Type": "application/json" };
+    if (needAuth) {
+      const token = await auth.getToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+    const res = await fetch(`${CONFIG.FN_BASE}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    let data = null;
+    try { data = await res.json(); } catch {}
+    if (!res.ok) {
+      return { error: { message: data?.error || `HTTP ${res.status}` }, data: null };
+    }
+    return { error: null, data };
   };
 
   // --- PROFILES ---
-  const getProfile = async (userId) => {
-    const { data, error } = await get()
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    return { profile: data, error };
+  const getProfile = async (_userId) => {
+    const { error, data } = await call("/profile", { method: "GET" });
+    return { profile: data?.profile ?? null, error };
+  };
+  const updateProfile = async (_userId, updates) => {
+    const { error, data } = await call("/profile", { method: "PUT", body: updates });
+    return { profile: data?.profile ?? null, error };
   };
 
-  const updateProfile = async (userId, updates) => {
-    const { data, error } = await get()
-      .from("profiles")
-      .update(updates)
-      .eq("id", userId)
-      .select()
-      .single();
-    return { profile: data, error };
-  };
+  // --- AVATAR ---
+  // The browser reads the file, base64-encodes it, and posts to the
+  // avatar Function. The Function stores it in Netlify Blobs and
+  // returns a relative URL the UI can put straight into <img src>.
+  const uploadAvatar = async (_userId, file) => {
+    const fileToBase64 = (f) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(f);
+    });
+    let dataBase64;
+    try { dataBase64 = await fileToBase64(file); }
+    catch (err) { return { url: null, error: { message: "Couldn't read file" } }; }
 
-  // --- AVATAR UPLOAD ---
-  const uploadAvatar = async (userId, file) => {
-    const ext = file.name.split(".").pop().toLowerCase();
-    // Path structure required by our storage policy: {user_id}/avatar.{ext}
-    const path = `${userId}/avatar-${Date.now()}.${ext}`;
-    const { error: uploadError } = await get()
-      .storage.from("profile-photos")
-      .upload(path, file, { upsert: true, cacheControl: "3600" });
-    if (uploadError) return { url: null, error: uploadError };
-    const { data } = get().storage.from("profile-photos").getPublicUrl(path);
-    return { url: data?.publicUrl ?? null, error: null };
+    const { error, data } = await call("/avatar", {
+      method: "POST",
+      body: { filename: file.name, contentType: file.type, dataBase64 },
+    });
+    return { url: data?.url ?? null, error };
   };
 
   // --- ADDRESSES ---
-  const listAddresses = async (userId) => {
-    const { data, error } = await get()
-      .from("addresses")
-      .select("*")
-      .eq("user_id", userId)
-      .order("is_default", { ascending: false })
-      .order("created_at", { ascending: false });
-    return { addresses: data ?? [], error };
+  const listAddresses = async (_userId) => {
+    const { error, data } = await call("/addresses", { method: "GET" });
+    return { addresses: data?.addresses ?? [], error };
   };
-
-  const insertAddress = async (userId, address) => {
-    const { data, error } = await get()
-      .from("addresses")
-      .insert({ ...address, user_id: userId })
-      .select()
-      .single();
-    return { address: data, error };
+  const insertAddress = async (_userId, address) => {
+    const { error, data } = await call("/addresses", { method: "POST", body: address });
+    return { address: data?.address ?? null, error };
   };
-
   const deleteAddress = async (id) => {
-    const { error } = await get().from("addresses").delete().eq("id", id);
+    const { error } = await call(`/addresses?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     return { error };
   };
 
   // --- SAVED CART ---
-  // We store the cart as JSONB in saved_carts.cart_data and upsert.
-  // One row per user (PK is user_id). cart_data is whatever shape the
-  // local cart array uses, including custom-image data URLs.
-  const getSavedCart = async (userId) => {
-    const { data, error } = await get()
-      .from("saved_carts")
-      .select("cart_data")
-      .eq("user_id", userId)
-      .maybeSingle(); // maybeSingle = null if no row, single = error if no row
-    return { cart: data?.cart_data ?? null, error };
+  const getSavedCart = async (_userId) => {
+    const { error, data } = await call("/saved-cart", { method: "GET" });
+    return { cart: data?.cart ?? null, error };
   };
-
-  const saveCart = async (userId, cartData) => {
-    const { error } = await get()
-      .from("saved_carts")
-      .upsert(
-        { user_id: userId, cart_data: cartData, updated_at: new Date().toISOString() },
-        { onConflict: "user_id" }
-      );
+  const saveCart = async (_userId, cartData) => {
+    const { error } = await call("/saved-cart", { method: "PUT", body: { cart: cartData } });
     return { error };
   };
 
   // --- ORDERS ---
-  // Customer order history. RLS limits results to orders matching auth.uid().
-  // We fetch orders + their items in two queries (no JOIN; supabase-js doesn't
-  // do JOINs natively across separate tables — we use the foreign-key embed
-  // shorthand instead).
-  const listOrders = async (userId) => {
-    const { data, error } = await get()
-      .from("orders")
-      .select("id, order_number, status, fulfillment_status, total_cents, shipping_cents, tax_cents, subtotal_cents, shipping_address, carrier, tracking_number, estimated_ship_date, created_at, order_items ( id, product_name, variant_label, quantity, unit_price_cents, is_custom, custom_image_url )")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-    return { orders: data ?? [], error };
+  const listOrders = async (_userId) => {
+    const { error, data } = await call("/orders", { method: "GET" });
+    return { orders: data?.orders ?? [], error };
   };
-
-  // After a brand-new signup, claim any guest orders that share the email.
-  // Calls the security-definer RPC defined in schema_phase3.sql.
   const linkGuestOrders = async () => {
-    const { data, error } = await get().rpc("link_guest_order_to_user");
-    return { linkedCount: data ?? 0, error };
+    const { error, data } = await call("/link-guest-order", { method: "POST", body: {} });
+    return { linkedCount: data?.linkedCount ?? 0, error };
   };
 
   return {
-    get, // expose for one-off cases; prefer the named helpers
-    signUp, signIn, signOut, sendPasswordReset, getSession, onAuthStateChange,
     getProfile, updateProfile, uploadAvatar,
     listAddresses, insertAddress, deleteAddress,
     getSavedCart, saveCart,
@@ -2755,7 +2861,7 @@ function App() {
   const [orderNumber, setOrderNumber] = useState("");
 
   // --- AUTH STATE ---
-  // user: Supabase auth user object (id, email, ...) or null when logged out
+  // user: Netlify Identity user object (id, email, ...) or null when logged out
   // profile: row from `profiles` table — full_name, phone, avatar_url
   // authReady: false while we're checking for an existing session on mount.
   //   Used to avoid flashing "Sign in" briefly on refresh for logged-in users.
@@ -2793,7 +2899,7 @@ function App() {
   }, [cart]);
 
   // --- AUTH SESSION RESTORATION ---
-  // On mount, ask Supabase for an existing session. If present, fetch profile
+  // On mount, ask Identity for an existing session. If present, fetch profile
   // and merge any guest cart into the user's saved DB cart. Also subscribe to
   // future auth changes (sign in, sign out, token refresh, email confirmation).
   useEffect(() => {
@@ -2810,8 +2916,8 @@ function App() {
       setUser(session.user);
       // Fetch profile + saved cart in parallel
       const [{ profile: p }, { cart: savedCart }] = await Promise.all([
-        supa.getProfile(session.user.id),
-        supa.getSavedCart(session.user.id),
+        db.getProfile(session.user.id),
+        db.getSavedCart(session.user.id),
       ]);
       if (!mounted) return;
       setProfile(p ?? null);
@@ -2834,10 +2940,10 @@ function App() {
     };
 
     // Initial check
-    supa.getSession()
+    auth.getSession()
       .then(({ session }) => handleSession(session))
       .catch((err) => {
-        // Supabase unreachable, no network, etc. Treat as logged-out.
+        // Identity unreachable, no network, etc. Treat as logged-out.
         console.warn("Auth session check failed:", err);
         if (mounted) setAuthReady(true);
       });
@@ -2845,12 +2951,12 @@ function App() {
     // Subscribe to auth changes (login, logout, token refresh)
     let subscription = null;
     try {
-      const { data } = supa.onAuthStateChange((_event, session) => {
+      const { data } = auth.onAuthStateChange((_event, session) => {
         handleSession(session);
       });
       subscription = data?.subscription;
     } catch (err) {
-      // Supabase script didn't load — site continues without auth.
+      // Identity widget didn't load — site continues without auth.
       console.warn("Auth subscription failed:", err);
     }
 
@@ -2896,7 +3002,7 @@ function App() {
       return;
     }
     const t = setTimeout(() => {
-      supa.saveCart(user.id, cart).catch((err) => console.warn("Cart save failed:", err));
+      db.saveCart(user.id, cart).catch((err) => console.warn("Cart save failed:", err));
     }, CONFIG.CART_PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [cart, user]);
@@ -3078,11 +3184,11 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Sign out: clears Supabase session, which fires onAuthStateChange and resets
+  // Sign out: clears the Identity session, which fires onAuthStateChange and resets
   // user/profile state. We deliberately do NOT clear the local cart on logout —
   // the user might want to keep shopping anonymously.
   const handleSignOut = async () => {
-    await supa.signOut();
+    await auth.signOut();
     setView("home");
   };
 
@@ -3885,7 +3991,7 @@ function AuthDrawer({ onClose, onAuthed }) {
     try {
       if (mode === "signin") {
         if (!password) { setError("Please enter your password."); return; }
-        const { error } = await supa.signIn({ email, password });
+        const { error } = await auth.signIn({ email, password });
         if (error) {
           setError(error.message || "Sign in failed.");
           return;
@@ -3897,7 +4003,7 @@ function AuthDrawer({ onClose, onAuthed }) {
       if (mode === "signup") {
         if (!fullName.trim()) { setError("Please enter your full name."); return; }
         if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
-        const { error } = await supa.signUp({
+        const { error } = await auth.signUp({
           email,
           password,
           fullName: fullName.trim(),
@@ -3907,15 +4013,16 @@ function AuthDrawer({ onClose, onAuthed }) {
           setError(error.message || "Sign up failed.");
           return;
         }
-        // With email confirmation enabled (which we set up in Phase 1), the
-        // user must verify their email before logging in. Show that message.
+        // Netlify Identity sends a confirmation email on signup by default
+        // (configurable in Site → Identity → Registration). Until the user
+        // clicks the link, login will fail; surface that expectation now.
         setInfo("Almost there! We've sent you a confirmation email — click the link to finish setting up your account.");
         setPassword("");
         return;
       }
 
       if (mode === "forgot") {
-        const { error } = await supa.sendPasswordReset(email);
+        const { error } = await auth.sendPasswordReset(email);
         if (error) {
           setError(error.message || "Couldn't send reset email.");
           return;
@@ -4119,7 +4226,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
   useEffect(() => {
     if (!user?.id) return;
     let mounted = true;
-    supa.listAddresses(user.id).then(({ addresses: a, error }) => {
+    db.listAddresses(user.id).then(({ addresses: a, error }) => {
       if (!mounted) return;
       if (error) console.warn("listAddresses error:", error);
       setAddresses(a || []);
@@ -4132,7 +4239,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
     if (!user?.id) return;
     setSavingProfile(true);
     setProfileMsg({ type: "", text: "" });
-    const { profile: updated, error } = await supa.updateProfile(user.id, {
+    const { profile: updated, error } = await db.updateProfile(user.id, {
       full_name: fullName.trim() || null,
       phone: phone.trim() || null,
     });
@@ -4160,13 +4267,13 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
       return;
     }
     setAvatarBusy(true);
-    const { url, error } = await supa.uploadAvatar(user.id, file);
+    const { url, error } = await db.uploadAvatar(user.id, file);
     if (error || !url) {
       setAvatarBusy(false);
       setProfileMsg({ type: "error", text: error?.message || "Upload failed." });
       return;
     }
-    const { profile: updated, error: updErr } = await supa.updateProfile(user.id, { avatar_url: url });
+    const { profile: updated, error: updErr } = await db.updateProfile(user.id, { avatar_url: url });
     setAvatarBusy(false);
     if (updErr) {
       setProfileMsg({ type: "error", text: "Photo uploaded but couldn't save to profile." });
@@ -4184,7 +4291,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
     for (const k of required) {
       if (!newAddr[k]?.trim()) return; // HTML required attribute will catch this
     }
-    const { address, error } = await supa.insertAddress(user.id, newAddr);
+    const { address, error } = await db.insertAddress(user.id, newAddr);
     if (error) return;
     setAddresses((a) => [address, ...a]);
     setAddingAddress(false);
@@ -4195,7 +4302,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
   };
 
   const removeAddress = async (id) => {
-    const { error } = await supa.deleteAddress(id);
+    const { error } = await db.deleteAddress(id);
     if (!error) setAddresses((a) => a.filter((x) => x.id !== id));
   };
 
@@ -4410,7 +4517,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
 // ============================================================
 // ORDER HISTORY — fetched, formatted, polled
 // ============================================================
-// Polls Supabase up to 6 times after a successful Stripe redirect (handled
+// Polls the orders Function up to 6 times after a successful Stripe redirect (handled
 // upstream via the ?order=success URL param) to give the webhook time to
 // land. Outside that window, just fetches once on mount.
 function OrderHistory({ userId }) {
@@ -4436,9 +4543,9 @@ function OrderHistory({ userId }) {
       attempts += 1;
       // Try to claim any guest orders first (idempotent, cheap)
       if (attempts === 1) {
-        await supa.linkGuestOrders().catch(() => {});
+        await db.linkGuestOrders().catch(() => {});
       }
-      const { orders: rows } = await supa.listOrders(userId);
+      const { orders: rows } = await db.listOrders(userId);
       if (!mounted) return;
       setOrders(rows);
       setLoading(false);
@@ -6837,7 +6944,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
   );
 }
 
-// === CHECKOUT (Stripe handoff via Edge Function) ===
+// === CHECKOUT (Stripe handoff via Netlify Function) ===
 function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -6852,7 +6959,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   //   socialHandle     : their handle, so Lusik can tag them (optional
   //                      even when allow=true; they may want to be
   //                      featured but not tagged)
-  // Sent to the Edge Function as `social_consent` under the snake_case
+  // Sent to the Function as `social_consent` under the snake_case
   // convention used by the rest of the order metadata.
   const [socialAllow, setSocialAllow] = useState(false);
   const [socialPlatforms, setSocialPlatforms] = useState([]);
@@ -6863,19 +6970,22 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
     );
   };
 
-  // Build absolute URL to the Edge Function. Format:
-  //   https://<project-ref>.supabase.co/functions/v1/<function-name>
-  const checkoutFnUrl = `${CONFIG.SUPABASE_URL}/functions/v1/create-checkout-session`;
+  // Relative path — works in `netlify dev` locally and in production
+  // with zero changes. The Function reads the Identity JWT from the
+  // Authorization header (set below) when present, otherwise treats
+  // the order as a guest checkout.
+  const checkoutFnUrl = `${CONFIG.FN_BASE}/create-checkout-session`;
 
   const handleCheckout = async () => {
     setBusy(true);
     setError("");
 
-    // Build the cart payload. Strip the giant base64 image data — the Edge
-    // Function doesn't need it for the Stripe session (Stripe metadata has a
-    // 500-char cap per value). The full custom image stays in cart state and
-    // is recovered via Supabase Storage on the order side. For now, we just
-    // mark which items are custom; image upload to Storage is a future polish.
+    // Build the cart payload. Strip the giant base64 image data — the
+    // Function doesn't need it for the Stripe session (Stripe metadata
+    // has a 500-char cap per value). The full custom image stays in
+    // cart state and is recovered via Netlify Blobs on the order side.
+    // For now, we just mark which items are custom; image upload to
+    // Blobs is a future polish.
     const safeCart = cart.map((item) => ({
       productKey: item.productKey ?? mapLegacyId(item.id),
       id: item.id,
@@ -6897,24 +7007,27 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           : null),
     }));
 
+    // If the user is signed in, attach their Identity JWT so the
+    // Function can stamp the order with their user_id. Guests still
+    // check out fine — no header is sent in that case.
+    const headers = { "Content-Type": "application/json" };
+    try {
+      const token = await auth.getToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    } catch { /* ignore — guest checkout */ }
+
     try {
       const res = await fetch(checkoutFnUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // The anon key is required by Supabase's Functions gateway even for
-          // functions deployed with --no-verify-jwt. It identifies the project.
-          "Authorization": `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-          "apikey": CONFIG.SUPABASE_ANON_KEY,
-        },
+        headers,
         body: JSON.stringify({
           cart: safeCart,
           userId: user?.id ?? null,
           customerEmail: user?.email ?? profile?.email ?? null,
           prefilledAddress: null, // future: pull from default saved address
-          // Optional social-share consent. The Edge Function should persist
-          // this on the order record (orders.social_consent JSONB column or
-          // similar) and Stripe metadata so Lusik sees it in her admin view.
+          // Optional social-share consent. The stripe-webhook Function
+          // persists this on the order row in orders.social_consent (JSONB)
+          // when checkout completes, so Lusik sees it in her admin view.
           // `allowed: false` is the legally-meaningful default — if the
           // customer didn't tick the box, no permission was granted.
           social_consent: {
@@ -6939,7 +7052,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   };
 
   // Map legacy IDs (without explicit productKey) — defensive copy of the
-  // Edge Function's helper, so the browser does the right thing pre-flight.
+  // server-side helper, so the browser does the right thing pre-flight.
   function mapLegacyId(id) {
     if (!id) return null;
     if (id.startsWith?.("bib-hand-")) return "bib-hand";  // must check before "bib-"
