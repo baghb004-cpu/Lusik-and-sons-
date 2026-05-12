@@ -91,7 +91,9 @@ CREATE TABLE IF NOT EXISTS saved_carts (
 CREATE TABLE IF NOT EXISTS orders (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_number          TEXT NOT NULL UNIQUE,    -- human-friendly e.g. "LS-2026-0142"
-  stripe_session_id     TEXT UNIQUE,             -- idempotency key for the webhook
+  stripe_session_id     TEXT UNIQUE,             -- idempotency key for checkout.session.completed
+  stripe_payment_intent TEXT,                    -- captured at insert; used to match refund webhooks back to the order
+  refunded_cents        INTEGER NOT NULL DEFAULT 0,  -- running total of refunds applied to this order (partial refunds accumulate)
   user_id               UUID REFERENCES profiles(id) ON DELETE SET NULL,
   customer_email        TEXT NOT NULL,
   status                TEXT NOT NULL DEFAULT 'paid',         -- paid | refunded | cancelled
@@ -122,6 +124,13 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS finished_photo_key         TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS finished_photo_emailed_at  TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes                TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at                 TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent      TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_cents             INTEGER NOT NULL DEFAULT 0;
+
+-- Index on stripe_payment_intent so refund webhooks (which arrive
+-- with a payment_intent reference) can find the matching order
+-- without a full table scan.
+CREATE INDEX IF NOT EXISTS idx_orders_payment_intent ON orders (stripe_payment_intent);
 
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (lower(customer_email));

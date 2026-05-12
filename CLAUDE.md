@@ -100,7 +100,7 @@ netlify/
 
 ### Order notification emails (Resend)
 
-The site sends four transactional emails across the order lifecycle, all through [Resend](https://resend.com) on the free tier (100/day, 3,000/month). Each fires with error isolation so a Resend outage never breaks the underlying database write — the email helpers log + return false on failure rather than throwing, and the calling code wraps them in `.catch()`.
+The site sends up to five transactional emails across the order lifecycle, all through [Resend](https://resend.com) on the free tier (100/day, 3,000/month). Each fires with error isolation so a Resend outage never breaks the underlying database write — the email helpers log + return false on failure rather than throwing, and the calling code wraps them in `.catch()`.
 
 **At order placement** — the `stripe-webhook` Function fires two emails in parallel (`Promise.allSettled`) after the order row is inserted:
 
@@ -120,6 +120,14 @@ The `orders.finished_photo_emailed_at` timestamp gates this. Re-uploads or repla
 4. **Shipped notification** (`sendShippedNotification`) — "your order is on its way," with the carrier name, the tracking number rendered in monospace, a Track-package CTA linking to the carrier's public tracking page (USPS/UPS/FedEx URL patterns mirrored from the browser-side `getTrackingUrl`), a callout to the finished-piece photo if Lusik already uploaded one, and the 14-day "if anything's wrong" reassurance.
 
 The `orders.shipped_at` timestamp gates this. Once it's set (the first save with status = shipped), it's never re-fired even if Lusik toggles status back and forth. Both timestamps (`shipped_at` and `finished_photo_emailed_at`) follow the same pattern: stamped in the same UPDATE as the change that triggers them, so the DB write and email send are atomic from the workflow's perspective.
+
+**On refund** — the `stripe-webhook` Function handles `charge.refunded` events in addition to `checkout.session.completed`:
+
+5. **Refund notification** (`sendRefundNotification`) — "We've refunded your order" (full) or "We've applied a partial refund" (partial). Includes order number, original total, refund amount, remaining balance for partial refunds, and the standard "5–10 business days for it to appear on your card" reassurance.
+
+The handler looks up the order by `stripe_payment_intent` (captured at order insert), updates `orders.status` to `refunded` or `partially_refunded`, flips `fulfillment_status` to `refunded` only on a full refund (partial refunds let the customer still receive most of their order), and stamps `refunded_cents` with the cumulative refund total. The cumulative-vs-stored comparison gates dedupe — Stripe sometimes fires the event multiple times for the same refund.
+
+**Stripe dashboard subscription requirement**: in the Stripe webhook configuration, both events need to be subscribed: `checkout.session.completed` AND `charge.refunded`. Without the second, the refund handling code never gets a chance to run.
 
 Required env vars (set in Netlify dashboard → Site → Environment):
 
@@ -207,7 +215,7 @@ Cart-ID shape is load-bearing for this flow: `mapLegacyId()` in `index.html` (se
 3. From a local checkout, `netlify link`, then `netlify database init` to provision the Postgres database.
 4. Apply the schema: `netlify db query --file netlify/schema.sql`.
 5. Set environment variables in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to `checkout.session.completed`. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to **both** `checkout.session.completed` and `charge.refunded` (so refunds you issue from the Stripe dashboard automatically update the order + email the customer). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 7. (Optional but recommended) Sign up at [resend.com](https://resend.com) — free tier covers 100 emails/day. Generate an API key under "API Keys" and set it as `RESEND_API_KEY` in Netlify. Set `ADMIN_NOTIFICATION_EMAIL` to wherever Lusik wants to receive new-order notifications. (Optionally verify `lusikandsons.com` in Resend → Domains and set `RESEND_FROM_EMAIL` to `Lusik & Sons <orders@lusikandsons.com>`; until then, emails come from `onboarding@resend.dev` which often lands in spam.)
 
 ## Working in this repo

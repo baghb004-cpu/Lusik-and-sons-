@@ -710,3 +710,115 @@ export async function sendShippedNotification({ order }) {
 
   return await sendEmail({ to, subject, html, text });
 }
+
+/**
+ * Send the customer a refund confirmation email. Triggered by
+ * the `charge.refunded` Stripe webhook — fires whenever any
+ * refund is applied to a charge, including partials. The
+ * `refunded_cents` row gate in the webhook prevents duplicates
+ * for the same Stripe refund event.
+ *
+ * `order`         — the orders row AFTER the refund-update write
+ * `refundedCents` — TOTAL refunded against the charge (cumulative)
+ * `isFullRefund`  — true when refundedCents >= original total
+ */
+export async function sendRefundNotification({ order, refundedCents, isFullRefund }) {
+  const to = order.customer_email;
+  if (!to) {
+    console.warn("[email] customer email missing on refund notification; skipping");
+    return false;
+  }
+
+  const orderNumber  = order.order_number ?? order.id;
+  const ship         = order.shipping_address ?? {};
+  const customerName = ship.name ?? null;
+  const greeting     = customerName ? `Hi ${customerName.split(" ")[0]},` : "Hi there,";
+
+  const subject = isFullRefund
+    ? `Your refund — ${orderNumber}`
+    : `A partial refund on your order — ${orderNumber}`;
+
+  const accent  = "#B08842";
+  const ink     = "#1A1612";
+  const cream   = "#F5EFE3";
+  const muted   = "#6B655D";
+  const baseUrl = process.env.URL || "https://lusikandsons.com";
+
+  const headline = isFullRefund
+    ? "We've refunded your order."
+    : "We've applied a partial refund.";
+  const bodyLine = isFullRefund
+    ? `We've issued a full refund of ${dollars(refundedCents)} on order ${esc(orderNumber)}. The amount typically appears back on your card within 5 to 10 business days, depending on your bank.`
+    : `We've applied a partial refund of ${dollars(refundedCents)} on order ${esc(orderNumber)}. The amount typically appears back on your card within 5 to 10 business days, depending on your bank.`;
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">Lusik &amp; Sons</div>
+
+    <h1 style="font-size:28px;font-weight:500;margin:0 0 14px 0;letter-spacing:-0.01em;line-height:1.2;">
+      ${esc(headline)}
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 6px 0;">${esc(greeting)}</p>
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">${bodyLine}</p>
+
+    <div style="margin:24px 0;padding:18px 20px;background:#FFFFFF;border:1px solid #E8E1D2;">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${muted};font-weight:600;margin-bottom:8px;">
+        ${isFullRefund ? "Refund details" : "Partial refund details"}
+      </div>
+      <div style="font-size:14px;color:${ink};line-height:1.7;">
+        <div>Order: <strong>${esc(orderNumber)}</strong></div>
+        <div>Original total: <strong>${dollars(order.total_cents)}</strong></div>
+        <div>${isFullRefund ? "Refunded" : "Refunded so far"}: <strong>${dollars(refundedCents)}</strong></div>
+        ${!isFullRefund ? `<div>Remaining balance: <strong>${dollars((order.total_cents ?? 0) - refundedCents)}</strong></div>` : ""}
+      </div>
+    </div>
+
+    <p style="margin:24px 0 6px 0;font-size:14px;color:${muted};">
+      Questions? It can take a few business days for the refund to show in your account — banks vary. If it's been longer than ten business days and you still don't see it:
+    </p>
+    <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
+      <a href="mailto:hello@lusikandsons.com?subject=Refund question - ${encodeURIComponent(orderNumber)}" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      ${" · "}
+      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS`,
+    "",
+    headline,
+    "",
+    greeting,
+    "",
+    isFullRefund
+      ? `We've issued a full refund of ${dollars(refundedCents)} on order ${orderNumber}.`
+      : `We've applied a partial refund of ${dollars(refundedCents)} on order ${orderNumber}.`,
+    "",
+    `The amount typically appears back on your card within 5 to 10 business`,
+    `days, depending on your bank.`,
+    "",
+    `Order: ${orderNumber}`,
+    `Original total: ${dollars(order.total_cents)}`,
+    `${isFullRefund ? "Refunded" : "Refunded so far"}: ${dollars(refundedCents)}`,
+    isFullRefund ? "" : `Remaining balance: ${dollars((order.total_cents ?? 0) - refundedCents)}`,
+    "",
+    `If you don't see the refund after ten business days:`,
+    `  hello@lusikandsons.com`,
+    `  (760) 874-2333`,
+    "",
+    `Made by hand in Cypress, California.`,
+    `${baseUrl}`,
+  ].filter(Boolean).join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}

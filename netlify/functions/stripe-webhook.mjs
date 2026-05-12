@@ -1,12 +1,15 @@
 // ============================================================
 // /.netlify/functions/stripe-webhook
 // ============================================================
-// Stripe POSTs here after a Checkout Session completes (or
-// fails). We verify the signature, look up the pending cart we
-// stashed in Blobs at session-create time, and write the order
-// to Postgres.
+// Stripe POSTs here for events we've subscribed to. We verify
+// the signature, dispatch on event type, and either record a
+// new order or update an existing one.
 //
-// Configure the endpoint in the Stripe dashboard:
+// Subscribe these events in the Stripe dashboard:
+//   - checkout.session.completed   (records new orders)
+//   - charge.refunded              (updates orders on refund)
+//
+// Endpoint URL:
 //   https://<your-site>.netlify.app/api/stripe-webhook
 //   (netlify.toml redirects /api/stripe-webhook to this Function)
 //
@@ -19,7 +22,11 @@ import Stripe        from "stripe";
 import { getStore } from "@netlify/blobs";
 import { sql }      from "./_lib/db.mjs";
 import { TRUSTED_PRODUCTS }    from "./_lib/trusted-products.mjs";
-import { sendAdminOrderEmail, sendCustomerOrderConfirmation } from "./_lib/email.mjs";
+import {
+  sendAdminOrderEmail,
+  sendCustomerOrderConfirmation,
+  sendRefundNotification,
+} from "./_lib/email.mjs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-06-20",
@@ -60,10 +67,14 @@ export default async (req) => {
     return new Response(`Invalid signature: ${err.message}`, { status: 400 });
   }
 
-  // We only care about completed checkouts for now. Refunds and
-  // disputes can be added later — they fire on different events.
+  // Dispatch on event type. Anything we haven't subscribed to
+  // (or that Stripe sends for some unrelated reason) gets a 200
+  // so Stripe doesn't keep retrying.
+  if (event.type === "charge.refunded") {
+    return await handleChargeRefunded(event.data.object);
+  }
   if (event.type !== "checkout.session.completed") {
-    return new Response("ok", { status: 200 });
+    return new Response("ok (ignored)", { status: 200 });
   }
 
   const session = event.data.object;
@@ -126,14 +137,24 @@ export default async (req) => {
   // because @netlify/neon's tagged template doesn't auto-batch;
   // we use a CTE so it's atomic.
   const orderNumber = generateOrderNumber();
+  // Stripe's session has a payment_intent reference. Capture it
+  // on insert so refund webhooks (which arrive with a
+  // payment_intent reference, not a session id) can find this
+  // order without an extra Stripe API call.
+  const paymentIntent = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : session.payment_intent?.id ?? null;
+
   const inserted = await sql`
     INSERT INTO orders (
-      order_number, stripe_session_id, user_id, customer_email, status,
-      fulfillment_status, subtotal_cents, shipping_cents, tax_cents, total_cents,
+      order_number, stripe_session_id, stripe_payment_intent, user_id,
+      customer_email, status, fulfillment_status,
+      subtotal_cents, shipping_cents, tax_cents, total_cents,
       shipping_address, social_consent, gift
     ) VALUES (
-      ${orderNumber}, ${session.id}, ${pending.userId}, ${customerEmail}, 'paid',
-      'in_progress', ${subtotalCents}, ${shippingCents}, ${taxCents}, ${totalCents},
+      ${orderNumber}, ${session.id}, ${paymentIntent}, ${pending.userId},
+      ${customerEmail}, 'paid', 'in_progress',
+      ${subtotalCents}, ${shippingCents}, ${taxCents}, ${totalCents},
       ${shippingAddr ? JSON.stringify(shippingAddr) : null}::jsonb,
       ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
       ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb
@@ -189,3 +210,82 @@ export default async (req) => {
 
   return new Response("ok", { status: 200 });
 };
+
+// ============================================================
+// charge.refunded — Lusik (or Stripe) issued a refund
+// ============================================================
+// Stripe fires this event when ANY refund is created on a
+// charge, including:
+//   - Lusik clicks "Refund" in the Stripe dashboard
+//   - A successful dispute/chargeback claim auto-refunds the
+//     customer
+//   - A Stripe Connect / API call creates a refund
+//
+// The event's `charge` object carries:
+//   - `payment_intent` — the PaymentIntent ID matching the one
+//     we captured on order insert
+//   - `amount`          — the original charge amount (cents)
+//   - `amount_refunded` — running total of refunds against this
+//     charge (cents). Used to decide partial vs. full refund.
+//
+// We look up the order by payment_intent, decide status
+// (refunded vs. partially_refunded), update the row, and email
+// the customer.
+// ============================================================
+async function handleChargeRefunded(charge) {
+  const paymentIntent = typeof charge.payment_intent === "string"
+    ? charge.payment_intent
+    : charge.payment_intent?.id ?? null;
+  if (!paymentIntent) {
+    console.warn("[webhook] charge.refunded with no payment_intent; skipping");
+    return new Response("ok (no payment intent)", { status: 200 });
+  }
+
+  const rows = await sql`
+    SELECT * FROM orders WHERE stripe_payment_intent = ${paymentIntent} LIMIT 1
+  `;
+  if (rows.length === 0) {
+    console.warn("[webhook] charge.refunded for unknown payment_intent:", paymentIntent);
+    // 200 so Stripe doesn't retry forever for an order we don't have.
+    return new Response("ok (no matching order)", { status: 200 });
+  }
+  const order = rows[0];
+
+  const refundedCents = charge.amount_refunded ?? 0;
+  const chargeCents   = charge.amount ?? order.total_cents ?? 0;
+  const isFull        = refundedCents >= chargeCents;
+  const newStatus     = isFull ? "refunded" : "partially_refunded";
+
+  // Idempotency: if the running total matches what we've
+  // already recorded, this is a duplicate webhook. Skip the
+  // email but still update fulfillment_status if it's not
+  // already terminal, since Stripe sometimes fires the event
+  // multiple times for the same refund.
+  const alreadyApplied = order.refunded_cents === refundedCents;
+  if (alreadyApplied) {
+    return new Response("ok (duplicate refund event)", { status: 200 });
+  }
+
+  // For full refunds, also flip fulfillment_status to "refunded"
+  // so the customer's order timeline shows a coherent end-state.
+  // Partial refunds leave fulfillment alone — the customer might
+  // still be receiving most of their order.
+  const updated = await sql`
+    UPDATE orders
+       SET status             = ${newStatus},
+           fulfillment_status = CASE WHEN ${isFull} THEN 'refunded' ELSE fulfillment_status END,
+           refunded_cents     = ${refundedCents}
+     WHERE id = ${order.id}
+     RETURNING *
+  `;
+
+  // Notify the customer. Same isolation as the other emails:
+  // failures log + skip rather than blocking the DB write.
+  await sendRefundNotification({
+    order:          updated[0],
+    refundedCents,
+    isFullRefund:   isFull,
+  }).catch((err) => console.warn("[webhook] refund email failed:", err?.message ?? err));
+
+  return new Response("ok", { status: 200 });
+}
