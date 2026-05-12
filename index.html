@@ -690,6 +690,17 @@
   <input type="text"   name="bot-field" />
   <input type="email"  name="email" />
 </form>
+<!-- Waitlist signup for placeholder catalog items. Submissions land
+     in Netlify Forms under "waitlist" — one entry per email +
+     product_key pair. Lusik can export the list before launching a
+     placeholder to notify everyone. -->
+<form name="waitlist" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input type="hidden" name="form-name"   value="waitlist" />
+  <input type="text"   name="bot-field" />
+  <input type="email"  name="email" />
+  <input type="text"   name="product_key" />
+  <input type="text"   name="product_name" />
+</form>
 
 <div id="root"></div>
 
@@ -2349,7 +2360,7 @@ function FooterLangToggle() {
 // onShopBlanket / onShopCustom: handlers passed in to scroll the homepage
 // to the existing blanket or custom sections. For placeholder products,
 // we just open mailto links — they don't exist on the site yet.
-function ShopMegaMenu({ onShopBlanket, onShopCustom }) {
+function ShopMegaMenu({ onShopBlanket, onShopCustom, onPlaceholderClick }) {
   const t = useT();
 
   // Click handler for a catalog item — figure out where to send the customer
@@ -2360,12 +2371,11 @@ function ShopMegaMenu({ onShopBlanket, onShopCustom }) {
       if (product.key === "blanket-alphabet")     onShopBlanket?.();
       else if (product.key === "bib-single")      onShopCustom?.();
     } else {
-      // Placeholder products — open a pre-filled email asking about them.
-      const subject = encodeURIComponent(`Inquiry: ${product.name}`);
-      const body = encodeURIComponent(
-        `Hi Lusik,\n\nI'm interested in your "${product.name}". Could you tell me more about availability and price?\n\nThank you,\n`
-      );
-      window.location.href = `mailto:hello@lusikandsons.com?subject=${subject}&body=${body}`;
+      // Placeholder products — open the waitlist modal so we can
+      // capture interest. A "Or email Lusik" fallback link inside
+      // the modal preserves the old direct-email path for
+      // customers who want a personal conversation.
+      onPlaceholderClick?.(product);
     }
   };
 
@@ -2389,7 +2399,7 @@ function ShopMegaMenu({ onShopBlanket, onShopCustom }) {
                 >
                   {p.name}
                   {p.status === "placeholder" && (
-                    <span className="shop-menu-item-meta">· Email to inquire</span>
+                    <span className="shop-menu-item-meta">· Notify me</span>
                   )}
                 </button>
               ))}
@@ -2397,7 +2407,7 @@ function ShopMegaMenu({ onShopBlanket, onShopCustom }) {
           ))}
         </div>
         <p className="text-[0.65rem] opacity-40 italic mt-6 pt-4" style={{ borderTop: "1px solid rgba(26,22,18,0.06)" }}>
-          Items marked "Email to inquire" aren't yet listed for online purchase — Lusik makes them but is finalizing pricing. Drop her a note and she'll get back to you.
+          Items marked "Notify me" aren't yet listed for online purchase — Lusik makes them but is finalizing pricing. Tap one to leave your email; we'll write the moment it launches.
         </p>
       </div>
     </div>
@@ -2606,9 +2616,23 @@ const auth = (() => {
     }
   };
 
+  // Whether the currently-signed-in user carries the "admin"
+  // role on their Identity record. Used to decide whether to
+  // render the Admin nav link and admin view. Mirrors the
+  // server-side requireAdmin check; the function still enforces
+  // independently so a tampered-with browser can't access admin
+  // endpoints by lying about the role.
+  const isAdmin = () => {
+    try {
+      const u = get().currentUser();
+      const roles = u?.app_metadata?.roles;
+      return Array.isArray(roles) && roles.includes("admin");
+    } catch { return false; }
+  };
+
   return {
     init, signUp, signIn, signOut, sendPasswordReset,
-    getSession, onAuthStateChange, getToken,
+    getSession, onAuthStateChange, getToken, isAdmin,
     // Expose the raw widget for one-off use cases (e.g. opening the
     // social-login modal). Prefer the named methods above.
     raw: () => get(),
@@ -2701,6 +2725,38 @@ const db = (() => {
     return { error };
   };
 
+  // --- ADMIN ---
+  // Lusik-only endpoints. These will 403 for any non-admin user
+  // even if they reach the wrapper, but the UI gates them too.
+  const adminListOrders = async () => {
+    const { error, data } = await call("/admin-orders", { method: "GET" });
+    return { orders: data?.orders ?? [], error };
+  };
+  const adminGetOrder = async (id) => {
+    const { error, data } = await call(`/admin-orders?id=${encodeURIComponent(id)}`, { method: "GET" });
+    return { order: data?.order ?? null, error };
+  };
+  const adminUpdateOrder = async (id, updates) => {
+    const { error, data } = await call(`/admin-orders?id=${encodeURIComponent(id)}`, { method: "PUT", body: updates });
+    return { order: data?.order ?? null, error };
+  };
+  const adminUploadOrderPhoto = async (orderId, file) => {
+    const fileToBase64 = (f) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(f);
+    });
+    let dataBase64;
+    try { dataBase64 = await fileToBase64(file); }
+    catch { return { url: null, key: null, error: { message: "Couldn't read file" } }; }
+    const { error, data } = await call("/admin-order-photo", {
+      method: "POST",
+      body: { orderId, filename: file.name, contentType: file.type, dataBase64 },
+    });
+    return { url: data?.url ?? null, key: data?.key ?? null, error };
+  };
+
   // --- SAVED DESIGNS ---
   // Customer-side "my designs" library. Each entry is the
   // compact picker state plus a label and timestamp.
@@ -2733,6 +2789,7 @@ const db = (() => {
     getSavedCart, saveCart,
     listOrders, linkGuestOrders,
     listSavedDesigns, saveDesign, deleteSavedDesign,
+    adminListOrders, adminGetOrder, adminUpdateOrder, adminUploadOrderPhoto,
   };
 })();
 
@@ -3054,6 +3111,119 @@ function TestimonialsSection() {
         ))}
       </div>
     </section>
+  );
+}
+
+// ============================================================
+// WaitlistModal — "notify me when this is available"
+// ============================================================
+// Replaces the old mailto flow for catalog items still marked
+// status: "placeholder". When the customer clicks one in the
+// mega-menu, this modal opens with a quick description + email
+// signup. Submissions go to Netlify Forms under "waitlist" with
+// the product_key tagged so Lusik can export a per-product list
+// when she's ready to launch each item.
+//
+// The "Or email Lusik directly" fallback link is preserved for
+// customers who want a personal conversation instead.
+// ============================================================
+function WaitlistModal({ product, onClose }) {
+  const toast = useToast();
+  const [email, setEmail] = useState("");
+  const [bot, setBot]     = useState("");
+  const [busy, setBusy]   = useState(false);
+
+  if (!product) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const value = email.trim();
+    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      toast({ kind: "error", message: "Please enter a valid email address." });
+      return;
+    }
+    setBusy(true);
+    try {
+      const body = new URLSearchParams({
+        "form-name": "waitlist",
+        "bot-field": bot,
+        email:        value,
+        product_key:  product.key,
+        product_name: product.name,
+      }).toString();
+      const res = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast({
+        kind: "success",
+        message: `Added to the ${product.name} waitlist. We'll email you when it's ready.`,
+      });
+      onClose?.();
+    } catch {
+      toast({ kind: "error", message: "Couldn't add you to the list — please try again or email hello@lusikandsons.com." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Waitlist for ${product.name}`}>
+      <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.55)" }} />
+      <div className="relative w-full max-w-md fade-in p-6 lg:p-8" style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.15)" }} onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} aria-label="Close" className="absolute top-3 right-3 opacity-50 hover:opacity-100 transition">
+          <X size={18} />
+        </button>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Coming soon</p>
+        <h3 className="font-display text-2xl lg:text-3xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+          {product.name}
+        </h3>
+        {product.description && (
+          <p className="text-sm opacity-80 leading-relaxed mb-5">{product.description}</p>
+        )}
+        <form onSubmit={handleSubmit} className="mb-4">
+          <label className="block mb-1.5">
+            <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70">Notify me when this is available</span>
+          </label>
+          <div className="flex items-stretch gap-2">
+            <input
+              type="email"
+              required
+              autoFocus
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={busy}
+              className="flex-1 px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+              style={{ border: "1px solid rgba(26,22,18,0.15)" }}
+              aria-label="Email address"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="px-5 text-[0.65rem] tracking-[0.2em] uppercase whitespace-nowrap transition"
+              style={{
+                background: busy ? "rgba(26,22,18,0.4)" : "#1A1612",
+                color: "#F5EFE3",
+                fontWeight: 500,
+                cursor: busy ? "wait" : "pointer",
+              }}
+            >
+              {busy ? "…" : "Notify me"}
+            </button>
+          </div>
+          {/* Honeypot — off-screen, real users never see it. */}
+          <label aria-hidden="true" style={{ position: "absolute", left: "-9999px" }}>
+            Don't fill this out: <input name="bot-field" value={bot} onChange={(e) => setBot(e.target.value)} tabIndex={-1} autoComplete="off" />
+          </label>
+        </form>
+        <p className="text-xs opacity-60 leading-relaxed">
+          Or <a href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent(`Inquiry: ${product.name}`)}`} className="underline hover:opacity-100">email Lusik directly</a> if you'd rather have a personal conversation.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -3791,6 +3961,9 @@ function App() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false); // sign-in/sign-up drawer
   const [policyOpen, setPolicyOpen] = useState(null); // null | "privacy" | "terms" | "finalSale"
+  // Placeholder-catalog item the customer just clicked. Drives the
+  // WaitlistModal — null when closed, a product object when open.
+  const [waitlistProduct, setWaitlistProduct] = useState(null);
 
   // Listen for cross-policy link clicks inside the modal (e.g. clicking
   // "Final Sale Policy" from the bottom of "Privacy Policy"). The modal fires
@@ -3810,6 +3983,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  // Mirror of Identity's app_metadata.roles.includes("admin"). Recomputed on
+  // every auth-state change so the Admin link in the account view appears
+  // immediately when Lusik signs in.
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Heart-burst + cart-pulse feedback state. `bursts` is a list of {id, x, y} —
   // each maps to a HeartBurst component. They're auto-removed after the animation finishes.
@@ -3852,10 +4029,12 @@ function App() {
       if (!session?.user) {
         setUser(null);
         setProfile(null);
+        setIsAdmin(false);
         setAuthReady(true);
         return;
       }
       setUser(session.user);
+      setIsAdmin(auth.isAdmin());
       // Fetch profile + saved cart in parallel
       const [{ profile: p }, { cart: savedCart }] = await Promise.all([
         db.getProfile(session.user.id),
@@ -4277,6 +4456,7 @@ function App() {
             <ShopMegaMenu
               onShopBlanket={() => scrollTo("blanket")}
               onShopCustom={() => scrollTo("custom")}
+              onPlaceholderClick={(p) => setWaitlistProduct(p)}
             />
             <button onClick={() => scrollTo("story")} className="hover:opacity-60">{t("nav.story")}</button>
             <button onClick={() => scrollTo("faq")} className="hover:opacity-60">{t("nav.faq")}</button>
@@ -4386,15 +4566,14 @@ function App() {
                                 if (p.key === "blanket-alphabet") scrollTo("blanket");
                                 else if (p.key === "bib-single") scrollTo("custom");
                               } else {
-                                const subject = encodeURIComponent(`Inquiry: ${p.name}`);
-                                window.location.href = `mailto:hello@lusikandsons.com?subject=${subject}`;
+                                setWaitlistProduct(p);
                               }
                               setMobileNavOpen(false);
                             }}
                             className={`text-left text-[0.85rem] ${p.status === "placeholder" ? "opacity-55" : ""}`}
                           >
                             {p.name}
-                            {p.status === "placeholder" && <span className="text-[0.65rem] opacity-60"> · Email</span>}
+                            {p.status === "placeholder" && <span className="text-[0.65rem] opacity-60"> · Notify me</span>}
                           </button>
                         ))}
                       </div>
@@ -4414,7 +4593,11 @@ function App() {
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
-      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} />}
+      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
+      {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
+
+      {/* Waitlist modal for placeholder catalog items */}
+      <WaitlistModal product={waitlistProduct} onClose={() => setWaitlistProduct(null)} />
 
       {/* FOOTER */}
       <footer className="border-t mt-12" style={{ borderColor: "rgba(26,22,18,0.1)", background: "#EFE7D6" }}>
@@ -5282,7 +5465,7 @@ function AuthDrawer({ onClose, onAuthed }) {
 // ============================================================
 // Sections: profile (photo + name + phone + email), saved addresses (list + add),
 // order history (placeholder until Phase 3). Sign-out lives at the bottom.
-function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReorder, product }) {
+function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReorder, product, onOpenAdmin }) {
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -5609,13 +5792,26 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
 
       <div className="gold-line mb-12" />
 
-      {/* SIGN OUT */}
-      <button
-        onClick={onSignOut}
-        className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2"
-      >
-        <LogOut size={14} strokeWidth={1.5} /> Sign out
-      </button>
+      {/* SIGN OUT + ADMIN — bottom of the page so it doesn't compete
+          with the customer's normal account actions. Admin link is
+          rendered only when the Identity user has the role. */}
+      <div className="flex items-center justify-between gap-6 flex-wrap">
+        <button
+          onClick={onSignOut}
+          className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2"
+        >
+          <LogOut size={14} strokeWidth={1.5} /> Sign out
+        </button>
+        {onOpenAdmin && (
+          <button
+            onClick={onOpenAdmin}
+            className="text-xs tracking-[0.2em] uppercase flex items-center gap-2 transition"
+            style={{ color: "#B08842", fontWeight: 500 }}
+          >
+            Open admin panel →
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -6027,6 +6223,32 @@ function OrderCard({ order, onReorder }) {
         <OrderProgressTimeline status={order.fulfillment_status} />
       )}
 
+      {/* Finished-piece photo — uploaded by Lusik from the admin
+          view. Shows up forever once attached, as a small keepsake
+          of the actual blanket made for this customer. Click to
+          open full-size in a new tab. */}
+      {order.finished_photo_key && (
+        <a
+          href={`/.netlify/functions/order-photo-get?key=${encodeURIComponent(order.finished_photo_key)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mb-4 overflow-hidden transition hover:opacity-90"
+          style={{ border: "1px solid rgba(176,136,66,0.3)" }}
+          aria-label="View finished-piece photo full size"
+        >
+          <img
+            src={`/.netlify/functions/order-photo-get?key=${encodeURIComponent(order.finished_photo_key)}`}
+            alt="The finished blanket Lusik made for this order"
+            className="w-full h-auto object-cover"
+            style={{ maxHeight: "240px", display: "block" }}
+            loading="lazy"
+          />
+          <p className="px-3 py-2 text-[0.65rem] tracking-[0.18em] uppercase opacity-70" style={{ background: "rgba(176,136,66,0.06)" }}>
+            <span style={{ color: "#B08842", fontWeight: 500 }}>From Lusik</span> · photo of your finished blanket
+          </p>
+        </a>
+      )}
+
       {/* Items */}
       <div className="space-y-2 mb-4 pb-4" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
         {(order.order_items ?? []).map((item) => (
@@ -6095,6 +6317,361 @@ function OrderCard({ order, onReorder }) {
           >
             Order again <ArrowRight size={12} strokeWidth={1.75} />
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// ADMIN VIEW — Lusik's order management dashboard
+// ============================================================
+// Only signed-in users with the "admin" role on their Identity
+// record reach this view. The browser hides the nav link from
+// non-admins; the Functions enforce role independently.
+//
+// Layout: a list of all orders (newest first) with a row per
+// order. Click a row to expand; the expanded panel shows the
+// full customer info, line items, gift options, social-share
+// consent, and an edit form for fulfillment status / carrier /
+// tracking / estimated ship date / admin notes / finished-piece
+// photo upload.
+//
+// State is per-card local — each expanded row manages its own
+// edit form so Lusik can have multiple orders open at once
+// without their drafts colliding.
+// ============================================================
+const ADMIN_STATUS_OPTIONS = [
+  { value: "awaiting_lusik", label: "Awaiting Lusik" },
+  { value: "in_production",  label: "Lusik is stitching" },
+  { value: "quality_check",  label: "Final review" },
+  { value: "ready_to_ship",  label: "Ready to ship" },
+  { value: "shipped",        label: "Shipped" },
+  { value: "delivered",      label: "Delivered" },
+  { value: "refunded",       label: "Refunded" },
+];
+const ADMIN_CARRIER_OPTIONS = [
+  { value: "",                        label: "— none yet —" },
+  { value: "USPS Ground Advantage",   label: "USPS Ground Advantage" },
+  { value: "UPS Ground",              label: "UPS Ground" },
+  { value: "FedEx Home Delivery",     label: "FedEx Home Delivery" },
+  { value: "Free U.S. shipping",      label: "Free U.S. shipping (no carrier)" },
+];
+
+function AdminOrderRow({ order, onSaved }) {
+  const toast = useToast();
+  const [expanded, setExpanded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const photoInputRef = useRef(null);
+
+  // Local edit-form state — initialized from the order. Reset on
+  // every successful save so the form mirrors what the server now
+  // holds.
+  const [status, setStatus]           = useState(order.fulfillment_status ?? "awaiting_lusik");
+  const [carrier, setCarrier]         = useState(order.carrier ?? "");
+  const [tracking, setTracking]       = useState(order.tracking_number ?? "");
+  const [shipDate, setShipDate]       = useState(order.estimated_ship_date ? order.estimated_ship_date.slice(0, 10) : "");
+  const [notes, setNotes]             = useState(order.admin_notes ?? "");
+  const [photoKey, setPhotoKey]       = useState(order.finished_photo_key ?? null);
+
+  const isDirty = (
+    status !== (order.fulfillment_status ?? "awaiting_lusik") ||
+    (carrier ?? "") !== (order.carrier ?? "") ||
+    (tracking ?? "") !== (order.tracking_number ?? "") ||
+    shipDate !== (order.estimated_ship_date ? order.estimated_ship_date.slice(0, 10) : "") ||
+    (notes ?? "") !== (order.admin_notes ?? "")
+  );
+
+  const handleSave = async () => {
+    setBusy(true);
+    const updates = {
+      fulfillment_status:  status,
+      carrier:             carrier || null,
+      tracking_number:     tracking || null,
+      estimated_ship_date: shipDate || null,
+      admin_notes:         notes || null,
+    };
+    const { error } = await db.adminUpdateOrder(order.id, updates);
+    setBusy(false);
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't save — please try again." });
+      return;
+    }
+    toast({ kind: "success", message: `Saved · ${order.order_number}` });
+    onSaved?.();
+  };
+
+  const handlePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoBusy(true);
+    const { key, error } = await db.adminUploadOrderPhoto(order.id, file);
+    setPhotoBusy(false);
+    if (error || !key) {
+      toast({ kind: "error", message: error?.message || "Couldn't upload that photo." });
+      return;
+    }
+    setPhotoKey(key);
+    toast({ kind: "success", message: "Finished photo uploaded — your customer can see it in their account now." });
+    onSaved?.();
+  };
+
+  const statusLabel = ADMIN_STATUS_OPTIONS.find((o) => o.value === order.fulfillment_status)?.label ?? order.fulfillment_status;
+  const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  const ship = order.shipping_address;
+  const photoUrl = photoKey ? `/.netlify/functions/order-photo-get?key=${encodeURIComponent(photoKey)}` : null;
+
+  return (
+    <div className="p-5 lg:p-6" style={{ border: "1px solid rgba(26,22,18,0.12)" }}>
+      {/* SUMMARY ROW — always visible */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-start justify-between gap-4 text-left"
+        aria-expanded={expanded}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-3 flex-wrap mb-1">
+            <p className="font-display text-lg" style={{ fontWeight: 500 }}>{order.order_number}</p>
+            <p className="text-xs opacity-60">{orderDate}</p>
+            {order.gift?.is_gift && (
+              <span className="text-[0.55rem] tracking-[0.18em] uppercase px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "#B08842", fontWeight: 500 }}>
+                Gift
+              </span>
+            )}
+          </div>
+          <p className="text-xs opacity-70 truncate">
+            {order.customer_email}
+            {ship && <span> · {ship.city}, {ship.state ?? ship.region}</span>}
+            <span> · {order.item_count} item{order.item_count === 1 ? "" : "s"}</span>
+          </p>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-70 mb-1" style={{ color: "#B08842", fontWeight: 500 }}>{statusLabel}</p>
+          <p className="text-sm" style={{ fontWeight: 500 }}>${(order.total_cents / 100).toFixed(2)}</p>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="mt-5 pt-5 space-y-5" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
+          {/* SHIPPING ADDRESS */}
+          {ship && (
+            <div>
+              <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 mb-1.5">Ship to</p>
+              <p className="text-sm leading-relaxed">
+                {ship.line1 ?? ship.address_line1}
+                {(ship.line2 ?? ship.address_line2) && <><br />{ship.line2 ?? ship.address_line2}</>}
+                <br />
+                {ship.city}, {ship.state ?? ship.region} {ship.postal_code ?? ship.zip}
+                {ship.country && <> · {ship.country}</>}
+              </p>
+            </div>
+          )}
+
+          {/* GIFT OPTIONS — surfaced prominently because they actually
+              affect how Lusik packs the box. */}
+          {order.gift?.is_gift && (
+            <div className="p-3" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
+              <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1.5" style={{ color: "#B08842" }}>This is a gift</p>
+              {order.gift.message && (
+                <p className="text-sm leading-relaxed italic mb-2" style={{ background: "#FFFFFF", padding: "0.5rem 0.75rem", border: "1px solid rgba(26,22,18,0.08)" }}>
+                  "{order.gift.message}"
+                </p>
+              )}
+              {order.gift.hide_prices && (
+                <p className="text-xs opacity-80" style={{ fontWeight: 500 }}>
+                  ⚠️ Customer asked: <span className="opacity-100">do NOT include prices on the packing slip.</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* SOCIAL-SHARE CONSENT */}
+          {order.social_consent?.allowed && (
+            <div className="text-xs opacity-80 leading-relaxed">
+              <p className="opacity-70 mb-1">
+                Customer opted in to social-media sharing on:{" "}
+                <span style={{ fontWeight: 500 }}>
+                  {Array.isArray(order.social_consent.platforms) ? order.social_consent.platforms.join(", ") : ""}
+                </span>
+              </p>
+              {order.social_consent.handles && Object.keys(order.social_consent.handles).length > 0 && (
+                <p className="opacity-70">
+                  Handles —{" "}
+                  {Object.entries(order.social_consent.handles).map(([k, v]) => (
+                    <span key={k}>{k}: <span style={{ fontWeight: 500 }}>{v}</span> · </span>
+                  ))}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* EDIT FORM */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Status</span>
+              <select value={status} onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+                style={{ border: "1px solid rgba(26,22,18,0.2)" }}>
+                {ADMIN_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Carrier</span>
+              <select value={carrier ?? ""} onChange={(e) => setCarrier(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+                style={{ border: "1px solid rgba(26,22,18,0.2)" }}>
+                {ADMIN_CARRIER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Tracking number</span>
+              <input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="e.g. 9400 1234 5678 ..."
+                className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+                style={{ border: "1px solid rgba(26,22,18,0.2)" }} />
+            </label>
+            <label className="block">
+              <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Estimated ship date</span>
+              <input type="date" value={shipDate} onChange={(e) => setShipDate(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+                style={{ border: "1px solid rgba(26,22,18,0.2)" }} />
+            </label>
+          </div>
+          <label className="block">
+            <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Internal notes <span className="normal-case tracking-normal opacity-70">(only Lusik sees these)</span></span>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+              className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] resize-none"
+              style={{ border: "1px solid rgba(26,22,18,0.2)" }} />
+          </label>
+
+          {/* FINISHED-PIECE PHOTO */}
+          <div>
+            <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 mb-2">Finished-piece photo</p>
+            <div className="flex items-start gap-4 flex-wrap">
+              {photoUrl ? (
+                <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="block flex-shrink-0">
+                  <img src={photoUrl} alt="Current finished-piece photo" className="w-24 h-24 object-cover" style={{ border: "1px solid rgba(26,22,18,0.15)" }} />
+                </a>
+              ) : (
+                <div className="w-24 h-24 flex items-center justify-center text-[0.6rem] tracking-[0.15em] uppercase opacity-50" style={{ border: "1px dashed rgba(26,22,18,0.25)" }}>
+                  No photo yet
+                </div>
+              )}
+              <div className="flex-1 min-w-[200px]">
+                <input ref={photoInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePhoto} className="hidden" />
+                <button onClick={() => photoInputRef.current?.click()} disabled={photoBusy}
+                  className="px-4 py-2 text-[0.65rem] tracking-[0.2em] uppercase mb-2"
+                  style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500, opacity: photoBusy ? 0.5 : 1 }}>
+                  {photoBusy ? "Uploading…" : (photoUrl ? "Replace photo" : "Upload photo")}
+                </button>
+                <p className="text-[0.65rem] opacity-60 leading-relaxed italic">
+                  The customer sees this in their order history. PNG / JPEG / WebP. Replacing keeps the old one in storage but only shows the newest.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* SAVE BAR */}
+          <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid rgba(26,22,18,0.06)" }}>
+            <button onClick={() => setExpanded(false)} className="text-[0.65rem] tracking-[0.2em] uppercase opacity-60 hover:opacity-100">
+              Close
+            </button>
+            <button onClick={handleSave} disabled={!isDirty || busy}
+              className="px-5 py-2.5 text-[0.65rem] tracking-[0.2em] uppercase transition"
+              style={{
+                background: (!isDirty || busy) ? "rgba(26,22,18,0.3)" : "#1A1612",
+                color: "#F5EFE3",
+                fontWeight: 500,
+                cursor: (!isDirty || busy) ? "not-allowed" : "pointer",
+              }}>
+              {busy ? "Saving…" : (isDirty ? "Save changes" : "Saved")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminView({ user, onBack }) {
+  const toast = useToast();
+  const [orders, setOrders] = useState(null); // null = loading
+  const [filter, setFilter] = useState("all");
+
+  const refresh = useCallback(async () => {
+    const { orders: rows, error } = await db.adminListOrders();
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't load orders." });
+      setOrders([]);
+      return;
+    }
+    setOrders(rows);
+  }, [toast]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  // Tiny filter buttons — "all" plus the two most-actionable
+  // states for Lusik: in-progress (anything she still needs to
+  // touch) and shipped (where she might need to look up a
+  // tracking issue).
+  const filtered = (orders ?? []).filter((o) => {
+    if (filter === "all")        return true;
+    if (filter === "in_progress") return ["awaiting_lusik", "in_production", "quality_check", "ready_to_ship"].includes(o.fulfillment_status);
+    if (filter === "shipped")    return ["shipped", "delivered"].includes(o.fulfillment_status);
+    return true;
+  });
+
+  return (
+    <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
+      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-6">
+        ← Back to site
+      </button>
+      <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
+        <div>
+          <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Admin</p>
+          <h1 className="font-display text-4xl lg:text-5xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Orders.</h1>
+          <p className="text-sm opacity-70 mt-1">{user?.email}</p>
+        </div>
+        <div className="flex gap-1.5">
+          {[
+            { key: "all",          label: "All" },
+            { key: "in_progress",  label: "In progress" },
+            { key: "shipped",      label: "Shipped" },
+          ].map((f) => (
+            <button key={f.key} onClick={() => setFilter(f.key)}
+              className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition"
+              style={{
+                background: filter === f.key ? "#1A1612" : "transparent",
+                color:      filter === f.key ? "#F5EFE3" : "rgba(26,22,18,0.7)",
+                border:     filter === f.key ? "1px solid #1A1612" : "1px solid rgba(26,22,18,0.2)",
+                fontWeight: 500,
+              }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {orders === null ? (
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="p-5" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
+              <Skeleton className="w-32 h-4 mb-2" />
+              <Skeleton className="w-3/4 h-3" />
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm opacity-60 italic">
+          {orders.length === 0
+            ? "No orders yet. When the first paid checkout lands, it'll appear here."
+            : `No orders match the "${filter.replace(/_/g, " ")}" filter.`}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((o) => (
+            <AdminOrderRow key={o.id} order={o} onSaved={refresh} />
+          ))}
         </div>
       )}
     </div>

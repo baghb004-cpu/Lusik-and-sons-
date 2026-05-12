@@ -67,18 +67,22 @@ netlify/
     ├── package.json                 # function-only deps; Netlify CI runs `npm install`
     ├── _lib/
     │   ├── db.mjs                   # @netlify/neon sql tagged-template export
-    │   ├── auth.mjs                 # requireUser(context) — pulls verified Identity user
+    │   ├── auth.mjs                 # requireUser + requireAdmin (Identity role check)
     │   ├── json.mjs                 # JSON response helper
     │   └── trusted-products.mjs     # server-side product price map (Stripe handoff)
-    ├── profile.mjs                  # GET/PUT  /profile
-    ├── addresses.mjs                # GET/POST/DELETE  /addresses
-    ├── saved-cart.mjs               # GET/PUT  /saved-cart
-    ├── orders.mjs                   # GET     /orders
-    ├── link-guest-order.mjs         # POST    /link-guest-order
-    ├── avatar.mjs                   # POST    /avatar   (write to Netlify Blobs)
-    ├── avatar-get.mjs               # GET     /avatar-get?key=...  (public read)
-    ├── create-checkout-session.mjs  # POST    /create-checkout-session (Stripe)
-    └── stripe-webhook.mjs           # POST    /api/stripe-webhook (Stripe → DB)
+    ├── profile.mjs                  # GET/PUT       /profile
+    ├── addresses.mjs                # GET/POST/DEL  /addresses
+    ├── saved-cart.mjs               # GET/PUT       /saved-cart
+    ├── saved-designs.mjs            # GET/POST/DEL  /saved-designs
+    ├── orders.mjs                   # GET           /orders
+    ├── link-guest-order.mjs         # POST          /link-guest-order
+    ├── avatar.mjs                   # POST          /avatar          (write to Netlify Blobs)
+    ├── avatar-get.mjs               # GET           /avatar-get?key=...  (public read)
+    ├── admin-orders.mjs             # GET/PUT       /admin-orders    (admin role required)
+    ├── admin-order-photo.mjs        # POST          /admin-order-photo (finished-piece upload, admin)
+    ├── order-photo-get.mjs          # GET           /order-photo-get?key=...  (signed-in customer or admin)
+    ├── create-checkout-session.mjs  # POST          /create-checkout-session (Stripe)
+    └── stripe-webhook.mjs           # POST          /api/stripe-webhook (Stripe → DB)
 ```
 
 ### Database — Netlify Database (Neon-backed Postgres)
@@ -91,6 +95,23 @@ netlify/
 
 - Avatars: store `profile-photos` (key pattern `<user_id>/avatar-<timestamp>.<ext>`), accessed via the `avatar` / `avatar-get` Functions.
 - Pending carts: store `pending-orders` (key = Stripe session ID). `create-checkout-session` stashes the cart here; `stripe-webhook` reads + deletes it when the payment completes.
+- Finished-piece photos: store `order-finished-photos` (key pattern `<order_id>/finished-<timestamp>.<ext>`). Lusik uploads via the admin view → `admin-order-photo`. The order row's `finished_photo_key` column points at the most recent upload; the customer's account page renders it via `order-photo-get`.
+
+### Admin view + roles
+
+Lusik (and her sons) manage orders through a dedicated admin view: `view === "admin"` inside the React app. It's gated three ways:
+
+1. **Browser**: the nav link only renders when `auth.isAdmin()` returns true.
+2. **Function**: every admin endpoint calls `requireAdmin(context)` from `_lib/auth.mjs`, which checks the Identity JWT's `app_metadata.roles` for the string `"admin"`. There's also an env-var fallback: `ADMIN_EMAILS` (comma-separated) lets a brand-new deploy work before the role has been assigned in the Netlify dashboard.
+3. **Database**: nothing — the DB just trusts the Function, same pattern as the customer endpoints.
+
+Granting admin access (one-time per user):
+
+1. Netlify dashboard → Site → Identity → Users → click the user → Edit role → add `admin` → Save.
+2. The user signs out + signs back in (the role lands on the JWT on next login).
+3. They see "Open admin panel →" at the bottom of their account view.
+
+From the admin view, Lusik can: change `fulfillment_status`, set `carrier` + `tracking_number`, set `estimated_ship_date`, write internal `admin_notes`, and upload a finished-piece photo per order. The customer's order card on their account page picks up every change automatically — the stepped progress timeline, the tracking link, and the finished-piece photo all key off these fields.
 
 ### Stripe checkout flow
 
