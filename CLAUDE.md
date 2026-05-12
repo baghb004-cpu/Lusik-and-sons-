@@ -147,6 +147,30 @@ A small in-file mini-blog at `view === "journal"`, with three starter posts abou
 - Per-route `<title>` and `<link rel="canonical">` are set via DOM manipulation when `view` or `journalSlug` changes, so each journal post is indexed as its own page rather than being collapsed into the home page by a static canonical.
 - All three posts carry the `TODO_LUSIK_REVIEW` marker — Lusik should read each one and tell us if anything needs adjusting. She can also send a personal anecdote for any of them, which we'd splice in as a section.
 
+### PWA (Add to Home Screen) + print styles
+
+The site is wired for both as of the polish pass:
+
+- `manifest.webmanifest` at the repo root declares brand name, theme colors (`#1A1612` ink, `#F5EFE3` cream), display mode (`standalone`), and icon paths. Linked from `<head>` via `<link rel="manifest">`.
+- iOS Safari meta tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`) sit alongside the manifest because Apple ignores `manifest.webmanifest` and uses its own legacy attributes.
+- A `theme-color` meta tag sets the mobile browser address-bar to brand ink on Android Chrome.
+
+**Icon files needed before launch** (referenced by both the manifest and the existing favicon tags — none of these exist in the repo yet, all flagged `TODO_LUSIK`):
+
+- `/favicon.ico` (32×32 or multi-size)
+- `/apple-touch-icon.png` (180×180 for iOS home screen)
+- `/icon-192.png` (192×192 for Android)
+- `/icon-512.png` (512×512 for Android splash + iOS large)
+- `/icon-maskable-512.png` (512×512 with safe-zone padding for Android adaptive icons)
+
+The PWA install still works without them — the browser falls back to a screenshot of the page as the icon — but the experience is much better with proper artwork.
+
+Print styles live in the main `<style>` block (search for `@media print`). They:
+- Hide all fixed-position UI (toasts, drawers, sticky nav, back-to-top, text-us widget, mobile bottom-nav)
+- Convert photos to grayscale to save color toner
+- Append `(URL)` after external links so paper copies stay useful
+- Force `page-break-inside: avoid` on `article`, `section`, and order cards so a long page splits sensibly
+
 ### Analytics (privacy-first, opt-in)
 
 The site is wired for [Umami](https://umami.is)-compatible analytics. Default is OFF — the script tag isn't loaded and no requests are made until `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` (~line 1370 in `index.html`) is set to a real ID.

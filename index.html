@@ -167,6 +167,31 @@
 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
+<!-- ============================================================
+     PWA — "Add to Home Screen" support
+     ============================================================
+     The manifest.webmanifest at the repo root declares the
+     brand identity (name, theme colors, icons) so Android and
+     desktop Chrome can install the site as an app. The Apple
+     meta tags below handle iOS, which doesn't read the manifest
+     and uses its own legacy attributes instead.
+
+     Required icon files for the full experience (TODO_LUSIK —
+     create these and drop them at the repo root):
+       - /icon-192.png            192x192   Android home screen
+       - /icon-512.png            512x512   Android splash + iOS
+       - /icon-maskable-512.png   512x512   Android adaptive icon
+                                            (with safe-zone padding)
+     Without these the install still works but uses a generic
+     screenshot of the page as the icon.
+     ============================================================ -->
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#1A1612" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Lusik & Sons" />
+<meta name="mobile-web-app-capable" content="yes" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=Allura&display=swap" rel="stylesheet" />
@@ -656,6 +681,92 @@
   .open-icon { transition: transform 0.2s ease; }
   .loading-screen { position: fixed; inset: 0; background: #F5EFE3; display: flex; align-items: center; justify-content: center; z-index: 100; }
   .loading-screen.hide { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+
+  /* ============================================================
+     Brand-polish CSS — small refinements that show up everywhere
+     ============================================================ */
+  /* Selected text picks up the brand gold instead of the system
+     default blue. Easy on the eyes, more cohesive with the rest
+     of the palette. */
+  ::selection { background: rgba(176,136,66,0.28); color: #1A1612; }
+
+  /* Keyboard-focused elements get a visible gold ring — uses
+     :focus-visible (NOT :focus) so the ring only appears for
+     keyboard / accessibility-tech users, never on mouse clicks.
+     2px outline + 2px offset clears most element backgrounds. */
+  *:focus-visible {
+    outline: 2px solid #B08842;
+    outline-offset: 2px;
+    border-radius: 1px;
+  }
+
+  /* Smooth scrolling for in-page anchor links (Story → FAQ etc.).
+     Honors prefers-reduced-motion automatically — the @media
+     query below overrides to instant for users who've opted out. */
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  /* ============================================================
+     PRINT STYLES
+     ============================================================
+     Strips the chrome (nav, toasts, drawers, floating widgets,
+     buttons) so the customer can print their order page, a
+     journal post, or any view cleanly. Ink-saving: backgrounds
+     drop, links become inline text, decorative borders go gold-
+     on-white. Page breaks fall sensibly between sections so a
+     long order doesn't split awkwardly mid-row.
+     ============================================================ */
+  @media print {
+    /* Reset body to print-friendly defaults. */
+    body { background: #FFFFFF !important; color: #000000 !important; }
+
+    /* Hide everything the customer didn't ask to print. */
+    nav,
+    .toast-viewport,
+    .textus-pill,
+    .textus-panel,
+    .textus-proactive,
+    .back-to-top,
+    .drawer-in,
+    [role="dialog"],
+    .lg\:hidden.fixed,
+    button[onclick],
+    .gold-line,
+    /* Cart, auth, connect drawers all use this pattern: */
+    .fixed.inset-0.z-50,
+    /* The dark announce / active-order strip at the top: */
+    body > div > div:first-child > div:first-child,
+    /* The whole-site footer trust signals + nav links: */
+    footer { display: none !important; }
+
+    /* Photos: convert to grayscale so they print legibly without
+       chewing through color toner. */
+    img { filter: grayscale(1); max-width: 100% !important; height: auto !important; }
+
+    /* Links: keep their underline but inline the URL after the
+       text. Useful for printed order pages where the customer
+       might want the tracking URL on paper. */
+    a[href^="http"]::after,
+    a[href^="https"]::after {
+      content: " (" attr(href) ")";
+      font-size: 0.75em;
+      color: #6B655D;
+    }
+    a[href^="mailto:"]::after,
+    a[href^="tel:"]::after { content: ""; }  /* mailto: + tel: URLs are noise on paper */
+
+    /* Page-break controls. Headings stay with their content;
+       order cards don't split across pages. */
+    h1, h2, h3 { page-break-after: avoid; }
+    article, .order-card, section { page-break-inside: avoid; }
+
+    /* Ink-saving: strip backgrounds + heavy borders, keep
+       structural ones thin and gray. */
+    [style*="background"] { background: transparent !important; }
+    [style*="border"] { border-color: #CCC !important; }
+  }
 </style>
 </head>
 <body>
