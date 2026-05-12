@@ -217,6 +217,16 @@
     @keyframes toastFadeOut { from { opacity: 1; } to { opacity: 0; } }
   }
 
+  /* Sticky mobile add-to-cart bar — slides up from the bottom of
+     the viewport when the main PDP CTA scrolls out of view. Only
+     present on mobile (Tailwind lg:hidden on the JSX); the CSS
+     here just powers the entry animation. */
+  @keyframes stickyCtaIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sticky-cta-in { animation: stickyCtaIn 0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+  @media (prefers-reduced-motion: reduce) {
+    .sticky-cta-in { animation: fadeIn 0.22s ease-out; }
+  }
+
   /* Heart-burst feedback on add-to-cart. Each particle uses CSS variables (--tx/--ty/--rot)
      set inline for randomization. The pivot is positioned fixed at the click point. */
   .heart-burst-pivot {
@@ -1245,6 +1255,21 @@ const CONFIG = {
   // How long to wait after the last cart change before writing to the database.
   // Higher = fewer DB writes; lower = less data loss if user closes tab quickly.
   CART_PERSIST_DEBOUNCE_MS: 800,
+
+  // ============================================================
+  // FREE-SHIPPING PROGRESS BAR
+  // ============================================================
+  // ⚠️ TODO_LUSIK: Decision before launch. The site currently
+  // charges $9.99–$16.99 for shipping (see SHIPPING_CARRIERS).
+  // If Lusik offers free shipping above a threshold, flip ENABLED
+  // to `true` and the cart drawer renders a progress bar nudging
+  // customers toward it. Off by default — we don't want to imply
+  // free shipping if it hasn't been agreed to.
+  //
+  // Suggested threshold once she decides: $75. The blanket is
+  // $65, so adding any bib pushes the cart over and lifts AOV.
+  FREE_SHIPPING_ENABLED: false,
+  FREE_SHIPPING_THRESHOLD_CENTS: 7500,
 
   // Gallery indexes whose source files are sideways and need a CSS-rotation
   // band-aid until the actual image files are replaced. Applies wherever
@@ -2793,6 +2818,100 @@ function ToastViewport({ toasts, onDismiss }) {
 }
 
 // ============================================================
+// FreeShippingProgress — cart-drawer "you're $X away" nudge
+// ============================================================
+// Gated by CONFIG.FREE_SHIPPING_ENABLED. Renders nothing when
+// the feature is off, so it's safe to leave the call site in
+// place while Lusik decides on a shipping policy. When enabled:
+//   subtotal < threshold → "Add $X.XX more for free U.S.
+//                            shipping" with a partial bar.
+//   subtotal ≥ threshold → "You've earned free U.S. shipping."
+//                            with a full bar.
+// The bar uses the brand's gold accent so it reads as a quiet
+// progress indicator, not a banner ad.
+// ============================================================
+function FreeShippingProgress({ subtotalCents }) {
+  if (!CONFIG.FREE_SHIPPING_ENABLED) return null;
+  const threshold = CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
+  const remaining = Math.max(0, threshold - subtotalCents);
+  const pct = Math.min(100, Math.round((subtotalCents / threshold) * 100));
+  const isEarned = remaining === 0;
+  return (
+    <div className="px-6 pt-5 pb-3" aria-live="polite">
+      <div className="flex justify-between items-baseline mb-2">
+        <p className="text-xs leading-snug">
+          {isEarned ? (
+            <span style={{ color: "#B08842", fontWeight: 500 }}>You've earned free U.S. shipping.</span>
+          ) : (
+            <>
+              <span style={{ fontWeight: 500 }}>${(remaining / 100).toFixed(2)}</span>
+              <span className="opacity-70"> away from free U.S. shipping</span>
+            </>
+          )}
+        </p>
+        <span className="text-[0.65rem] opacity-50 tabular-nums">{pct}%</span>
+      </div>
+      <div
+        className="w-full h-1"
+        style={{ background: "rgba(26,22,18,0.08)" }}
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Progress toward free shipping"
+      >
+        <div
+          className="h-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: "#B08842" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// PaymentMethodsRow — restrained "we accept" trust signal
+// ============================================================
+// Stripe handles Visa, Mastercard, Amex, Apple Pay, Google Pay
+// (and more). Customers register payment-method icons in a
+// quarter-second of scanning; not showing them at all is a
+// noticeable absence at checkout.
+//
+// Visual choice: small text chips in the brand's typographic
+// style instead of full-color brand logos. Reasons —
+//   (a) Multi-color third-party logos clash with the warm
+//       cream + ink palette this site uses everywhere else.
+//   (b) Monochrome text labels avoid any trademark-licensing
+//       worry from rendering official marks.
+//   (c) The chips read as deliberate / on-brand, which is the
+//       signal we actually want: "this store made considered
+//       choices," not "this store pasted Visa's logo from
+//       Google Images."
+// ============================================================
+function PaymentMethodsRow({ className = "", align = "center" }) {
+  const methods = ["Visa", "Mastercard", "Amex", "Apple Pay", "Google Pay"];
+  const justify = align === "center" ? "justify-center" : "justify-start";
+  return (
+    <div className={`flex items-center gap-1.5 flex-wrap ${justify} ${className}`}>
+      {methods.map((m) => (
+        <span
+          key={m}
+          className="text-[0.55rem] tracking-[0.18em] uppercase px-2 py-1"
+          style={{
+            color: "rgba(26,22,18,0.6)",
+            border: "1px solid rgba(26,22,18,0.15)",
+            fontWeight: 500,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {m}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
 // BACK-TO-TOP BUTTON
 // ============================================================
 // Small floating button anchored above the text-us widget. Hidden when the
@@ -3804,6 +3923,11 @@ function App() {
               <h3 className="font-display text-2xl" style={{ fontWeight: 400 }}>Your cart</h3>
               <button onClick={() => setCartOpen(false)} aria-label="Close cart" data-tooltip="Close" data-tooltip-pos="left"><X size={20} /></button>
             </div>
+            {/* Free-shipping progress nudge — renders nothing unless
+                CONFIG.FREE_SHIPPING_ENABLED is flipped on. Lives above
+                the item list so it's the first thing the customer
+                sees when the drawer opens with items in it. */}
+            {cart.length > 0 && <FreeShippingProgress subtotalCents={Math.round(subtotal * 100)} />}
             {cart.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
                 <ShoppingBag size={32} strokeWidth={1} className="opacity-30 mb-4" />
@@ -3854,7 +3978,11 @@ function App() {
                   <button onClick={goCheckout} className="w-full py-4 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "#1A1612", color: "#F5EFE3" }}>
                     Checkout <ArrowRight size={16} />
                   </button>
-                  <p className="text-xs text-center opacity-60 mt-4">
+                  {/* Trust signal: which payment methods Stripe will accept on
+                      the next page. Sized smaller than the CTA so it informs
+                      without competing. */}
+                  <PaymentMethodsRow className="mt-4" />
+                  <p className="text-xs text-center opacity-60 mt-3">
                     Or <button onClick={() => window.open("https://instagram.com")} className="underline">DM us on Instagram</button> to order
                   </p>
                 </div>
@@ -4173,7 +4301,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Trademarks and materials",
-          body: "Other names mentioned on this site — Stripe, USPS, UPS, FedEx, Instagram, Facebook, and similar — are referenced only to describe how we run our business or where customers can find related products and services. Lusik & Sons is not affiliated with, endorsed by, sponsored by, or partnered with any of these companies. All trademarks belong to their respective owners."
+          body: "Other names and marks mentioned on this site — including Stripe; USPS, UPS, and FedEx; Instagram, TikTok, Facebook, and YouTube; Visa, Mastercard, American Express, Apple Pay, and Google Pay; and DMC threads — are referenced only to describe how we run our business or what we use to make our products. Lusik & Sons is not affiliated with, endorsed by, sponsored by, or partnered with any of these companies, and no such relationship is implied. All trademarks, service marks, and trade names belong to their respective owners."
         },
         {
           heading: "Changes",
@@ -6512,6 +6640,59 @@ function CollapsibleSection({ title, open, summary, onExpand, children, mb = "mb
 }
 
 function ProductShowcase({ product, onAdd, onCartFeedback }) {
+  // --- STICKY MOBILE ADD-TO-CART ---
+  // Ref on the primary Add-to-cart button. An IntersectionObserver
+  // watches it; when it scrolls out of view on mobile we slide a
+  // sticky CTA bar up from the bottom of the viewport so the
+  // customer can convert without scrolling back. The observer
+  // also runs on desktop but the sticky bar JSX uses Tailwind's
+  // `lg:hidden`, so desktop never sees it. The threshold is 0 so
+  // the bar appears as soon as the main button leaves view, and
+  // disappears as soon as any pixel of it returns.
+  const addCtaRef = useRef(null);
+  const [isAddCtaVisible, setIsAddCtaVisible] = useState(true);
+  useEffect(() => {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const el = addCtaRef.current;
+    if (!el) return;
+    // The sticky mobile bar should only appear AFTER the customer has
+    // scrolled past the main CTA — not before they've reached it. So
+    // "visible" here means either truly intersecting OR still below the
+    // viewport (i.e. hasn't been scrolled to yet). That keeps the bar
+    // from appearing during the hero / above-the-fold reading flow.
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        const stillBelowFold = entry.boundingClientRect.top > window.innerHeight;
+        setIsAddCtaVisible(entry.isIntersecting || stillBelowFold);
+      },
+      { threshold: 0 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Shared add-to-cart for the primary CTA AND the mobile sticky
+  // bar. Both pass the rect of whichever button was clicked so the
+  // heart-burst animation originates from the right spot.
+  const addItemToCart = (originRect) => {
+    if (originRect) {
+      onCartFeedback?.(
+        originRect.left + originRect.width / 2,
+        originRect.top + originRect.height / 2
+      );
+    }
+    onAdd(color, qty, alphabet, layout, {
+      block: blockColor,
+      letter: letterColor,
+      letterColors: letterColorList,  // null for single-color, array of threadColor entries for multi-color
+      presetKey: activePresetKey,
+      customLine1: customLine1.trim(),  // optional name/initials, "" if blank
+      customLine2: customLine2.trim(),  // optional year/date, "" if blank
+    });
+  };
+
   const [activeImg, setActiveImg] = useState(0);
   const [color, setColor] = useState(product.colors[0]);
   const [letter, setLetter] = useState(product.letters[0]);
@@ -7260,18 +7441,16 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
               <span className="px-5 text-base">{qty}</span>
               <button onClick={() => setQty(qty + 1)} className="px-4 py-3"><Plus size={14} /></button>
             </div>
-            <button onClick={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              onCartFeedback?.(r.left + r.width / 2, r.top + r.height / 2);
-              onAdd(color, qty, alphabet, layout, {
-                block: blockColor,
-                letter: letterColor,
-                letterColors: letterColorList,  // null for single-color, array of threadColor entries for multi-color
-                presetKey: activePresetKey,
-                customLine1: customLine1.trim(),  // optional name/initials, "" if blank
-                customLine2: customLine2.trim(),  // optional year/date, "" if blank
-              });
-            }} className="flex-1 py-4 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+            {/* Primary Add-to-cart. The ref drives the IntersectionObserver
+                above so the mobile sticky bar knows when this button is
+                off-screen; the shared `addItemToCart` helper is also called
+                from the sticky bar so they stay in lockstep. */}
+            <button
+              ref={addCtaRef}
+              onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
+              className="flex-1 py-4 text-sm tracking-wide flex items-center justify-center gap-2"
+              style={{ background: "#1A1612", color: "#F5EFE3" }}
+            >
               Add to cart — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
             </button>
           </div>
@@ -7288,6 +7467,47 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
           </div>
         </div>
       </div>
+
+      {/* ============================================================
+          MOBILE STICKY ADD-TO-CART
+          ============================================================
+          Slides up from the bottom of the viewport when the main
+          Add-to-cart button has scrolled off-screen. Mobile only
+          (lg:hidden). Reads the current variant's price live so it
+          matches whatever the customer's last selection was. Uses
+          the same `addItemToCart` helper as the main button so the
+          cart-feedback animation, the cart drawer auto-open, and
+          any future shared logic stay identical.
+          ============================================================ */}
+      {!isAddCtaVisible && (
+        <div
+          className="lg:hidden fixed bottom-0 inset-x-0 z-30 sticky-cta-in"
+          style={{
+            background: "rgba(245, 239, 227, 0.97)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            borderTop: "1px solid rgba(26,22,18,0.1)",
+            paddingBottom: "env(safe-area-inset-bottom, 0)",
+          }}
+        >
+          <div className="px-4 py-3 flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <p className="text-[0.55rem] tracking-[0.2em] uppercase opacity-60">Total</p>
+              <p className="text-base" style={{ fontWeight: 500 }}>
+                ${((layout.priceCents / 100) * qty).toFixed(0)}
+              </p>
+            </div>
+            <button
+              onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
+              className="flex-1 py-3 text-sm tracking-wide flex items-center justify-center gap-2"
+              style={{ background: "#1A1612", color: "#F5EFE3" }}
+              aria-label={`Add to cart for $${((layout.priceCents / 100) * qty).toFixed(0)}`}
+            >
+              Add to cart <ArrowRight size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -7556,6 +7776,10 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {busy ? "Connecting to Stripe…" : "Pay with Stripe"}
             {!busy && <ArrowRight size={16} strokeWidth={1.5} />}
           </button>
+
+          {/* Accepted-payment row — Stripe handles all of these, but
+              customers don't know that until they see the icons. */}
+          <PaymentMethodsRow className="mt-4" />
 
           <p className="text-xs opacity-60 mt-4 leading-relaxed">
             Or order the slow way: <button onClick={() => window.open("https://instagram.com")} className="underline">DM us on Instagram</button>, <button onClick={() => window.open("mailto:hello@lusikandsons.com")} className="underline">email</button>, or call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>.
