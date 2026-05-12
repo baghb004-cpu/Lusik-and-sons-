@@ -69,6 +69,7 @@ netlify/
     │   ├── db.mjs                   # @netlify/neon sql tagged-template export
     │   ├── auth.mjs                 # requireUser + requireAdmin (Identity role check)
     │   ├── json.mjs                 # JSON response helper
+    │   ├── email.mjs                # Resend wrapper + admin-order email composer
     │   └── trusted-products.mjs     # server-side product price map (Stripe handoff)
     ├── profile.mjs                  # GET/PUT       /profile
     ├── addresses.mjs                # GET/POST/DEL  /addresses
@@ -82,7 +83,7 @@ netlify/
     ├── admin-order-photo.mjs        # POST          /admin-order-photo (finished-piece upload, admin)
     ├── order-photo-get.mjs          # GET           /order-photo-get?key=...  (signed-in customer or admin)
     ├── create-checkout-session.mjs  # POST          /create-checkout-session (Stripe)
-    └── stripe-webhook.mjs           # POST          /api/stripe-webhook (Stripe → DB)
+    └── stripe-webhook.mjs           # POST          /api/stripe-webhook (Stripe → DB, fires admin email)
 ```
 
 ### Database — Netlify Database (Neon-backed Postgres)
@@ -96,6 +97,18 @@ netlify/
 - Avatars: store `profile-photos` (key pattern `<user_id>/avatar-<timestamp>.<ext>`), accessed via the `avatar` / `avatar-get` Functions.
 - Pending carts: store `pending-orders` (key = Stripe session ID). `create-checkout-session` stashes the cart here; `stripe-webhook` reads + deletes it when the payment completes.
 - Finished-piece photos: store `order-finished-photos` (key pattern `<order_id>/finished-<timestamp>.<ext>`). Lusik uploads via the admin view → `admin-order-photo`. The order row's `finished_photo_key` column points at the most recent upload; the customer's account page renders it via `order-photo-get`.
+
+### Order notification emails (Resend)
+
+When a Stripe `checkout.session.completed` webhook lands and the order is persisted, the `stripe-webhook` Function fires an HTML email to Lusik via [Resend](https://resend.com) with the full order details — items + design metadata, shipping address, gift options if any, social-share consent if any, and a deep link to the admin panel. Failures are logged but never block the order.
+
+Required env vars (set in Netlify dashboard → Site → Environment):
+
+- `RESEND_API_KEY` — generate at resend.com/api-keys (free tier: 100 emails/day, 3,000/month).
+- `ADMIN_NOTIFICATION_EMAIL` — where to send the notifications (e.g. `hello@lusikandsons.com`).
+- `RESEND_FROM_EMAIL` *(optional)* — sender address. Defaults to `Lusik & Sons <onboarding@resend.dev>` if unset, which works for testing but will land in spam. To use a real `from`, verify `lusikandsons.com` in Resend → Domains and set this to e.g. `Lusik & Sons <orders@lusikandsons.com>`.
+
+The composer lives in `netlify/functions/_lib/email.mjs`. To extend (e.g. add a customer order-confirmation email later), add another exported function alongside `sendAdminOrderEmail` and call it from wherever in the order pipeline you need.
 
 ### Lusik's Journal
 
@@ -170,6 +183,7 @@ Cart-ID shape is load-bearing for this flow: `mapLegacyId()` in `index.html` (se
 4. Apply the schema: `netlify db query --file netlify/schema.sql`.
 5. Set environment variables in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
 6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to `checkout.session.completed`. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+7. (Optional but recommended) Sign up at [resend.com](https://resend.com) — free tier covers 100 emails/day. Generate an API key under "API Keys" and set it as `RESEND_API_KEY` in Netlify. Set `ADMIN_NOTIFICATION_EMAIL` to wherever Lusik wants to receive new-order notifications. (Optionally verify `lusikandsons.com` in Resend → Domains and set `RESEND_FROM_EMAIL` to `Lusik & Sons <orders@lusikandsons.com>`; until then, emails come from `onboarding@resend.dev` which often lands in spam.)
 
 ## Working in this repo
 

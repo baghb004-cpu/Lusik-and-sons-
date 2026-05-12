@@ -18,7 +18,8 @@
 import Stripe        from "stripe";
 import { getStore } from "@netlify/blobs";
 import { sql }      from "./_lib/db.mjs";
-import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
+import { TRUSTED_PRODUCTS }    from "./_lib/trusted-products.mjs";
+import { sendAdminOrderEmail } from "./_lib/email.mjs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-06-20",
@@ -130,7 +131,7 @@ export default async (req) => {
       ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
       ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb
     )
-    RETURNING id
+    RETURNING *
   `;
   const orderId = inserted[0].id;
 
@@ -150,6 +151,17 @@ export default async (req) => {
       )
     `;
   }
+
+  // Notify Lusik via email. Done AFTER the order is persisted so a
+  // failed send never blocks the order. The helper logs + returns
+  // false on failure (missing API key, Resend down, etc.) rather
+  // than throwing — Stripe shouldn't retry the whole webhook just
+  // because an email didn't go through.
+  await sendAdminOrderEmail({
+    order:   inserted[0],
+    items,
+    pending,
+  }).catch((err) => console.warn("[webhook] admin email failed:", err?.message ?? err));
 
   // Clean up the pending cart blob — it's served its purpose.
   await pendingStore.delete(session.id).catch(() => {});
