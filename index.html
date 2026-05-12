@@ -779,7 +779,8 @@ const PRODUCT = {
   ],
   // ALPHABETS — used by the blanket picker. Each blanket has three separate
   // squares, each with one letter, stitched diagonally across the blanket.
-  // The customer also chooses the diagonal direction (see DIAGONAL_DIRECTIONS).
+  // The diagonal direction is fixed (top-left to bottom-right) — Lusik does
+  // not offer the mirrored direction. There is no DIAGONAL_DIRECTIONS choice.
   alphabets: [
     {
       key: "armenian",
@@ -1380,9 +1381,9 @@ const TRANSLATIONS = {
       q1: { q: "How long does a blanket take to make?",
             a: "Anywhere from one to three weeks, depending on how many orders are ahead of yours. Lusik works on one blanket at a time. If you need it by a specific date, please tell us at checkout or email — we'll let you know honestly whether we can meet it." },
       q2: { q: "Which letters come on the blanket?",
-            a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The letters are stitched in three separate squares placed diagonally across the blanket. The middle letter sits in the center, with the first and third letters in opposite corners. You pick the alphabet and the diagonal direction on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
-      q3: { q: "Can I choose which way the letters run?",
-            a: "Yes. You pick the diagonal: top-left to bottom-right, or top-right to bottom-left. The middle letter is always in the center either way." },
+            a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The letters are stitched in three separate squares placed diagonally across the blanket. The middle letter sits in the center, with the first and third letters in opposite corners. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
+      q3: { q: "Which way do the letters run?",
+            a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
       q4: { q: "What is the blanket made of?",
             a: "A soft acrylic baby blanket with a woven pomegranate pattern, finished with fringe edges. The fabric is gentle enough for newborns. Lusik picks each blanket personally before stitching." },
       q5: { q: "How do I wash it?",
@@ -1748,9 +1749,10 @@ const TRANSLATIONS = {
       q1: { q: "Որքա՞ն ժամանակ է տևում ծածկոցի պատրաստումը։",
             a: "Մեկ-երեք շաբաթ, կախված նրանից, թե քանի պատվեր կա ձեր առջևից։ Լուսիկը միաժամանակ աշխատում է մեկ ծածկոցի վրա։ Եթե այն ձեզ անհրաժեշտ է որոշակի օրվա համար, խնդրում ենք գրել պատվեր տալիս կամ էլ. փոստով — մենք ազնվորեն կասենք՝ կարո՞ղ ենք հասցնել։" },
       q2: { q: "Որ տառերն են դրվում ծածկոցի վրա։",
-            a: "Յուրաքանչյուր ծածկոցի վրա երեք տառ կա՝ հայերեն (Ա, Բ, Գ) կամ անգլերեն (A, B, C)։ Տառերը կարկատվում են երեք առանձին վանդակների մեջ, որոնք դասավորված են ծածկոցի անկյունագծով։ Միջին տառը նստում է կենտրոնում, իսկ առաջին ու երրորդը՝ հակառակ անկյուններում։ Դուք ընտրում եք այբուբենը և անկյունագծի ուղղությունը արտադրանքի էջում։ Այլ տառերի կամ հատուկ պատվերների համար գրեք Լուսիկին՝ hello@lusikandsons.com։" },
-      q3: { q: "Կարո՞ղ եմ ընտրել, թե ինչ ուղղությամբ են ընթանում տառերը։",
-            a: "Այո։ Դուք ընտրում եք անկյունագիծը՝ վերին ձախից ներքին աջ, կամ վերին աջից ներքին ձախ։ Միջին տառը միշտ կենտրոնում է երկու դեպքում էլ։" },
+            a: "Յուրաքանչյուր ծածկոցի վրա երեք տառ կա՝ հայերեն (Ա, Բ, Գ) կամ անգլերեն (A, B, C)։ Տառերը կարկատվում են երեք առանձին վանդակների մեջ, որոնք դասավորված են ծածկոցի անկյունագծով։ Միջին տառը նստում է կենտրոնում, իսկ առաջին ու երրորդը՝ հակառակ անկյուններում։ Դուք ընտրում եք այբուբենը արտադրանքի էջում։ Այլ տառերի կամ հատուկ պատվերների համար գրեք Լուսիկին՝ hello@lusikandsons.com։" },
+      q3: { q: "Ի՞նչ ուղղությամբ են ընթանում տառերը։",
+            // ⚠️ TODO_LUSIK_REVIEW — auto-translated; please confirm with Lusik.
+            a: "Վերին ձախից ներքին աջ։ Լուսիկը կարկատում է այբուբենը այդ մեկ անկյունագծի վրա — հակառակ ուղղությունը նա չի առաջարկում։ Միջին տառը միշտ կենտրոնում է։" },
       q4: { q: "Ինչից է պատրաստված ծածկոցը։",
             a: "Փափուկ ակրիլային մանկական ծածկոցից՝ նռան նախշով գործվածքով, ծոպավոր եզրերով։ Գործվածքը բավականաչափ նուրբ է նորածինների համար։ Լուսիկը անձամբ ընտրում է յուրաքանչյուր ծածկոց՝ կարկատելուց առաջ։" },
       q5: { q: "Ինչպե՞ս լվանալ։",
@@ -3789,7 +3791,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Optional social-share consent",
-          body: "At checkout you can choose, entirely optionally, to let Lusik share a photo of your finished order on social media. The checkbox is unchecked by default. If you tick it, we store: the fact that you opted in, the timestamp of your consent, which platforms you authorized (Instagram, TikTok, Facebook, YouTube — whichever you ticked), and the social handle you typed if you provided one. We use this information only to know what Lusik is allowed to post about your order and where, and to tag you if you asked to be tagged. We never post photos of you, your child, or anyone else — only the finished blanket or bib. You can withdraw your consent at any time by emailing hello@lusikandsons.com; we'll honor the withdrawal within a few days and remove any posts that are still under our control. Posts that other people have already shared or saved are outside our reach, which is the practical limit of any social-media consent."
+          body: "At checkout you can choose, entirely optionally, to let Lusik share a photo of your finished piece on social media. The checkbox is unchecked by default. If you tick it, we store: the fact that you opted in, the timestamp of your consent, which platforms you authorized (Instagram, TikTok, Facebook, YouTube — whichever you ticked), and the handle you typed for each of those platforms if you provided one. Each handle is stored against its own platform, so an Instagram handle is only ever used on Instagram, a TikTok handle only on TikTok, and so on. We use this information only to know what Lusik is allowed to post about your order and where, and to tag the right account on each platform if you asked to be tagged. We never post photos of you, your child, or anyone else — only the finished blanket or bib. You can withdraw your consent at any time by emailing hello@lusikandsons.com; we'll honor the withdrawal within a few days and remove any posts that are still under our control. Posts that other people have already shared or saved are outside our reach, which is the practical limit of any social-media consent."
         },
         {
           heading: "Your California rights",
@@ -3815,7 +3817,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Making the blanket",
-          body: "Each blanket has three letters of your chosen alphabet (Armenian Ա, Բ, Գ or English A, B, C), hand cross-stitched in three separate squares placed diagonally across the blanket. You also pick the diagonal direction. The bib comes in two versions: hand cross-stitched with one of those letters, or machine-embroidered from an image you upload. Because every piece is made by hand, slight variation between blankets is expected and is part of the character of the product."
+          body: "Each blanket has three letters of your chosen alphabet (Armenian Ա, Բ, Գ or English A, B, C), hand cross-stitched in three separate squares placed diagonally across the blanket, top-left to bottom-right. The bib comes in two versions: hand cross-stitched with one of those letters, or machine-embroidered from an image you upload. Because every piece is made by hand, slight variation between blankets is expected and is part of the character of the product."
         },
         {
           heading: "Shipping",
@@ -3831,7 +3833,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Optional social-media license",
-          body: "If you tick the optional 'share my story' box at checkout, you grant Lusik & Sons a limited, non-exclusive, royalty-free, and revocable license to photograph the finished item we made for you and to display those photographs on the social-media platforms you authorized (Instagram, TikTok, Facebook, YouTube — whichever you ticked). This license covers only the finished article — never you, your child, your home, or any other person. If you also entered a social-media handle, you authorize us to tag that account in those posts. You can revoke this license at any time by emailing hello@lusikandsons.com; we will stop posting and remove any posts still under our control. Posts already saved, re-shared, or downloaded by other people are outside our control, which is the practical limit of any social-media license. If you did not tick the box, no such license is granted."
+          body: "If you tick the optional 'share your story' box at checkout, you grant Lusik & Sons a limited, non-exclusive, royalty-free, and revocable license to photograph the finished item we made for you and to display those photographs on the social-media platforms you authorized (Instagram, TikTok, Facebook, YouTube — whichever you ticked). This license covers only the finished article — never you, your child, your home, or any other person. If you provided a handle for any of the platforms you authorized, you authorize us to tag that handle on its own platform — your Instagram handle on Instagram, your TikTok handle on TikTok, and so on; we will never carry a handle from one platform over to another. You can revoke this license at any time by emailing hello@lusikandsons.com; we will stop posting and remove any posts still under our control. Posts already saved, re-shared, or downloaded by other people are outside our control, which is the practical limit of any social-media license. If you did not tick the box, no such license is granted."
         },
         {
           heading: "Limitation of liability",
@@ -4832,8 +4834,8 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
         <div className="space-y-1">
           {[
             { q: "How long does it take to make my blanket?", a: "Each blanket is made to order. Please allow 5–10 business days before it ships." },
-            { q: "Which letters come on the blanket?", a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The letters are stitched in three separate squares placed diagonally across the blanket. The middle letter sits in the center, with the first and third letters in opposite corners. You pick the alphabet and the diagonal direction on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
-            { q: "Can I choose which way the letters run?", a: "Yes. You pick the diagonal: top-left to bottom-right, or top-right to bottom-left. The middle letter is always in the center either way." },
+            { q: "Which letters come on the blanket?", a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The letters are stitched in three separate squares placed diagonally across the blanket. The middle letter sits in the center, with the first and third letters in opposite corners. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
+            { q: "Which way do the letters run?", a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
             { q: "How do I tell you which alphabet I picked?", a: "Your choice goes through with the order. If you want anything different, message us on Instagram (@lusikandsons), call or text (760) 874-2333, or reply to your order confirmation email." },
             { q: "Is this safe for babies?", a: "Yes. The blanket is soft acrylic, machine-washable. Gentle cycle, cold water, and lay flat to dry." },
             { q: "What's the difference between the blanket and the bib?", a: "The blanket is always hand cross-stitched. The bib can be either — hand cross-stitched with one of the three letters, or machine-embroidered with an image you upload. You choose when you add the bib to your cart." },
@@ -6950,24 +6952,33 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [error, setError] = useState("");
 
   // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
-  // Default everything OFF — affirmative opt-in is the only thing that
-  // grants Lusik permission to share photos of the customer's finished
-  // order on social media. Three independent fields, persisted with the
-  // order so Lusik knows what's allowed when she goes to post:
+  // Default everything OFF — affirmative opt-in is the only thing
+  // that grants Lusik permission to share photos of the customer's
+  // finished order on social media. Four independent fields,
+  // persisted with the order so Lusik knows what's allowed when she
+  // goes to post:
   //   socialAllow      : true only after the customer ticks the box
   //   socialPlatforms  : subset of SOCIAL_CONSENT_PLATFORMS ids they OK'd
-  //   socialHandle     : their handle, so Lusik can tag them (optional
-  //                      even when allow=true; they may want to be
-  //                      featured but not tagged)
+  //   socialHandles    : { [platformId]: "@handle" } — keyed by
+  //                      platform because almost nobody uses the same
+  //                      handle on Instagram, TikTok, Facebook, and
+  //                      YouTube. We preserve typed handles across
+  //                      toggling a platform off-then-on so a misclick
+  //                      doesn't make the customer retype, but at
+  //                      submit time we only include handles for
+  //                      platforms that are currently checked.
   // Sent to the Function as `social_consent` under the snake_case
   // convention used by the rest of the order metadata.
   const [socialAllow, setSocialAllow] = useState(false);
   const [socialPlatforms, setSocialPlatforms] = useState([]);
-  const [socialHandle, setSocialHandle] = useState("");
+  const [socialHandles, setSocialHandles] = useState({});
   const toggleSocialPlatform = (id) => {
     setSocialPlatforms((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
+  };
+  const updateSocialHandle = (id, value) => {
+    setSocialHandles((prev) => ({ ...prev, [id]: value }));
   };
 
   // Relative path — works in `netlify dev` locally and in production
@@ -7030,10 +7041,19 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           // when checkout completes, so Lusik sees it in her admin view.
           // `allowed: false` is the legally-meaningful default — if the
           // customer didn't tick the box, no permission was granted.
+          // `handles` is keyed by platform id; only platforms currently
+          // checked are included, and empty strings are dropped, so the
+          // saved record is exactly what Lusik should act on.
           social_consent: {
             allowed: socialAllow,
             platforms: socialAllow ? socialPlatforms : [],
-            handle: socialAllow ? socialHandle.trim() : "",
+            handles: socialAllow
+              ? Object.fromEntries(
+                  socialPlatforms
+                    .map((p) => [p, (socialHandles[p] ?? "").trim()])
+                    .filter(([, v]) => v.length > 0)
+                )
+              : {},
             consented_at: socialAllow ? new Date().toISOString() : null,
           },
         }),
@@ -7092,13 +7112,13 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           {/* ============================================================
               OPTIONAL: SOCIAL-SHARE CONSENT
               ============================================================
-              Default-off opt-in. When the customer ticks the parent box,
-              the platform multi-select and handle field reveal underneath.
-              Unticking the parent collapses the children AND zeroes their
-              state on submit (see the social_consent payload — when
-              `allowed` is false, platforms and handle are forced empty).
-              This makes "unchecked" the legally-clean default and prevents
-              partial state from being persisted. */}
+              Default-off opt-in. The customer ticks the headline box,
+              chooses any subset of platforms, and (optionally) types a
+              handle for each platform they ticked. Handles are tracked
+              per-platform because almost nobody uses the same username
+              everywhere. Unticking the headline collapses everything
+              and zeroes the submitted payload, so "unchecked" stays the
+              legally-clean default. */}
           <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
             <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · share your story</legend>
 
@@ -7111,9 +7131,9 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 style={{ accentColor: "#B08842" }}
               />
               <span className="text-sm leading-snug">
-                <span style={{ fontWeight: 500 }}>I'd love for Lusik to share a photo of my finished order on social media.</span>
+                <span style={{ fontWeight: 500 }}>If you'd like, Lusik can share a photo of your finished piece.</span>
                 <span className="block text-xs opacity-65 mt-1 leading-relaxed">
-                  Completely optional. Lusik would only post a photo of the finished blanket or bib — never of your child or any other person. You can pick which platforms and you can change your mind any time by emailing hello@lusikandsons.com.
+                  Just the blanket or bib — never your baby or anyone else. Tick the platforms you're on, and (if you'd like to be tagged) leave your handle for each one. Change your mind any time by emailing hello@lusikandsons.com.
                 </span>
               </span>
             </label>
@@ -7145,22 +7165,34 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                     );
                   })}
                 </div>
-                <label className="block">
-                  <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Your handle (optional — so Lusik can tag you)</span>
-                  <input
-                    type="text"
-                    value={socialHandle}
-                    onChange={(e) => setSocialHandle(e.target.value)}
-                    maxLength={64}
-                    placeholder="@yourname"
-                    className="w-full px-3 py-2.5 text-sm"
-                    style={{ border: "1px solid rgba(26,22,18,0.2)", background: "#FFFFFF" }}
-                    aria-label="Your social media handle, optional"
-                  />
-                  <span className="text-[0.65rem] opacity-55 mt-1 block italic">
-                    Leave blank if you'd rather not be tagged. Even with a handle, Lusik may post without tagging if she's not sure which account is yours.
-                  </span>
-                </label>
+
+                {socialPlatforms.length > 0 && (
+                  <div className="mt-1">
+                    <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 mb-2">Where should she tag you? <span className="normal-case tracking-normal opacity-70">(optional)</span></p>
+                    <div className="space-y-2">
+                      {SOCIAL_CONSENT_PLATFORMS
+                        .filter((p) => socialPlatforms.includes(p.id))
+                        .map((p) => (
+                          <label key={p.id} className="flex items-center gap-3">
+                            <span className="text-xs w-20 flex-shrink-0 opacity-80" style={{ fontWeight: 500 }}>{p.label}</span>
+                            <input
+                              type="text"
+                              value={socialHandles[p.id] ?? ""}
+                              onChange={(e) => updateSocialHandle(p.id, e.target.value)}
+                              maxLength={64}
+                              placeholder="@yourname"
+                              className="flex-1 px-3 py-2 text-sm"
+                              style={{ border: "1px solid rgba(26,22,18,0.2)", background: "#FFFFFF" }}
+                              aria-label={`Your ${p.label} handle, optional`}
+                            />
+                          </label>
+                        ))}
+                    </div>
+                    <span className="text-[0.65rem] opacity-55 mt-2 block italic">
+                      Leave any of these blank — Lusik will share without tagging if she isn't sure which account is yours.
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </fieldset>
