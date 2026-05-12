@@ -9223,32 +9223,31 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     return defaultLetterFg;
   };
 
-  // Build a multi-step shadow staircase going UP-AND-TO-THE-RIGHT
-  // to suggest the back-top-right corner of a 3D alphabet block.
-  // Matches the way Lusik stitches the cubes on the real blanket
-  // — each block has a visible top + right face extending behind
-  // the lettered front face. The staircase is the simplest CSS
-  // primitive that reads as 3D depth without using SVG or
-  // transform-based isometric tricks (which would re-skew the
-  // letter glyphs inside).
+  // Build the depth-wedge for one alphabet cube. Direction
+  // flips per diagonal so the two parallel diagonals visually
+  // "face inward" toward each other — exactly how Lusik
+  // stitches them on the real blanket (see the close-up photo
+  // in the design notes). The upper diagonal's cubes show
+  // their back-top corner UP-AND-RIGHT; the lower diagonal's
+  // show it UP-AND-LEFT.
   //
   // Step count scales with `size`: tiny thumbnails get a 2-step
-  // wedge so the depth is visible but doesn't overwhelm; the
-  // live preview at ~140px gets a 4-step wedge that reads
-  // unambiguously as 3D. Color is the cube's outline color at
-  // ~73% opacity (BB hex), so the depth lines read as paler
-  // siblings of the front-face outline.
+  // wedge, the live preview at ~140px gets a 4-step wedge,
+  // hero shots get 5. Shadow color is the cube's outline color
+  // at ~73% opacity so the depth lines read as paler siblings
+  // of the front-face outline — same hue, less weight.
   const depthSteps = size < 70 ? 2 : (size < 110 ? 3 : (size < 160 ? 4 : 5));
   const depthColor = blockColor ? `${blockColor}BB` : "rgba(176,136,66,0.7)";
-  const depthShadow = Array.from({ length: depthSteps }, (_, i) =>
-    `${i + 1}px ${-(i + 1)}px 0 0 ${depthColor}`
+  const buildDepth = (xSign) => Array.from({ length: depthSteps }, (_, i) =>
+    `${(i + 1) * xSign}px ${-(i + 1)}px 0 0 ${depthColor}`
   ).join(", ");
 
-  // Extra padding goes on the TOP and RIGHT of the grid container
-  // since that's where the depth wedges of the top-row and
-  // rightmost-column cells extend. Bottom + left can be tighter.
-  const padTopRight = depthSteps + (size < 80 ? 3 : 6);
-  const padBotLeft  = depthSteps + (size < 80 ? 1 : 2);
+  // Extra padding on TOP (where every cube's depth extends up),
+  // and on BOTH left AND right (since upper-diagonal cubes
+  // extend right and lower-diagonal cubes extend left after the
+  // facing-flip). Bottom can stay tight.
+  const padTopLR  = depthSteps + (size < 80 ? 3 : 6);
+  const padBottom = depthSteps + (size < 80 ? 1 : 2);
 
   return (
     <div
@@ -9259,11 +9258,10 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
         gridTemplateRows: "repeat(5, 1fr)",
         gap: size < 80 ? "2px" : "3px",
         border: `1px solid ${borderColor}`,
-        // Generous padding on top + right (where the depth wedge
-        // extends after this commit) plus a smaller cushion on
-        // bottom + left so the cells have visual breathing room
-        // from the grid frame without dead space at the depth side.
-        padding: `${padTopRight}px ${padTopRight}px ${padBotLeft}px ${padBotLeft}px`,
+        // Generous padding on top + both sides (every cube's depth
+        // extends up; upper-diagonal extends right, lower extends
+        // left after the facing-flip). Bottom can stay tight.
+        padding: `${padTopLR}px ${padTopLR}px ${padBottom}px ${padTopLR}px`,
         maxWidth: `${size}px`,
         background: darkMode ? "transparent" : "#FFFFFF",
         // overflow stays VISIBLE so depth shadows can extend naturally without
@@ -9278,6 +9276,17 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
         const filled = cell !== null;
         const isAlphabetCube = filled && cell.kind === "alphabet";
         const isTextCell = filled && cell.kind === "text";
+
+        // Per-cube depth direction. The preview array stores cubes
+        // in two halves: the first `letters.length` entries are
+        // the upper diagonal, the rest are the lower diagonal.
+        // Upper-diagonal cubes face up-and-right; lower-diagonal
+        // cubes face up-and-left. Mirror = the two diagonals look
+        // like they're facing each other across the blanket.
+        const isLowerDiagonal = isAlphabetCube && cell.idx >= letters.length;
+        const cellDepthShadow = isAlphabetCube
+          ? buildDepth(isLowerDiagonal ? -1 : 1)
+          : "none";
 
         // For alphabet cubes: single letter at ~55% of cell. For text cells
         // (optional name/year), the glyph may be multiple characters (up to 6),
@@ -9322,7 +9331,7 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
               // no border so they read as "embroidered onto the blanket"
               // rather than another framed letter.
               border: isAlphabetCube ? `2px solid ${outlineColor}` : "none",
-              boxShadow: isAlphabetCube ? depthShadow : "none",
+              boxShadow: cellDepthShadow,
               fontFamily: "Fraunces, serif",
               fontSize: `${letterPx}px`,
               fontWeight: isAlphabetCube ? 600 : (isPlaceholderText ? 400 : 500),
