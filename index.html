@@ -149,6 +149,17 @@
   "url": "https://lusikandsons.com"
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home",                            "item": "https://lusikandsons.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blankets",                        "item": "https://lusikandsons.com/#blanket" },
+    { "@type": "ListItem", "position": 3, "name": "The Armenian Alphabet Blanket",   "item": "https://lusikandsons.com/#product" }
+  ]
+}
+</script>
 
 <!-- Favicon and app icons — paths must resolve to real files in your Netlify site root.
      TODO BEFORE LAUNCH: Upload favicon.ico (32x32 or multi-size .ico) and
@@ -631,6 +642,30 @@
     <div style="font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.6; margin-top: 0.5rem;">Stitching...</div>
   </div>
 </div>
+
+<!-- ============================================================
+     Netlify Forms — build-time detection target
+     ============================================================
+     Netlify Forms scans the deployed HTML for <form> tags with
+     `data-netlify="true"` and registers them as form endpoints.
+     React-controlled forms don't appear in the static HTML
+     (Babel hasn't run yet at build time), so we put a hidden
+     copy here that the build process can see. The live form
+     in the footer POSTs to "/" with the same `form-name`
+     attribute below and gets routed to this endpoint.
+
+     Field list MUST match the dynamic form: form-name, bot-field
+     (honeypot), and email. Adding a new field to one means
+     adding it here too.
+
+     The "bot-field" input is a standard Netlify honeypot — real
+     users can't see it, so anything filled in is a bot.
+     ============================================================ -->
+<form name="newsletter" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input type="hidden" name="form-name" value="newsletter" />
+  <input type="text"   name="bot-field" />
+  <input type="email"  name="email" />
+</form>
 
 <div id="root"></div>
 
@@ -2921,6 +2956,173 @@ function PaymentMethodsRow({ className = "", align = "center" }) {
 }
 
 // ============================================================
+// TestimonialsSection — three quotes, no ratings, no stars
+// ============================================================
+// Placeholder copy below uses realistic Armenian-American first
+// names + cities — swap with real customer quotes before launch.
+// Format choices: italic display type, no quotation-mark icon,
+// first-name attribution + city, no avatars. The understatement
+// is the point — a polished testimonials section with 5-star
+// graphics on a hand-craft brand reads as "stock e-commerce."
+// ============================================================
+const _LUSIK_TESTIMONIALS = [
+  {
+    // ⚠️ TODO_LUSIK: replace with a real quote from a real customer
+    // who's said yes to being attributed.
+    quote: "Lusik made one for my niece and one for my godson. The work is just beautiful — you can feel every stitch.",
+    name:  "Anna",
+    place: "Glendale, CA",
+  },
+  {
+    // ⚠️ TODO_LUSIK: ditto.
+    quote: "I asked her to do a name in Armenian and the year. She emailed me a photo before shipping. Worth every penny.",
+    name:  "Sevan",
+    place: "Pasadena, CA",
+  },
+  {
+    // ⚠️ TODO_LUSIK: ditto.
+    quote: "Three years, three blankets — one for each grandchild. These are going to be heirlooms.",
+    name:  "Lily",
+    place: "Burbank, CA",
+  },
+];
+
+function TestimonialsSection() {
+  return (
+    <section className="max-w-6xl mx-auto px-6 lg:px-12 py-16 lg:py-24">
+      <div className="text-center mb-10 lg:mb-14 max-w-xl mx-auto">
+        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>From customers</p>
+        <h2 className="font-display text-3xl lg:text-4xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+          Notes from <em style={{ fontWeight: 400 }}>past orders</em>.
+        </h2>
+      </div>
+      <div className="grid md:grid-cols-3 gap-10 lg:gap-12">
+        {_LUSIK_TESTIMONIALS.map((t, i) => (
+          <figure key={i} className="text-center md:text-left">
+            <blockquote className="font-display italic text-lg lg:text-xl leading-relaxed mb-5" style={{ fontWeight: 400, color: "#3D332A" }}>
+              {"“"}{t.quote}{"”"}
+            </blockquote>
+            <figcaption className="text-[0.65rem] tracking-[0.2em] uppercase opacity-70">
+              <span style={{ fontWeight: 500 }}>{t.name}</span>
+              {t.place && <span className="opacity-70"> · {t.place}</span>}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+// NewsletterSignup — quiet email capture in the footer
+// ============================================================
+// Posts to Netlify Forms (no third-party email service yet). The
+// build-time detection form lives near the top of <body>; this
+// component fetch-POSTs to "/" with the matching `form-name`
+// attribute so Netlify routes it to the same endpoint without
+// reloading the page.
+//
+// Voice goal: NOT "JOIN OUR LIST!". This is a quiet, opt-in,
+// craft-brand signup that respects the customer's inbox. Copy:
+// "Be the first to hear when Lusik adds a new alphabet." That
+// sets an honest expectation — emails are rare and product-led.
+//
+// Spam: a `bot-field` honeypot input is included; bots fill in
+// every visible field including the hidden one, and Netlify
+// drops submissions with anything in it. Real users never see
+// or touch it.
+// ============================================================
+function NewsletterSignup() {
+  const toast = useToast();
+  const [email, setEmail] = useState("");
+  const [bot, setBot]     = useState("");   // honeypot — must stay empty
+  const [busy, setBusy]   = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const value = email.trim();
+    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      toast({ kind: "error", message: "Please enter a valid email address." });
+      return;
+    }
+    setBusy(true);
+    try {
+      const body = new URLSearchParams({
+        "form-name": "newsletter",
+        "bot-field": bot,
+        email: value,
+      }).toString();
+      const res = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast({
+        kind: "success",
+        message: "Thanks — we'll let you know when Lusik adds a new alphabet.",
+      });
+      setEmail("");
+    } catch {
+      toast({
+        kind: "error",
+        message: "Couldn't sign you up — please try again, or email hello@lusikandsons.com.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mb-8">
+      <p className="text-xs tracking-[0.3em] uppercase mb-3 opacity-70">Newsletter</p>
+      <p className="text-sm opacity-80 leading-relaxed mb-3 max-w-md">
+        Be the first to hear when Lusik adds a new alphabet or opens custom slots. No spam, no upsells — just the occasional note.
+      </p>
+      <form
+        name="newsletter"
+        method="POST"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+        onSubmit={handleSubmit}
+        className="flex items-stretch gap-2 max-w-md"
+      >
+        <input type="hidden" name="form-name" value="newsletter" />
+        {/* Honeypot — visually hidden but a bot will fill it. */}
+        <label className="sr-only" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }}>
+          Don't fill this out: <input name="bot-field" value={bot} onChange={(e) => setBot(e.target.value)} tabIndex={-1} autoComplete="off" />
+        </label>
+        <input
+          type="email"
+          name="email"
+          required
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={busy}
+          className="flex-1 px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+          style={{ border: "1px solid rgba(26,22,18,0.15)" }}
+          aria-label="Email address"
+        />
+        <button
+          type="submit"
+          disabled={busy}
+          className="px-5 text-xs tracking-[0.2em] uppercase whitespace-nowrap transition"
+          style={{
+            background: busy ? "rgba(26,22,18,0.5)" : "#1A1612",
+            color: "#F5EFE3",
+            fontWeight: 500,
+            cursor: busy ? "wait" : "pointer",
+          }}
+        >
+          {busy ? "…" : "Sign me up"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// ============================================================
 // BACK-TO-TOP BUTTON
 // ============================================================
 // Small floating button anchored above the text-us widget. Hidden when the
@@ -3654,6 +3856,75 @@ function App() {
     }
   };
 
+  // Reorder — re-add a past order's items to the current cart.
+  // Today this handles the blanket only, by reconstructing the
+  // cart selection from custom_metadata fields the webhook
+  // persisted. Anything else (bibs, future products) is skipped
+  // with a friendly toast so the customer isn't left wondering.
+  // Limitation: depends on alphabet/layout/color keys still
+  // existing in the live PRODUCT data. If Lusik retires an
+  // alphabet or color, old orders referencing it will skip.
+  const reorderFromHistory = (order) => {
+    const items = order?.order_items ?? [];
+    if (items.length === 0) {
+      toast({ kind: "info", message: "That order has no items to re-add." });
+      return;
+    }
+    let restored = 0;
+    let skipped  = 0;
+    for (const item of items) {
+      const pk = item.product_key || "";
+      const meta = item.custom_metadata || {};
+      if (pk.startsWith("blanket")) {
+        const alphabet    = PRODUCT.alphabets.find((a) => a.key === meta.alphabet_key);
+        const layout      = PRODUCT.layouts.find((l) => l.key === meta.layout_key);
+        const blockColor  = PRODUCT.threadColors.find((c) => c.dmc === meta.block_color_ref);
+        const letterColor = PRODUCT.threadColors.find((c) => c.dmc === meta.letter_color_ref);
+        if (!alphabet || !layout || !blockColor || !letterColor) {
+          skipped++;
+          continue;
+        }
+        // Multi-color presets persist their letter colors as a
+        // pipe-joined string ("Name (#hex) | ...") in metadata —
+        // parse the hexes back out and re-resolve to threadColors.
+        let letterColors = null;
+        if (typeof meta.letter_colors_multi === "string" && meta.letter_colors_multi.length > 0) {
+          const hexes = meta.letter_colors_multi.match(/#[0-9A-Fa-f]{6}/g) ?? [];
+          const resolved = hexes
+            .map((h) => PRODUCT.threadColors.find((c) => c.hex.toLowerCase() === h.toLowerCase()))
+            .filter(Boolean);
+          if (resolved.length > 0) letterColors = resolved;
+        }
+        addToCart(blockColor, item.quantity || 1, alphabet, layout, {
+          block:        blockColor,
+          letter:       letterColor,
+          letterColors,
+          presetKey:    meta.color_preset_key ?? null,
+          customLine1:  meta.custom_line_1 ?? "",
+          customLine2:  meta.custom_line_2 ?? "",
+        });
+        restored++;
+      } else {
+        // Bibs / future products — not handled in v1.
+        skipped++;
+      }
+    }
+    if (restored > 0) {
+      toast({
+        kind: "success",
+        message: `Added ${restored} item${restored === 1 ? "" : "s"} from order ${order.order_number} to your cart.`,
+      });
+      setView("home");
+      setCartOpen(true);
+    }
+    if (skipped > 0) {
+      toast({
+        kind: "info",
+        message: `${skipped} item${skipped === 1 ? "" : "s"} from that order couldn't be re-added automatically — please add them by hand.`,
+      });
+    }
+  };
+
   const completeOrder = () => {
     const num = "LS-" + Math.random().toString(36).slice(2, 8).toUpperCase();
     setOrderNumber(num);
@@ -3824,7 +4095,7 @@ function App() {
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
-      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} />}
+      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} />}
 
       {/* FOOTER */}
       <footer className="border-t mt-12" style={{ borderColor: "rgba(26,22,18,0.1)", background: "#EFE7D6" }}>
@@ -3885,6 +4156,11 @@ function App() {
           <BetaTranslationBadge />
 
           <div className="gold-line my-10" />
+
+          {/* Newsletter signup — quiet, real-incentive copy. Posts
+              to Netlify Forms via the build-time-detected form
+              near the top of <body>. */}
+          <NewsletterSignup />
 
           {/* Trust signals — small but earn their place */}
           <div className="grid sm:grid-cols-3 gap-4 mb-8 text-xs opacity-70">
@@ -4669,7 +4945,7 @@ function AuthDrawer({ onClose, onAuthed }) {
 // ============================================================
 // Sections: profile (photo + name + phone + email), saved addresses (list + add),
 // order history (placeholder until Phase 3). Sign-out lives at the bottom.
-function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
+function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReorder }) {
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -4983,7 +5259,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
       {/* ORDER HISTORY */}
       <section className="mb-16">
         <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order history</h2>
-        <OrderHistory userId={user.id} />
+        <OrderHistory userId={user.id} onReorder={onReorder} />
       </section>
 
       <div className="gold-line mb-12" />
@@ -5005,7 +5281,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
 // Polls the orders Function up to 6 times after a successful Stripe redirect (handled
 // upstream via the ?order=success URL param) to give the webhook time to
 // land. Outside that window, just fetches once on mount.
-function OrderHistory({ userId }) {
+function OrderHistory({ userId, onReorder }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pollingForOrder, setPollingForOrder] = useState(false);
@@ -5080,13 +5356,28 @@ function OrderHistory({ userId }) {
 
   return (
     <div className="space-y-4">
-      {orders.map((o) => <OrderCard key={o.id} order={o} />)}
+      {orders.map((o) => <OrderCard key={o.id} order={o} onReorder={onReorder} />)}
     </div>
   );
 }
 
+// Deep-link to the carrier's tracking page. Stripe writes the
+// carrier name as the shipping_rate display_name, which is one of
+// "USPS Ground Advantage", "UPS Ground", "FedEx Home Delivery",
+// or "Free U.S. shipping" (the last has no carrier yet — Lusik
+// updates the row by hand once she drops it off). A substring
+// match is more forgiving than equality if the labels evolve.
+function getTrackingUrl(carrier, trackingNumber) {
+  if (!trackingNumber || !carrier) return null;
+  const c = carrier.toLowerCase();
+  if (c.includes("usps"))  return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(trackingNumber)}`;
+  if (c.includes("ups"))   return `https://www.ups.com/track?tracknum=${encodeURIComponent(trackingNumber)}`;
+  if (c.includes("fedex")) return `https://www.fedex.com/fedextrack/?tracknumbers=${encodeURIComponent(trackingNumber)}`;
+  return null;
+}
+
 // Single-order card. Fulfillment status drives the visible label and color.
-function OrderCard({ order }) {
+function OrderCard({ order, onReorder }) {
   const statusLabel = (() => {
     switch (order.fulfillment_status) {
       case "awaiting_lusik":  return { text: "Awaiting Lusik", color: "#B08842" };
@@ -5138,14 +5429,32 @@ function OrderCard({ order }) {
 
       {/* Shipping + tracking */}
       <div className="text-xs opacity-70 space-y-1">
-        {order.carrier && (
-          <p>
-            {order.carrier}
-            {order.tracking_number && (
-              <> · Tracking: <span className="underline">{order.tracking_number}</span></>
-            )}
-          </p>
-        )}
+        {order.carrier && (() => {
+          const trackUrl = getTrackingUrl(order.carrier, order.tracking_number);
+          return (
+            <p>
+              {order.carrier}
+              {order.tracking_number && (
+                <>
+                  {" · "}
+                  {trackUrl ? (
+                    <a
+                      href={trackUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:opacity-100"
+                      style={{ color: "#B08842", fontWeight: 500 }}
+                    >
+                      Track {order.tracking_number}
+                    </a>
+                  ) : (
+                    <span className="underline">{order.tracking_number}</span>
+                  )}
+                </>
+              )}
+            </p>
+          );
+        })()}
         {order.estimated_ship_date && (
           <p>Estimated ship date: {new Date(order.estimated_ship_date).toLocaleDateString()}</p>
         )}
@@ -5155,6 +5464,22 @@ function OrderCard({ order }) {
           </p>
         )}
       </div>
+
+      {/* Reorder — re-adds the order's items to the current cart.
+          Currently handles blankets (the main SKU); skips any
+          line items whose metadata can't be re-resolved into the
+          live product config and toasts the customer about it. */}
+      {onReorder && (order.order_items?.length ?? 0) > 0 && (
+        <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(26,22,18,0.06)" }}>
+          <button
+            onClick={() => onReorder(order)}
+            className="text-[0.65rem] tracking-[0.2em] uppercase px-3 py-2 inline-flex items-center gap-2 hover:bg-[rgba(26,22,18,0.04)] transition"
+            style={{ border: "1px solid rgba(26,22,18,0.2)", color: "#1A1612", fontWeight: 500 }}
+          >
+            Order again <ArrowRight size={12} strokeWidth={1.75} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -5310,6 +5635,24 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
           </div>
         </div>
       </section>
+
+      {/* ============================================================
+          TESTIMONIALS
+          ============================================================
+          Quiet trust signal — three quotes from customers. NOT a
+          ratings widget; no stars, no Trustpilot scrape. The point
+          is to land that real people have ordered this and felt
+          something about it.
+
+          ⚠️ TODO_LUSIK: the quotes below are placeholder content
+          using realistic Armenian-American customer names. Before
+          launch, swap them with actual quotes from customers who
+          said yes to being quoted. Email Lusik to ask which of her
+          past customers she'd be comfortable attributing this way;
+          first name + city is the lightest-touch attribution that
+          still feels credible.
+          ============================================================ */}
+      <TestimonialsSection />
 
       <section id="faq" className="max-w-4xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
         <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "#B08842" }}>Frequently Asked</p>
@@ -6815,6 +7158,27 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
 
   return (
     <section id="blanket" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
+      {/* Breadcrumbs — matches the BreadcrumbList JSON-LD in <head>.
+          "Home" scrolls back to the top. The middle and final crumbs
+          aren't separate pages in this SPA, so they're plain text. */}
+      <nav aria-label="Breadcrumb" className="mb-6 lg:mb-8">
+        <ol className="flex items-center gap-2 flex-wrap text-[0.65rem] tracking-[0.25em] uppercase">
+          <li>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="opacity-60 hover:opacity-100 transition"
+            >
+              Home
+            </button>
+          </li>
+          <li aria-hidden="true" className="opacity-30">/</li>
+          <li className="opacity-60">Blankets</li>
+          <li aria-hidden="true" className="opacity-30">/</li>
+          <li aria-current="page" style={{ color: "#B08842", fontWeight: 500 }}>
+            The Armenian Alphabet Blanket
+          </li>
+        </ol>
+      </nav>
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         {/* Left column — either the live SVG preview (default) OR the photo
             gallery, toggleable via a small button at the top. The live preview

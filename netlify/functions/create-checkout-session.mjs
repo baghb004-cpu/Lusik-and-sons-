@@ -20,6 +20,57 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-06-20",
 });
 
+// ============================================================
+// SHIPPING POLICY
+// ============================================================
+// Free U.S. shipping at or above this threshold. The cart-drawer
+// progress bar promises it; this is where we make it real on the
+// Stripe side. MUST stay in sync with CONFIG.FREE_SHIPPING_*
+// values in index.html — keep both updated when the promotion
+// changes.
+// ============================================================
+const FREE_SHIPPING_THRESHOLD_CENTS = 15000;
+
+// Paid shipping options offered below the threshold. Mirrors
+// SHIPPING_CARRIERS in index.html. Stripe shows these on its
+// hosted checkout page; the customer picks one.
+const SHIPPING_CARRIERS = [
+  { name: "USPS Ground Advantage", amountCents:  999, daysMin: 3, daysMax: 5 },
+  { name: "UPS Ground",            amountCents: 1499, daysMin: 2, daysMax: 5 },
+  { name: "FedEx Home Delivery",   amountCents: 1699, daysMin: 2, daysMax: 5 },
+];
+
+function buildShippingOptions(subtotalCents) {
+  if (subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS) {
+    // Single free option. Including a "free" entry rather than no
+    // shipping at all keeps the checkout page consistent (always
+    // shows a "Shipping" line) and lets the customer see they
+    // earned it.
+    return [{
+      shipping_rate_data: {
+        type: "fixed_amount",
+        fixed_amount: { amount: 0, currency: "usd" },
+        display_name: "Free U.S. shipping",
+        delivery_estimate: {
+          minimum: { unit: "business_day", value: 3 },
+          maximum: { unit: "business_day", value: 5 },
+        },
+      },
+    }];
+  }
+  return SHIPPING_CARRIERS.map((c) => ({
+    shipping_rate_data: {
+      type: "fixed_amount",
+      fixed_amount: { amount: c.amountCents, currency: "usd" },
+      display_name: c.name,
+      delivery_estimate: {
+        minimum: { unit: "business_day", value: c.daysMin },
+        maximum: { unit: "business_day", value: c.daysMax },
+      },
+    },
+  }));
+}
+
 // Where Stripe sends the customer after pay/cancel. We append the
 // ?order=success|cancelled flag that index.html's post-checkout
 // handler already understands.
@@ -85,6 +136,15 @@ export default async (req, context) => {
 
   const returnUrls = buildReturnUrls(req.headers.get("origin"));
 
+  // Compute subtotal from the TRUSTED prices we just built into
+  // line items (NOT from anything the browser sent). This is the
+  // number that decides whether free shipping applies.
+  const subtotalCents = lineItems.reduce(
+    (sum, li) => sum + li.price_data.unit_amount * li.quantity,
+    0,
+  );
+  const shippingOptions = buildShippingOptions(subtotalCents);
+
   // Create the Checkout Session.
   let session;
   try {
@@ -96,11 +156,16 @@ export default async (req, context) => {
       success_url: returnUrls.success_url,
       cancel_url:  returnUrls.cancel_url,
       shipping_address_collection: { allowed_countries: ["US"] },
+      shipping_options: shippingOptions,
       // Stripe metadata has a 500-char-per-value cap, so we don't
       // shove the cart in here. Instead we stash it in Blobs keyed
       // by session.id and the webhook looks it up.
       metadata: {
         userId: userId ?? "",
+        // Stamp the subtotal + whether free shipping applied so
+        // the order admin can audit later without recomputing.
+        subtotalCents: String(subtotalCents),
+        freeShippingApplied: String(subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS),
       },
     });
   } catch (err) {
