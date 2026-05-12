@@ -612,10 +612,6 @@ const PRODUCT = {
   name: "The Armenian Alphabet Blanket",
   subtitle: "Hand cross-stitched by Lusik",
   price: 65,
-  // No MSRP / intro pricing — Lusik decided to remove the promotional framing.
-  // The price IS the price. Set msrp equal to price so any UI that references
-  // it doesn't show a strikethrough or "save $X" pitch.
-  msrp: 65,
   gallery: [
     PHOTO_HERO_OLEN,           // Olen bib + Olen/2026 blanket together — the killer "real order" photo
     PHOTO_OLEN_2026_BLANKET,   // Same OLEN/2026 blanket, solo (no bib) — quieter follow-up shot
@@ -1125,9 +1121,6 @@ const CONFIG = {
   // Heart-burst feedback timings.
   HEART_BURST_LIFETIME_MS: 1100,
 
-  // Limited-edition orders to show in the intro pricing pill.
-  INTRO_ORDERS_LIMIT: 25,
-
   // Floating "Text us" widget config. The phone number is the same one
   // shown elsewhere on the site — single source of truth lives here.
   TEXT_US: {
@@ -1321,7 +1314,6 @@ const TRANSLATIONS = {
     // Product page (blanket)
     product: {
       madeToOrder: "Made to order · Cypress, CA",
-      introPrice: "Intro Price",
       limited: "Limited to first {n} orders.",
       premium: "Premium variant — alphabet stitched twice (six letter squares).",
       step1: "1. Choose your alphabet",
@@ -1561,7 +1553,6 @@ const TRANSLATIONS = {
     },
     product: {
       madeToOrder: "Պատուէրով կը պատրաստուի · Սայփրըս, Քալիֆորնիա",
-      introPrice: "Ներածական Գին",
       limited: "Սահմանուած է առաջին {n} պատուէրներուն։",
       premium: "Բարձր տարբերակ — այբուբենը երկու անգամ կարկատուած (վեց տառ)։",
       step1: "1. Ընտրեցէք ձեր այբուբենը",
@@ -1693,7 +1684,6 @@ const TRANSLATIONS = {
 
     product: {
       madeToOrder: "Պատվերով է պատրաստվում · Սայփրեսս, Քալիֆորնիա",
-      introPrice: "Ներածական գին",
       limited: "Սահմանափակված է առաջին {n} պատվերներով։",
       premium: "Բարձր տարբերակ — այբուբենը կարկատված է երկու անգամ (վեց տառի վանդակ)։",
       step1: "1. Ընտրեք ձեր այբուբենը",
@@ -6249,17 +6239,11 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
 
           <div className="flex items-baseline gap-3 mb-2">
             <p className="text-3xl" style={{ fontWeight: 500 }}>${(layout.priceCents / 100).toFixed(0)}</p>
-            {layout.priceCents === product.price * 100 && (
-              <>
-                <p className="text-base opacity-50 line-through">${product.msrp}</p>
-                <span className="text-xs px-2 py-1 tracking-wider uppercase" style={{ background: "#8B2C2C", color: "#F5EFE3" }}>Intro Price</span>
-              </>
-            )}
           </div>
           <p className="text-xs opacity-60 mb-8">
             {layout.letterCount === 6
               ? "Premium variant — alphabet stitched twice (six letter squares)."
-              : `Limited to first ${CONFIG.INTRO_ORDERS_LIMIT} orders.`}
+              : "Hand cross-stitched by Lusik · made to order."}
           </p>
 
           <p className="text-base leading-relaxed mb-8 opacity-85">{product.description}</p>
