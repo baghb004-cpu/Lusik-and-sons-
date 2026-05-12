@@ -1819,12 +1819,9 @@ const TRANSLATIONS = {
       title: "Custom orders",
       subtitle: "Bibs and towels with your child's letter or image.",
       bibTitle: "Baby Bib",
-      bibSubtitle: "Hand cross-stitched or machine-embroidered.",
-      bibMode: "Production method",
-      bibHand: "Hand cross-stitched",
+      bibSubtitle: "Machine-embroidered with a personalized name.",
       bibMachine: "Machine embroidered",
-      bibHandNote: "Lusik stitches a single letter by hand. Pick from Ա, Բ, Գ or A, B, C.",
-      bibMachineNote: "Upload a PNG or JPEG. Lusik approves it before stitching.",
+      bibMachineNote: "Type a short name (up to 5 or 6 letters). Lusik confirms placement before stitching.",
       towelTitle: "Custom Embroidered Towel",
       towelSubtitle: "Upload an image; we machine-embroider it.",
       uploadImage: "Upload image (PNG/JPEG, max 5 MB)",
@@ -2181,12 +2178,11 @@ const TRANSLATIONS = {
       title: "Հատուկ պատվերներ",
       subtitle: "Կրծկալներ և սրբիչներ՝ ձեր երեխայի տառով կամ նկարով։",
       bibTitle: "Մանկական կրծկալ",
-      bibSubtitle: "Ձեռագործ խաչաձև կարկատանով կամ մեքենայով ասեղնագործ։",
-      bibMode: "Արտադրման եղանակ",
-      bibHand: "Ձեռագործ խաչաձև կարկատան",
+      // ⚠️ TODO_LUSIK_REVIEW — Armenian wording updated to reflect machine-only bib.
+      bibSubtitle: "Մեքենայով ասեղնագործ՝ անհատականացված անունով։",
       bibMachine: "Մեքենայով ասեղնագործ",
-      bibHandNote: "Լուսիկը ձեռքով կարկատում է մեկ տառ։ Ընտրեք Ա, Բ, Գ կամ A, B, C-ից։",
-      bibMachineNote: "Վերբեռնեք PNG կամ JPEG։ Լուսիկը հաստատում է մինչև կարկատելը։",
+      // ⚠️ TODO_LUSIK_REVIEW — Armenian wording updated; was about PNG/JPEG upload.
+      bibMachineNote: "Մուտքագրեք կարճ անուն (մինչև 5–6 տառ)։ Լուսիկը հաստատում է տեղադրումը նախքան կարկատելը։",
       towelTitle: "Հատուկ ասեղնագործ սրբիչ",
       towelSubtitle: "Վերբեռնեք նկար, մենք մեքենայով կասեղնագործենք։",
       uploadImage: "Վերբեռնել նկար (PNG/JPEG, առավելագույնը 5 ՄԲ)",
@@ -5198,7 +5194,7 @@ function PolicyModal({ policyKey, onClose }) {
       sections: [
         {
           heading: "Who we are",
-          body: "Lusik & Sons is a small family business based in Cypress, California. Lusik makes hand cross-stitched baby blankets and bibs. Her sons run this website."
+          body: "Lusik & Sons is a small family business based in Cypress, California. Lusik hand cross-stitches Armenian-alphabet baby blankets, and machine-embroiders personalized baby bibs. Her sons run this website."
         },
         {
           heading: "Placing an order",
@@ -5206,7 +5202,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Making the blanket",
-          body: "Each blanket has three letters of your chosen alphabet (Armenian Ա, Բ, Գ or English A, B, C), hand cross-stitched along two parallel diagonals that run top-left to bottom-right — six letter-squares in total, with the alphabet repeated once on each diagonal. The bib comes in two versions: hand cross-stitched with one of those letters, or machine-embroidered from an image you upload. Because every piece is made by hand, slight variation between blankets is expected and is part of the character of the product."
+          body: "Each blanket has three letters of your chosen alphabet (Armenian Ա, Բ, Գ or English A, B, C), hand cross-stitched along two parallel diagonals that run top-left to bottom-right — six letter-squares in total, with the alphabet repeated once on each diagonal. The bib is machine-embroidered with a personalized name (up to five or six letters); its surface is too small for hand cross-stitch to read well, so it gets the technique that suits its size. Because every blanket is made by hand, slight variation between pieces is expected and is part of the character of the product."
         },
         {
           heading: "Shipping",
@@ -5218,7 +5214,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Custom orders",
-          body: "If you upload an image for the machine-embroidered bib or towel, you confirm you have the right to use that image. Lusik reserves the right to decline custom orders that are offensive, illegal, or use copyrighted material she doesn't have permission to reproduce."
+          body: "If a future custom order includes an image you upload, you confirm you have the right to use that image. Lusik reserves the right to decline custom orders that are offensive, illegal, or use copyrighted material she doesn't have permission to reproduce. (Today's bib only accepts a typed name, not an uploaded image, but this clause applies if image-upload products are reactivated.)"
         },
         {
           heading: "Optional social-media license",
@@ -7167,7 +7163,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
             { q: "Which way do the letters run?", a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
             { q: "How do I tell you which alphabet I picked?", a: "Your choice goes through with the order. If you want anything different, message us on Instagram (@lusikandsons), call or text (760) 874-2333, or reply to your order confirmation email." },
             { q: "Is this safe for babies?", a: "Yes. The blanket is soft acrylic, machine-washable. Gentle cycle, cold water, and lay flat to dry." },
-            { q: "What's the difference between the blanket and the bib?", a: "The blanket is always hand cross-stitched. The bib can be either — hand cross-stitched with one of the three letters, or machine-embroidered with an image you upload. You choose when you add the bib to your cart." },
+            { q: "What's the difference between the blanket and the bib?", a: "The blanket is hand cross-stitched by Lusik. The bib is machine-embroidered with a personalized name (up to five or six letters) — its surface is too small for counted cross-stitch to read well, so each piece gets the technique that suits its size." },
             { q: "Do you ship internationally?", a: "Not yet. We ship within the United States only." },
           ].map((item, i) => (
             <details key={i} className="border-b group" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
