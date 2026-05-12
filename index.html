@@ -57,6 +57,99 @@
 <!-- Canonical URL — helps search engines and prevents duplicate-URL issues -->
 <link rel="canonical" href="https://lusikandsons.com/" />
 
+<!-- ============================================================
+     JSON-LD structured data — invisible to humans, parsed by
+     search engines and link-preview crawlers to render rich
+     snippets in Google search results (price, availability,
+     business address). Three blocks:
+       1. LocalBusiness  — covers the whole site, gives Google
+                            the brand identity for the Knowledge
+                            Panel and Maps.
+       2. Product        — covers the live Armenian Alphabet
+                            Blanket. Lets Google show the price
+                            and "Made to order" status directly
+                            in search results.
+       3. WebSite        — minimal, just gives Google the canonical
+                            name + URL so it can render sitelinks.
+     If you add a second live product later, duplicate the Product
+     block with the new details. Keep prices here in sync with
+     TRUSTED_PRODUCTS in netlify/functions/_lib/trusted-products.mjs.
+     ============================================================ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Lusik & Sons",
+  "image": "https://lusikandsons.com/og-image.jpg",
+  "url": "https://lusikandsons.com",
+  "telephone": "+1-760-874-2333",
+  "email": "hello@lusikandsons.com",
+  "description": "Hand cross-stitched Armenian alphabet baby blankets, made one at a time by Lusik in Cypress, California.",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Cypress",
+    "addressRegion": "CA",
+    "addressCountry": "US"
+  },
+  "founder": {
+    "@type": "Person",
+    "name": "Lusik"
+  },
+  "areaServed": {
+    "@type": "Country",
+    "name": "United States"
+  },
+  "priceRange": "$22 – $65"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "The Armenian Alphabet Blanket",
+  "description": "A soft acrylic baby blanket with a woven pomegranate pattern. Lusik hand cross-stitches the alphabet (Ա Բ Գ in Armenian or A B C in English) twice along two parallel diagonals — six letter-squares in total. Each blanket is made to order.",
+  "image": [
+    "https://lusikandsons.com/img/hero-olen-bib.jpg",
+    "https://lusikandsons.com/img/olen-2026-blanket.jpg",
+    "https://lusikandsons.com/img/purple-flat.jpg",
+    "https://lusikandsons.com/img/armenian-flag.jpg"
+  ],
+  "brand": {
+    "@type": "Brand",
+    "name": "Lusik & Sons"
+  },
+  "category": "Baby Blankets",
+  "material": "Acrylic",
+  "offers": {
+    "@type": "Offer",
+    "url": "https://lusikandsons.com/#product",
+    "priceCurrency": "USD",
+    "price": "65.00",
+    "availability": "https://schema.org/MadeToOrder",
+    "itemCondition": "https://schema.org/NewCondition",
+    "seller": {
+      "@type": "Organization",
+      "name": "Lusik & Sons"
+    },
+    "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "shippingDestination": {
+        "@type": "DefinedRegion",
+        "addressCountry": "US"
+      }
+    }
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Lusik & Sons",
+  "url": "https://lusikandsons.com"
+}
+</script>
+
 <!-- Favicon and app icons — paths must resolve to real files in your Netlify site root.
      TODO BEFORE LAUNCH: Upload favicon.ico (32x32 or multi-size .ico) and
      apple-touch-icon.png (180x180 for iOS home-screen bookmarks). -->
@@ -87,6 +180,42 @@
   @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes drawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
   .drawer-in { animation: drawerIn 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
+  /* ============================================================
+     Toast notifications — slide in from the right edge (top of
+     viewport), stack vertically with a small gap. Position is
+     fixed at top-right on desktop, top-center on mobile.
+     prefers-reduced-motion replaces the slide with a quick fade.
+     ============================================================ */
+  .toast-viewport {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;            /* let clicks pass through gaps */
+    max-width: calc(100vw - 2rem);
+  }
+  @media (max-width: 640px) {
+    .toast-viewport { left: 1rem; right: 1rem; align-items: stretch; }
+  }
+  .toast-item {
+    pointer-events: auto;            /* but the toasts themselves are clickable */
+    width: min(360px, 100%);
+    animation: toastIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+  }
+  .toast-item.toast-leave { animation: toastOut 0.22s ease-out forwards; }
+  @keyframes toastIn  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastOut { from { opacity: 1; transform: translateX(0); }   to { opacity: 0; transform: translateX(24px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .toast-item       { animation: toastFadeIn 0.18s ease-out; }
+    .toast-item.toast-leave { animation: toastFadeOut 0.18s ease-out forwards; }
+    @keyframes toastFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes toastFadeOut { from { opacity: 1; } to { opacity: 0; } }
+  }
 
   /* Heart-burst feedback on add-to-cart. Each particle uses CSS variables (--tx/--ty/--rot)
      set inline for randomization. The pivot is positioned fixed at the click point. */
@@ -507,7 +636,7 @@ const IMG_DETAIL2 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAcF
 
 <!-- MAIN APP (JSX, transpiled by Babel in browser) -->
 <script type="text/babel" data-presets="env,react">
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useCallback, useContext } = React;
 
 // === ICONS (inline SVG components matching lucide style) ===
 const Icon = ({ children, size = 20, strokeWidth = 1.5, className = "", style = {} }) => (
@@ -2504,6 +2633,166 @@ const db = (() => {
 })();
 
 // ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+// Lightweight, dependency-free toast system. Used everywhere we
+// want to confirm an async action ("Added to cart", "Address
+// saved") or surface a failure that isn't tied to a specific
+// form field. Inline form errors (wrong password, etc.) stay
+// inline — toasts are for *whole-action* feedback, not field
+// validation.
+//
+// Usage from any component:
+//   const toast = useToast();
+//   toast({ kind: "success", message: "Added to cart" });
+//
+// Kinds:
+//   "success" — gold accent. 3.8s auto-dismiss. role="status".
+//   "info"    — neutral.     3.8s auto-dismiss. role="status".
+//   "error"   — wine red.    6.0s auto-dismiss. role="alert".
+//
+// Optional `action: { label, onClick }` renders a button next to
+// the message (e.g. an "Undo" hook for future removals). Click
+// anywhere on the toast (other than the action button) dismisses
+// it. Toasts respect prefers-reduced-motion via the CSS above.
+// ============================================================
+const ToastContext = React.createContext(null);
+
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+  const timers = useRef(new Map());
+
+  const dismiss = useCallback((id) => {
+    // Tag the toast as leaving so the CSS plays the slide-out,
+    // then drop it from state after the animation. 220ms matches
+    // the toast-out keyframe duration.
+    setToasts((prev) => prev.map((t) => t.id === id ? { ...t, leaving: true } : t));
+    const leaveTimer = setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 220);
+    timers.current.set(`leave-${id}`, leaveTimer);
+  }, []);
+
+  const push = useCallback((opts) => {
+    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const t = {
+      id,
+      kind:     opts.kind     ?? "info",
+      message:  opts.message  ?? "",
+      action:   opts.action   ?? null,
+      duration: opts.duration ?? (opts.kind === "error" ? 6000 : 3800),
+      leaving:  false,
+    };
+    setToasts((prev) => [...prev, t]);
+    if (t.duration > 0) {
+      const dismissTimer = setTimeout(() => dismiss(id), t.duration);
+      timers.current.set(id, dismissTimer);
+    }
+    return id;
+  }, [dismiss]);
+
+  // Clean up any pending timers on unmount so toasts don't try to
+  // dismiss after the provider is gone.
+  useEffect(() => () => {
+    for (const t of timers.current.values()) clearTimeout(t);
+    timers.current.clear();
+  }, []);
+
+  return (
+    <ToastContext.Provider value={push}>
+      {children}
+      <ToastViewport toasts={toasts} onDismiss={dismiss} />
+    </ToastContext.Provider>
+  );
+}
+
+// useToast — returns a function. Calling it with no args is safe
+// (no-op fallback) so components don't crash if they're somehow
+// rendered outside the provider.
+function useToast() {
+  const push = useContext(ToastContext);
+  return push ?? (() => {});
+}
+
+// Visual rendering — one viewport, N toasts. The viewport is
+// aria-live polite by default; error toasts get aria-live assertive
+// via their own role="alert". Each toast has an X close button so
+// keyboard users can dismiss without waiting for the timer.
+function ToastViewport({ toasts, onDismiss }) {
+  if (toasts.length === 0) return null;
+
+  // Visual treatment per kind. Background stays cream-ish so
+  // toasts feel part of the brand, not a system overlay. The
+  // accent comes from a 3px left border in the kind's color.
+  const styleFor = (kind) => {
+    if (kind === "error")   return { borderLeftColor: "#8B2C2C", iconColor: "#8B2C2C", role: "alert"  };
+    if (kind === "success") return { borderLeftColor: "#B08842", iconColor: "#B08842", role: "status" };
+    return                         { borderLeftColor: "rgba(26,22,18,0.35)", iconColor: "#1A1612", role: "status" };
+  };
+
+  return (
+    <div className="toast-viewport" aria-live="polite" aria-atomic="false">
+      {toasts.map((t) => {
+        const s = styleFor(t.kind);
+        return (
+          <div
+            key={t.id}
+            role={s.role}
+            className={`toast-item ${t.leaving ? "toast-leave" : ""}`}
+            onClick={(e) => {
+              // Don't dismiss when the customer clicked the action button.
+              if (e.target.closest && e.target.closest("[data-toast-action]")) return;
+              onDismiss(t.id);
+            }}
+          >
+            <div
+              className="flex items-start gap-3 px-4 py-3 cursor-pointer shadow-sm"
+              style={{
+                background: "#FFFFFF",
+                color: "#1A1612",
+                borderLeft: `3px solid ${s.borderLeftColor}`,
+                border: "1px solid rgba(26,22,18,0.08)",
+                borderLeftWidth: "3px",
+                borderLeftColor: s.borderLeftColor,
+              }}
+            >
+              {/* Subtle dot icon — keeps the toast clean without leaning on emoji */}
+              <span
+                aria-hidden="true"
+                className="mt-1.5 flex-shrink-0 rounded-full"
+                style={{ width: 6, height: 6, background: s.iconColor }}
+              />
+              <div className="flex-1 text-sm leading-snug" style={{ fontWeight: 500 }}>
+                {t.message}
+              </div>
+              {t.action && (
+                <button
+                  data-toast-action
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    try { t.action.onClick?.(); } finally { onDismiss(t.id); }
+                  }}
+                  className="text-xs tracking-[0.15em] uppercase px-2 py-1 flex-shrink-0"
+                  style={{ color: s.iconColor, fontWeight: 600 }}
+                >
+                  {t.action.label}
+                </button>
+              )}
+              <button
+                aria-label="Dismiss notification"
+                onClick={(e) => { e.stopPropagation(); onDismiss(t.id); }}
+                className="text-xs opacity-50 hover:opacity-90 flex-shrink-0 px-1"
+                style={{ lineHeight: 1 }}
+              >×</button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================
 // BACK-TO-TOP BUTTON
 // ============================================================
 // Small floating button anchored above the text-us widget. Hidden when the
@@ -2845,6 +3134,7 @@ function TextUsWidget() {
 // === MAIN APP ===
 function App() {
   const t = useT();
+  const toast = useToast();
   const [cart, setCart] = useState([]);
   const [view, setView] = useState("home");
   const [cartOpen, setCartOpen] = useState(false);
@@ -3150,7 +3440,43 @@ function App() {
   const updateQty = (id, delta) => {
     setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0));
   };
-  const removeFromCart = (id) => setCart((c) => c.filter((i) => i.id !== id));
+  const removeFromCart = (id) => {
+    // Capture the removed line item so the toast's "Undo" can put it
+    // back exactly as it was — including custom metadata and qty.
+    // We preserve its position in the cart so an undo restores order.
+    let removed = null;
+    let removedIndex = -1;
+    setCart((c) => {
+      removedIndex = c.findIndex((i) => i.id === id);
+      if (removedIndex < 0) return c;
+      removed = c[removedIndex];
+      return c.filter((i) => i.id !== id);
+    });
+    if (!removed) return;
+    toast({
+      kind: "info",
+      message: `Removed ${removed.name} from your cart.`,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          setCart((c) => {
+            // If the customer added the same SKU again before clicking
+            // Undo, merge quantities rather than duplicate the row.
+            const existing = c.findIndex((i) => i.id === removed.id);
+            if (existing >= 0) {
+              return c.map((i, idx) => idx === existing
+                ? { ...i, qty: i.qty + removed.qty }
+                : i);
+            }
+            const next = [...c];
+            const insertAt = Math.min(removedIndex, next.length);
+            next.splice(insertAt, 0, removed);
+            return next;
+          });
+        },
+      },
+    });
+  };
 
   const addCustomToCart = ({ productKey, name, price, size, customImage, customImageName, subtitleOverride, customMetadata }) => {
     // Each custom upload gets a unique id so multiple custom items don't merge.
@@ -3191,8 +3517,13 @@ function App() {
   // user/profile state. We deliberately do NOT clear the local cart on logout —
   // the user might want to keep shopping anonymously.
   const handleSignOut = async () => {
-    await auth.signOut();
+    const { error } = await auth.signOut();
     setView("home");
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't sign you out — please try again." });
+    } else {
+      toast({ kind: "success", message: "Signed out. See you again soon." });
+    }
   };
 
   const completeOrder = () => {
@@ -4202,10 +4533,15 @@ function AuthDrawer({ onClose, onAuthed }) {
 // Sections: profile (photo + name + phone + email), saved addresses (list + add),
 // order history (placeholder until Phase 3). Sign-out lives at the bottom.
 function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
+  const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [savingProfile, setSavingProfile] = useState(false);
+  // Inline messages are kept ONLY for input-validation feedback that
+  // belongs next to the form field (e.g. "image is too large"). All
+  // post-network success / failure feedback flows through toasts —
+  // see calls to `toast({...})` below.
   const [profileMsg, setProfileMsg] = useState({ type: "", text: "" });
 
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -4248,19 +4584,20 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
     });
     setSavingProfile(false);
     if (error) {
-      setProfileMsg({ type: "error", text: error.message || "Couldn't save changes." });
+      toast({ kind: "error", message: error.message || "Couldn't save changes — please try again." });
       return;
     }
     onProfileUpdate(updated);
     setEditing(false);
-    setProfileMsg({ type: "ok", text: "Saved." });
-    setTimeout(() => setProfileMsg({ type: "", text: "" }), 2500);
+    toast({ kind: "success", message: "Profile saved." });
   };
 
   const handleAvatar = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setProfileMsg({ type: "", text: "" });
+    // Local validation stays inline — the error sits right next to the
+    // avatar control so the customer immediately sees what's wrong.
     if (!CONFIG.AVATAR_ACCEPTED_TYPES.includes(file.type)) {
       setProfileMsg({ type: "error", text: "Please choose a PNG, JPEG, or WebP image." });
       return;
@@ -4273,18 +4610,17 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
     const { url, error } = await db.uploadAvatar(user.id, file);
     if (error || !url) {
       setAvatarBusy(false);
-      setProfileMsg({ type: "error", text: error?.message || "Upload failed." });
+      toast({ kind: "error", message: error?.message || "Couldn't upload that photo — please try again." });
       return;
     }
     const { profile: updated, error: updErr } = await db.updateProfile(user.id, { avatar_url: url });
     setAvatarBusy(false);
     if (updErr) {
-      setProfileMsg({ type: "error", text: "Photo uploaded but couldn't save to profile." });
+      toast({ kind: "error", message: "Photo uploaded but we couldn't save it to your profile — please try again." });
       return;
     }
     onProfileUpdate(updated);
-    setProfileMsg({ type: "ok", text: "Photo updated." });
-    setTimeout(() => setProfileMsg({ type: "", text: "" }), 2500);
+    toast({ kind: "success", message: "Profile photo updated." });
   };
 
   const submitAddress = async (e) => {
@@ -4295,18 +4631,27 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut }) {
       if (!newAddr[k]?.trim()) return; // HTML required attribute will catch this
     }
     const { address, error } = await db.insertAddress(user.id, newAddr);
-    if (error) return;
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't save that address — please try again." });
+      return;
+    }
     setAddresses((a) => [address, ...a]);
     setAddingAddress(false);
     setNewAddr({
       label: "Home", recipient_name: "", street_line_1: "", street_line_2: "",
       city: "", state: "", postal_code: "", country: "US", phone: "",
     });
+    toast({ kind: "success", message: "Address saved." });
   };
 
   const removeAddress = async (id) => {
     const { error } = await db.deleteAddress(id);
-    if (!error) setAddresses((a) => a.filter((x) => x.id !== id));
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't remove that address — please try again." });
+      return;
+    }
+    setAddresses((a) => a.filter((x) => x.id !== id));
+    toast({ kind: "info", message: "Address removed." });
   };
 
   const inputCls = "w-full px-4 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]";
@@ -7269,7 +7614,13 @@ function Confirmation({ orderNumber, onHome }) {
 
 // === MOUNT ===
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<LanguageProvider><App /></LanguageProvider>);
+root.render(
+  <LanguageProvider>
+    <ToastProvider>
+      <App />
+    </ToastProvider>
+  </LanguageProvider>
+);
 setTimeout(() => document.getElementById("loading")?.classList.add("hide"), 300);
 </script>
 </body>
