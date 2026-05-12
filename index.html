@@ -1186,6 +1186,27 @@ const galleryRotationStyle = (i, shape = "portrait-4-5") => {
   return { transform: `rotate(90deg) scale(${scale})` };
 };
 
+// ============================================================
+// SOCIAL_CONSENT_PLATFORMS — the opt-in list shown at checkout.
+// ============================================================
+// The customer can authorize Lusik to share photos of their finished order
+// on these platforms. Default for every checkbox is OFF. The list is
+// deliberately a SUBSET of SOCIAL_PLATFORMS.tier1 — only the four channels
+// where Lusik actually posts finished work get engagement. Adding more
+// options just adds friction at checkout.
+//
+// Each entry has:
+//   id    — stable identifier persisted with the order ("instagram", ...)
+//   label — what the customer reads
+// To add a platform later: add a new entry here. UI, persistence, and
+// admin display all key off `id`, so no other code changes needed.
+const SOCIAL_CONSENT_PLATFORMS = [
+  { id: "instagram", label: "Instagram" },
+  { id: "tiktok",    label: "TikTok" },
+  { id: "facebook",  label: "Facebook" },
+  { id: "youtube",   label: "YouTube" },
+];
+
 const SHIPPING_CARRIERS = [
   { id: "usps", name: "USPS Ground Advantage", price: 9.99, days: "3–5 business days" },
   { id: "ups", name: "UPS Ground", price: 14.99, days: "2–5 business days" },
@@ -3661,6 +3682,14 @@ function PolicyModal({ policyKey, onClose }) {
           body: "Our products are for babies and children, but our site is intended for adult purchasers. We don't knowingly collect information from anyone under 13."
         },
         {
+          heading: "Optional social-share consent",
+          body: "At checkout you can choose, entirely optionally, to let Lusik share a photo of your finished order on social media. The checkbox is unchecked by default. If you tick it, we store: the fact that you opted in, the timestamp of your consent, which platforms you authorized (Instagram, TikTok, Facebook, YouTube — whichever you ticked), and the social handle you typed if you provided one. We use this information only to know what Lusik is allowed to post about your order and where, and to tag you if you asked to be tagged. We never post photos of you, your child, or anyone else — only the finished blanket or bib. You can withdraw your consent at any time by emailing hello@lusikandsons.com; we'll honor the withdrawal within a few days and remove any posts that are still under our control. Posts that other people have already shared or saved are outside our reach, which is the practical limit of any social-media consent."
+        },
+        {
+          heading: "Your California rights",
+          body: "If you are a California resident, you have specific rights under the California Consumer Privacy Act (CCPA) and its 2023 amendments (CPRA): the right to know what personal information we have collected about you, the right to access a copy of it, the right to correct inaccuracies, the right to delete it (subject to the order-record retention noted above), and the right to opt out of the sale or sharing of your personal information. We do not sell your information and we do not share it with advertisers, so the opt-out is, in our case, the default state for every customer. To exercise any of these rights, email hello@lusikandsons.com from the address associated with your account or order. We do not discriminate against customers who exercise their privacy rights — your order is fulfilled the same way either way."
+        },
+        {
           heading: "Questions",
           body: "Email hello@lusikandsons.com. Lusik or one of her sons will respond, usually within a day."
         },
@@ -3693,6 +3722,10 @@ function PolicyModal({ policyKey, onClose }) {
         {
           heading: "Custom orders",
           body: "If you upload an image for the machine-embroidered bib or towel, you confirm you have the right to use that image. Lusik reserves the right to decline custom orders that are offensive, illegal, or use copyrighted material she doesn't have permission to reproduce."
+        },
+        {
+          heading: "Optional social-media license",
+          body: "If you tick the optional 'share my story' box at checkout, you grant Lusik & Sons a limited, non-exclusive, royalty-free, and revocable license to photograph the finished item we made for you and to display those photographs on the social-media platforms you authorized (Instagram, TikTok, Facebook, YouTube — whichever you ticked). This license covers only the finished article — never you, your child, your home, or any other person. If you also entered a social-media handle, you authorize us to tag that account in those posts. You can revoke this license at any time by emailing hello@lusikandsons.com; we will stop posting and remove any posts still under our control. Posts already saved, re-shared, or downloaded by other people are outside our control, which is the practical limit of any social-media license. If you did not tick the box, no such license is granted."
         },
         {
           heading: "Limitation of liability",
@@ -6809,6 +6842,27 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
+  // Default everything OFF — affirmative opt-in is the only thing that
+  // grants Lusik permission to share photos of the customer's finished
+  // order on social media. Three independent fields, persisted with the
+  // order so Lusik knows what's allowed when she goes to post:
+  //   socialAllow      : true only after the customer ticks the box
+  //   socialPlatforms  : subset of SOCIAL_CONSENT_PLATFORMS ids they OK'd
+  //   socialHandle     : their handle, so Lusik can tag them (optional
+  //                      even when allow=true; they may want to be
+  //                      featured but not tagged)
+  // Sent to the Edge Function as `social_consent` under the snake_case
+  // convention used by the rest of the order metadata.
+  const [socialAllow, setSocialAllow] = useState(false);
+  const [socialPlatforms, setSocialPlatforms] = useState([]);
+  const [socialHandle, setSocialHandle] = useState("");
+  const toggleSocialPlatform = (id) => {
+    setSocialPlatforms((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
+
   // Build absolute URL to the Edge Function. Format:
   //   https://<project-ref>.supabase.co/functions/v1/<function-name>
   const checkoutFnUrl = `${CONFIG.SUPABASE_URL}/functions/v1/create-checkout-session`;
@@ -6858,6 +6912,17 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           userId: user?.id ?? null,
           customerEmail: user?.email ?? profile?.email ?? null,
           prefilledAddress: null, // future: pull from default saved address
+          // Optional social-share consent. The Edge Function should persist
+          // this on the order record (orders.social_consent JSONB column or
+          // similar) and Stripe metadata so Lusik sees it in her admin view.
+          // `allowed: false` is the legally-meaningful default — if the
+          // customer didn't tick the box, no permission was granted.
+          social_consent: {
+            allowed: socialAllow,
+            platforms: socialAllow ? socialPlatforms : [],
+            handle: socialAllow ? socialHandle.trim() : "",
+            consented_at: socialAllow ? new Date().toISOString() : null,
+          },
         }),
       });
       if (!res.ok) {
@@ -6910,6 +6975,82 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               {error}
             </div>
           )}
+
+          {/* ============================================================
+              OPTIONAL: SOCIAL-SHARE CONSENT
+              ============================================================
+              Default-off opt-in. When the customer ticks the parent box,
+              the platform multi-select and handle field reveal underneath.
+              Unticking the parent collapses the children AND zeroes their
+              state on submit (see the social_consent payload — when
+              `allowed` is false, platforms and handle are forced empty).
+              This makes "unchecked" the legally-clean default and prevents
+              partial state from being persisted. */}
+          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · share your story</legend>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={socialAllow}
+                onChange={(e) => setSocialAllow(e.target.checked)}
+                className="mt-0.5 w-4 h-4 flex-shrink-0"
+                style={{ accentColor: "#B08842" }}
+              />
+              <span className="text-sm leading-snug">
+                <span style={{ fontWeight: 500 }}>I'd love for Lusik to share a photo of my finished order on social media.</span>
+                <span className="block text-xs opacity-65 mt-1 leading-relaxed">
+                  Completely optional. Lusik would only post a photo of the finished blanket or bib — never of your child or any other person. You can pick which platforms and you can change your mind any time by emailing hello@lusikandsons.com.
+                </span>
+              </span>
+            </label>
+
+            {socialAllow && (
+              <div className="mt-4 pt-4" style={{ borderTop: "1px dashed rgba(176,136,66,0.3)" }}>
+                <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 mb-2">Which platforms?</p>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {SOCIAL_CONSENT_PLATFORMS.map((p) => {
+                    const checked = socialPlatforms.includes(p.id);
+                    return (
+                      <label
+                        key={p.id}
+                        className="flex items-center gap-2 px-3 py-2 cursor-pointer transition"
+                        style={{
+                          background: checked ? "rgba(176,136,66,0.12)" : "#FFFFFF",
+                          border: `1px solid ${checked ? "#B08842" : "rgba(26,22,18,0.15)"}`,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSocialPlatform(p.id)}
+                          className="w-3.5 h-3.5"
+                          style={{ accentColor: "#B08842" }}
+                        />
+                        <span className="text-sm">{p.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <label className="block">
+                  <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Your handle (optional — so Lusik can tag you)</span>
+                  <input
+                    type="text"
+                    value={socialHandle}
+                    onChange={(e) => setSocialHandle(e.target.value)}
+                    maxLength={64}
+                    placeholder="@yourname"
+                    className="w-full px-3 py-2.5 text-sm"
+                    style={{ border: "1px solid rgba(26,22,18,0.2)", background: "#FFFFFF" }}
+                    aria-label="Your social media handle, optional"
+                  />
+                  <span className="text-[0.65rem] opacity-55 mt-1 block italic">
+                    Leave blank if you'd rather not be tagged. Even with a handle, Lusik may post without tagging if she's not sure which account is yours.
+                  </span>
+                </label>
+              </div>
+            )}
+          </fieldset>
 
           <button
             onClick={handleCheckout}
