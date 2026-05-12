@@ -22,6 +22,14 @@ export default async (req, context) => {
 
   // One round-trip via json_agg so we don't N+1. Each order row
   // already contains its `order_items` array.
+  //
+  // What's deliberately NOT in this SELECT (kept on the server
+  // side only): admin_notes (Lusik's internal scratchpad),
+  // stripe_session_id and stripe_payment_intent (Stripe-side
+  // identifiers customers don't need), social_consent
+  // (customer's own opt-in record — they can see it in their
+  // /account-export download), finished_photo_emailed_at
+  // (internal dedupe state).
   const rows = await sql`
     SELECT
       o.id,
@@ -32,10 +40,14 @@ export default async (req, context) => {
       o.shipping_cents,
       o.tax_cents,
       o.total_cents,
+      o.refunded_cents,
       o.shipping_address,
       o.carrier,
       o.tracking_number,
       o.estimated_ship_date,
+      o.shipped_at,
+      o.finished_photo_key,
+      o.gift,
       o.created_at,
       COALESCE(
         (

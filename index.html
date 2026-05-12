@@ -6702,14 +6702,21 @@ function getTrackingUrl(carrier, trackingNumber) {
 // Single-order card. Fulfillment status drives the visible label and color.
 function OrderCard({ order, onReorder }) {
   const statusLabel = (() => {
+    // Money-status takes precedence over fulfillment-status for
+    // the headline badge — a refunded order is "Refunded"
+    // regardless of where it was in production when the refund
+    // hit. Partial refunds still show the original fulfillment
+    // label since the customer is still getting most of it.
+    if (order.status === "refunded")           return { text: "Refunded",          color: "#8B2C2C" };
+    if (order.status === "partially_refunded") return { text: "Partially refunded", color: "#8B2C2C" };
     switch (order.fulfillment_status) {
-      case "awaiting_lusik":  return { text: "Awaiting Lusik", color: "#B08842" };
+      case "awaiting_lusik":  return { text: "Awaiting Lusik",     color: "#B08842" };
       case "in_production":   return { text: "Lusik is stitching", color: "#B08842" };
-      case "quality_check":   return { text: "Final review", color: "#B08842" };
-      case "ready_to_ship":   return { text: "Ready to ship", color: "#3D5A3D" };
-      case "shipped":         return { text: "Shipped", color: "#3D5A3D" };
-      case "delivered":       return { text: "Delivered", color: "#3D5A3D" };
-      case "refunded":        return { text: "Refunded", color: "#8B2C2C" };
+      case "quality_check":   return { text: "Final review",       color: "#B08842" };
+      case "ready_to_ship":   return { text: "Ready to ship",      color: "#3D5A3D" };
+      case "shipped":         return { text: "Shipped",            color: "#3D5A3D" };
+      case "delivered":       return { text: "Delivered",          color: "#3D5A3D" };
+      case "refunded":        return { text: "Refunded",           color: "#8B2C2C" };
       default:                return { text: order.fulfillment_status || "Pending", color: "#666" };
     }
   })();
@@ -6733,8 +6740,42 @@ function OrderCard({ order, onReorder }) {
         </div>
       </div>
 
+      {/* Refund banner — surfaces refunded_cents prominently
+          when any portion of the order has been refunded. Full
+          refunds also kill the timeline (the order is over);
+          partial refunds keep the timeline so the customer can
+          still see the rest of their order in motion. */}
+      {(order.refunded_cents ?? 0) > 0 && (() => {
+        const isFull       = order.status === "refunded" || order.refunded_cents >= order.total_cents;
+        const refundedFmt  = (order.refunded_cents / 100).toFixed(2);
+        const remainingFmt = ((order.total_cents - order.refunded_cents) / 100).toFixed(2);
+        return (
+          <div className="mb-4 p-3" style={{ background: "rgba(139,44,44,0.06)", border: "1px solid rgba(139,44,44,0.25)" }}>
+            <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1.5" style={{ color: "#8B2C2C", fontWeight: 600 }}>
+              {isFull ? "Refunded" : "Partial refund"}
+            </p>
+            <p className="text-sm leading-relaxed">
+              <span style={{ fontWeight: 500 }}>${refundedFmt}</span>
+              <span className="opacity-75"> returned to your card</span>
+              {!isFull && (
+                <>
+                  <span className="opacity-50"> · </span>
+                  <span style={{ fontWeight: 500 }}>${remainingFmt}</span>
+                  <span className="opacity-75"> remaining</span>
+                </>
+              )}
+            </p>
+            <p className="text-[0.65rem] opacity-65 mt-1 leading-snug italic">
+              Refunds usually appear on your card within 5–10 business days, depending on your bank.
+            </p>
+          </div>
+        );
+      })()}
+
       {/* Stepped progress — only when the order is in a normal
-          fulfillment state. Refunds get a quiet notice instead. */}
+          fulfillment state. Full refunds get the refund banner
+          above instead; partial refunds keep the timeline since
+          the customer's still getting most of the order. */}
       {order.fulfillment_status !== "refunded" && (
         <OrderProgressTimeline status={order.fulfillment_status} />
       )}
