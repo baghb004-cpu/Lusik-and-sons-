@@ -100,9 +100,16 @@ CREATE TABLE IF NOT EXISTS orders (
   carrier               TEXT,
   tracking_number       TEXT,
   estimated_ship_date   DATE,
-  social_consent        JSONB,                   -- {allowed, platforms, handle, consented_at}
+  social_consent        JSONB,                   -- {allowed, platforms, handles, consented_at}
+  gift                  JSONB,                   -- {is_gift, message, hide_prices}
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- If the orders table already exists from a previous deploy, make
+-- sure newer columns get added. Both are no-ops if the column is
+-- already present.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift           JSONB;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS social_consent JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (lower(customer_email));

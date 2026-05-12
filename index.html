@@ -238,6 +238,18 @@
     .sticky-cta-in { animation: fadeIn 0.22s ease-out; }
   }
 
+  /* Order progress timeline — the current stage's circle softly
+     pulses to signal "this is happening right now." */
+  @keyframes orderStageRing {
+    0%   { box-shadow: 0 0 0 4px  rgba(176,136,66,0.15); }
+    50%  { box-shadow: 0 0 0 8px  rgba(176,136,66,0.05); }
+    100% { box-shadow: 0 0 0 4px  rgba(176,136,66,0.15); }
+  }
+  .order-stage-current { animation: orderStageRing 2.4s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .order-stage-current { animation: none; }
+  }
+
   /* Heart-burst feedback on add-to-cart. Each particle uses CSS variables (--tx/--ty/--rot)
      set inline for randomization. The pivot is positioned fixed at the click point. */
   .heart-burst-pivot {
@@ -710,6 +722,7 @@ const Truck = (p) => <Icon {...p}><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 
 const Phone = (p) => <Icon {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></Icon>;
 const MapPin = (p) => <Icon {...p}><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></Icon>;
 const Send = (p) => <Icon {...p}><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></Icon>;
+const Share2 = (p) => <Icon {...p}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></Icon>;
 const User = (p) => <Icon {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>;
 const LogOut = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
 const Camera = (p) => <Icon {...p}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></Icon>;
@@ -3123,6 +3136,128 @@ function NewsletterSignup() {
 }
 
 // ============================================================
+// SHAREABLE DESIGN URLS
+// ============================================================
+// Encodes the blanket configurator's state into a short base64
+// query parameter so a customer can text or DM their design to
+// someone else, who opens the link and sees the picker hydrated
+// to the same selections. The shape we encode is intentionally
+// the minimum needed to reproduce the design:
+//
+//   a  — alphabet key
+//   l  — layout key
+//   b  — block-color DMC reference
+//   c  — letter-color DMC reference
+//   p  — preset key (or null for custom)
+//   m  — pipe-joined DMC list for multi-color presets (or null)
+//   n1 — optional custom name/initials
+//   n2 — optional custom year/date
+//
+// Validation happens on read: any field that doesn't resolve to
+// a live product option is silently dropped (the picker falls
+// back to its default for that slot). That way, retiring a
+// preset or color doesn't break old shared links — they just
+// hydrate partially.
+// ============================================================
+function encodeDesignToUrl(state) {
+  try {
+    const compact = {
+      a:  state.alphabet?.key ?? null,
+      l:  state.layout?.key ?? null,
+      b:  state.blockColor?.dmc ?? null,
+      c:  state.letterColor?.dmc ?? null,
+      p:  state.activePresetKey ?? null,
+      m:  Array.isArray(state.letterColorList) && state.letterColorList.length > 0
+            ? state.letterColorList.map((x) => x.dmc).join("|")
+            : null,
+      n1: (state.customLine1 ?? "").trim() || null,
+      n2: (state.customLine2 ?? "").trim() || null,
+    };
+    // btoa requires ASCII — JSON.stringify gives us that.
+    return btoa(JSON.stringify(compact));
+  } catch {
+    return null;
+  }
+}
+
+function decodeDesignFromUrl(encoded) {
+  if (!encoded || typeof encoded !== "string") return null;
+  try {
+    const compact = JSON.parse(atob(encoded));
+    if (!compact || typeof compact !== "object") return null;
+    return compact;
+  } catch {
+    return null;
+  }
+}
+
+// Resolve a decoded design back into the typed entries the
+// picker uses. Missing or stale refs return null for that slot
+// so the picker can keep its default.
+function resolveDesign(compact, product) {
+  if (!compact) return null;
+  const alphabet    = product.alphabets.find((a) => a.key === compact.a) ?? null;
+  const layout      = product.layouts.find((l) => l.key === compact.l && l.enabled !== false) ?? null;
+  const blockColor  = product.threadColors.find((t) => t.dmc === compact.b) ?? null;
+  const letterColor = product.threadColors.find((t) => t.dmc === compact.c) ?? null;
+  let letterColorList = null;
+  if (typeof compact.m === "string" && compact.m.length > 0) {
+    const dmcs = compact.m.split("|");
+    const resolved = dmcs.map((d) => product.threadColors.find((t) => t.dmc === d)).filter(Boolean);
+    if (resolved.length > 0) letterColorList = resolved;
+  }
+  return {
+    alphabet, layout, blockColor, letterColor, letterColorList,
+    activePresetKey: typeof compact.p === "string" ? compact.p : null,
+    customLine1: typeof compact.n1 === "string" ? compact.n1.slice(0, 16) : "",
+    customLine2: typeof compact.n2 === "string" ? compact.n2.slice(0, 16) : "",
+  };
+}
+
+// ============================================================
+// ESTIMATED-DELIVERY MATH
+// ============================================================
+// Concrete ship-by / arrive-by date range so the customer sees
+// "order today, arrives by Friday" instead of "5–10 day shipping."
+//
+// Production lead time matches the FAQ (5–10 business days).
+// Transit time is the typical USPS/UPS/FedEx ground range. We
+// skip weekends; we don't try to model federal holidays, which
+// would need a per-year calendar — the range is wide enough
+// that one-day shifts around Thanksgiving / Christmas wash out.
+// ============================================================
+const PRODUCTION_MIN_BIZ_DAYS = 5;
+const PRODUCTION_MAX_BIZ_DAYS = 10;
+const TRANSIT_MIN_BIZ_DAYS    = 3;
+const TRANSIT_MAX_BIZ_DAYS    = 5;
+
+function addBusinessDays(date, n) {
+  const d = new Date(date);
+  let added = 0;
+  while (added < n) {
+    d.setDate(d.getDate() + 1);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) added += 1; // skip Sun (0) and Sat (6)
+  }
+  return d;
+}
+
+function fmtMonthDay(d) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function getDeliveryEstimate(today = new Date()) {
+  const shipMin   = addBusinessDays(today, PRODUCTION_MIN_BIZ_DAYS);
+  const shipMax   = addBusinessDays(today, PRODUCTION_MAX_BIZ_DAYS);
+  const arriveMin = addBusinessDays(shipMin, TRANSIT_MIN_BIZ_DAYS);
+  const arriveMax = addBusinessDays(shipMax, TRANSIT_MAX_BIZ_DAYS);
+  return {
+    shipBy:  `${fmtMonthDay(shipMin)} – ${fmtMonthDay(shipMax)}`,
+    arrives: `${fmtMonthDay(arriveMin)} – ${fmtMonthDay(arriveMax)}`,
+  };
+}
+
+// ============================================================
 // BACK-TO-TOP BUTTON
 // ============================================================
 // Small floating button anchored above the text-us widget. Hidden when the
@@ -5361,6 +5496,103 @@ function OrderHistory({ userId, onReorder }) {
   );
 }
 
+// ============================================================
+// OrderProgressTimeline — stepped fulfillment indicator
+// ============================================================
+// Replaces a single status badge with a five-step visual:
+//
+//   Order received → Stitching → Final review → Shipped → Delivered
+//
+// Stage mapping from the DB's `fulfillment_status` column:
+//   awaiting_lusik   → stage 0   (received, not started)
+//   in_production    → stage 1   (Lusik stitching)
+//   quality_check    → stage 2   (final review)
+//   ready_to_ship    → stage 2   (lumped — customer can't tell these apart)
+//   shipped          → stage 3
+//   delivered        → stage 4
+//   refunded         → no timeline (handled by caller with a notice)
+//
+// Visual: completed stages are filled gold circles with a check
+// glyph; the current stage is an outlined gold circle that pulses;
+// future stages are empty grey outlines. Connector lines between
+// circles fill in gold as the order progresses. Stacks vertically
+// on mobile (under 640px) so labels stay readable.
+// ============================================================
+const ORDER_STAGES = [
+  { key: "received", label: "Order received" },
+  { key: "stitching", label: "Lusik is stitching" },
+  { key: "review",    label: "Final review" },
+  { key: "shipped",   label: "Shipped" },
+  { key: "delivered", label: "Delivered" },
+];
+
+function statusToStageIndex(status) {
+  switch (status) {
+    case "awaiting_lusik": return 0;
+    case "in_production":  return 1;
+    case "quality_check":  return 2;
+    case "ready_to_ship":  return 2;
+    case "shipped":        return 3;
+    case "delivered":      return 4;
+    default:               return 0;
+  }
+}
+
+function OrderProgressTimeline({ status }) {
+  if (status === "refunded") return null;
+  const current = statusToStageIndex(status);
+  return (
+    <ol className="flex items-start justify-between mb-4 mt-2 gap-1 sm:gap-2" aria-label="Order progress">
+      {ORDER_STAGES.map((stage, i) => {
+        const isComplete = i < current;
+        const isCurrent  = i === current;
+        const isLast     = i === ORDER_STAGES.length - 1;
+        const bg     = isComplete || isCurrent ? "#B08842" : "rgba(26,22,18,0.15)";
+        const fg     = isComplete || isCurrent ? "#F5EFE3" : "rgba(26,22,18,0.4)";
+        const lineBg = isComplete             ? "#B08842" : "rgba(26,22,18,0.12)";
+        return (
+          <li key={stage.key} className="flex-1 flex flex-col items-center text-center" aria-current={isCurrent ? "step" : undefined}>
+            <div className="relative w-full flex items-center justify-center">
+              {/* Connector line — half before the dot, half after.
+                  Skipping the first half on stage 0 and the last
+                  half on stage N keeps the line from spilling out. */}
+              {i > 0 && (
+                <span aria-hidden="true" className="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-px" style={{ background: lineBg }} />
+              )}
+              {!isLast && (
+                <span aria-hidden="true" className="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-px" style={{
+                  // The line AFTER this stage fills if the NEXT stage
+                  // is complete or current.
+                  background: i + 1 <= current ? "#B08842" : "rgba(26,22,18,0.12)"
+                }} />
+              )}
+              <span
+                className={"relative z-10 inline-flex items-center justify-center rounded-full " + (isCurrent ? "order-stage-current" : "")}
+                style={{
+                  width: 22, height: 22,
+                  background: bg,
+                  color: fg,
+                  border: isCurrent ? "1.5px solid #B08842" : "none",
+                  boxShadow: isCurrent ? "0 0 0 4px rgba(176,136,66,0.15)" : "none",
+                }}
+              >
+                {isComplete ? (
+                  <Check size={11} strokeWidth={2.5} />
+                ) : (
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: fg, display: "block" }} />
+                )}
+              </span>
+            </div>
+            <span className="text-[0.55rem] sm:text-[0.6rem] tracking-[0.12em] uppercase mt-2 leading-tight px-0.5" style={{ color: isComplete || isCurrent ? "#1A1612" : "rgba(26,22,18,0.5)", fontWeight: isCurrent ? 600 : 400 }}>
+              {stage.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 // Deep-link to the carrier's tracking page. Stripe writes the
 // carrier name as the shipping_rate display_name, which is one of
 // "USPS Ground Advantage", "UPS Ground", "FedEx Home Delivery",
@@ -5409,6 +5641,12 @@ function OrderCard({ order, onReorder }) {
           <p className="text-sm" style={{ fontWeight: 500 }}>${(order.total_cents / 100).toFixed(2)}</p>
         </div>
       </div>
+
+      {/* Stepped progress — only when the order is in a normal
+          fulfillment state. Refunds get a quiet notice instead. */}
+      {order.fulfillment_status !== "refunded" && (
+        <OrderProgressTimeline status={order.fulfillment_status} />
+      )}
 
       {/* Items */}
       <div className="space-y-2 mb-4 pb-4" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
@@ -6992,6 +7230,7 @@ function CollapsibleSection({ title, open, summary, onExpand, children, mb = "mb
 }
 
 function ProductShowcase({ product, onAdd, onCartFeedback }) {
+  const toast = useToast();
   // --- STICKY MOBILE ADD-TO-CART ---
   // Ref on the primary Add-to-cart button. An IntersectionObserver
   // watches it; when it scrolls out of view on mobile we slide a
@@ -7091,6 +7330,78 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
   // The currently-selected preset, if customer chose one. Helps the UI
   // show which preset card is highlighted; null when in custom mode.
   const [activePresetKey, setActivePresetKey] = useState(defaultPreset.key);
+
+  // ============================================================
+  // SHAREABLE DESIGN URL — hydration + share handler
+  // ============================================================
+  // On mount, check for ?d=<base64> in the URL. If present, decode
+  // and hydrate the picker so the recipient sees the same design
+  // the sender configured. We strip the param from the URL after
+  // hydrating so the customer can keep tweaking without a stale
+  // share-link in their address bar.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("d");
+    if (!encoded) return;
+    const compact  = decodeDesignFromUrl(encoded);
+    const resolved = resolveDesign(compact, product);
+    if (!resolved) return;
+    if (resolved.alphabet)           setAlphabet(resolved.alphabet);
+    if (resolved.layout)             setLayout(resolved.layout);
+    if (resolved.blockColor)         setBlockColor(resolved.blockColor);
+    if (resolved.letterColor)        setLetterColor(resolved.letterColor);
+    if (resolved.letterColorList)    setLetterColorList(resolved.letterColorList);
+    setActivePresetKey(resolved.activePresetKey);
+    setColorMode(resolved.activePresetKey ? "preset" : "custom");
+    if (resolved.customLine1) setCustomLine1(resolved.customLine1);
+    if (resolved.customLine2) setCustomLine2(resolved.customLine2);
+    // Strip the param so the URL bar stays clean.
+    params.delete("d");
+    const newQs   = params.toString();
+    const newPath = window.location.pathname + (newQs ? `?${newQs}` : "") + window.location.hash;
+    window.history.replaceState({}, "", newPath);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Build a shareable URL containing the current design and either
+  // open the native share sheet (mobile / supporting desktops) or
+  // copy to clipboard with a toast confirmation.
+  const handleShareDesign = async () => {
+    const encoded = encodeDesignToUrl({
+      alphabet, layout, blockColor, letterColor, letterColorList,
+      activePresetKey, customLine1, customLine2,
+    });
+    if (!encoded) {
+      toast({ kind: "error", message: "Couldn't build a share link — please try again." });
+      return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("d", encoded);
+    url.hash = "blanket";
+    const shareUrl = url.toString();
+
+    // Try the native share sheet first — better UX on mobile.
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "My blanket design — Lusik & Sons",
+          text:  "Here's the blanket I'm thinking about — what do you think?",
+          url:   shareUrl,
+        });
+        return;
+      } catch (err) {
+        // AbortError means the user dismissed the sheet; don't toast.
+        if (err?.name === "AbortError") return;
+        // Anything else, fall through to clipboard.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ kind: "success", message: "Link copied — paste it anywhere you'd like a second opinion." });
+    } catch {
+      toast({ kind: "info", message: `Copy this link: ${shareUrl}`, duration: 12000 });
+    }
+  };
 
   // Helper: apply a preset by key. Sets block + letter + optionally per-letter
   // color list (Armenian Flag).
@@ -7721,9 +8032,22 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
           </CollapsibleSection>
 
           {/* LIVE PREVIEW — sits right after color picker so the customer
-              sees their final choice rendered, before any other content. */}
+              sees their final choice rendered, before any other content.
+              The "Share this design" link in the header encodes the current
+              picker state into a URL and either invokes the native share
+              sheet or copies to clipboard — see handleShareDesign above. */}
           <div className="mb-6 p-5 lg:p-6" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.1)" }}>
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60 mb-3" style={{ color: "#B08842" }}>Your blanket</p>
+            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "#B08842" }}>Your blanket</p>
+              <button
+                onClick={handleShareDesign}
+                className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5"
+                aria-label="Share this design"
+                title="Get a second opinion before you order"
+              >
+                <Share2 size={11} strokeWidth={1.75} /> Share this design
+              </button>
+            </div>
             <div className="flex items-center gap-5">
               <div style={{ width: "140px", flexShrink: 0 }}>
                 <BlanketLayoutPreview
@@ -7827,6 +8151,23 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
               Add to cart — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
             </button>
           </div>
+          {/* Estimated delivery — concrete ship-by / arrives-by range
+              instead of a vague "5–10 days" line. Computed on every
+              render from today's date so it stays current; ranges
+              are wide enough that a one-day shift around a federal
+              holiday doesn't make it lie. */}
+          <p className="text-xs opacity-70 leading-relaxed mb-4">
+            {(() => {
+              const est = getDeliveryEstimate();
+              return (
+                <>
+                  <span style={{ fontWeight: 500 }}>Ships {est.shipBy}</span>
+                  <span className="opacity-70"> · arrives {est.arrives}</span>
+                  <span className="block opacity-60 mt-0.5 text-[0.65rem]">Based on Lusik's current production time and ground shipping to a U.S. address.</span>
+                </>
+              );
+            })()}
+          </p>
           <div className="grid grid-cols-3 gap-2">
             <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
               <Phone size={14} /> Call
@@ -7889,6 +8230,28 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
 function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // --- GIFT OPTIONS (optional) ---
+  // The baby-blanket category is overwhelmingly gift purchases, so
+  // these fields are first-class rather than buried in a "notes"
+  // textbox. Three independent toggles + a 140-char message that
+  // fits on the small thank-you card Lusik includes in the box:
+  //
+  //   giftIsGift        — flips the whole block on. Default off
+  //                       because most checkouts are for the buyer.
+  //   giftMessage       — short note printed/handwritten on the
+  //                       included card. Max 140 chars so it stays
+  //                       legible on a 3"x5" card.
+  //   giftHidePrices    — Lusik reads this and excludes the packing
+  //                       slip pricing when shipping. Stripe's email
+  //                       receipt still goes to the buyer regardless;
+  //                       this controls what's in the BOX.
+  //
+  // Everything ships to the Function as `gift` and ends up in
+  // orders.metadata + a JSONB column the webhook can stamp.
+  const [giftIsGift,     setGiftIsGift]     = useState(false);
+  const [giftMessage,    setGiftMessage]    = useState("");
+  const [giftHidePrices, setGiftHidePrices] = useState(false);
 
   // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
   // Default everything OFF — affirmative opt-in is the only thing
@@ -7975,6 +8338,15 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           userId: user?.id ?? null,
           customerEmail: user?.email ?? profile?.email ?? null,
           prefilledAddress: null, // future: pull from default saved address
+          // Optional gift options. The webhook persists these on the
+          // order so Lusik sees them in her admin view. When not a
+          // gift, all fields are explicit defaults so the order
+          // record clearly reads "not a gift" rather than "unknown."
+          gift: {
+            is_gift:      giftIsGift,
+            message:      giftIsGift ? giftMessage.trim() : "",
+            hide_prices:  giftIsGift ? giftHidePrices : false,
+          },
           // Optional social-share consent. The stripe-webhook Function
           // persists this on the order row in orders.social_consent (JSONB)
           // when checkout completes, so Lusik sees it in her admin view.
@@ -8047,6 +8419,71 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               {error}
             </div>
           )}
+
+          {/* ============================================================
+              OPTIONAL: GIFT OPTIONS
+              ============================================================
+              Most baby-blanket orders are gifts. This block lets the
+              buyer turn that on first-class — short message printed
+              on Lusik's included card, and a flag that tells her to
+              omit prices from the packing slip in the box. When the
+              headline checkbox is off, no gift metadata is sent. */}
+          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · gift options</legend>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={giftIsGift}
+                onChange={(e) => setGiftIsGift(e.target.checked)}
+                className="mt-0.5 w-4 h-4 flex-shrink-0"
+                style={{ accentColor: "#B08842" }}
+              />
+              <span className="text-sm leading-snug">
+                <span style={{ fontWeight: 500 }}>This is a gift.</span>
+                <span className="block text-xs opacity-65 mt-1 leading-relaxed">
+                  Lusik will include a small handwritten card with your message. You can also ask her to leave prices off the packing slip so the recipient never sees what was paid.
+                </span>
+              </span>
+            </label>
+
+            {giftIsGift && (
+              <div className="mt-4 pt-4" style={{ borderTop: "1px dashed rgba(176,136,66,0.3)" }}>
+                <label className="block mb-4">
+                  <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Message for the card <span className="normal-case tracking-normal opacity-70">(optional)</span></span>
+                  <textarea
+                    value={giftMessage}
+                    onChange={(e) => setGiftMessage(e.target.value.slice(0, 140))}
+                    maxLength={140}
+                    rows={3}
+                    placeholder="With all our love, Mom and Dad."
+                    className="w-full px-3 py-2.5 text-sm resize-none"
+                    style={{ border: "1px solid rgba(26,22,18,0.2)", background: "#FFFFFF" }}
+                    aria-label="Gift message for the included card"
+                  />
+                  <span className="text-[0.6rem] opacity-55 mt-1 block tabular-nums">{giftMessage.length}/140</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={giftHidePrices}
+                    onChange={(e) => setGiftHidePrices(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 flex-shrink-0"
+                    style={{ accentColor: "#B08842" }}
+                  />
+                  <span className="text-xs leading-snug">
+                    Hide prices from the packing slip inside the box.
+                    <span className="block opacity-65 mt-0.5">
+                      Your email receipt still goes to you with the total — this only affects what's printed and shipped with the order.
+                    </span>
+                  </span>
+                </label>
+                <p className="text-[0.65rem] opacity-55 mt-3 italic leading-snug">
+                  Shipping address is collected on the next page — if you're sending this to someone else, use their address there.
+                </p>
+              </div>
+            )}
+          </fieldset>
 
           {/* ============================================================
               OPTIONAL: SOCIAL-SHARE CONSENT

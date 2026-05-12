@@ -122,12 +122,13 @@ export default async (req) => {
     INSERT INTO orders (
       order_number, stripe_session_id, user_id, customer_email, status,
       fulfillment_status, subtotal_cents, shipping_cents, tax_cents, total_cents,
-      shipping_address, social_consent
+      shipping_address, social_consent, gift
     ) VALUES (
       ${orderNumber}, ${session.id}, ${pending.userId}, ${customerEmail}, 'paid',
       'in_progress', ${subtotalCents}, ${shippingCents}, ${taxCents}, ${totalCents},
       ${shippingAddr ? JSON.stringify(shippingAddr) : null}::jsonb,
-      ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb
+      ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
+      ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb
     )
     RETURNING id
   `;

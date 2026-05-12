@@ -92,7 +92,7 @@ export default async (req, context) => {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  const { cart, userId, customerEmail, social_consent } = body ?? {};
+  const { cart, userId, customerEmail, social_consent, gift } = body ?? {};
   if (!Array.isArray(cart) || cart.length === 0) {
     return json(400, { error: "Cart is empty" });
   }
@@ -183,6 +183,7 @@ export default async (req, context) => {
     userId: userId ?? null,
     customerEmail: customerEmail ?? null,
     social_consent: social_consent ?? null,
+    gift: gift ?? null,
     createdAt: new Date().toISOString(),
   });
 
