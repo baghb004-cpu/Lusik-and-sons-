@@ -250,6 +250,18 @@
     .order-stage-current { animation: none; }
   }
 
+  /* Skeleton shimmer — used as a placeholder while async data
+     loads. The gradient is set inline; this rule just animates
+     the background-position so it appears to move across. */
+  @keyframes skeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skeleton-shimmer { animation: skeletonShimmer 1.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer { animation: none; }
+  }
+
   /* Heart-burst feedback on add-to-cart. Each particle uses CSS variables (--tx/--ty/--rot)
      set inline for randomization. The pivot is positioned fixed at the click point. */
   .heart-burst-pivot {
@@ -722,7 +734,9 @@ const Truck = (p) => <Icon {...p}><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 
 const Phone = (p) => <Icon {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></Icon>;
 const MapPin = (p) => <Icon {...p}><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></Icon>;
 const Send = (p) => <Icon {...p}><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></Icon>;
-const Share2 = (p) => <Icon {...p}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></Icon>;
+const Share2   = (p) => <Icon {...p}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></Icon>;
+const Bookmark = (p) => <Icon {...p}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></Icon>;
+const Trash2   = (p) => <Icon {...p}><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
 const User = (p) => <Icon {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>;
 const LogOut = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
 const Camera = (p) => <Icon {...p}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></Icon>;
@@ -2687,6 +2701,22 @@ const db = (() => {
     return { error };
   };
 
+  // --- SAVED DESIGNS ---
+  // Customer-side "my designs" library. Each entry is the
+  // compact picker state plus a label and timestamp.
+  const listSavedDesigns = async () => {
+    const { error, data } = await call("/saved-designs", { method: "GET" });
+    return { designs: data?.designs ?? [], error };
+  };
+  const saveDesign = async (entry) => {
+    const { error, data } = await call("/saved-designs", { method: "POST", body: entry });
+    return { design: data?.design ?? null, error };
+  };
+  const deleteSavedDesign = async (id) => {
+    const { error } = await call(`/saved-designs?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    return { error };
+  };
+
   // --- ORDERS ---
   const listOrders = async (_userId) => {
     const { error, data } = await call("/orders", { method: "GET" });
@@ -2702,6 +2732,7 @@ const db = (() => {
     listAddresses, insertAddress, deleteAddress,
     getSavedCart, saveCart,
     listOrders, linkGuestOrders,
+    listSavedDesigns, saveDesign, deleteSavedDesign,
   };
 })();
 
@@ -3132,6 +3163,159 @@ function NewsletterSignup() {
         </button>
       </form>
     </div>
+  );
+}
+
+// ============================================================
+// ShippingEstimator — pre-checkout transparency
+// ============================================================
+// Shows the customer the same flat rates Stripe will offer them
+// on the next page, so they know the total before they commit.
+// Three states:
+//   * Cart is at/over the free-shipping threshold → simple
+//     "Free U.S. shipping" note, no ZIP input needed.
+//   * Below threshold, collapsed → a one-line "Estimate cost
+//     for your ZIP →" prompt so the calculator doesn't shout.
+//   * Below threshold, expanded → ZIP input + Estimate button;
+//     once submitted, shows the three carrier rates + a transit
+//     estimate biased by which coast the ZIP is in (Lusik is in
+//     California, so far East ZIPs get the 4–5 day band).
+//
+// We don't call any carrier API — Lusik's rates are flat by
+// service, so we can be accurate without paying for one. Transit
+// estimates use the first ZIP digit (a US Postal Service zone
+// approximation) to bias the range.
+// ============================================================
+function getTransitDaysByZip(zip) {
+  // Roughly bias by the first ZIP digit:
+  //   9 → West coast, closest to CA  (1–3 business days)
+  //   8 → Mountain                     (2–3)
+  //   5,6,7 → Midwest / South Central  (3–4)
+  //   0,1,2,3,4 → East / Southeast     (4–5)
+  if (!zip || zip.length < 1) return { min: 3, max: 5 };
+  const d = parseInt(zip[0], 10);
+  if (Number.isNaN(d)) return { min: 3, max: 5 };
+  if (d >= 9) return { min: 1, max: 3 };
+  if (d >= 8) return { min: 2, max: 3 };
+  if (d >= 5) return { min: 3, max: 4 };
+  return { min: 4, max: 5 };
+}
+
+const SHIPPING_RATES_DISPLAY = [
+  { name: "USPS Ground Advantage", cost: 9.99 },
+  { name: "UPS Ground",            cost: 14.99 },
+  { name: "FedEx Home Delivery",   cost: 16.99 },
+];
+
+function ShippingEstimator({ subtotalCents }) {
+  const [zip, setZip]               = useState("");
+  const [expanded, setExpanded]     = useState(false);
+  const [submitted, setSubmitted]   = useState(false);
+
+  const earnsFreeShipping = CONFIG.FREE_SHIPPING_ENABLED
+                          && subtotalCents >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
+  const zipValid = /^\d{5}$/.test(zip.trim());
+
+  // State 1 — earned free shipping; nothing to estimate.
+  if (earnsFreeShipping) {
+    return (
+      <p className="text-xs leading-relaxed mb-3">
+        <span style={{ color: "#B08842", fontWeight: 500 }}>Shipping:</span>{" "}
+        <span className="opacity-80">Free U.S. shipping. Lusik picks the carrier at checkout.</span>
+      </p>
+    );
+  }
+
+  // State 2 — collapsed teaser.
+  if (!expanded) {
+    return (
+      <div className="text-xs mb-3 leading-relaxed">
+        <span className="opacity-70">Shipping from $9.99 — calculated at checkout. </span>
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="underline opacity-80 hover:opacity-100"
+        >
+          Estimate for my ZIP →
+        </button>
+      </div>
+    );
+  }
+
+  // State 3 — submitted, valid ZIP, show rates.
+  if (submitted && zipValid) {
+    const t = getTransitDaysByZip(zip);
+    return (
+      <div className="text-xs mb-3 leading-relaxed p-3" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.18)" }}>
+        <p className="opacity-70 mb-2">
+          Estimated rates to <span style={{ fontWeight: 500 }}>ZIP {zip}</span>
+          {" "}<span className="opacity-70">· {t.min}–{t.max} business days transit:</span>
+        </p>
+        <div className="space-y-1 mb-2">
+          {SHIPPING_RATES_DISPLAY.map((r) => (
+            <div key={r.name} className="flex justify-between tabular-nums">
+              <span className="opacity-85">{r.name}</span>
+              <span style={{ fontWeight: 500 }}>${r.cost.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+        <p className="opacity-55 italic mt-1.5">
+          Add Lusik's production time (5–10 business days) for the full lead. You'll pick a carrier on the next page.
+        </p>
+        <button
+          type="button"
+          onClick={() => { setSubmitted(false); setZip(""); }}
+          className="underline opacity-70 hover:opacity-100 mt-2 inline-block"
+        >
+          Try a different ZIP
+        </button>
+      </div>
+    );
+  }
+
+  // State 4 — expanded, awaiting submit.
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); if (zipValid) setSubmitted(true); }}
+      className="text-xs mb-3"
+    >
+      <label className="block mb-1.5 opacity-70">Enter your ZIP code:</label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="postal-code"
+          maxLength={5}
+          value={zip}
+          onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+          placeholder="90630"
+          className="flex-1 px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
+          style={{ border: "1px solid rgba(26,22,18,0.15)" }}
+          aria-label="ZIP code for shipping estimate"
+          autoFocus
+        />
+        <button
+          type="submit"
+          disabled={!zipValid}
+          className="px-3 text-[0.65rem] tracking-[0.2em] uppercase whitespace-nowrap transition"
+          style={{
+            background: zipValid ? "#1A1612" : "rgba(26,22,18,0.3)",
+            color: "#F5EFE3",
+            fontWeight: 500,
+            cursor: zipValid ? "pointer" : "not-allowed",
+          }}
+        >
+          Estimate
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => { setExpanded(false); setZip(""); }}
+        className="underline opacity-60 hover:opacity-100 mt-2 inline-block"
+      >
+        Cancel
+      </button>
+    </form>
   );
 }
 
@@ -4227,10 +4411,10 @@ function App() {
         )}
       </nav>
 
-      {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} />}
+      {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
-      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} />}
+      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} />}
 
       {/* FOOTER */}
       <footer className="border-t mt-12" style={{ borderColor: "rgba(26,22,18,0.1)", background: "#EFE7D6" }}>
@@ -4351,8 +4535,25 @@ function App() {
             {cart.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
                 <ShoppingBag size={32} strokeWidth={1} className="opacity-30 mb-4" />
-                <p className="opacity-60">Your cart is empty.</p>
-                <button onClick={() => { setCartOpen(false); scrollTo("blanket"); }} className="mt-6 text-sm underline underline-offset-4">Shop the blanket</button>
+                <p className="opacity-75 mb-2" style={{ fontWeight: 500 }}>Your cart is empty.</p>
+                <p className="text-xs opacity-55 mb-6 max-w-xs leading-relaxed">
+                  Lusik stitches each blanket to order. Start with the alphabet picker below.
+                </p>
+                <button
+                  onClick={() => { setCartOpen(false); scrollTo("blanket"); }}
+                  className="px-6 py-3 text-xs tracking-[0.2em] uppercase mb-4"
+                  style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500 }}
+                >
+                  Shop the blanket
+                </button>
+                {user && (
+                  <button
+                    onClick={() => { setCartOpen(false); setView("account"); }}
+                    className="text-[0.65rem] tracking-[0.18em] uppercase opacity-60 hover:opacity-100 underline underline-offset-4 transition"
+                  >
+                    Or open a saved design →
+                  </button>
+                )}
               </div>
             ) : (
               <>
@@ -4390,11 +4591,12 @@ function App() {
                       <span style={{ color: "#B08842", fontWeight: 500 }}>Custom orders:</span> Your uploaded designs are saved with your order. We'll email you a proof of your stitched design before running it through the embroidery machine.
                     </div>
                   )}
-                  <div className="flex justify-between mb-1 text-sm">
+                  <div className="flex justify-between mb-3 text-sm">
                     <span className="opacity-70">Subtotal</span>
                     <span style={{ fontWeight: 500 }}>${subtotal.toFixed(2)}</span>
                   </div>
-                  <p className="text-xs opacity-60 mb-5">Shipping & promo codes applied at checkout · Made to order, ships in 5–10 business days</p>
+                  <ShippingEstimator subtotalCents={Math.round(subtotal * 100)} />
+                  <p className="text-[0.65rem] opacity-55 italic leading-relaxed mb-4">Made to order — every blanket starts after Lusik receives your order.</p>
                   <button onClick={goCheckout} className="w-full py-4 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "#1A1612", color: "#F5EFE3" }}>
                     Checkout <ArrowRight size={16} />
                   </button>
@@ -5080,7 +5282,7 @@ function AuthDrawer({ onClose, onAuthed }) {
 // ============================================================
 // Sections: profile (photo + name + phone + email), saved addresses (list + add),
 // order history (placeholder until Phase 3). Sign-out lives at the bottom.
-function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReorder }) {
+function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReorder, product }) {
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -5391,6 +5593,14 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
 
       <div className="gold-line mb-12" />
 
+      {/* SAVED DESIGNS */}
+      <section className="mb-16">
+        <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Saved designs</h2>
+        <SavedDesignsSection userId={user.id} product={product} />
+      </section>
+
+      <div className="gold-line mb-12" />
+
       {/* ORDER HISTORY */}
       <section className="mb-16">
         <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order history</h2>
@@ -5468,7 +5678,31 @@ function OrderHistory({ userId, onReorder }) {
   }, [userId]);
 
   if (loading) {
-    return <p className="text-sm opacity-60">Loading your orders…</p>;
+    // Skeleton placeholders shaped like OrderCard so the layout
+    // doesn't jump when the real data arrives.
+    return (
+      <div className="space-y-4">
+        {[0, 1].map((i) => (
+          <div key={i} className="p-5 lg:p-6" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
+            <div className="flex items-start justify-between mb-4 gap-3">
+              <div className="flex-1">
+                <Skeleton className="w-32 h-4 mb-2" />
+                <Skeleton className="w-24 h-3" />
+              </div>
+              <div className="text-right">
+                <Skeleton className="w-20 h-3 mb-2 ml-auto" />
+                <Skeleton className="w-16 h-4 ml-auto" />
+              </div>
+            </div>
+            <Skeleton className="w-full h-6 mb-4" />
+            <div className="space-y-2">
+              <Skeleton className="w-3/4 h-3" />
+              <Skeleton className="w-1/2 h-3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (pollingForOrder && orders.length === 0) {
@@ -5492,6 +5726,151 @@ function OrderHistory({ userId, onReorder }) {
   return (
     <div className="space-y-4">
       {orders.map((o) => <OrderCard key={o.id} order={o} onReorder={onReorder} />)}
+    </div>
+  );
+}
+
+// ============================================================
+// Skeleton — generic loading placeholder
+// ============================================================
+// A muted gradient that shimmers softly, used wherever an async
+// fetch is in flight (order history, saved designs). One
+// component, parameterized by className for sizing — same style
+// pattern as Skeleton libraries customers expect from Shopify-
+// grade sites.
+// ============================================================
+function Skeleton({ className = "", style = {} }) {
+  return (
+    <div
+      className={`skeleton-shimmer ${className}`}
+      style={{
+        background: "linear-gradient(90deg, rgba(26,22,18,0.06) 0%, rgba(26,22,18,0.10) 50%, rgba(26,22,18,0.06) 100%)",
+        backgroundSize: "200% 100%",
+        ...style,
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+// ============================================================
+// SavedDesignsSection — "My designs" library on AccountView
+// ============================================================
+// Lists the customer's saved blanket configurations as small
+// thumbnail cards. Each card has an "Open" button that reloads
+// the page with the design encoded in ?d= so the existing
+// hydration in ProductShowcase picks it up, and a delete button.
+// Empty state has friendly copy pointing at the Save button on
+// the PDP. Loading state shows two skeletons.
+// ============================================================
+function SavedDesignsSection({ userId, product }) {
+  const toast = useToast();
+  const [designs, setDesigns] = useState(null); // null = loading
+
+  useEffect(() => {
+    if (!userId) return;
+    let mounted = true;
+    db.listSavedDesigns().then(({ designs: d, error }) => {
+      if (!mounted) return;
+      if (error) { console.warn("listSavedDesigns:", error); setDesigns([]); return; }
+      setDesigns(d);
+    });
+    return () => { mounted = false; };
+  }, [userId]);
+
+  const handleLoad = (entry) => {
+    try {
+      const encoded = btoa(JSON.stringify(entry.design));
+      window.location.assign(`/?d=${encodeURIComponent(encoded)}#blanket`);
+    } catch {
+      toast({ kind: "error", message: "Couldn't load that design — please try again." });
+    }
+  };
+
+  const handleDelete = async (entry) => {
+    const { error } = await db.deleteSavedDesign(entry.id);
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't delete that design." });
+      return;
+    }
+    setDesigns((cur) => (cur ?? []).filter((d) => d.id !== entry.id));
+    toast({ kind: "info", message: "Design removed." });
+  };
+
+  if (designs === null) {
+    return (
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[0, 1].map((i) => (
+          <div key={i} className="p-3" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
+            <Skeleton className="w-full mb-3" style={{ aspectRatio: "1 / 1" }} />
+            <Skeleton className="w-3/4 h-3 mb-2" />
+            <Skeleton className="w-1/2 h-3" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (designs.length === 0) {
+    return (
+      <p className="text-sm opacity-60 italic max-w-md leading-relaxed">
+        Nothing saved yet. On the blanket page, click <span style={{ fontWeight: 500 }}>Save</span> next to the live preview to keep a configuration here for later.
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {designs.map((entry) => {
+        const r = resolveDesign(entry.design, product);
+        const alphabet = r?.alphabet ?? product.alphabets[0];
+        const layout   = r?.layout   ?? product.layouts.find((l) => l.enabled) ?? product.layouts[0];
+        const blockHex = r?.blockColor?.hex  ?? "#999999";
+        const letterHex = r?.letterColor?.hex ?? "#666666";
+        const letterColors = r?.letterColorList ? r.letterColorList.map((c) => c.hex) : null;
+        return (
+          <div key={entry.id} className="p-3" style={{ border: "1px solid rgba(26,22,18,0.12)" }}>
+            <div className="overflow-hidden mb-3 flex items-center justify-center" style={{ background: "rgba(26,22,18,0.04)", aspectRatio: "1 / 1" }}>
+              <BlanketLayoutPreview
+                letters={alphabet.letters}
+                layout={layout}
+                darkMode={false}
+                size={150}
+                blockColor={blockHex}
+                letterColor={letterHex}
+                letterColors={letterColors}
+                customLine1={r?.customLine1 ?? ""}
+                customLine2={r?.customLine2 ?? ""}
+                showCustomTextHints={false}
+              />
+            </div>
+            <p className="text-sm leading-tight mb-1 truncate" style={{ fontWeight: 500 }} title={entry.label}>
+              {entry.label}
+            </p>
+            <p className="text-[0.65rem] opacity-55 mb-3">
+              Saved {new Date(entry.created_at).toLocaleDateString()}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleLoad(entry)}
+                className="flex-1 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:opacity-90"
+                style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500 }}
+              >
+                Open
+              </button>
+              <button
+                onClick={() => handleDelete(entry)}
+                className="px-3 py-2 opacity-60 hover:opacity-100 transition"
+                style={{ border: "1px solid rgba(26,22,18,0.15)" }}
+                aria-label={`Delete saved design ${entry.label}`}
+                title="Delete"
+              >
+                <Trash2 size={14} strokeWidth={1.5} />
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -5723,7 +6102,7 @@ function OrderCard({ order, onReorder }) {
 }
 
 // === HOME ===
-function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo }) {
+function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo, user, onRequireSignIn }) {
   const t = useT();
   return (
     <div className="fade-in">
@@ -5777,7 +6156,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
         </div>
       </section>
 
-      <ProductShowcase product={product} onAdd={onAdd} onCartFeedback={onCartFeedback} />
+      <ProductShowcase product={product} onAdd={onAdd} onCartFeedback={onCartFeedback} user={user} onRequireSignIn={onRequireSignIn} />
 
       {/* FROM LUSIK'S WORKSHOP — additional real product photos that aren't
           in the main gallery, showing the range of Lusik's work: different
@@ -7229,7 +7608,7 @@ function CollapsibleSection({ title, open, summary, onExpand, children, mb = "mb
   );
 }
 
-function ProductShowcase({ product, onAdd, onCartFeedback }) {
+function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn }) {
   const toast = useToast();
   // --- STICKY MOBILE ADD-TO-CART ---
   // Ref on the primary Add-to-cart button. An IntersectionObserver
@@ -7362,6 +7741,46 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
     const newPath = window.location.pathname + (newQs ? `?${newQs}` : "") + window.location.hash;
     window.history.replaceState({}, "", newPath);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save the current design to the customer's account. Requires
+  // sign-in — guests are nudged into the auth drawer with a toast
+  // explaining why. The compact design payload re-uses the
+  // encoder above so saved designs round-trip identically to
+  // shared links.
+  const [savingDesign, setSavingDesign] = useState(false);
+  const handleSaveDesign = async () => {
+    if (!user) {
+      toast({
+        kind: "info",
+        message: "Sign in to save designs to your account.",
+        action: { label: "Sign in", onClick: () => onRequireSignIn?.() },
+      });
+      return;
+    }
+    const compactJson = encodeDesignToUrl({
+      alphabet, layout, blockColor, letterColor, letterColorList,
+      activePresetKey, customLine1, customLine2,
+    });
+    const compact = decodeDesignFromUrl(compactJson);
+    if (!compact) {
+      toast({ kind: "error", message: "Couldn't save that design — please try again." });
+      return;
+    }
+    // Build a friendly label from the variant data so the design
+    // list in the account view is scannable without thumbnails.
+    const customBits = [customLine1.trim(), customLine2.trim()].filter(Boolean).join(" / ");
+    const labelParts = [alphabet?.label, blockColor?.name];
+    if (customBits) labelParts.push(`"${customBits}"`);
+    const label = labelParts.filter(Boolean).join(" · ").slice(0, 48);
+    setSavingDesign(true);
+    const { error } = await db.saveDesign({ label, design: compact });
+    setSavingDesign(false);
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't save — please try again." });
+      return;
+    }
+    toast({ kind: "success", message: "Design saved to your account." });
+  };
 
   // Build a shareable URL containing the current design and either
   // open the native share sheet (mobile / supporting desktops) or
@@ -8039,14 +8458,25 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
           <div className="mb-6 p-5 lg:p-6" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.1)" }}>
             <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
               <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "#B08842" }}>Your blanket</p>
-              <button
-                onClick={handleShareDesign}
-                className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5"
-                aria-label="Share this design"
-                title="Get a second opinion before you order"
-              >
-                <Share2 size={11} strokeWidth={1.75} /> Share this design
-              </button>
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={handleSaveDesign}
+                  disabled={savingDesign}
+                  className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5 disabled:opacity-40"
+                  aria-label="Save this design to your account"
+                  title={user ? "Save to your account for later" : "Sign in to save designs"}
+                >
+                  <Bookmark size={11} strokeWidth={1.75} /> {savingDesign ? "Saving…" : "Save"}
+                </button>
+                <button
+                  onClick={handleShareDesign}
+                  className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5"
+                  aria-label="Share this design"
+                  title="Get a second opinion before you order"
+                >
+                  <Share2 size={11} strokeWidth={1.75} /> Share
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-5">
               <div style={{ width: "140px", flexShrink: 0 }}>

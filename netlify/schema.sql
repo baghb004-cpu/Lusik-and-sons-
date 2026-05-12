@@ -29,14 +29,18 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- don't fire into Postgres — the function does the upsert itself).
 -- ============================================================
 CREATE TABLE IF NOT EXISTS profiles (
-  id           UUID PRIMARY KEY,                 -- == Netlify Identity sub
-  email        TEXT NOT NULL,
-  full_name    TEXT,
-  phone        TEXT,
-  avatar_url   TEXT,                             -- public URL into Netlify Blobs
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  id             UUID PRIMARY KEY,               -- == Netlify Identity sub
+  email          TEXT NOT NULL,
+  full_name      TEXT,
+  phone          TEXT,
+  avatar_url     TEXT,                           -- public URL into Netlify Blobs
+  saved_designs  JSONB NOT NULL DEFAULT '[]'::jsonb,  -- array of { id, label, design, created_at }
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Idempotent column adds for previously-provisioned DBs.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS saved_designs JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles (lower(email));
 
