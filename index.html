@@ -1453,6 +1453,93 @@ const SHIPPING_CARRIERS = [
 ];
 
 // ============================================================
+// LUSIK'S JOURNAL — cultural posts about Armenian craft
+// ============================================================
+// These three posts are intentionally about ARMENIAN HERITAGE,
+// not about Lusik personally. They make claims about Armenian
+// history, cross-stitch technique, and pomegranate symbolism
+// that are well-attested — not autobiographical claims that
+// would need Lusik's sign-off.
+//
+// ⚠️ TODO_LUSIK_REVIEW: Lusik should read each post and tell
+//    us if anything needs adjusting. She can also send us a
+//    personal anecdote for any of them — we'll splice it in as
+//    a fourth section or pull it forward as the lede.
+//
+// Adding a new post: prepend a new entry below with a unique
+// slug. The slug appears in the URL hash (#journal/the-slug),
+// the JSON-LD BlogPosting `mainEntityOfPage`, and the SEO
+// canonical link. Don't change a slug once a post is shared —
+// older links would 404.
+//
+// Each `content` block is an array of typed nodes:
+//   { type: "p",          text: "..." }   plain paragraph
+//   { type: "h2",         text: "..." }   section heading
+//   { type: "blockquote", text: "..." }   pulled-out quote
+//   { type: "p", text: "...", em: ["word1", "word2"] }   italicize substrings
+//
+// Keep posts in the 300–500 word range. Long enough to rank on
+// long-tail Armenian-craft searches, short enough that a
+// customer browsing on their phone actually reads to the end.
+// ============================================================
+const JOURNAL_POSTS = [
+  {
+    slug:        "armenian-alphabet-gift",
+    title:       "The Armenian Alphabet: A 1,600-Year-Old Gift",
+    excerpt:     "Mesrop Mashtots designed the alphabet in 405 AD. Sixteen centuries later, those same first three letters — Ա Բ Գ — are still the first ones Armenian children learn.",
+    publishedAt: "2026-05-14",
+    readMinutes: 3,
+    content: [
+      { type: "p", text: "The Armenian alphabet was created in 405 AD by a monk named Mesrop Mashtots, commissioned by King Vramshapuh and the Catholicos Sahak Parthev. Before that, Armenian was written in Greek, Syriac, or Persian script — but none of those captured the actual sounds of the spoken language. Mashtots designed a 36-letter alphabet that matched every Armenian sound, and that core has survived nearly intact for sixteen centuries." },
+      { type: "p", text: "The first three letters — Ա (Ayb), Բ (Ben), Գ (Gim) — are the alphabet's opening. They're the letters Armenian children learn first. The Armenian word for \"alphabet\" itself, Այբուբեն (Aybuben), is built from the names of the first two letters, the way \"alpha-beta\" became \"alphabet\" in Greek." },
+      { type: "h2", text: "Why the first three letters matter" },
+      { type: "p", text: "To stitch Ա Բ Գ onto a blanket is to give a child the beginning of their language — literally the first three steps into reading it. It's a quiet kind of inheritance: nobody's reading the blanket to the baby yet, but the letters are there, and one day the same child who slept under them will recognize them on a page." },
+      { type: "p", text: "Two more letters were added during the Middle Ages: Օ (Oh) and Ֆ (Feh), bringing the total to 38. The original 36 are still what most Armenian primers teach as \"the alphabet,\" and you'll still see the Mashtots-era letters in old monastery inscriptions if you ever travel to Echmiadzin or Geghard." },
+      { type: "h2", text: "Or English, if that's the right gift" },
+      { type: "p", text: "The English ABC follows the same logic. Some families want their child's first letters in Armenian; others want English; many want both. Lusik stitches whichever the parent picks — she doesn't push one over the other. The blanket should be the language the family speaks at home." },
+      { type: "p", text: "For other letters or special requests — a child's specific initial, an unusual combination, or a custom blanket for a name you'd like spelled out — write Lusik at hello@lusikandsons.com." },
+    ],
+  },
+  {
+    slug:        "why-cross-stitch",
+    title:       "Why Cross-Stitch, and Not Just Embroidery",
+    excerpt:     "Most people use the two words interchangeably. They're not the same thing — and the difference is why Lusik's blanket has to be made by hand.",
+    publishedAt: "2026-05-07",
+    readMinutes: 4,
+    content: [
+      { type: "p", text: "Cross-stitch and embroidery aren't the same thing, even though most people use the words interchangeably." },
+      { type: "p", text: "Embroidery is a broad family of techniques — satin stitch, French knots, chain stitch, machine embroidery — basically any way of decorating fabric with thread. Cross-stitch is one specific technique within that family, but it's old enough and exacting enough to deserve its own name." },
+      { type: "h2", text: "What makes a stitch a cross-stitch" },
+      { type: "p", text: "Every mark on the fabric is a small X — two diagonal threads crossing at a single point. The whole picture is built out of those Xs, counted one at a time onto a fabric with an even, gridded weave. There's no improvisation in the stitches themselves; the variation comes entirely from which Xs you place and what color thread you use." },
+      { type: "p", text: "This is why cross-stitch is sometimes called \"counted embroidery\": you literally count squares of fabric to know where each X goes. The waffle-weave blankets Lusik uses have the count built into the cloth itself — every little square is one stitch." },
+      { type: "h2", text: "Why a machine can't really do it" },
+      { type: "p", text: "Machine embroidery uses different stitches — satin and fill — optimized for speed and density. The result is closer to a painted-on image: smooth, regular, opaque. Hand cross-stitch produces something different. You can see the individual stitches, you can feel the texture, and (on the back) you can see the path the stitcher took through the cloth." },
+      { type: "p", text: "That visibility is part of why cross-stitched gifts get kept. The work is in the work. A grandmother who learned cross-stitch from her grandmother, who learned it from hers, makes something a machine can't approximate at any price." },
+      { type: "h2", text: "Why the bib is different" },
+      { type: "p", text: "Lusik does the blanket by hand because the blanket is where the count and texture matter. The bib is machine-embroidered because its surface is too small for hand cross-stitch — a name in cross-stitch on a bib would be unreadable. Each piece gets the technique that suits its size." },
+    ],
+  },
+  {
+    slug:        "pomegranate-in-textiles",
+    title:       "The Pomegranate in Armenian Textiles",
+    excerpt:     "There's a reason every Armenian rug, plate, and manuscript seems to have one. The pomegranate is the country's visual shorthand — and it's woven into Lusik's blankets too.",
+    publishedAt: "2026-04-29",
+    readMinutes: 3,
+    content: [
+      { type: "p", text: "If you've ever been in an Armenian home, you've probably seen a pomegranate somewhere. On a tablecloth, woven into a rug, painted on a plate, illuminated in an old manuscript. The pomegranate is, more than any other symbol, the visual shorthand for Armenia." },
+      { type: "p", text: "There's a reason." },
+      { type: "h2", text: "Abundance, marriage, family" },
+      { type: "p", text: "The fruit grows wild in the Armenian highlands — pomegranate trees are an everyday sight. But the symbolism runs deeper. In Armenian folklore, the pomegranate represents abundance, fertility, marriage, and family. The seeds inside (which can number in the hundreds) stand for many children, much grace, a full life. At Armenian weddings, the bride traditionally throws a pomegranate against a wall: the seeds that scatter are blessings on the marriage." },
+      { type: "h2", text: "In textiles specifically" },
+      { type: "p", text: "In Armenian rug and textile work, the pomegranate appears in stylized, geometric form. The fruit's distinctive crown becomes a small angular tuft at the top; the body is a circle or stylized teardrop. Look at any Armenian rug from the last few centuries and you'll find pomegranates worked into the border or repeated through the field." },
+      { type: "h2", text: "On the blanket" },
+      { type: "p", text: "Lusik chose her blankets specifically for their pomegranate-pattern waffle weave. The pattern is woven into the fabric itself, not stitched on top — small, repeating, embossed across the entire surface. When she cross-stitches the alphabet over it, the pomegranates stay visible underneath, framing each letter the way they'd frame a child's name on an Armenian heirloom from a century ago." },
+      { type: "p", text: "The blanket carries the symbol whether you notice it or not. A child can grow up underneath pomegranates without ever knowing why, and still inherit something Armenian." },
+    ],
+  },
+];
+
+// ============================================================
 // INTERNATIONALIZATION (i18n)
 // ============================================================
 // Three-language support: English (en), Western Armenian (hyw),
@@ -3964,6 +4051,10 @@ function App() {
   // Placeholder-catalog item the customer just clicked. Drives the
   // WaitlistModal — null when closed, a product object when open.
   const [waitlistProduct, setWaitlistProduct] = useState(null);
+  // Currently-selected journal post slug. null = render the list.
+  // Synced to the URL hash (#journal/<slug>) so individual posts
+  // get shareable, copy-pasteable URLs even though we're a SPA.
+  const [journalSlug, setJournalSlug] = useState(null);
 
   // Listen for cross-policy link clicks inside the modal (e.g. clicking
   // "Final Sale Policy" from the bottom of "Privacy Policy"). The modal fires
@@ -4110,6 +4201,35 @@ function App() {
       window.history.replaceState({}, "", url.toString());
     }
   }, [user]);
+
+  // --- JOURNAL HASH ROUTING ---
+  // Each journal post lives at #journal/<slug>. The list view is
+  // just #journal. Two-way sync: (1) on mount and on popstate
+  // (back/forward), parse the hash into view + slug; (2) on
+  // every slug change inside the journal view, mirror back to
+  // the hash. This gives posts a copy-pasteable URL even though
+  // we don't have real per-page routing yet.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const applyFromHash = () => {
+      const m = window.location.hash.match(/^#journal(?:\/([\w-]+))?/);
+      if (!m) return;
+      setView("journal");
+      setJournalSlug(m[1] ?? null);
+    };
+    applyFromHash();
+    window.addEventListener("popstate", applyFromHash);
+    return () => window.removeEventListener("popstate", applyFromHash);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (view !== "journal") return;
+    const next = journalSlug ? `#journal/${journalSlug}` : "#journal";
+    if (window.location.hash !== next) {
+      window.history.replaceState({}, "", window.location.pathname + window.location.search + next);
+    }
+  }, [view, journalSlug]);
 
   // --- DEBOUNCED CART SYNC TO DB (logged-in users only) ---
   // Avoid hammering the database on every +/- click. Wait until cart changes
@@ -4459,6 +4579,7 @@ function App() {
               onPlaceholderClick={(p) => setWaitlistProduct(p)}
             />
             <button onClick={() => scrollTo("story")} className="hover:opacity-60">{t("nav.story")}</button>
+            <button onClick={() => { setJournalSlug(null); setView("journal"); }} className="hover:opacity-60">Journal</button>
             <button onClick={() => scrollTo("faq")} className="hover:opacity-60">{t("nav.faq")}</button>
             <button onClick={() => scrollTo("shipping")} className="hover:opacity-60">{t("nav.shipping")}</button>
             <button onClick={() => scrollTo("contact")} className="hover:opacity-60">{t("nav.contact")}</button>
@@ -4582,6 +4703,7 @@ function App() {
                 </div>
               </details>
               <button onClick={() => scrollTo("story")} className="text-left">{t("nav.story")}</button>
+              <button onClick={() => { setJournalSlug(null); setView("journal"); setMobileNavOpen(false); }} className="text-left">Journal</button>
               <button onClick={() => scrollTo("faq")} className="text-left">{t("nav.faq")}</button>
               <button onClick={() => scrollTo("shipping")} className="text-left">{t("nav.shipping")}</button>
               <button onClick={() => scrollTo("contact")} className="text-left">{t("nav.contact")}</button>
@@ -4595,6 +4717,7 @@ function App() {
       {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
+      {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
 
       {/* Waitlist modal for placeholder catalog items */}
       <WaitlistModal product={waitlistProduct} onClose={() => setWaitlistProduct(null)} />
@@ -4624,6 +4747,7 @@ function App() {
                 <button onClick={() => scrollTo("blanket")} className="text-left hover:opacity-60">{t("nav.blanket")}</button>
                 <button onClick={() => scrollTo("custom")} className="text-left hover:opacity-60">{t("nav.custom")}</button>
                 <button onClick={() => scrollTo("story")} className="text-left hover:opacity-60">{t("nav.story")}</button>
+                <button onClick={() => { setJournalSlug(null); setView("journal"); }} className="text-left hover:opacity-60">Journal</button>
                 <button onClick={() => scrollTo("faq")} className="text-left hover:opacity-60">{t("nav.faq")}</button>
               </div>
             </div>
@@ -6676,6 +6800,191 @@ function AdminView({ user, onBack }) {
       )}
     </div>
   );
+}
+
+// ============================================================
+// LUSIK'S JOURNAL — list view + post detail view
+// ============================================================
+// Two surfaces, both reachable via view === "journal":
+//   slug === null  → JournalListView  (index of all posts)
+//   slug provided  → JournalPostView  (single post + JSON-LD)
+//
+// We DON'T render the list AND a chosen post on the same view —
+// it's a clean swap. The slug lives in App state so the parent
+// can hook URL-hash routing without each component knowing about
+// the address bar.
+// ============================================================
+function formatPublishedDate(iso) {
+  if (!iso) return "";
+  // Construct in local time to avoid the off-by-one-day issue when a
+  // pure YYYY-MM-DD string is interpreted as UTC midnight.
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+function JournalListView({ posts, onSelectPost, onBack }) {
+  return (
+    <div className="fade-in max-w-4xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
+      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
+        ← Back to the shop
+      </button>
+      <header className="mb-12 lg:mb-16">
+        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>The Journal</p>
+        <h1 className="font-display text-4xl lg:text-5xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+          Notes from <em style={{ fontWeight: 400 }}>Lusik's table</em>.
+        </h1>
+        <p className="text-base lg:text-lg opacity-75 leading-relaxed max-w-2xl">
+          Short posts about the craft we make — the Armenian alphabet, the technique behind cross-stitch, the symbols woven into Lusik's blankets. Written for anyone curious about what goes into the work, not just the work itself.
+        </p>
+      </header>
+      <div className="space-y-10">
+        {posts.map((post) => (
+          <article
+            key={post.slug}
+            className="group cursor-pointer pb-10"
+            style={{ borderBottom: "1px solid rgba(26,22,18,0.1)" }}
+            onClick={() => onSelectPost(post.slug)}
+          >
+            <div className="flex items-baseline gap-3 mb-2 flex-wrap">
+              <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60" dateTime={post.publishedAt}>
+                {formatPublishedDate(post.publishedAt)}
+              </time>
+              <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
+              <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60">{post.readMinutes} min read</span>
+            </div>
+            <h2 className="font-display text-2xl lg:text-3xl mb-3 transition group-hover:opacity-80" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+              {post.title}
+            </h2>
+            <p className="text-sm lg:text-base opacity-80 leading-relaxed mb-4 max-w-2xl">
+              {post.excerpt}
+            </p>
+            <span className="text-[0.65rem] tracking-[0.2em] uppercase transition group-hover:opacity-100" style={{ color: "#B08842", fontWeight: 500 }}>
+              Keep reading →
+            </span>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function JournalPostView({ post, onBack, onSelectPost }) {
+  // BlogPosting JSON-LD — gets indexed by Google whether it sits
+  // in <head> or anywhere in the body, so we render it here
+  // inline. Includes the canonical URL, author (the brand), and
+  // publish date.
+  const canonicalUrl = `https://lusikandsons.com/#journal/${post.slug}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type":    "BlogPosting",
+    headline:   post.title,
+    description: post.excerpt,
+    datePublished: post.publishedAt,
+    author: { "@type": "Organization", name: "Lusik & Sons" },
+    publisher: {
+      "@type": "Organization",
+      name:    "Lusik & Sons",
+      logo: { "@type": "ImageObject", url: "https://lusikandsons.com/og-image.jpg" },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+    image: "https://lusikandsons.com/og-image.jpg",
+  };
+
+  // Quick "you might also like" — the two other most-recent posts.
+  const others = JOURNAL_POSTS.filter((p) => p.slug !== post.slug).slice(0, 2);
+
+  return (
+    <div className="fade-in max-w-3xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
+        ← All posts
+      </button>
+      <article>
+        <header className="mb-10 lg:mb-12">
+          <div className="flex items-baseline gap-3 mb-3 flex-wrap">
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#B08842" }}>Journal</p>
+            <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
+            <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60" dateTime={post.publishedAt}>
+              {formatPublishedDate(post.publishedAt)}
+            </time>
+            <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
+            <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60">{post.readMinutes} min read</span>
+          </div>
+          <h1 className="font-display text-4xl lg:text-5xl leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+            {post.title}
+          </h1>
+        </header>
+
+        <div className="prose-journal space-y-6 max-w-none">
+          {post.content.map((node, i) => {
+            if (node.type === "h2") {
+              return (
+                <h2 key={i} className="font-display text-2xl lg:text-3xl mt-10 mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+                  {node.text}
+                </h2>
+              );
+            }
+            if (node.type === "blockquote") {
+              return (
+                <blockquote key={i} className="font-display italic text-lg lg:text-xl border-l pl-5 leading-relaxed" style={{ borderColor: "#B08842", fontWeight: 400, color: "#3D332A" }}>
+                  {node.text}
+                </blockquote>
+              );
+            }
+            return (
+              <p key={i} className="text-base lg:text-lg leading-relaxed" style={{ color: "#3D332A" }}>
+                {node.text}
+              </p>
+            );
+          })}
+        </div>
+      </article>
+
+      {others.length > 0 && (
+        <aside className="mt-16 pt-10" style={{ borderTop: "1px solid rgba(26,22,18,0.12)" }}>
+          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-5" style={{ color: "#B08842" }}>Keep reading</p>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {others.map((p) => (
+              <button
+                key={p.slug}
+                onClick={() => onSelectPost(p.slug)}
+                className="text-left p-5 transition hover:bg-[rgba(26,22,18,0.03)]"
+                style={{ border: "1px solid rgba(26,22,18,0.1)" }}
+              >
+                <time className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 block mb-2" dateTime={p.publishedAt}>
+                  {formatPublishedDate(p.publishedAt)}
+                </time>
+                <h3 className="font-display text-lg leading-tight mb-2" style={{ fontWeight: 500 }}>
+                  {p.title}
+                </h3>
+                <p className="text-xs opacity-70 leading-relaxed line-clamp-3">
+                  {p.excerpt}
+                </p>
+              </button>
+            ))}
+          </div>
+        </aside>
+      )}
+    </div>
+  );
+}
+
+function JournalView({ slug, onSelectPost, onBack }) {
+  // Scroll to top whenever the slug changes so readers don't land
+  // mid-post when they tap into one from the list.
+  useEffect(() => {
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
+  }, [slug]);
+
+  if (slug) {
+    const post = JOURNAL_POSTS.find((p) => p.slug === slug);
+    if (post) {
+      return <JournalPostView post={post} onBack={() => onSelectPost(null)} onSelectPost={onSelectPost} />;
+    }
+    // Unknown slug — fall through to the list with a soft notice.
+  }
+  return <JournalListView posts={JOURNAL_POSTS} onSelectPost={onSelectPost} onBack={onBack} />;
 }
 
 // === HOME ===

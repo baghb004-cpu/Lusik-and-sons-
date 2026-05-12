@@ -97,6 +97,15 @@ netlify/
 - Pending carts: store `pending-orders` (key = Stripe session ID). `create-checkout-session` stashes the cart here; `stripe-webhook` reads + deletes it when the payment completes.
 - Finished-piece photos: store `order-finished-photos` (key pattern `<order_id>/finished-<timestamp>.<ext>`). Lusik uploads via the admin view → `admin-order-photo`. The order row's `finished_photo_key` column points at the most recent upload; the customer's account page renders it via `order-photo-get`.
 
+### Lusik's Journal
+
+A small in-file mini-blog at `view === "journal"`, with three starter posts about Armenian craft heritage (the alphabet, cross-stitch as a technique, the pomegranate in textiles). The posts are intentionally *cultural*, not biographical — they make claims about Armenian history that are well-attested rather than claims about Lusik personally that would need her sign-off.
+
+- Post data: the `JOURNAL_POSTS` array near the SHIPPING_CARRIERS constant (~line 1455). Each entry has `slug`, `title`, `excerpt`, `publishedAt`, `readMinutes`, and a `content` array of typed nodes (`p`, `h2`, `blockquote`). Adding a new post = prepending an entry. **Don't change a slug** once a post is shared — old URLs would 404.
+- Components: `JournalListView` (index), `JournalPostView` (single post with inline `BlogPosting` JSON-LD for Google), and the parent `JournalView` that swaps between them.
+- Routing: the App holds `journalSlug` state synced two-ways with the URL hash (`#journal` for the list, `#journal/<slug>` for a post). Back/forward buttons work; copy-paste of an article URL hydrates correctly. (Future polish: switch to full history-API routing once a Netlify `_redirects` SPA fallback is in place.)
+- All three posts carry the `TODO_LUSIK_REVIEW` marker — Lusik should read each one and tell us if anything needs adjusting. She can also send a personal anecdote for any of them, which we'd splice in as a section.
+
 ### Admin view + roles
 
 Lusik (and her sons) manage orders through a dedicated admin view: `view === "admin"` inside the React app. It's gated three ways:
