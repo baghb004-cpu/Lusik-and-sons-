@@ -749,6 +749,8 @@ const Share2   = (p) => <Icon {...p}><circle cx="18" cy="5" r="3"/><circle cx="6
 const Bookmark = (p) => <Icon {...p}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></Icon>;
 const Trash2   = (p) => <Icon {...p}><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
 const User = (p) => <Icon {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>;
+const Home = (p) => <Icon {...p}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+const Store = (p) => <Icon {...p}><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><line x1="2" x2="22" y1="9" y2="9"/><path d="M20 9v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M2 7v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V7"/><path d="M6 9a2 2 0 0 0 2 2 2 2 0 0 0 2-2V7"/><path d="M10 7v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V7"/><path d="M14 7v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V7"/><path d="M18 7v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V7"/></Icon>;
 const LogOut = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
 const Camera = (p) => <Icon {...p}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></Icon>;
 const Eye = (p) => <Icon {...p}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></Icon>;
@@ -4080,6 +4082,11 @@ function App() {
   // Synced to the URL hash (#journal/<slug>) so individual posts
   // get shareable, copy-pasteable URLs even though we're a SPA.
   const [journalSlug, setJournalSlug] = useState(null);
+  // Whether the PDP's mobile sticky add-to-cart bar is currently
+  // showing. Lifted up from ProductShowcase so the global mobile
+  // bottom-nav can step out of the way — they share the same
+  // pixels on phones.
+  const [pdpStickyCtaShown, setPdpStickyCtaShown] = useState(false);
 
   // Listen for cross-policy link clicks inside the modal (e.g. clicking
   // "Final Sale Policy" from the bottom of "Privacy Policy"). The modal fires
@@ -4668,7 +4675,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20 lg:pb-0">
+      {/* `pb-20 lg:pb-0` reserves space for the mobile bottom-nav
+          on phones so footer content + bottom of long pages aren't
+          hidden behind it. On desktop the nav doesn't exist, so
+          no padding is needed. */}
       {/* ANNOUNCEMENT / ACTIVE-ORDER BAR
           Swaps its content based on whether the signed-in user has
           a live order in flight. Renders the brand announce string
@@ -4823,7 +4834,7 @@ function App() {
         )}
       </nav>
 
-      {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} />}
+      {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
@@ -4832,6 +4843,25 @@ function App() {
 
       {/* Waitlist modal for placeholder catalog items */}
       <WaitlistModal product={waitlistProduct} onClose={() => setWaitlistProduct(null)} />
+
+      {/* Mobile bottom navigation — hidden on desktop. Steps out
+          of the way when the PDP sticky add-to-cart bar is
+          showing, the customer is in checkout, or Lusik is in
+          the admin view (any of those is a focused context that
+          shouldn't compete with shop-level nav). */}
+      {view !== "checkout" && view !== "admin" && !pdpStickyCtaShown && (
+        <MobileBottomNav
+          view={view}
+          cartCount={cart.reduce((n, i) => n + (i.qty || 0), 0)}
+          onHome={() => { setView("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onShop={() => scrollTo("blanket")}
+          onCart={() => setCartOpen(true)}
+          onAccount={() => {
+            if (user) setView("account");
+            else setAuthOpen(true);
+          }}
+        />
+      )}
 
       {/* FOOTER */}
       <footer className="border-t mt-12" style={{ borderColor: "rgba(26,22,18,0.1)", background: "#EFE7D6" }}>
@@ -7148,6 +7178,88 @@ function statusToActiveBarMessage(status) {
   }
 }
 
+// ============================================================
+// MobileBottomNav — sticky-bottom tab bar on phones
+// ============================================================
+// Four-tab nav (Home · Shop · Cart · Account) anchored to the
+// bottom of mobile viewports. Hidden on desktop via lg:hidden
+// (Tailwind). Hidden on mobile when:
+//
+//   - The PDP's sticky add-to-cart bar is showing — they fight
+//     for the same pixels, so the conversion bar wins
+//   - The customer is in the checkout or admin view — both are
+//     focused conversion / operational contexts where wandering
+//     off via nav would be a distraction
+//
+// Respects iOS safe-area-inset-bottom so the bar doesn't sit
+// behind the home-bar gesture indicator on modern iPhones.
+// The cart tab shows a count badge when items are present.
+// ============================================================
+function MobileBottomNav({ view, cartCount, onHome, onShop, onCart, onAccount }) {
+  // Each tab's "active" highlight. Cart is a drawer (not a
+  // view), so it gets the active style when the count > 0 as a
+  // gentler signal that something's in there.
+  const isHome    = view === "home";
+  const isAccount = view === "account" || view === "admin";
+  const itemColor = (active) => ({
+    color: active ? "#1A1612" : "rgba(26,22,18,0.55)",
+    fontWeight: active ? 600 : 500,
+  });
+  const labelCls = "text-[0.55rem] tracking-[0.12em] uppercase mt-1";
+  const btnCls   = "flex-1 flex flex-col items-center justify-center py-2 px-1 transition active:bg-[rgba(26,22,18,0.05)]";
+
+  return (
+    <nav
+      className="lg:hidden fixed bottom-0 inset-x-0 z-30"
+      style={{
+        background: "rgba(245, 239, 227, 0.98)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        borderTop: "1px solid rgba(26,22,18,0.1)",
+        paddingBottom: "env(safe-area-inset-bottom, 0)",
+      }}
+      aria-label="Bottom navigation"
+    >
+      <div className="flex items-stretch">
+        <button onClick={onHome} className={btnCls} aria-label="Home" aria-current={isHome ? "page" : undefined}>
+          <Home size={20} strokeWidth={isHome ? 2 : 1.5} style={itemColor(isHome)} />
+          <span className={labelCls} style={itemColor(isHome)}>Home</span>
+        </button>
+        <button onClick={onShop} className={btnCls} aria-label="Shop">
+          <Store size={20} strokeWidth={1.5} style={itemColor(false)} />
+          <span className={labelCls} style={itemColor(false)}>Shop</span>
+        </button>
+        <button onClick={onCart} className={btnCls} aria-label={`Cart${cartCount > 0 ? ` (${cartCount} item${cartCount === 1 ? "" : "s"})` : ""}`}>
+          <span className="relative">
+            <ShoppingBag size={20} strokeWidth={cartCount > 0 ? 2 : 1.5} style={itemColor(cartCount > 0)} />
+            {cartCount > 0 && (
+              <span
+                className="absolute -top-1.5 -right-2 tabular-nums text-[0.6rem] leading-none flex items-center justify-center"
+                style={{
+                  background: "#B08842",
+                  color: "#F5EFE3",
+                  minWidth: 16,
+                  height: 16,
+                  padding: "0 4px",
+                  borderRadius: 9,
+                  fontWeight: 600,
+                }}
+              >
+                {cartCount}
+              </span>
+            )}
+          </span>
+          <span className={labelCls} style={itemColor(cartCount > 0)}>Cart</span>
+        </button>
+        <button onClick={onAccount} className={btnCls} aria-label="Account" aria-current={isAccount ? "page" : undefined}>
+          <User size={20} strokeWidth={isAccount ? 2 : 1.5} style={itemColor(isAccount)} />
+          <span className={labelCls} style={itemColor(isAccount)}>Account</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 function ActiveOrderTopBar({ user, onOpenAccount }) {
   const t = useT();
   const [activeOrder, setActiveOrder] = useState(null);
@@ -7381,7 +7493,7 @@ function JournalView({ slug, onSelectPost, onBack }) {
 }
 
 // === HOME ===
-function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo, user, onRequireSignIn }) {
+function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo, user, onRequireSignIn, onStickyCtaShown }) {
   const t = useT();
   return (
     <div className="fade-in">
@@ -7435,7 +7547,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
         </div>
       </section>
 
-      <ProductShowcase product={product} onAdd={onAdd} onCartFeedback={onCartFeedback} user={user} onRequireSignIn={onRequireSignIn} />
+      <ProductShowcase product={product} onAdd={onAdd} onCartFeedback={onCartFeedback} user={user} onRequireSignIn={onRequireSignIn} onStickyCtaShown={onStickyCtaShown} />
 
       {/* FROM LUSIK'S WORKSHOP — additional real product photos that aren't
           in the main gallery, showing the range of Lusik's work: different
@@ -8900,7 +9012,7 @@ function CollapsibleSection({ title, open, summary, onExpand, children, mb = "mb
   );
 }
 
-function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn }) {
+function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn, onStickyCtaShown }) {
   const toast = useToast();
   // --- STICKY MOBILE ADD-TO-CART ---
   // Ref on the primary Add-to-cart button. An IntersectionObserver
@@ -8927,13 +9039,23 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
         const entry = entries[0];
         if (!entry) return;
         const stillBelowFold = entry.boundingClientRect.top > window.innerHeight;
-        setIsAddCtaVisible(entry.isIntersecting || stillBelowFold);
+        const visible = entry.isIntersecting || stillBelowFold;
+        setIsAddCtaVisible(visible);
+        // Lift the inverse signal to the parent so the global
+        // mobile bottom-nav can hide while the sticky CTA bar
+        // is occupying the same screen real estate.
+        onStickyCtaShown?.(!visible);
       },
       { threshold: 0 }
     );
     io.observe(el);
-    return () => io.disconnect();
-  }, []);
+    return () => {
+      io.disconnect();
+      // Tell the parent the sticky CTA is no longer relevant when
+      // we unmount (e.g. customer navigated away from the PDP).
+      onStickyCtaShown?.(false);
+    };
+  }, [onStickyCtaShown]);
 
   // Shared add-to-cart for the primary CTA AND the mobile sticky
   // bar. Both pass the rect of whichever button was clicked so the
