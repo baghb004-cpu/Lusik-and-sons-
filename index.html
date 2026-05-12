@@ -1381,7 +1381,7 @@ const TRANSLATIONS = {
       q1: { q: "How long does a blanket take to make?",
             a: "Anywhere from one to three weeks, depending on how many orders are ahead of yours. Lusik works on one blanket at a time. If you need it by a specific date, please tell us at checkout or email — we'll let you know honestly whether we can meet it." },
       q2: { q: "Which letters come on the blanket?",
-            a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The letters are stitched in three separate squares placed diagonally across the blanket. The middle letter sits in the center, with the first and third letters in opposite corners. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
+            a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The alphabet is stitched twice, along two parallel diagonals that run top-left to bottom-right, so six letter-squares appear across the blanket in total — three letters in one diagonal, the same three again in the other. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
       q3: { q: "Which way do the letters run?",
             a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
       q4: { q: "What is the blanket made of?",
@@ -1749,7 +1749,8 @@ const TRANSLATIONS = {
       q1: { q: "Որքա՞ն ժամանակ է տևում ծածկոցի պատրաստումը։",
             a: "Մեկ-երեք շաբաթ, կախված նրանից, թե քանի պատվեր կա ձեր առջևից։ Լուսիկը միաժամանակ աշխատում է մեկ ծածկոցի վրա։ Եթե այն ձեզ անհրաժեշտ է որոշակի օրվա համար, խնդրում ենք գրել պատվեր տալիս կամ էլ. փոստով — մենք ազնվորեն կասենք՝ կարո՞ղ ենք հասցնել։" },
       q2: { q: "Որ տառերն են դրվում ծածկոցի վրա։",
-            a: "Յուրաքանչյուր ծածկոցի վրա երեք տառ կա՝ հայերեն (Ա, Բ, Գ) կամ անգլերեն (A, B, C)։ Տառերը կարկատվում են երեք առանձին վանդակների մեջ, որոնք դասավորված են ծածկոցի անկյունագծով։ Միջին տառը նստում է կենտրոնում, իսկ առաջին ու երրորդը՝ հակառակ անկյուններում։ Դուք ընտրում եք այբուբենը արտադրանքի էջում։ Այլ տառերի կամ հատուկ պատվերների համար գրեք Լուսիկին՝ hello@lusikandsons.com։" },
+            // ⚠️ TODO_LUSIK_REVIEW — auto-translated to match the corrected English; please confirm.
+            a: "Յուրաքանչյուր ծածկոցի վրա երեք տառ կա՝ հայերեն (Ա, Բ, Գ) կամ անգլերեն (A, B, C)։ Այբուբենը կարկատվում է երկու անգամ՝ երկու զուգահեռ անկյունագծերի վրա, որոնք ընթանում են վերին ձախից դեպի ներքին աջ — ընդհանուր առմամբ վեց տառի վանդակ ծածկոցի վրա, երեքը մի անկյունագծի, երեքն էլ՝ մյուսի։ Դուք ընտրում եք այբուբենը արտադրանքի էջում։ Այլ տառերի կամ հատուկ պատվերների համար գրեք Լուսիկին՝ hello@lusikandsons.com։" },
       q3: { q: "Ի՞նչ ուղղությամբ են ընթանում տառերը։",
             // ⚠️ TODO_LUSIK_REVIEW — auto-translated; please confirm with Lusik.
             a: "Վերին ձախից ներքին աջ։ Լուսիկը կարկատում է այբուբենը այդ մեկ անկյունագծի վրա — հակառակ ուղղությունը նա չի առաջարկում։ Միջին տառը միշտ կենտրոնում է։" },
@@ -3817,7 +3818,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Making the blanket",
-          body: "Each blanket has three letters of your chosen alphabet (Armenian Ա, Բ, Գ or English A, B, C), hand cross-stitched in three separate squares placed diagonally across the blanket, top-left to bottom-right. The bib comes in two versions: hand cross-stitched with one of those letters, or machine-embroidered from an image you upload. Because every piece is made by hand, slight variation between blankets is expected and is part of the character of the product."
+          body: "Each blanket has three letters of your chosen alphabet (Armenian Ա, Բ, Գ or English A, B, C), hand cross-stitched along two parallel diagonals that run top-left to bottom-right — six letter-squares in total, with the alphabet repeated once on each diagonal. The bib comes in two versions: hand cross-stitched with one of those letters, or machine-embroidered from an image you upload. Because every piece is made by hand, slight variation between blankets is expected and is part of the character of the product."
         },
         {
           heading: "Shipping",
@@ -4834,7 +4835,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
         <div className="space-y-1">
           {[
             { q: "How long does it take to make my blanket?", a: "Each blanket is made to order. Please allow 5–10 business days before it ships." },
-            { q: "Which letters come on the blanket?", a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The letters are stitched in three separate squares placed diagonally across the blanket. The middle letter sits in the center, with the first and third letters in opposite corners. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
+            { q: "Which letters come on the blanket?", a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The alphabet is stitched twice, along two parallel diagonals that run top-left to bottom-right, so six letter-squares appear across the blanket in total — three letters in one diagonal, the same three again in the other. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
             { q: "Which way do the letters run?", a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
             { q: "How do I tell you which alphabet I picked?", a: "Your choice goes through with the order. If you want anything different, message us on Instagram (@lusikandsons), call or text (760) 874-2333, or reply to your order confirmation email." },
             { q: "Is this safe for babies?", a: "Yes. The blanket is soft acrylic, machine-washable. Gentle cycle, cold water, and lay flat to dry." },
