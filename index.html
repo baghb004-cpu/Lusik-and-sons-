@@ -2655,6 +2655,22 @@ const auth = (() => {
     }
   };
 
+  // Change the password of the currently-signed-in user. GoTrue's
+  // update() endpoint accepts the new password and uses the JWT
+  // for authorization (no current-password challenge). The Identity
+  // session is valid afterwards — no re-login needed.
+  const changePassword = async (newPassword) => {
+    init();
+    const u = get().currentUser();
+    if (!u) return { error: { message: "Not signed in" } };
+    try {
+      await u.update({ password: newPassword });
+      return { error: null };
+    } catch (err) {
+      return { error: { message: err?.message || "Couldn't update password" } };
+    }
+  };
+
   const sendPasswordReset = async (email) => {
     init();
     try {
@@ -2716,7 +2732,7 @@ const auth = (() => {
   };
 
   return {
-    init, signUp, signIn, signOut, sendPasswordReset,
+    init, signUp, signIn, signOut, sendPasswordReset, changePassword,
     getSession, onAuthStateChange, getToken, isAdmin,
     // Expose the raw widget for one-off use cases (e.g. opening the
     // social-login modal). Prefer the named methods above.
@@ -5745,6 +5761,32 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
   const [avatarBusy, setAvatarBusy] = useState(false);
   const avatarInputRef = useRef(null);
 
+  // --- CHANGE PASSWORD ---
+  // Inline expandable form below the profile section. Validates
+  // min-8-chars and matching confirm field before submit
+  // enables. GoTrue's update endpoint uses the existing JWT, so
+  // no re-auth needed afterwards.
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [newPwd, setNewPwd]         = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [showPwd, setShowPwd]       = useState(false);
+  const [pwdBusy, setPwdBusy]       = useState(false);
+  const handleChangePassword = async () => {
+    if (newPwd.length < 8 || newPwd !== confirmPwd) return;
+    setPwdBusy(true);
+    const { error } = await auth.changePassword(newPwd);
+    setPwdBusy(false);
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't update password — please try again." });
+      return;
+    }
+    setChangingPassword(false);
+    setNewPwd("");
+    setConfirmPwd("");
+    setShowPwd(false);
+    toast({ kind: "success", message: "Password updated." });
+  };
+
   // --- ACCOUNT DATA / DELETION ---
   // Self-serve CCPA/CPRA. Export downloads a JSON file with
   // everything we hold; delete asks the customer to type
@@ -5989,9 +6031,89 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
             </div>
           </div>
         ) : (
-          <button onClick={() => setEditing(true)} className="text-xs tracking-[0.2em] uppercase underline opacity-70 hover:opacity-100">
-            Edit profile
-          </button>
+          <div className="flex items-center gap-4 flex-wrap">
+            <button onClick={() => setEditing(true)} className="text-xs tracking-[0.2em] uppercase underline opacity-70 hover:opacity-100">
+              Edit profile
+            </button>
+            <span className="opacity-30">·</span>
+            <button onClick={() => setChangingPassword(true)} className="text-xs tracking-[0.2em] uppercase underline opacity-70 hover:opacity-100">
+              Change password
+            </button>
+          </div>
+        )}
+
+        {/* CHANGE PASSWORD FORM — only renders when the customer
+            taps "Change password" above. Validates min 8 chars +
+            both-fields-match before enabling the submit button.
+            On success, the form collapses and a toast confirms. */}
+        {changingPassword && (
+          <div className="mt-6 p-4 max-w-md" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <p className="text-[0.65rem] tracking-[0.25em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>Change password</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[0.6rem] tracking-[0.2em] uppercase opacity-70 block mb-1.5">New password</label>
+                <div className="relative">
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    value={newPwd}
+                    onChange={(e) => setNewPwd(e.target.value)}
+                    className={inputCls}
+                    style={{ ...inputStyle, paddingRight: "2.5rem" }}
+                    autoComplete="new-password"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 opacity-50 hover:opacity-90"
+                    aria-label={showPwd ? "Hide password" : "Show password"}
+                  >
+                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-[0.6rem] tracking-[0.2em] uppercase opacity-70 block mb-1.5">Confirm new password</label>
+                <input
+                  type={showPwd ? "text" : "password"}
+                  value={confirmPwd}
+                  onChange={(e) => setConfirmPwd(e.target.value)}
+                  className={inputCls}
+                  style={inputStyle}
+                  autoComplete="new-password"
+                />
+                {newPwd && confirmPwd && newPwd !== confirmPwd && (
+                  <p className="text-[0.65rem] mt-1.5" style={{ color: "#8B2C2C" }}>Passwords don't match.</p>
+                )}
+                {newPwd && newPwd.length < 8 && (
+                  <p className="text-[0.65rem] mt-1.5 opacity-65">At least 8 characters.</p>
+                )}
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwdBusy || newPwd.length < 8 || newPwd !== confirmPwd}
+                  className="px-5 py-2 text-xs tracking-[0.2em] uppercase"
+                  style={{
+                    background: (pwdBusy || newPwd.length < 8 || newPwd !== confirmPwd) ? "rgba(26,22,18,0.35)" : "#1A1612",
+                    color: "#F5EFE3",
+                    fontWeight: 500,
+                    cursor: (pwdBusy || newPwd.length < 8 || newPwd !== confirmPwd) ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {pwdBusy ? "Updating…" : "Update password"}
+                </button>
+                <button
+                  onClick={() => { setChangingPassword(false); setNewPwd(""); setConfirmPwd(""); setShowPwd(false); }}
+                  disabled={pwdBusy}
+                  className="px-5 py-2 text-xs tracking-[0.2em] uppercase"
+                  style={{ border: "1px solid rgba(26,22,18,0.2)" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {profileMsg.text && (
@@ -10494,14 +10616,96 @@ function Confirmation({ orderNumber, onHome }) {
   );
 }
 
+// ============================================================
+// ErrorBoundary — catches uncaught React errors so a stray bug
+// doesn't crash to a blank white screen
+// ============================================================
+// React error boundaries have to be class components (Hooks
+// don't yet support the getDerivedStateFromError / componentDidCatch
+// lifecycle). We catch the error, log it, and render a friendly
+// fallback that lets the customer either reload, return home,
+// or email us with what they were doing.
+//
+// Wraps the LanguageProvider so even a crash inside the i18n
+// layer still falls back to the English-only error screen.
+// ============================================================
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, info) {
+    // Best-effort: log to console so anyone with devtools open can
+    // file a useful bug report. Future: ship this to a logging
+    // service if/when one is configured.
+    console.error("[ErrorBoundary]", error, info?.componentStack);
+  }
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2rem 1.5rem",
+        background: "#F5EFE3",
+        color: "#1A1612",
+        fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
+        lineHeight: 1.5,
+        textAlign: "center",
+      }}>
+        <div style={{ maxWidth: 480 }}>
+          <p style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 500, fontSize: "0.85rem", letterSpacing: "0.05em", opacity: 0.55, marginBottom: "2rem" }}>
+            Lusik <span style={{ color: "#B08842" }}>&amp;</span> Sons
+          </p>
+          <p style={{ fontSize: "0.7rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#B08842", margin: "0 0 1rem", fontWeight: 600 }}>
+            Something went wrong
+          </p>
+          <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 400, fontSize: "3rem", margin: "0 0 1rem", letterSpacing: "-0.02em", lineHeight: 1 }}>
+            We hit a snag.
+          </h1>
+          <p style={{ fontSize: "1rem", opacity: 0.78, margin: "0 0 1.5rem" }}>
+            The page ran into an unexpected error. The site is still here — just this one tab needs a refresh.
+          </p>
+          <div style={{ display: "flex", gap: "0.6rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "2rem" }}>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ padding: "0.75rem 1.25rem", background: "#1A1612", color: "#F5EFE3", border: "none", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, cursor: "pointer" }}
+            >
+              Reload the page
+            </button>
+            <button
+              onClick={() => window.location.assign("/")}
+              style={{ padding: "0.75rem 1.25rem", background: "transparent", color: "#1A1612", border: "1px solid rgba(26,22,18,0.25)", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, cursor: "pointer" }}
+            >
+              Back home
+            </button>
+          </div>
+          <p style={{ fontSize: "0.78rem", opacity: 0.6, margin: 0 }}>
+            Still stuck? Email{" "}
+            <a href="mailto:hello@lusikandsons.com?subject=Site error" style={{ color: "#1A1612", textDecoration: "underline" }}>hello@lusikandsons.com</a>
+            {" "}— tell us what you were doing and we'll figure it out. Lusik or one of her sons writes back, usually within a day.
+          </p>
+        </div>
+      </div>
+    );
+  }
+}
+
 // === MOUNT ===
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <LanguageProvider>
-    <ToastProvider>
-      <App />
-    </ToastProvider>
-  </LanguageProvider>
+  <ErrorBoundary>
+    <LanguageProvider>
+      <ToastProvider>
+        <App />
+      </ToastProvider>
+    </LanguageProvider>
+  </ErrorBoundary>
 );
 setTimeout(() => document.getElementById("loading")?.classList.add("hide"), 300);
 </script>
