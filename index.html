@@ -2808,6 +2808,34 @@ const db = (() => {
     return { error };
   };
 
+  // --- ACCOUNT (data export + deletion) ---
+  // CCPA/CPRA + GDPR "right to portability" and "right to
+  // erasure". The export downloads a JSON file with everything
+  // we have about the customer; delete tears the account down
+  // and removes the Identity user. Past orders are preserved
+  // anonymized (user_id nulled) for tax retention.
+  const exportAccountData = async () => {
+    const token = await auth.getToken();
+    if (!token) return { blob: null, error: { message: "Not signed in" } };
+    try {
+      const res = await fetch(`${CONFIG.FN_BASE}/account-export`, {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        return { blob: null, error: { message: body?.error || `HTTP ${res.status}` } };
+      }
+      const blob = await res.blob();
+      return { blob, error: null };
+    } catch (err) {
+      return { blob: null, error: { message: err?.message || "Network error" } };
+    }
+  };
+  const deleteAccount = async (confirm) => {
+    const { error } = await call("/account-delete", { method: "POST", body: { confirm } });
+    return { error };
+  };
+
   // --- ADMIN ---
   // Lusik-only endpoints. These will 403 for any non-admin user
   // even if they reach the wrapper, but the UI gates them too.
@@ -2873,6 +2901,7 @@ const db = (() => {
     listOrders, linkGuestOrders,
     listSavedDesigns, saveDesign, deleteSavedDesign,
     adminListOrders, adminGetOrder, adminUpdateOrder, adminUploadOrderPhoto,
+    exportAccountData, deleteAccount,
   };
 })();
 
@@ -4196,6 +4225,16 @@ function App() {
       url.searchParams.delete("order");
       window.history.replaceState({}, "", url.toString());
     }
+    // Post-account-deletion redirect target. The deletion
+    // endpoint returns OK + the AccountView does a hard reload
+    // to /?account=deleted, which lands us here. We toast and
+    // strip the param so a refresh doesn't re-toast.
+    if (params.get("account") === "deleted") {
+      toast({ kind: "success", message: "Your account has been deleted. Thank you for trying us." });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("account");
+      window.history.replaceState({}, "", url.toString());
+    }
   }, [user]);
 
   // --- JOURNAL ROUTING (history API) ---
@@ -5240,7 +5279,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "How long we keep it",
-          body: "Order records are kept indefinitely for tax and warranty purposes. Account profiles are kept as long as you have an account. If you'd like your account deleted, email hello@lusikandsons.com and we'll remove it within 30 days, retaining only the minimum order records required by California law."
+          body: "Order records are kept indefinitely for tax and warranty purposes. Account profiles are kept as long as you have an account. You can delete your account yourself from the bottom of your account page — your profile, saved addresses, saved designs, avatar, and sign-in are removed immediately. Past order records stay (we have to keep them for taxes) but they're anonymized: your user account is unlinked from them. You can also download everything we have about you from the same page. If you'd rather have a human handle it, email hello@lusikandsons.com and we'll remove your account within 30 days."
         },
         {
           heading: "Cookies and tracking",
@@ -5256,7 +5295,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Your California rights",
-          body: "If you are a California resident, you have specific rights under the California Consumer Privacy Act (CCPA) and its 2023 amendments (CPRA): the right to know what personal information we have collected about you, the right to access a copy of it, the right to correct inaccuracies, the right to delete it (subject to the order-record retention noted above), and the right to opt out of the sale or sharing of your personal information. We do not sell your information and we do not share it with advertisers, so the opt-out is, in our case, the default state for every customer. To exercise any of these rights, email hello@lusikandsons.com from the address associated with your account or order. We do not discriminate against customers who exercise their privacy rights — your order is fulfilled the same way either way."
+          body: "If you are a California resident, you have specific rights under the California Consumer Privacy Act (CCPA) and its 2023 amendments (CPRA): the right to know what personal information we have collected about you, the right to access a copy of it, the right to correct inaccuracies, the right to delete it (subject to the order-record retention noted above), and the right to opt out of the sale or sharing of your personal information. We do not sell your information and we do not share it with advertisers, so the opt-out is, in our case, the default state for every customer. The first two rights are self-serve: in your account page, the \"Download my data\" button gives you a JSON export of everything we hold, and \"Delete my account\" tears it down. To exercise the others, email hello@lusikandsons.com from the address associated with your account or order. We do not discriminate against customers who exercise their privacy rights — your order is fulfilled the same way either way."
         },
         {
           heading: "Questions",
@@ -5676,6 +5715,49 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
   const [avatarBusy, setAvatarBusy] = useState(false);
   const avatarInputRef = useRef(null);
 
+  // --- ACCOUNT DATA / DELETION ---
+  // Self-serve CCPA/CPRA. Export downloads a JSON file with
+  // everything we hold; delete asks the customer to type
+  // "DELETE" in a modal before tearing the account down.
+  const [exportBusy, setExportBusy]   = useState(false);
+  const [deleteOpen, setDeleteOpen]   = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteBusy, setDeleteBusy]   = useState(false);
+
+  const handleExportData = async () => {
+    setExportBusy(true);
+    const { blob, error } = await db.exportAccountData();
+    setExportBusy(false);
+    if (error || !blob) {
+      toast({ kind: "error", message: error?.message || "Couldn't export — please try again." });
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement("a");
+    a.href = url;
+    a.download = `lusikandsons-data-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ kind: "success", message: "Your data has been downloaded." });
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== "DELETE") return;
+    setDeleteBusy(true);
+    const { error } = await db.deleteAccount("DELETE");
+    if (error) {
+      setDeleteBusy(false);
+      toast({ kind: "error", message: error.message || "Couldn't delete your account — please try again or email hello@lusikandsons.com." });
+      return;
+    }
+    // Hard reload to /?account=deleted. App.useEffect catches
+    // the query param + toasts. The reload also clears any
+    // stale in-memory Identity state since the user is gone.
+    window.location.assign("/?account=deleted");
+  };
+
   const [addresses, setAddresses] = useState([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [addingAddress, setAddingAddress] = useState(false);
@@ -5991,7 +6073,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
       {/* SIGN OUT + ADMIN — bottom of the page so it doesn't compete
           with the customer's normal account actions. Admin link is
           rendered only when the Identity user has the role. */}
-      <div className="flex items-center justify-between gap-6 flex-wrap">
+      <div className="flex items-center justify-between gap-6 flex-wrap mb-16">
         <button
           onClick={onSignOut}
           className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2"
@@ -6008,6 +6090,92 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
           </button>
         )}
       </div>
+
+      {/* YOUR DATA — CCPA/CPRA self-serve actions. Visually
+          quiet (small monospace-feeling type, no headings
+          competing with the rest of the page) but actually
+          present, which is a real differentiator from template
+          sites that bury these rights in fine print. */}
+      <section className="pt-10" style={{ borderTop: "1px solid rgba(26,22,18,0.1)" }}>
+        <h2 className="text-xs tracking-[0.3em] uppercase mb-3 opacity-50">Your data</h2>
+        <p className="text-xs opacity-65 leading-relaxed mb-5 max-w-md">
+          You can download everything we have about you, or delete your account entirely. Past orders are kept anonymized for tax records (we have to) but your name, address, saved designs, and account are removed.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={handleExportData}
+            disabled={exportBusy}
+            className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:opacity-80 disabled:opacity-40"
+            style={{ border: "1px solid rgba(26,22,18,0.2)", color: "#1A1612", fontWeight: 500 }}
+          >
+            {exportBusy ? "Preparing…" : "↓ Download my data"}
+          </button>
+          <button
+            onClick={() => { setDeleteConfirm(""); setDeleteOpen(true); }}
+            className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:bg-[rgba(139,44,44,0.06)]"
+            style={{ border: "1px solid rgba(139,44,44,0.4)", color: "#8B2C2C", fontWeight: 500 }}
+          >
+            Delete my account
+          </button>
+        </div>
+      </section>
+
+      {/* DELETE-CONFIRMATION MODAL. Inline, not extracted, so it
+          stays close to its triggering button + state. Type
+          "DELETE" to enable the delete button — a basic
+          confirmation gate that mirrors the server-side
+          requirement. */}
+      {deleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => !deleteBusy && setDeleteOpen(false)} role="dialog" aria-modal="true" aria-label="Confirm account deletion">
+          <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.55)" }} />
+          <div className="relative w-full max-w-md fade-in p-6 lg:p-8" style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.15)" }} onClick={(e) => e.stopPropagation()}>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#8B2C2C", fontWeight: 600 }}>This can't be undone</p>
+            <h3 className="font-display text-2xl lg:text-3xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+              Delete your account?
+            </h3>
+            <div className="text-sm opacity-80 leading-relaxed mb-5 space-y-3">
+              <p><strong>Removed:</strong> your profile, saved addresses, saved designs, avatar, saved cart, and your Identity sign-in. You won't be able to sign in again with this email.</p>
+              <p><strong>Kept:</strong> past orders, anonymized — they're kept for tax purposes, but your name and the user-account link are removed. Lusik's internal notes about past orders aren't auto-scrubbed; email hello@lusikandsons.com if you'd like those too.</p>
+            </div>
+            <label className="block mb-1.5">
+              <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70">Type <span style={{ fontFamily: "monospace", letterSpacing: 0, color: "#8B2C2C", fontWeight: 600 }}>DELETE</span> to confirm</span>
+            </label>
+            <input
+              type="text"
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              autoFocus
+              disabled={deleteBusy}
+              className="w-full px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(139,44,44,0.3)] mb-5"
+              style={{ border: "1px solid rgba(26,22,18,0.2)", fontFamily: "monospace", letterSpacing: "0.1em" }}
+              aria-label="Confirmation phrase"
+            />
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setDeleteOpen(false)}
+                disabled={deleteBusy}
+                className="px-4 py-2 text-[0.65rem] tracking-[0.2em] uppercase opacity-70 hover:opacity-100 transition"
+                style={{ fontWeight: 500 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirm !== "DELETE" || deleteBusy}
+                className="px-5 py-2.5 text-[0.65rem] tracking-[0.2em] uppercase transition"
+                style={{
+                  background: (deleteConfirm !== "DELETE" || deleteBusy) ? "rgba(139,44,44,0.35)" : "#8B2C2C",
+                  color: "#F5EFE3",
+                  fontWeight: 500,
+                  cursor: (deleteConfirm !== "DELETE" || deleteBusy) ? "not-allowed" : "pointer",
+                }}
+              >
+                {deleteBusy ? "Deleting…" : "Delete account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
