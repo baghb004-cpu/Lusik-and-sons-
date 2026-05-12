@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Lusik & Sons sitemap.
+  Served from the repo root and referenced in robots.txt.
+
+  When you add a new journal post:
+    1. Add a new <url> block below, copying the format of the
+       existing journal entries.
+    2. Set <lastmod> to today's date in YYYY-MM-DD.
+    3. Commit + push; the next deploy makes the new URL crawlable.
+
+  The product page lives at the root (/) — anchor sections like
+  #blanket, #faq are NOT listed separately because they're not
+  distinct documents and Google handles in-page anchors via
+  the structured-data BreadcrumbList in the HTML head.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://lusikandsons.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <url>
+    <loc>https://lusikandsons.com/journal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://lusikandsons.com/journal/armenian-alphabet-gift</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://lusikandsons.com/journal/why-cross-stitch</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://lusikandsons.com/journal/pomegranate-in-textiles</loc>
+    <lastmod>2026-04-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>

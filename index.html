@@ -4198,33 +4198,108 @@ function App() {
     }
   }, [user]);
 
-  // --- JOURNAL HASH ROUTING ---
-  // Each journal post lives at #journal/<slug>. The list view is
-  // just #journal. Two-way sync: (1) on mount and on popstate
-  // (back/forward), parse the hash into view + slug; (2) on
-  // every slug change inside the journal view, mirror back to
-  // the hash. This gives posts a copy-pasteable URL even though
-  // we don't have real per-page routing yet.
+  // --- JOURNAL ROUTING (history API) ---
+  // Real URLs, not hash fragments: the list lives at `/journal`,
+  // each post at `/journal/<slug>`. Netlify's SPA fallback in
+  // netlify.toml rewrites both paths to index.html so the React
+  // app handles them in the browser. Two-way sync: (1) on mount
+  // and on popstate (back/forward), parse the pathname into view
+  // + slug; (2) on every internal navigation inside the journal,
+  // push a new history entry so back works the way customers
+  // expect.
+  //
+  // Backward compatibility: any shared `#journal/<slug>` URL
+  // hash from before this commit gets silently rewritten to the
+  // clean pathname on first load.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const applyFromHash = () => {
-      const m = window.location.hash.match(/^#journal(?:\/([\w-]+))?/);
-      if (!m) return;
-      setView("journal");
-      setJournalSlug(m[1] ?? null);
+    const applyFromUrl = () => {
+      // Pathname first — the real source of truth post-deploy.
+      const m = window.location.pathname.match(/^\/journal(?:\/([\w-]+))?\/?$/);
+      if (m) {
+        setView("journal");
+        setJournalSlug(m[1] ?? null);
+        return;
+      }
+      // Hash fallback for legacy shared links.
+      const h = window.location.hash.match(/^#journal(?:\/([\w-]+))?/);
+      if (h) {
+        const slug = h[1] ?? null;
+        const newPath = slug ? `/journal/${slug}` : "/journal";
+        window.history.replaceState({}, "", newPath);
+        setView("journal");
+        setJournalSlug(slug);
+      }
     };
-    applyFromHash();
-    window.addEventListener("popstate", applyFromHash);
-    return () => window.removeEventListener("popstate", applyFromHash);
+    applyFromUrl();
+    window.addEventListener("popstate", applyFromUrl);
+    return () => window.removeEventListener("popstate", applyFromUrl);
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (view !== "journal") return;
-    const next = journalSlug ? `#journal/${journalSlug}` : "#journal";
-    if (window.location.hash !== next) {
-      window.history.replaceState({}, "", window.location.pathname + window.location.search + next);
+    const next = journalSlug ? `/journal/${journalSlug}` : "/journal";
+    if (window.location.pathname !== next) {
+      // pushState (not replaceState) so the browser back button
+      // walks the customer through their own navigation history:
+      // post → list → wherever they came from. The exception is
+      // the initial pop-from-URL on mount, which uses
+      // replaceState above (so the bookmark URL isn't doubled).
+      window.history.pushState({}, "", next);
     }
+  }, [view, journalSlug]);
+
+  // When the customer leaves the journal entirely (e.g. clicks
+  // "Back to the shop"), restore the root path so the URL bar
+  // doesn't lie about where they are.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (view === "journal") return;
+    if (window.location.pathname.startsWith("/journal")) {
+      window.history.pushState({}, "", "/");
+    }
+  }, [view]);
+
+  // --- DOCUMENT TITLE + CANONICAL per route ---
+  // Without these, every URL on the site reports the same <title>
+  // and the same canonical link, so Google treats individual
+  // journal posts as duplicates of the home page. Updating both
+  // per route is what makes posts indexable as standalone pages.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const BRAND = "Lusik & Sons";
+    let title = `${BRAND} — Hand-Embroidered Armenian Alphabet Blankets | Cypress, CA`;
+    let canonical = "https://lusikandsons.com/";
+    if (view === "journal") {
+      if (journalSlug) {
+        const post = JOURNAL_POSTS.find((p) => p.slug === journalSlug);
+        if (post) {
+          title     = `${post.title} · ${BRAND}`;
+          canonical = `https://lusikandsons.com/journal/${journalSlug}`;
+        } else {
+          title     = `The Journal · ${BRAND}`;
+          canonical = "https://lusikandsons.com/journal";
+        }
+      } else {
+        title     = `The Journal · ${BRAND}`;
+        canonical = "https://lusikandsons.com/journal";
+      }
+    } else if (view === "account") {
+      title = `Your account · ${BRAND}`;
+    } else if (view === "admin") {
+      title = `Admin · ${BRAND}`;
+    } else if (view === "checkout") {
+      title = `Checkout · ${BRAND}`;
+    }
+    document.title = title;
+    let link = document.querySelector("link[rel='canonical']");
+    if (!link) {
+      link = document.createElement("link");
+      link.setAttribute("rel", "canonical");
+      document.head.appendChild(link);
+    }
+    link.setAttribute("href", canonical);
   }, [view, journalSlug]);
 
   // --- DEBOUNCED CART SYNC TO DB (logged-in users only) ---
@@ -6870,7 +6945,7 @@ function JournalPostView({ post, onBack, onSelectPost }) {
   // in <head> or anywhere in the body, so we render it here
   // inline. Includes the canonical URL, author (the brand), and
   // publish date.
-  const canonicalUrl = `https://lusikandsons.com/#journal/${post.slug}`;
+  const canonicalUrl = `https://lusikandsons.com/journal/${post.slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type":    "BlogPosting",

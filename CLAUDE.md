@@ -114,10 +114,16 @@ The composer lives in `netlify/functions/_lib/email.mjs`. To extend (e.g. add a 
 
 A small in-file mini-blog at `view === "journal"`, with three starter posts about Armenian craft heritage (the alphabet, cross-stitch as a technique, the pomegranate in textiles). The posts are intentionally *cultural*, not biographical — they make claims about Armenian history that are well-attested rather than claims about Lusik personally that would need her sign-off.
 
-- Post data: the `JOURNAL_POSTS` array near the SHIPPING_CARRIERS constant (~line 1455). Each entry has `slug`, `title`, `excerpt`, `publishedAt`, `readMinutes`, and a `content` array of typed nodes (`p`, `h2`, `blockquote`). Adding a new post = prepending an entry. **Don't change a slug** once a post is shared — old URLs would 404.
+- Post data: the `JOURNAL_POSTS` array near the SHIPPING_CARRIERS constant (~line 1455). Each entry has `slug`, `title`, `excerpt`, `publishedAt`, `readMinutes`, and a `content` array of typed nodes (`p`, `h2`, `blockquote`). Adding a new post = prepending an entry **AND** adding a `<url>` block to `sitemap.xml` at the repo root. **Don't change a slug** once a post is shared — old URLs would 404.
 - Components: `JournalListView` (index), `JournalPostView` (single post with inline `BlogPosting` JSON-LD for Google), and the parent `JournalView` that swaps between them.
-- Routing: the App holds `journalSlug` state synced two-ways with the URL hash (`#journal` for the list, `#journal/<slug>` for a post). Back/forward buttons work; copy-paste of an article URL hydrates correctly. (Future polish: switch to full history-API routing once a Netlify `_redirects` SPA fallback is in place.)
+- Routing: real history-API URLs (`/journal` for the list, `/journal/<slug>` for a post). Netlify's `[[redirects]]` block in `netlify.toml` serves index.html for any `/journal*` path so direct visits and shared links work. Two effects in `App` keep the URL in sync with state both ways: on mount + popstate, pathname → state; on internal navigation, state → `pushState`. Legacy `#journal/<slug>` hash URLs from before the routing change get silently rewritten to clean pathnames on first load.
+- Per-route `<title>` and `<link rel="canonical">` are set via DOM manipulation when `view` or `journalSlug` changes, so each journal post is indexed as its own page rather than being collapsed into the home page by a static canonical.
 - All three posts carry the `TODO_LUSIK_REVIEW` marker — Lusik should read each one and tell us if anything needs adjusting. She can also send a personal anecdote for any of them, which we'd splice in as a section.
+
+### SEO infrastructure
+
+- `sitemap.xml` at the repo root lists the home page, the journal index, and every journal post with its `<lastmod>`. Update it when you add a new post — there's a comment at the top of the file walking through what to change.
+- `robots.txt` at the repo root tells crawlers everything is allowed except the `/.netlify/` namespace, and points at the sitemap. Both files are static and served directly by Netlify with no special config needed (they live alongside `index.html` at the repo root).
 
 ### Admin view + roles
 

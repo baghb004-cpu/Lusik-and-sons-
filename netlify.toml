@@ -31,5 +31,26 @@
   to     = "/.netlify/functions/stripe-webhook"
   status = 200
 
+# SPA fallback for the journal — `/journal` and `/journal/<slug>`
+# need to serve index.html so the React app can handle them in
+# the browser. Without this, Netlify would 404 on direct visits
+# to a post URL (e.g. someone clicking a shared link). The 200
+# status is the "rewrite" form — the browser keeps the original
+# URL in the bar while the static file is served, which is what
+# we want for SEO + JS routing.
+#
+# Scoped to /journal specifically (not a catch-all /*) so any
+# typo'd URL still 404s properly and search engines learn it's
+# a dead page.
+[[redirects]]
+  from   = "/journal"
+  to     = "/index.html"
+  status = 200
+
+[[redirects]]
+  from   = "/journal/*"
+  to     = "/index.html"
+  status = 200
+
 # Don't redirect /index.html or static files — the default behavior already
 # serves them correctly from `publish`.

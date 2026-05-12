@@ -1,0 +1,22 @@
+# ============================================================
+# Lusik & Sons — robots.txt
+# ============================================================
+# Tells well-behaved crawlers (Google, Bing, DuckDuckGo) what
+# they can crawl + where the sitemap lives.
+#
+# We allow everything by default — there's no admin section
+# the public knows the URL to, no staging area, no internal
+# pages we need to hide. The Netlify Functions live under
+# /.netlify/functions/ which crawlers don't try to index
+# anyway since they're not linked from any HTML.
+# ============================================================
+
+User-agent: *
+Allow: /
+
+# Disallow the Netlify Functions namespace just to be explicit.
+# Crawlers wouldn't index function endpoints regardless (they
+# return JSON, not HTML), but stating it removes any ambiguity.
+Disallow: /.netlify/
+
+Sitemap: https://lusikandsons.com/sitemap.xml
