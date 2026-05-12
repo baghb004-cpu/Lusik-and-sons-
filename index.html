@@ -7381,39 +7381,52 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     };
   });
 
-  // Optional customer text — placed in the CENTER COLUMN of the grid, stacked
-  // vertically. This matches the real "OLEN / 2026" blanket photo where the
-  // optional text sits in the empty waffle squares between the alphabet
-  // cubes, in a single center column. Line 2 (typically the year) appears
-  // ABOVE Line 1 (typically the name) — matching the photo's "2026 / OLEN"
-  // top-to-bottom order. Text is rendered WITHOUT a cube outline since the
-  // real product stitches the name/year directly onto the waffle weave, not
+  // Optional customer text — placed on the MIDDLE PARALLEL DIAGONAL
+  // that runs equidistant between the two alphabet diagonals. This
+  // matches the real "OLEN / 2026" blanket photo:
+  //
+  //   Alphabet diagonal positions (current `double_diag_br` layout):
+  //     Row 0: . A . . .
+  //     Row 1: . . B . .
+  //     Row 2: . A . C .   ← lower-A at col 1, upper-C at col 3
+  //     Row 3: . . B . .
+  //     Row 4: . . . C .
+  //
+  //   The cells (1,1), (2,2), (3,3) all lie on a third diagonal that
+  //   bisects the two alphabet diagonals — every cell on it is
+  //   exactly one cell away from both diagonals. That's where Lusik
+  //   actually stitches the optional name + year, with the name in
+  //   the geometric center (2,2) and the year on the cell above
+  //   (1,1). The result: personalization parallels the alphabet
+  //   rhythm rather than running down a stiff central column.
+  //
+  // Cell positions used (5×5, pos = row*5 + col):
+  //   Year anchor: (1,1) → position 6
+  //   Name anchor: (2,2) → position 12         ← true center of the blanket
+  //   Reserve:     (3,3) → position 18         ← fallback if a future
+  //                                              layout occupies one of the
+  //                                              above
+  //
+  // Text is rendered WITHOUT a cube outline since the real product
+  // stitches the name/year directly onto the waffle weave, not
   // inside an alphabet cube frame.
-  //
-  // Cell positions in the 5×5 grid (column 2 = center column):
-  //   Row 0, col 2: position 2  (above center — line 2 / year)
-  //   Row 2, col 2: position 12 (dead center — line 1 / name)
-  //   Row 4, col 2: position 22 (below center — fallback if both rows used)
-  //
-  // We only place text in cells that aren't already occupied by alphabet
-  // cubes, so the placement is layout-agnostic: if a future layout uses pos 2,
-  // we'd fall back to pos 22 etc. For the current `double_diag_br` layout
-  // (cubes at [1, 7, 13, 11, 17, 23]) all three center-column positions are
-  // free, giving us flexible placement.
   const line1Trim = (customLine1 ?? "").trim();
   const line2Trim = (customLine2 ?? "").trim();
 
-  // Find available center-column cells in vertical order (top to bottom).
-  const centerColumnPositions = [2, 12, 22];
-  const availableCenterCells = centerColumnPositions.filter(pos => cells[pos] === null);
+  // The middle diagonal in order from top-left to bottom-right.
+  // Filtering by empty-cell makes this layout-agnostic: if a future
+  // layout uses (1,1) for a letter, we'd skip to (2,2) etc.
+  const middleDiagonalPositions = [6, 12, 18];
+  const availableMidline = middleDiagonalPositions.filter(pos => cells[pos] === null);
 
-  // Anchor the year to the TOP available center cell and the name to the
-  // cell directly BELOW it — matches the OLEN/2026 photo (year above, name
-  // below). Doing it by anchor rather than by "first two available" keeps the
-  // placeholder hints in the same slot whether the customer has typed one,
-  // both, or neither line, so the preview doesn't shuffle as they type.
-  const yearAnchor = availableCenterCells[0] ?? null;                                 // top center
-  const nameAnchor = availableCenterCells.find(pos => pos > (yearAnchor ?? -1)) ?? null; // next center cell down
+  // Anchor the year to the TOP available midline cell and the name to
+  // the cell directly BELOW it — matches the OLEN/2026 photo (year
+  // above, name below). Doing it by anchor rather than by "first two
+  // available" keeps the placeholder hints in the same slot whether
+  // the customer has typed one, both, or neither line, so the
+  // preview doesn't shuffle as they type.
+  const yearAnchor = availableMidline[0] ?? null;
+  const nameAnchor = availableMidline.find(pos => pos > (yearAnchor ?? -1)) ?? null;
 
   if (yearAnchor !== null) {
     if (line2Trim.length > 0) {
@@ -8414,22 +8427,26 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
             </div>
 
             {/* Real-blanket reference — the OLEN / 2026 photo proves the
-                placement the caption describes (year above, name below, both
-                in the empty center column of waffle squares). Keeping the
-                image small (96px wide) keeps the focus on the inputs above
-                rather than dominating the section. */}
+                placement the caption describes: the name sits in the
+                geometric center of the blanket, with the year on the
+                empty waffle square diagonally above and to the left.
+                Both squares lie on the line that runs equidistant
+                between Lusik's two alphabet diagonals, so the
+                personalization rhythms with the rest of the design.
+                Keeping the image small (96px wide) keeps the focus on
+                the inputs above rather than dominating the section. */}
             <div className="mt-4 flex items-start gap-3 p-3" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.18)" }}>
               <div className="w-24 h-24 lg:w-28 lg:h-28 flex-shrink-0 overflow-hidden" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
                 <img
                   src={PHOTO_DATE_DETAIL}
-                  alt="Real example — a recent blanket with OLEN stitched below the year 2026, both in the center column of empty waffle squares"
+                  alt="Real example — OLEN stitched at the center of the blanket with 2026 on the empty waffle square diagonally above, on the middle line between the two alphabet diagonals"
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1" style={{ color: "#B08842" }}>Real example</p>
                 <p className="text-[0.7rem] opacity-75 leading-snug italic">
-                  Lusik stitches the optional text in the center column of empty waffle squares — name below, year above — like the <span style={{ fontStyle: "normal", fontFamily: "Fraunces, serif", fontWeight: 500 }}>OLEN / 2026</span> blanket shown here. Final placement may shift slightly depending on the specific text length.
+                  Lusik stitches the name in the center of the blanket and the year on the empty square diagonally above — on the line that runs between the two alphabet diagonals — like the <span style={{ fontStyle: "normal", fontFamily: "Fraunces, serif", fontWeight: 500 }}>OLEN / 2026</span> blanket shown here. Final placement may shift slightly depending on the specific text length.
                 </p>
               </div>
             </div>
