@@ -1365,8 +1365,8 @@ const TRANSLATIONS = {
             a: "Gentle machine wash on cold, lay flat to dry. Don't tumble dry — heat can shrink the stitching." },
       q6: { q: "Do you ship internationally?",
             a: "Not yet. Right now we ship only within the United States. We'll add more countries as the business grows." },
-      q7: { q: "Can I return it?",
-            a: "Because each blanket is made specifically for you, we can't accept returns for change of mind. If there's a defect or shipping damage, please email us within 7 days and we'll make it right." },
+      q7: { q: "Is this a final sale?",
+            a: "Yes — every blanket and bib is made specifically for you, so all sales are final. We don't accept exchanges, refunds, or returns once an order is placed. Please use the live preview to confirm your alphabet, colors, and any name or year before checking out. If anything is unclear, email or text us before you buy and we'll talk it through. If your item arrives damaged in transit or has a clear defect, we stand behind the work — email us within 14 days with photos and Lusik will repair or remake it." },
     },
 
     // Shipping section
@@ -1404,7 +1404,7 @@ const TRANSLATIONS = {
       help: "Help & Policies",
       findUs: "Find Us",
       shippingTracking: "Shipping & Tracking",
-      refundPolicy: "Refund Policy",
+      finalSalePolicy: "Final Sale Policy",
       privacyPolicy: "Privacy Policy",
       termsOfService: "Terms of Service",
       contactUs: "Contact Us",
@@ -1584,7 +1584,7 @@ const TRANSLATIONS = {
       help: "Օգնութիւն եւ կանոններ",
       findUs: "Մեզ գտնել",
       shippingTracking: "Առաքում եւ հետեւում",
-      refundPolicy: "Վերադարձի կանոն",
+      finalSalePolicy: "Վերջնական վաճառքի կանոն",
       privacyPolicy: "Գաղտնիութեան կանոն",
       termsOfService: "Ծառայութեան պայմաններ",
       contactUs: "Կապուիլ մեզի",
@@ -1771,7 +1771,7 @@ const TRANSLATIONS = {
       help: "Օգնություն և կանոններ",
       findUs: "Մեզ գտնել",
       shippingTracking: "Առաքում և հետևում",
-      refundPolicy: "Վերադարձի կանոն",
+      finalSalePolicy: "Վերջնական վաճառքի կանոն",
       privacyPolicy: "Գաղտնիության կանոն",
       termsOfService: "Ծառայության պայմաններ",
       contactUs: "Կապվել մեզ հետ",
@@ -2731,10 +2731,10 @@ function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false); // sign-in/sign-up drawer
-  const [policyOpen, setPolicyOpen] = useState(null); // null | "privacy" | "terms" | "refunds"
+  const [policyOpen, setPolicyOpen] = useState(null); // null | "privacy" | "terms" | "finalSale"
 
   // Listen for cross-policy link clicks inside the modal (e.g. clicking
-  // "Refund Policy" from the bottom of "Privacy Policy"). The modal fires
+  // "Final Sale Policy" from the bottom of "Privacy Policy"). The modal fires
   // a CustomEvent because it doesn't have a direct setter handle.
   useEffect(() => {
     const handler = (e) => setPolicyOpen(e.detail);
@@ -3281,7 +3281,7 @@ function App() {
               <p className="text-xs tracking-[0.3em] uppercase mb-4 opacity-70">{t("footer.help")}</p>
               <div className="flex flex-col gap-2 text-sm">
                 <button onClick={() => scrollTo("shipping")} className="text-left hover:opacity-60">{t("footer.shippingTracking")}</button>
-                <button onClick={() => setPolicyOpen("refunds")} className="text-left hover:opacity-60">{t("footer.refundPolicy")}</button>
+                <button onClick={() => setPolicyOpen("finalSale")} className="text-left hover:opacity-60">{t("footer.finalSalePolicy")}</button>
                 <button onClick={() => setPolicyOpen("privacy")} className="text-left hover:opacity-60">{t("footer.privacyPolicy")}</button>
                 <button onClick={() => setPolicyOpen("terms")} className="text-left hover:opacity-60">{t("footer.termsOfService")}</button>
                 <button onClick={() => scrollTo("contact")} className="text-left hover:opacity-60">{t("footer.contactUs")}</button>
@@ -3686,7 +3686,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Placing an order",
-          body: "When you place an order, you're entering into a sales agreement with Lusik & Sons. Prices on the site are accurate to the best of our ability, but we reserve the right to cancel and refund an order if a clear pricing error has occurred. Each blanket is made to order; we begin work only after your order is paid and confirmed."
+          body: "When you place an order, you're entering into a sales agreement with Lusik & Sons. All sales are final — see our Final Sale Policy below. Prices on the site are accurate to the best of our ability, but we reserve the right to cancel an order and reverse the charge before stitching begins if a clear pricing error has occurred. Each blanket is made to order; we begin work only after your order is paid and confirmed."
         },
         {
           heading: "Making the blanket",
@@ -3718,36 +3718,36 @@ function PolicyModal({ policyKey, onClose }) {
         },
       ],
     },
-    refunds: {
-      title: "Refund Policy",
-      eyebrow: "If something isn't right",
+    finalSale: {
+      title: "Final Sale Policy",
+      eyebrow: "All sales are final",
       sections: [
         {
-          heading: "Made-to-order, so please choose carefully",
-          body: "Every blanket and hand-stitched bib is made specifically for your order. Because they're not pulled from inventory, we can't accept returns for changed minds. Please make sure you've picked the alphabet you want and the right size before checking out."
+          heading: "Why every order is final sale",
+          body: "Every blanket and bib is made specifically for you — the alphabet, the layout, the colors, and any name or year you've added are stitched into the piece by hand or by a single-purpose embroidery machine. There's no shelf to put a finished blanket back on if you change your mind. Once your order is paid, Lusik begins working on a piece that exists because of you and that we cannot resell to anyone else. For that reason, all sales are final: no returns, no exchanges, no refunds for change of mind, color preference, or fit."
         },
         {
-          heading: "If your item arrives damaged or defective",
-          body: "We'll make it right. Email hello@lusikandsons.com within 14 days of delivery with photos of the damage. We'll either repair, replace, or refund — your choice. Shipping for the replacement is on us."
+          heading: "Please review your design before you check out",
+          body: "The live preview on the product page shows your exact alphabet, layout, colors, and optional name and year — what you see is what Lusik stitches. Take a moment to confirm spelling, year digits, and color choice. If you're unsure about anything, email hello@lusikandsons.com or text (760) 874-2333 BEFORE checking out. We're happy to talk a design through with you."
         },
         {
-          heading: "If we made a mistake",
-          body: "If we sent the wrong alphabet, wrong letter, or wrong product, contact us within 30 days of delivery. We'll replace it at no cost and cover return shipping for the original."
+          heading: "We still stand behind our work",
+          body: "Final sale does not mean you are on your own. If your item arrives damaged in transit, has a clear manufacturing defect, or is materially different from what you ordered (wrong alphabet, wrong letter, wrong name, wrong product), email us within 14 days of delivery with photos. At our discretion, Lusik will repair the piece, remake it, or work with you to find an acceptable resolution. This is not a returns process — it is us standing behind the work."
+        },
+        {
+          heading: "Slight variation is part of the work",
+          body: "Lusik sources thread from different manufacturers, so two blankets in the same color can vary slightly in shade. Each blanket is hand-stitched, so spacing, tension, and stitch density can vary subtly from piece to piece. These are characteristics of handmade goods, not defects, and are not grounds for remake."
         },
         {
           heading: "Lost in transit",
-          body: "If your package's tracking shows it as lost or stuck for over 14 business days past the expected delivery date, contact us. We'll work with the carrier and replace the order if it doesn't show up."
+          body: "If your package's tracking shows it as lost or stuck for over 14 business days past the expected delivery date, contact us. We will file a claim with the carrier and work with you on a replacement — separate from the final-sale rule."
         },
         {
-          heading: "Custom-image bibs and towels",
-          body: "These are also made-to-order based on the image you uploaded. We'll review your image before stitching and reach out if it can't be machine-embroidered well at the size requested. Once stitched, the same rules apply: defects covered, change-of-mind not covered."
+          heading: "Pricing-error cancellations",
+          body: "If we accept an order at an obviously wrong price (typo, misconfigured listing), we reserve the right to cancel before stitching begins. In that case the charge is reversed in full and the order does not proceed. This is the only situation in which money flows back to the buyer."
         },
         {
-          heading: "How refunds work",
-          body: "Approved refunds are issued to the original payment method via Stripe. Most refunds clear within 5–10 business days of approval, depending on your bank. Refunds for individual items in multi-item orders are prorated based on the items refunded."
-        },
-        {
-          heading: "How to start",
+          heading: "How to reach us",
           body: "Email hello@lusikandsons.com, call or text (760) 874-2333, or DM @lusikandsons on Instagram. Lusik or one of her sons will respond, usually within a day."
         },
       ],
@@ -5597,11 +5597,28 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           </div>
         </div>
 
+        {/* Final-sale reminder — same callout pattern used on the blanket
+            PDP, sized down to fit the bib card. */}
+        <div className="mt-auto p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
+          <span style={{ color: "#B08842", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
+          <span className="opacity-80">
+            Embroidered specifically for you. No returns, exchanges, or refunds.{" "}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
+              className="underline hover:opacity-60"
+              style={{ color: "#B08842" }}
+            >
+              Read the full policy
+            </button>.
+          </span>
+        </div>
+
         {/* Add to cart */}
         <button
           onClick={handleAdd}
           disabled={!canAdd}
-          className="mt-auto w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+          className="mt-2 w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
           style={{
             background: canAdd ? "#1A1612" : "rgba(26,22,18,0.15)",
             color: canAdd ? "#F5EFE3" : "rgba(26,22,18,0.5)",
@@ -6745,6 +6762,25 @@ function ProductShowcase({ product, onAdd, onCartFeedback }) {
               ))}
             </ul>
           </details>
+
+          {/* Final-sale reminder — sits right above Add to Cart so the
+              customer cannot miss it at the decision point. Subtle gold-tinted
+              callout, not alarming; links to the full Final Sale Policy
+              modal so anyone who wants the detail can read it. */}
+          <div className="mb-3 p-3 text-xs leading-snug flex items-start gap-2.5" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
+            <span style={{ color: "#B08842", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
+            <span className="opacity-80">
+              This blanket is stitched specifically for you, so all sales are final. No returns, exchanges, or refunds. Please review your alphabet, colors, and any name or year before checking out.{" "}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
+                className="underline hover:opacity-60"
+                style={{ color: "#B08842" }}
+              >
+                Read the full policy
+              </button>.
+            </span>
+          </div>
 
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center border" style={{ borderColor: "rgba(26,22,18,0.2)" }}>
