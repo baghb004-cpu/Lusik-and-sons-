@@ -147,6 +147,33 @@ A small in-file mini-blog at `view === "journal"`, with three starter posts abou
 - Per-route `<title>` and `<link rel="canonical">` are set via DOM manipulation when `view` or `journalSlug` changes, so each journal post is indexed as its own page rather than being collapsed into the home page by a static canonical.
 - All three posts carry the `TODO_LUSIK_REVIEW` marker — Lusik should read each one and tell us if anything needs adjusting. She can also send a personal anecdote for any of them, which we'd splice in as a section.
 
+### Analytics (privacy-first, opt-in)
+
+The site is wired for [Umami](https://umami.is)-compatible analytics. Default is OFF — the script tag isn't loaded and no requests are made until `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` (~line 1370 in `index.html`) is set to a real ID.
+
+To enable:
+
+1. Sign up for an Umami Cloud free account (or self-host Umami, or pick a different privacy-first provider — anything that exposes a global `window.umami.track()` works).
+2. Create a website in the dashboard for `lusikandsons.com`, copy the website ID.
+3. Paste it into `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID`. If you're not using Umami Cloud, also update `UMAMI_SRC_URL` to your script URL.
+4. Deploy.
+
+What gets tracked:
+
+- **Pageviews**, including SPA navigation (the App fires `umami.track()` on every `view` or `journalSlug` change so journal posts and account/admin views show up as distinct pages).
+- **Custom events** — wired at the call sites that signal real intent:
+  - `add-to-cart` (with kind: "blanket"/"custom" and design variant info)
+  - `checkout-start` (when Pay-with-Stripe is clicked, with item count + total cents)
+  - `order-complete` (when Stripe redirects back with `?order=success`)
+  - `save-design` (signed-in customer saves a configuration)
+  - `share-design` (any share — native share sheet or clipboard)
+  - `waitlist-signup` (per-product placeholder waitlist email submitted)
+  - `newsletter-signup` (footer newsletter email submitted)
+
+All custom events go through the module-level `track(eventName, data)` helper in `index.html`. When analytics is off, every `track()` call is a no-op and costs nothing.
+
+The Privacy Policy's "Cookies and tracking" clause already acknowledges the optional analytics provider in honest terms ("if active, it doesn't set cookies, doesn't track you across other sites…") — so the disclosure is accurate whether analytics is on or off.
+
 ### SEO infrastructure
 
 - `sitemap.xml` at the repo root lists the home page, the journal index, and every journal post with its `<lastmod>`. Update it when you add a new post — there's a comment at the top of the file walking through what to change.

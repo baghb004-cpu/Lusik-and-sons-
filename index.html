@@ -1346,6 +1346,37 @@ const CONFIG = {
   FREE_SHIPPING_ENABLED: true,
   FREE_SHIPPING_THRESHOLD_CENTS: 15000,
 
+  // ============================================================
+  // PRIVACY-FIRST ANALYTICS (opt-in, empty by default)
+  // ============================================================
+  // Both values empty = no script loaded, no requests made, no
+  // tracking. To turn analytics on:
+  //
+  //   1. Sign up for a free privacy-first analytics provider —
+  //      Umami Cloud (umami.is) is the default this code is
+  //      shaped for, but the same pattern works for any
+  //      drop-in script tag (Plausible, Fathom, GoatCounter,
+  //      Cloudflare Web Analytics, etc.).
+  //   2. Paste the website ID from your dashboard into
+  //      UMAMI_WEBSITE_ID below.
+  //   3. If you're using something other than Umami Cloud,
+  //      also update UMAMI_SRC_URL (Umami self-hosted, Plausible,
+  //      etc. each ship their own script URL).
+  //   4. Deploy. The script tag is injected on every page load,
+  //      pageviews track automatically, and SPA navigation
+  //      between views fires extra pageview events via the
+  //      view-change effect in App.
+  //
+  // Privacy posture: Umami doesn't use cookies, doesn't track
+  // cross-site, and doesn't collect personal data. Our own
+  // Privacy Policy mentions this behavior when the website ID
+  // is set; when it's empty, the policy reads as "we don't run
+  // analytics" — both forms are accurate at the right time.
+  ANALYTICS: {
+    UMAMI_WEBSITE_ID: "",                            // paste from umami.is dashboard
+    UMAMI_SRC_URL:    "https://cloud.umami.is/script.js",
+  },
+
   // Gallery indexes whose source files are sideways and need a CSS-rotation
   // band-aid until the actual image files are replaced. Applies wherever
   // these gallery items render. Once you re-upload an image rotated correctly,
@@ -3287,6 +3318,7 @@ function WaitlistModal({ product, onClose }) {
         body,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      track("waitlist-signup", { productKey: product.key });
       toast({
         kind: "success",
         message: `Added to the ${product.name} waitlist. We'll email you when it's ready.`,
@@ -3402,6 +3434,7 @@ function NewsletterSignup() {
         body,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      track("newsletter-signup");
       toast({
         kind: "success",
         message: "Thanks — we'll let you know when Lusik adds a new alphabet.",
@@ -4081,6 +4114,27 @@ function TextUsWidget() {
 }
 
 // === MAIN APP ===
+// Module-level analytics helper. Wraps window.umami.track() so
+// call sites can fire events without checking whether analytics
+// is enabled or whether the script has loaded. When analytics is
+// off (CONFIG.ANALYTICS.UMAMI_WEBSITE_ID empty), this is a no-op
+// and costs nothing. When the script hasn't loaded yet (early
+// mount events), the try/catch swallows the undefined-window-
+// .umami case.
+//
+// Usage:
+//   track("add-to-cart", { productKey: "blanket-double_diag_br" });
+//   track("checkout-start");
+//   track("share-design");
+function track(eventName, data) {
+  if (typeof window === "undefined") return;
+  if (!CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID) return;
+  try {
+    if (data) window.umami?.track(eventName, data);
+    else      window.umami?.track(eventName);
+  } catch { /* analytics never throws into user code */ }
+}
+
 function App() {
   const t = useT();
   const toast = useToast();
@@ -4237,6 +4291,7 @@ function App() {
     const orderStatus = params.get("order");
     if (orderStatus === "success") {
       setCart([]);
+      track("order-complete", { sessionId: params.get("session_id") });
       // If we have a session, send them to the account page; if not, stay
       // home with a banner. Future polish: show a "checkout success" banner.
       if (user) {
@@ -4364,6 +4419,41 @@ function App() {
     link.setAttribute("href", canonical);
   }, [view, journalSlug]);
 
+  // --- PRIVACY-FIRST ANALYTICS (opt-in via CONFIG.ANALYTICS) ---
+  // On mount, if the customer set CONFIG.ANALYTICS.UMAMI_WEBSITE_ID,
+  // inject the script tag. The script self-installs window.umami
+  // and starts tracking the initial pageview. Re-mounts are
+  // protected by the data-umami marker so hot-reload doesn't
+  // stack scripts.
+  //
+  // A separate effect below fires window.umami.track() on every
+  // view + slug change — without that, the SPA's internal
+  // navigation wouldn't show up as distinct pageviews in the
+  // analytics dashboard. Umami's track() with no args sends a
+  // fresh pageview using the current URL.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const id  = CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID;
+    if (!id) return;
+    if (document.querySelector("script[data-umami]")) return;
+    const src = CONFIG.ANALYTICS?.UMAMI_SRC_URL || "https://cloud.umami.is/script.js";
+    const s = document.createElement("script");
+    s.src   = src;
+    s.defer = true;
+    s.dataset.websiteId = id;
+    s.dataset.umami     = "installed";
+    document.head.appendChild(s);
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID) return;
+    // Umami's track() with no args grabs the current location
+    // and fires a pageview. Wrapped in a queueMicrotask so it
+    // runs after the title/canonical updates above — Umami picks
+    // up the new title/URL automatically that way.
+    queueMicrotask(() => { try { window.umami?.track(); } catch {} });
+  }, [view, journalSlug]);
+
   // --- DEBOUNCED CART SYNC TO DB (logged-in users only) ---
   // Avoid hammering the database on every +/- click. Wait until cart changes
   // settle for CART_PERSIST_DEBOUNCE_MS, then write once. We skip the very
@@ -4403,6 +4493,7 @@ function App() {
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
   const addToCart = (color, qty = 1, selection = null, layout = null, colors = null) => {
+    track("add-to-cart", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
     // `selection` is either a `letter` (legacy single-letter bib) or an
     // `alphabet` (current — Armenian/English). When alphabet, `layout` is
     // also expected — it carries the spatial arrangement, the letter count,
@@ -4560,6 +4651,7 @@ function App() {
   };
 
   const addCustomToCart = ({ productKey, name, price, size, customImage, customImageName, subtitleOverride, customMetadata }) => {
+    track("add-to-cart", { kind: "custom", productKey });
     // Each custom upload gets a unique id so multiple custom items don't merge.
     const id = `${productKey}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     setCart((c) => [...c, {
@@ -5329,7 +5421,7 @@ function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Cookies and tracking",
-          body: "We use only the cookies necessary to keep you signed in and to remember your cart. We don't use Google Analytics, Facebook Pixel, or other cross-site tracking. We don't run advertisements."
+          body: "We use only the cookies necessary to keep you signed in and to remember your cart. We don't use Google Analytics, Facebook Pixel, or any other cross-site tracking, and we don't run advertisements. The site may use a privacy-first analytics provider (Umami) for aggregate pageview counts; if active, it doesn't set cookies, doesn't track you across other sites, and doesn't collect personal data. You can confirm what's running by opening your browser's developer tools and looking at the Network tab — every request the site makes will be visible there."
         },
         {
           heading: "Children's privacy",
@@ -9356,6 +9448,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
       toast({ kind: "error", message: error.message || "Couldn't save — please try again." });
       return;
     }
+    track("save-design", { alphabet: alphabet?.key, layout: layout?.key });
     toast({ kind: "success", message: "Design saved to your account." });
   };
 
@@ -9363,6 +9456,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
   // open the native share sheet (mobile / supporting desktops) or
   // copy to clipboard with a toast confirmation.
   const handleShareDesign = async () => {
+    track("share-design", { alphabet: alphabet?.key, layout: layout?.key });
     const encoded = encodeDesignToUrl({
       alphabet, layout, blockColor, letterColor, letterColorList,
       activePresetKey, customLine1, customLine2,
@@ -10303,6 +10397,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const handleCheckout = async () => {
     setBusy(true);
     setError("");
+    track("checkout-start", { itemCount: cart.length, totalCents: Math.round(subtotal * 100) });
 
     // Build the cart payload. Strip the giant base64 image data — the
     // Function doesn't need it for the Stripe session (Stripe metadata
