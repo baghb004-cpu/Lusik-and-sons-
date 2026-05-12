@@ -14,10 +14,11 @@
 // grow blob references to unexpected formats.
 // ============================================================
 
-import { getStore }      from "@netlify/blobs";
-import { sql }           from "./_lib/db.mjs";
-import { requireAdmin }  from "./_lib/auth.mjs";
-import { json }          from "./_lib/json.mjs";
+import { getStore }                  from "@netlify/blobs";
+import { sql }                       from "./_lib/db.mjs";
+import { requireAdmin }              from "./_lib/auth.mjs";
+import { json }                      from "./_lib/json.mjs";
+import { sendFinishedPhotoNotification } from "./_lib/email.mjs";
 
 const MAX_BYTES     = 8 * 1024 * 1024;  // 8 MB — Lusik's phone photos can be chunky
 const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -45,9 +46,18 @@ export default async (req, context) => {
     return json(400, { error: "Unsupported file extension" });
   }
 
-  // Verify the order exists before writing.
-  const existing = await sql`SELECT id FROM orders WHERE id = ${orderId} LIMIT 1`;
+  // Verify the order exists before writing. Also peek at
+  // finished_photo_emailed_at: if it's null, this upload
+  // is the FIRST photo for this order and the customer
+  // should be notified. Replacements (already-emailed orders)
+  // skip the notification — Lusik tweaking the shot doesn't
+  // need to re-buzz the customer.
+  const existing = await sql`
+    SELECT id, finished_photo_emailed_at
+    FROM orders WHERE id = ${orderId} LIMIT 1
+  `;
   if (existing.length === 0) return json(404, { error: "Order not found" });
+  const isFirstPhoto = !existing[0].finished_photo_emailed_at;
 
   let bytes;
   try { bytes = Buffer.from(dataBase64, "base64"); }
@@ -71,7 +81,27 @@ export default async (req, context) => {
   // previous blob (if any) is left in storage for now; Netlify
   // Blobs are cheap and an audit trail of finished photos is
   // useful if Lusik ever wants to look back.
-  await sql`UPDATE orders SET finished_photo_key = ${key} WHERE id = ${orderId}`;
+  //
+  // When this is the first photo for the order, also stamp
+  // finished_photo_emailed_at = now() in the same statement —
+  // this gates the notification email so re-uploads don't
+  // re-trigger it.
+  const updatedRows = await sql`
+    UPDATE orders
+       SET finished_photo_key = ${key},
+           finished_photo_emailed_at = CASE WHEN ${isFirstPhoto} THEN now() ELSE finished_photo_emailed_at END
+     WHERE id = ${orderId}
+     RETURNING *
+  `;
+
+  // Fire the "Lusik just finished your blanket" email AFTER the
+  // DB write. Same isolation as the other order emails: missing
+  // RESEND_API_KEY or a Resend outage logs + returns false, but
+  // never throws and never blocks the upload.
+  if (isFirstPhoto && updatedRows[0]) {
+    await sendFinishedPhotoNotification({ order: updatedRows[0] })
+      .catch((err) => console.warn("[admin-order-photo] finished-photo email failed:", err?.message ?? err));
+  }
 
   const url = `/.netlify/functions/order-photo-get?key=${encodeURIComponent(key)}`;
   return json(201, { url, key });

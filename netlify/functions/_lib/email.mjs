@@ -441,6 +441,127 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
   return await sendEmail({ to: customerEmail, subject, html, text });
 }
 
+/**
+ * Send the "Lusik just finished your piece" email — fired the
+ * first time Lusik uploads a finished-piece photo for an order.
+ * orders.finished_photo_emailed_at gates this so re-uploads or
+ * replacements don't re-trigger the email.
+ *
+ * Why we don't embed the photo: the photo is gated behind a
+ * customer-auth check (only the order's user_id, or an admin,
+ * can fetch it via order-photo-get). Embedding in an email
+ * would either require a signed-token bypass or making the
+ * URL public — both add complexity for limited gain, and most
+ * email clients strip images from unknown senders by default
+ * anyway. Instead we send a tasteful "view your finished
+ * blanket →" CTA that takes the customer to their account
+ * page, where the photo is rendered with their other order
+ * details.
+ *
+ * `order` — the orders row (post-upload; finished_photo_key is
+ *           set; shipping_address.name is the recipient when present)
+ */
+export async function sendFinishedPhotoNotification({ order }) {
+  const to = order.customer_email;
+  if (!to) {
+    console.warn("[email] customer email missing on finished-photo notification; skipping");
+    return false;
+  }
+
+  const orderNumber  = order.order_number ?? order.id;
+  const ship         = order.shipping_address ?? {};
+  const customerName = ship.name ?? null;
+  const greeting     = customerName ? `Hi ${customerName.split(" ")[0]},` : "Hi there,";
+  const isGift       = order.gift?.is_gift === true;
+
+  // Slightly different subject + first line for gifts vs.
+  // self-purchases. The buyer of a gift hasn't seen the
+  // physical piece — they're forwarding the experience.
+  const subject = isGift
+    ? `A photo of the finished gift — ${orderNumber}`
+    : `Lusik just finished your blanket`;
+
+  const accent  = "#B08842";
+  const ink     = "#1A1612";
+  const cream   = "#F5EFE3";
+  const muted   = "#6B655D";
+  const baseUrl = process.env.URL || "https://lusikandsons.com";
+
+  const openingLine = isGift
+    ? "Lusik just finished the blanket you ordered. Here's a photo before it ships."
+    : "Lusik just finished your blanket. Here's a photo before it ships out.";
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 14px 0;letter-spacing:-0.01em;line-height:1.2;">
+      ${isGift ? "The gift you ordered is ready." : "Your blanket is ready."}
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 6px 0;">${esc(greeting)}</p>
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">${esc(openingLine)}</p>
+
+    <div style="margin:24px 0;padding:24px;background:#FFFFFF;border:1px solid #E8E1D2;text-align:center;">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">Photo of your finished piece</div>
+      <p style="font-size:14px;color:${ink};margin:0 0 18px 0;line-height:1.6;">
+        We've added it to your order page — sign in and have a look. It stays there as a small keepsake, available any time you'd like to see it again.
+      </p>
+      <a href="${baseUrl}/" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+        View the photo →
+      </a>
+    </div>
+
+    <p style="margin:24px 0 6px 0;font-size:14px;color:${muted};">
+      Order <span style="color:${ink};font-weight:500;">${esc(orderNumber)}</span> ${isGift ? "ships to the address you provided" : "ships to your address"} in the next day or two. You'll get a tracking number by email when it goes out.
+    </p>
+
+    <p style="margin:18px 0 6px 0;font-size:14px;color:${muted};">
+      One last chance — if anything looks off in the photo, tell us before it ships:
+    </p>
+    <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
+      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      ${" · "}
+      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS`,
+    "",
+    isGift ? `The gift you ordered is ready.` : `Your blanket is ready.`,
+    "",
+    greeting,
+    "",
+    openingLine,
+    "",
+    `A photo of your finished piece is on your order page. Sign in and have`,
+    `a look — it stays there as a small keepsake, available any time:`,
+    `  ${baseUrl}`,
+    "",
+    `Order ${orderNumber} ships in the next day or two. You'll get a`,
+    `tracking number by email when it goes out.`,
+    "",
+    `If anything looks off in the photo, tell us before it ships:`,
+    `  hello@lusikandsons.com`,
+    `  (760) 874-2333`,
+    "",
+    `Made by hand in Cypress, California.`,
+    `${baseUrl}`,
+  ].join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}
+
 // Mirror of the browser-side getTrackingUrl helper. Kept here
 // (rather than imported across the JS/server boundary) because
 // _lib/ functions can't reach into index.html, and the URL

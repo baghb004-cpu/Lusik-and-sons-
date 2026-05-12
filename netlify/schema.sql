@@ -106,20 +106,22 @@ CREATE TABLE IF NOT EXISTS orders (
   estimated_ship_date   DATE,
   social_consent        JSONB,                   -- {allowed, platforms, handles, consented_at}
   gift                  JSONB,                   -- {is_gift, message, hide_prices}
-  finished_photo_key    TEXT,                    -- Netlify Blobs key for "Lusik's finished piece" photo
-  admin_notes           TEXT,                    -- internal-only notes Lusik writes from the admin view
-  shipped_at            TIMESTAMPTZ,             -- set when fulfillment_status first transitions to "shipped"
-  created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+  finished_photo_key          TEXT,                    -- Netlify Blobs key for "Lusik's finished piece" photo
+  finished_photo_emailed_at   TIMESTAMPTZ,             -- set when the customer was first emailed about the photo (dedupe gate)
+  admin_notes                 TEXT,                    -- internal-only notes Lusik writes from the admin view
+  shipped_at                  TIMESTAMPTZ,             -- set when fulfillment_status first transitions to "shipped"
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- If the orders table already exists from a previous deploy, make
 -- sure newer columns get added. All no-ops if the column is
 -- already present.
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift                JSONB;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS social_consent      JSONB;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS finished_photo_key  TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes         TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at          TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift                       JSONB;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS social_consent             JSONB;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS finished_photo_key         TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS finished_photo_emailed_at  TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes                TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at                 TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (lower(customer_email));

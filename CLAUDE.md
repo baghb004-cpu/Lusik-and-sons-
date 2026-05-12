@@ -100,7 +100,7 @@ netlify/
 
 ### Order notification emails (Resend)
 
-The site sends three transactional emails across the order lifecycle, all through [Resend](https://resend.com) on the free tier (100/day, 3,000/month). Each one is fired with error isolation so a Resend outage never breaks the underlying database write.
+The site sends four transactional emails across the order lifecycle, all through [Resend](https://resend.com) on the free tier (100/day, 3,000/month). Each fires with error isolation so a Resend outage never breaks the underlying database write — the email helpers log + return false on failure rather than throwing, and the calling code wraps them in `.catch()`.
 
 **At order placement** — the `stripe-webhook` Function fires two emails in parallel (`Promise.allSettled`) after the order row is inserted:
 
@@ -109,11 +109,17 @@ The site sends three transactional emails across the order lifecycle, all throug
 
 The customer confirmation is intentionally NOT a duplicate of Stripe's auto-generated receipt — Stripe handles the financial paperwork; ours handles brand experience + expectation setting.
 
-**At ship time** — the `admin-orders` Function fires a third email the first time Lusik flips an order's `fulfillment_status` to `shipped`:
+**At finished-piece photo upload** — the `admin-order-photo` Function fires the third email the first time Lusik uploads a photo for an order:
 
-3. **Shipped notification** (`sendShippedNotification`) — "your order is on its way," with the carrier name, the tracking number rendered in monospace, a Track-package CTA linking to the carrier's public tracking page (USPS/UPS/FedEx URL patterns mirrored from the browser-side `getTrackingUrl`), a callout to the finished-piece photo if Lusik already uploaded one, and the 14-day "if anything's wrong" reassurance.
+3. **Finished-piece notification** (`sendFinishedPhotoNotification`) — "Lusik just finished your blanket," with a CTA linking to the customer's account page where the photo is rendered. Slightly different copy for gift orders ("the gift you ordered is ready") vs. self-purchases. We deliberately don't embed the photo in the email itself because access is gated behind the order's user_id — instead the customer signs in to see it.
 
-The `orders.shipped_at` timestamp gates this. Once it's set (the first save with status = shipped), it's never re-fired even if Lusik toggles status back and forth. The DB write and email fire together: timestamp is stamped in the same UPDATE that updates fulfillment_status.
+The `orders.finished_photo_emailed_at` timestamp gates this. Re-uploads or replacements don't re-trigger the email.
+
+**At ship time** — the `admin-orders` Function fires the fourth email the first time Lusik flips an order's `fulfillment_status` to `shipped`:
+
+4. **Shipped notification** (`sendShippedNotification`) — "your order is on its way," with the carrier name, the tracking number rendered in monospace, a Track-package CTA linking to the carrier's public tracking page (USPS/UPS/FedEx URL patterns mirrored from the browser-side `getTrackingUrl`), a callout to the finished-piece photo if Lusik already uploaded one, and the 14-day "if anything's wrong" reassurance.
+
+The `orders.shipped_at` timestamp gates this. Once it's set (the first save with status = shipped), it's never re-fired even if Lusik toggles status back and forth. Both timestamps (`shipped_at` and `finished_photo_emailed_at`) follow the same pattern: stamped in the same UPDATE as the change that triggers them, so the DB write and email send are atomic from the workflow's perspective.
 
 Required env vars (set in Netlify dashboard → Site → Environment):
 
