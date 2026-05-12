@@ -19,7 +19,7 @@ import Stripe        from "stripe";
 import { getStore } from "@netlify/blobs";
 import { sql }      from "./_lib/db.mjs";
 import { TRUSTED_PRODUCTS }    from "./_lib/trusted-products.mjs";
-import { sendAdminOrderEmail } from "./_lib/email.mjs";
+import { sendAdminOrderEmail, sendCustomerOrderConfirmation } from "./_lib/email.mjs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-06-20",
@@ -152,16 +152,30 @@ export default async (req) => {
     `;
   }
 
-  // Notify Lusik via email. Done AFTER the order is persisted so a
-  // failed send never blocks the order. The helper logs + returns
-  // false on failure (missing API key, Resend down, etc.) rather
-  // than throwing — Stripe shouldn't retry the whole webhook just
-  // because an email didn't go through.
-  await sendAdminOrderEmail({
-    order:   inserted[0],
-    items,
-    pending,
-  }).catch((err) => console.warn("[webhook] admin email failed:", err?.message ?? err));
+  // Capture the customer's name from Stripe's checkout data —
+  // shipping_details has it when present, billing as a fallback.
+  const customerName = session.shipping_details?.name
+                    ?? session.customer_details?.name
+                    ?? null;
+
+  // Fire both notification emails in parallel. Each one has its
+  // own error isolation: failure to send EITHER email never
+  // blocks the order from being recorded, and Stripe shouldn't
+  // retry the whole webhook just because Resend was momentarily
+  // down. The helpers log + return false on failure.
+  await Promise.allSettled([
+    sendAdminOrderEmail({
+      order:   inserted[0],
+      items,
+      pending,
+    }),
+    sendCustomerOrderConfirmation({
+      order:   inserted[0],
+      items,
+      pending,
+      customerName,
+    }),
+  ]).catch((err) => console.warn("[webhook] email batch failed:", err?.message ?? err));
 
   // Clean up the pending cart blob — it's served its purpose.
   await pendingStore.delete(session.id).catch(() => {});

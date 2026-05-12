@@ -287,3 +287,156 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
 
   return await sendEmail({ to, subject, html, text });
 }
+
+/**
+ * Send the customer order-confirmation email. Different goal
+ * from the admin notification: this one's about warmth and
+ * setting expectations. The customer already got Stripe's
+ * generic receipt; ours fills in what Stripe can't say —
+ * "Lusik has your order, here's what comes next."
+ *
+ * `order`, `items`, `pending` — same shapes as the admin email.
+ * `customerName` — string or null. Used to greet the customer
+ *                   by name when available.
+ */
+export async function sendCustomerOrderConfirmation({ order, items, pending, customerName }) {
+  const customerEmail = order.customer_email;
+  if (!customerEmail) {
+    console.warn("[email] customer email missing; skipping customer confirmation");
+    return false;
+  }
+
+  const orderNumber = order.order_number ?? order.id;
+  const isGift = pending?.gift?.is_gift === true;
+  const giftMessage = pending?.gift?.message ?? "";
+  const ship = order.shipping_address ?? {};
+  const recipientName = ship.name || (isGift ? "your recipient" : null);
+  const greeting = customerName ? `Hi ${customerName.split(" ")[0]},` : "Hi there,";
+
+  const subject = isGift
+    ? `Your gift order is in — Lusik is starting`
+    : `Lusik is starting on your order`;
+
+  // -------- HTML body --------
+  const accent = "#B08842";
+  const ink    = "#1A1612";
+  const cream  = "#F5EFE3";
+  const muted  = "#6B655D";
+
+  const itemRows = items.map((it) => {
+    const variant = summarizeItem(it) || it.variantLabel || "";
+    const qty = it.quantity > 1 ? ` × ${it.quantity}` : "";
+    return `
+      <div style="padding:14px 0;border-top:1px solid #E8E1D2;">
+        <div style="font-weight:600;color:${ink};">${esc(it.productName)}${qty}</div>
+        ${variant ? `<div style="font-size:13px;color:${muted};margin-top:4px;line-height:1.5;">${esc(variant)}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+
+  const giftRecap = isGift ? `
+    <div style="margin:24px 0;padding:16px 18px;background:#FAF1DF;border-left:3px solid ${accent};">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:10px;">Gift details we have</div>
+      <div style="font-size:14px;color:${ink};line-height:1.6;">
+        Shipping to${recipientName ? ` <strong>${esc(recipientName)}</strong>` : ""} in ${esc(ship.city ?? "")}, ${esc(ship.state ?? ship.region ?? "")}.
+        ${giftMessage ? `<div style="margin-top:10px;font-style:italic;">Your message: "${esc(giftMessage)}"</div>` : ""}
+        ${pending?.gift?.hide_prices ? `<div style="margin-top:10px;font-size:13px;">We'll keep prices off the packing slip as requested.</div>` : ""}
+      </div>
+    </div>
+  ` : "";
+
+  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">Lusik &amp; Sons</div>
+
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 14px 0;letter-spacing:-0.01em;line-height:1.2;">
+      Thank you, ${esc(customerName ? customerName.split(" ")[0] : "")}— Lusik is starting on your order.
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 6px 0;">
+      ${esc(greeting)}
+    </p>
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">
+      ${isGift
+        ? "Lusik has your gift order. She'll start hand-stitching within a day or two."
+        : "Lusik has your order. She'll start hand-stitching within a day or two."}
+    </p>
+
+    <div style="margin:24px 0;padding:18px 20px;background:#FFFFFF;border:1px solid #E8E1D2;">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${muted};font-weight:600;margin-bottom:12px;">What happens next</div>
+      <ul style="margin:0;padding:0 0 0 20px;font-size:14px;color:${ink};">
+        <li style="margin-bottom:8px;">Each blanket is hand cross-stitched — usually 5 to 10 business days before it's ready.</li>
+        <li style="margin-bottom:8px;">Before it ships, we'll email you a photo of the finished piece. Small keepsake for now and forever.</li>
+        <li style="margin-bottom:0;">When it ships, you'll get a tracking number from the carrier (USPS, UPS, or FedEx).</li>
+      </ul>
+    </div>
+
+    ${giftRecap}
+
+    <div style="margin:24px 0 8px 0;">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${muted};font-weight:600;margin-bottom:4px;">Order ${esc(orderNumber)}</div>
+      ${itemRows}
+      <div style="padding:14px 0;border-top:2px solid ${ink};display:flex;justify-content:space-between;color:${ink};font-weight:600;">
+        <span>Total</span>
+        <span>${dollars(order.total_cents)}</span>
+      </div>
+    </div>
+
+    <p style="margin:28px 0 6px 0;font-size:14px;color:${muted};">
+      If anything is wrong — a name spelling, a color, second thoughts — please reach out now, before Lusik begins stitching:
+    </p>
+    <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
+      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      ${" · "}
+      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+  </div>
+</body></html>`;
+
+  // -------- Plain-text fallback --------
+  const itemLines = items.map((it) => {
+    const variant = summarizeItem(it) || it.variantLabel || "";
+    const qty = it.quantity > 1 ? ` × ${it.quantity}` : "";
+    return `  • ${it.productName}${qty}${variant ? `\n    ${variant}` : ""}`;
+  }).join("\n");
+
+  const text = [
+    `LUSIK & SONS`,
+    "",
+    `Thank you — Lusik is starting on your order.`,
+    "",
+    greeting,
+    "",
+    isGift
+      ? "Lusik has your gift order. She'll start hand-stitching within a day or two."
+      : "Lusik has your order. She'll start hand-stitching within a day or two.",
+    "",
+    `What happens next:`,
+    `  • Each blanket is hand cross-stitched — usually 5 to 10 business days before it's ready.`,
+    `  • Before it ships, we'll email a photo of the finished piece.`,
+    `  • When it ships, you'll get a tracking number.`,
+    "",
+    isGift ? `GIFT DETAILS\n  Shipping to${recipientName ? ` ${recipientName}` : ""} in ${ship.city ?? ""}, ${ship.state ?? ship.region ?? ""}.${giftMessage ? `\n  Your message: "${giftMessage}"` : ""}${pending?.gift?.hide_prices ? `\n  We'll keep prices off the packing slip as requested.` : ""}\n` : "",
+    `ORDER ${orderNumber}`,
+    itemLines,
+    `  Total: ${dollars(order.total_cents)}`,
+    "",
+    `If anything is wrong, reach out now before Lusik begins stitching:`,
+    `  hello@lusikandsons.com`,
+    `  (760) 874-2333`,
+    "",
+    `Made by hand in Cypress, California.`,
+    `${baseUrl}`,
+  ].filter(Boolean).join("\n");
+
+  return await sendEmail({ to: customerEmail, subject, html, text });
+}

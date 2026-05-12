@@ -100,15 +100,20 @@ netlify/
 
 ### Order notification emails (Resend)
 
-When a Stripe `checkout.session.completed` webhook lands and the order is persisted, the `stripe-webhook` Function fires an HTML email to Lusik via [Resend](https://resend.com) with the full order details — items + design metadata, shipping address, gift options if any, social-share consent if any, and a deep link to the admin panel. Failures are logged but never block the order.
+When a Stripe `checkout.session.completed` webhook lands and the order is persisted, the `stripe-webhook` Function fires **two** HTML emails via [Resend](https://resend.com) — fired in parallel via `Promise.allSettled` so a failure of either never blocks the order:
+
+1. **Admin notification** to Lusik (`sendAdminOrderEmail`) — operational tone: items + full design metadata for stitching, shipping address, gift options if any, social-share consent + handles if any, link to the admin panel.
+2. **Customer confirmation** (`sendCustomerOrderConfirmation`) — warm, on-brand tone: "Lusik is starting on your order," what to expect (5–10 business days, photo before ship, tracking on ship), order summary, gift recap if applicable, contact info for catching mistakes before stitching begins.
+
+The customer email is intentionally NOT a duplicate of Stripe's auto-generated receipt — Stripe handles the financial paperwork; ours handles brand experience + expectation setting.
 
 Required env vars (set in Netlify dashboard → Site → Environment):
 
-- `RESEND_API_KEY` — generate at resend.com/api-keys (free tier: 100 emails/day, 3,000/month).
-- `ADMIN_NOTIFICATION_EMAIL` — where to send the notifications (e.g. `hello@lusikandsons.com`).
-- `RESEND_FROM_EMAIL` *(optional)* — sender address. Defaults to `Lusik & Sons <onboarding@resend.dev>` if unset, which works for testing but will land in spam. To use a real `from`, verify `lusikandsons.com` in Resend → Domains and set this to e.g. `Lusik & Sons <orders@lusikandsons.com>`.
+- `RESEND_API_KEY` — generate at resend.com/api-keys (free tier: 100 emails/day, 3,000/month; both emails count against this).
+- `ADMIN_NOTIFICATION_EMAIL` — where to send the admin notifications (e.g. `hello@lusikandsons.com`).
+- `RESEND_FROM_EMAIL` *(optional)* — sender address. Defaults to `Lusik & Sons <onboarding@resend.dev>` if unset, which works for testing but will land in spam. To use a real `from`, verify `lusikandsons.com` in Resend → Domains and set this to e.g. `Lusik & Sons <orders@lusikandsons.com>`. Especially important for the customer confirmation — a transactional email from `resend.dev` looks suspicious to non-technical customers.
 
-The composer lives in `netlify/functions/_lib/email.mjs`. To extend (e.g. add a customer order-confirmation email later), add another exported function alongside `sendAdminOrderEmail` and call it from wherever in the order pipeline you need.
+The composers live in `netlify/functions/_lib/email.mjs`. Shared helpers (`esc`, `dollars`, `summarizeItem`) are reused between both. To extend (e.g. add a shipped-notification email when Lusik flips an order to `shipped`), add another exported function alongside the existing two and call it from wherever in the order pipeline you need.
 
 ### Lusik's Journal
 
