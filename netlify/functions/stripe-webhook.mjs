@@ -113,7 +113,14 @@ export default async (req) => {
   const customerEmail = session.customer_details?.email
                      ?? pending.customerEmail
                      ?? "";
-  const shippingAddr  = session.shipping_details?.address ?? null;
+  // Bundle the recipient's name into shipping_address so the
+  // "your order shipped" email later has someone to greet —
+  // Stripe stores name and address in separate sub-objects, but
+  // for our purposes one JSONB blob keeps the order row simple.
+  const shippingAddrRaw = session.shipping_details?.address ?? null;
+  const shippingAddr = shippingAddrRaw
+    ? { ...shippingAddrRaw, name: session.shipping_details?.name ?? null }
+    : null;
 
   // Insert order. We don't use a transaction with separate inserts
   // because @netlify/neon's tagged template doesn't auto-batch;

@@ -440,3 +440,152 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
 
   return await sendEmail({ to: customerEmail, subject, html, text });
 }
+
+// Mirror of the browser-side getTrackingUrl helper. Kept here
+// (rather than imported across the JS/server boundary) because
+// _lib/ functions can't reach into index.html, and the URL
+// shapes don't change often. Keep this in sync if a carrier
+// changes their public tracking URL pattern.
+function getTrackingUrl(carrier, trackingNumber) {
+  if (!trackingNumber || !carrier) return null;
+  const c = carrier.toLowerCase();
+  if (c.includes("usps"))  return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(trackingNumber)}`;
+  if (c.includes("ups"))   return `https://www.ups.com/track?tracknum=${encodeURIComponent(trackingNumber)}`;
+  if (c.includes("fedex")) return `https://www.fedex.com/fedextrack/?tracknumbers=${encodeURIComponent(trackingNumber)}`;
+  return null;
+}
+
+/**
+ * Send the "your order shipped" email to the customer. Fired
+ * by the admin-orders Function the first time Lusik flips an
+ * order's fulfillment_status to "shipped." The orders.shipped_at
+ * column gates this — once set, the email isn't re-fired even
+ * if Lusik toggles status back and forth.
+ *
+ * `order` — the orders row (post-update, with carrier + tracking
+ *           number set; shipping_address.name has the recipient)
+ */
+export async function sendShippedNotification({ order }) {
+  const to = order.customer_email;
+  if (!to) {
+    console.warn("[email] customer email missing on shipped notification; skipping");
+    return false;
+  }
+
+  const orderNumber  = order.order_number ?? order.id;
+  const ship         = order.shipping_address ?? {};
+  const customerName = ship.name ?? null;
+  const greeting     = customerName ? `Hi ${customerName.split(" ")[0]},` : "Hi there,";
+  const carrier      = order.carrier ?? "";
+  const tracking     = order.tracking_number ?? "";
+  const trackUrl     = getTrackingUrl(carrier, tracking);
+  const hasPhoto     = !!order.finished_photo_key;
+
+  const subject = tracking
+    ? `Your order is on its way — ${orderNumber}`
+    : `Your order has shipped — ${orderNumber}`;
+
+  const accent = "#B08842";
+  const ink    = "#1A1612";
+  const cream  = "#F5EFE3";
+  const muted  = "#6B655D";
+
+  const baseUrl = process.env.URL || "https://lusikandsons.com";
+
+  const trackingBlock = tracking ? `
+    <div style="margin:22px 0;padding:18px 20px;background:#FFFFFF;border:1px solid #E8E1D2;">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${muted};font-weight:600;margin-bottom:10px;">Tracking</div>
+      <div style="font-size:14px;color:${ink};line-height:1.6;margin-bottom:12px;">
+        ${esc(carrier)} · <span style="font-family:'SF Mono',Monaco,Consolas,monospace;font-size:13px;">${esc(tracking)}</span>
+      </div>
+      ${trackUrl ? `
+        <a href="${trackUrl}" style="display:inline-block;padding:10px 18px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+          Track package →
+        </a>` : `<div style="font-size:13px;color:${muted};">Tracking link available from ${esc(carrier)}.</div>`
+      }
+    </div>
+  ` : "";
+
+  const photoBlock = hasPhoto ? `
+    <div style="margin:22px 0;padding:16px 18px;background:#FAF1DF;border-left:3px solid ${accent};">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:8px;">A photo of your finished piece</div>
+      <div style="font-size:14px;color:${ink};line-height:1.6;">
+        Lusik snapped a photo of the finished blanket before packing it up. You can see it any time on your order in your account:
+        <div style="margin-top:10px;">
+          <a href="${baseUrl}/" style="color:${accent};text-decoration:none;font-weight:500;">View your order →</a>
+        </div>
+      </div>
+    </div>
+  ` : "";
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">Lusik &amp; Sons</div>
+
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 14px 0;letter-spacing:-0.01em;line-height:1.2;">
+      ${tracking ? "Your order is on its way." : "Your order has shipped."}
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 6px 0;">${esc(greeting)}</p>
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">
+      Lusik finished your piece and ${tracking ? "handed it to" : "shipped it with"} ${esc(carrier || "the carrier")}. ${tracking ? "Most ground shipments land within 3 to 5 business days." : ""}
+    </p>
+
+    ${trackingBlock}
+
+    ${photoBlock}
+
+    <div style="margin:24px 0;padding:18px 20px;background:#FFFFFF;border:1px solid #E8E1D2;">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${muted};font-weight:600;margin-bottom:10px;">When it arrives</div>
+      <div style="font-size:14px;color:${ink};line-height:1.6;">
+        If anything looks wrong — damaged in transit, a stitch you weren't expecting, the wrong name — email us within 14 days with a photo and Lusik will repair or remake it. We stand behind every piece that leaves her table.
+      </div>
+    </div>
+
+    <p style="margin:24px 0 6px 0;font-size:14px;color:${muted};">
+      Questions, or want to order another?
+    </p>
+    <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
+      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      ${" · "}
+      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS`,
+    "",
+    tracking ? `Your order is on its way.` : `Your order has shipped.`,
+    "",
+    greeting,
+    "",
+    `Lusik finished your piece and ${tracking ? "handed it to" : "shipped it with"} ${carrier || "the carrier"}.${tracking ? " Most ground shipments land within 3 to 5 business days." : ""}`,
+    "",
+    tracking ? `TRACKING\n  ${carrier} ${tracking}${trackUrl ? `\n  ${trackUrl}` : ""}` : "",
+    "",
+    hasPhoto ? `A photo of your finished piece is in your account at ${baseUrl}` : "",
+    "",
+    `WHEN IT ARRIVES`,
+    `  If anything looks wrong — damaged in transit, a stitch you weren't expecting,`,
+    `  the wrong name — email us within 14 days with a photo and Lusik will repair`,
+    `  or remake it.`,
+    "",
+    `Questions or another order?`,
+    `  hello@lusikandsons.com`,
+    `  (760) 874-2333`,
+    "",
+    `Made by hand in Cypress, California.`,
+    `${baseUrl}`,
+  ].filter(Boolean).join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}

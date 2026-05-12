@@ -18,9 +18,10 @@
 // the JWT doesn't carry the role.
 // ============================================================
 
-import { sql }          from "./_lib/db.mjs";
-import { requireAdmin } from "./_lib/auth.mjs";
-import { json }         from "./_lib/json.mjs";
+import { sql }                    from "./_lib/db.mjs";
+import { requireAdmin }           from "./_lib/auth.mjs";
+import { json }                   from "./_lib/json.mjs";
+import { sendShippedNotification } from "./_lib/email.mjs";
 
 // Whitelisted enum values — anything outside this set is rejected
 // at the PUT layer so a malformed payload can't put an order into
@@ -150,6 +151,22 @@ export default async (req, context) => {
       return json(400, { error: "No updatable fields in body" });
     }
 
+    // Detect the "first time being marked shipped" transition.
+    // We use orders.shipped_at as the dedupe gate — if it's
+    // still NULL after the update is computed but the new
+    // status is "shipped", this PUT is the first time Lusik
+    // marked it shipped, and we should fire the customer email
+    // + set the timestamp. Lusik flipping status to shipped a
+    // second time (e.g. after toggling back to "ready_to_ship"
+    // and back) won't re-fire the email.
+    const willBeShipped = updates.fulfillment_status === "shipped";
+    let stampShippedAt = false;
+    if (willBeShipped) {
+      const existing = await sql`SELECT shipped_at FROM orders WHERE id = ${id} LIMIT 1`;
+      if (existing.length === 0) return json(404, { error: "Order not found" });
+      if (!existing[0].shipped_at) stampShippedAt = true;
+    }
+
     // Use COALESCE so missing keys preserve existing values.
     const rows = await sql`
       UPDATE orders SET
@@ -157,11 +174,23 @@ export default async (req, context) => {
         carrier             = CASE WHEN ${'carrier' in updates} THEN ${updates.carrier ?? null} ELSE carrier END,
         tracking_number     = CASE WHEN ${'tracking_number' in updates} THEN ${updates.tracking_number ?? null} ELSE tracking_number END,
         estimated_ship_date = CASE WHEN ${'estimated_ship_date' in updates} THEN ${updates.estimated_ship_date ?? null}::date ELSE estimated_ship_date END,
-        admin_notes         = CASE WHEN ${'admin_notes' in updates} THEN ${updates.admin_notes ?? null} ELSE admin_notes END
+        admin_notes         = CASE WHEN ${'admin_notes' in updates} THEN ${updates.admin_notes ?? null} ELSE admin_notes END,
+        shipped_at          = CASE WHEN ${stampShippedAt} THEN now() ELSE shipped_at END
       WHERE id = ${id}
       RETURNING *
     `;
     if (rows.length === 0) return json(404, { error: "Order not found" });
+
+    // Fire the customer shipped-notification email AFTER the
+    // update lands. Same isolation as the order-completion
+    // emails: a Resend failure (missing API key, service down)
+    // logs + returns false; it never throws and never blocks
+    // the admin save.
+    if (stampShippedAt) {
+      await sendShippedNotification({ order: rows[0] })
+        .catch((err) => console.warn("[admin-orders] shipped email failed:", err?.message ?? err));
+    }
+
     return json(200, { order: rows[0] });
   }
 
