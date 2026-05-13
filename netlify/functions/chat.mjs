@@ -103,9 +103,12 @@ async function checkAndIncrementRateLimit(ip, sessionId) {
   if (current.count >= MAX_TURNS_PER_SESSION) {
     return { ok: false, used: current.count };
   }
-  await store.setJSON(key, { count: current.count + 1 }, {
-    metadata: { ttl: 60 * 60 * 24 }, // best-effort expiry
-  });
+  // Netlify Blobs doesn't auto-expire based on metadata, so the
+  // keys persist until manually cleaned. That's acceptable here:
+  // each key embeds the YYYY-MM-DD date, so the namespace grows
+  // linearly with active days (not active sessions). A scheduled
+  // cleanup of pre-yesterday keys is a future polish.
+  await store.setJSON(key, { count: current.count + 1 });
   return { ok: true, used: current.count + 1 };
 }
 

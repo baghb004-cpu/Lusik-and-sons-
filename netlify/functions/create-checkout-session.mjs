@@ -120,9 +120,25 @@ async function handle(req, context) {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  const { cart, userId, customerEmail, social_consent, gift } = body ?? {};
+  const { cart, social_consent, gift } = body ?? {};
   if (!Array.isArray(cart) || cart.length === 0) {
     return json(400, { error: "Cart is empty" });
+  }
+
+  // userId and customerEmail are derived from the Identity JWT when
+  // present — NEVER from the request body. A signed-in customer
+  // can't impersonate someone else by sending a different userId,
+  // and a guest can't plant an order against a victim's email and
+  // have it auto-attach when the victim later signs up.
+  const identityUser = context?.clientContext?.user;
+  const userId = identityUser?.sub ?? null;
+  const bodyEmail = typeof body?.customerEmail === "string" ? body.customerEmail.trim() : "";
+  // Trust JWT email when authenticated. For guests, accept a
+  // syntactically valid email from the body so Stripe can send
+  // them a receipt — but no body email gets stamped on a user_id.
+  let customerEmail = identityUser?.email ?? null;
+  if (!customerEmail && bodyEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bodyEmail)) {
+    customerEmail = bodyEmail;
   }
 
   // Build Stripe line items from the trusted price map. Any item
@@ -213,13 +229,15 @@ async function handle(req, context) {
       },
     });
   } catch (err) {
-    // Log the full error for the Netlify Functions log viewer.
+    // Log fields for the Netlify Functions log viewer. err.raw can
+    // include partial card data on some error types, so omit it in
+    // production logs.
     console.error("Stripe session create failed:", {
       type:    err?.type,
       code:    err?.code,
       param:   err?.param,
       message: err?.message,
-      raw:     err?.raw,
+      ...(isProd ? {} : { raw: err?.raw }),
     });
     if (isProd) {
       return json(502, { error: "Payment provider rejected the request. Please try again." });

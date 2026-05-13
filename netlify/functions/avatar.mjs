@@ -14,6 +14,7 @@
 // ============================================================
 
 import { getStore }    from "@netlify/blobs";
+import { randomBytes } from "node:crypto";
 import { requireUser } from "./_lib/auth.mjs";
 import { json }        from "./_lib/json.mjs";
 
@@ -57,8 +58,13 @@ export default async (req, context) => {
     return json(413, { error: `Image must be 1 byte – ${MAX_BYTES} bytes` });
   }
 
-  // Path mirrors the old Supabase Storage convention: <user_id>/avatar-<ts>.<ext>
-  const key = `${user.id}/avatar-${Date.now()}.${ext}`;
+  // Path: <user_id>/avatar-<ts>-<nonce>.<ext>. The random nonce
+  // makes the key unguessable even if an attacker learns the
+  // user_id — avatar-get is public-by-design (so <img src> works
+  // without an auth header), so we rely on the key being a
+  // capability that only the owner ever sees.
+  const nonce = randomBytes(8).toString("hex");
+  const key = `${user.id}/avatar-${Date.now()}-${nonce}.${ext}`;
   const store = getStore({ name: STORE_NAME, consistency: "strong" });
   await store.set(key, bytes, {
     metadata: { contentType, uploadedAt: new Date().toISOString(), userId: user.id },

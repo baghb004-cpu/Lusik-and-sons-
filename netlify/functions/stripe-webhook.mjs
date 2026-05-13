@@ -83,8 +83,12 @@ export default async (req) => {
       process.env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (err) {
+    // Log the detailed reason (missing secret vs. mismatch vs.
+    // timestamp drift) but don't echo it back — the response is
+    // public and the detail would help an attacker tune their
+    // forgery attempts.
     console.warn("Webhook signature verification failed:", err.message);
-    return new Response(`Invalid signature: ${err.message}`, { status: 400 });
+    return new Response("Invalid signature", { status: 400 });
   }
 
   // Dispatch on event type. Anything we haven't subscribed to

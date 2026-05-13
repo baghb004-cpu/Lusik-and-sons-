@@ -34,7 +34,11 @@ export default async (req, context) => {
   // be an admin. Admins can view any photo (Lusik reviewing her
   // own work shouldn't be blocked).
   const orderId = key.split("/")[0];
-  if (!orderId) return json(400, { error: "Malformed key" });
+  // UUID-shape gate before the SQL lookup so attacker-controlled
+  // path segments (".." etc.) can't reach the query.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId || "")) {
+    return json(400, { error: "Malformed key" });
+  }
 
   const isAdmin = auth.user.roles?.includes("admin");
   if (!isAdmin) {

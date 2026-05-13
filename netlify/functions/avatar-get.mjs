@@ -4,8 +4,8 @@
 // GET ?key=<blob-key> -> streams the avatar bytes back.
 //
 // Public (no auth) — avatar URLs are meant to be embeddable in
-// <img src>. Knowing the key is enough to view; the key is opaque
-// and namespaced by user_id so it's not enumerable.
+// <img src>. The key includes a random nonce (see avatar.mjs) so
+// learning a user_id alone is not enough to guess valid keys.
 // ============================================================
 
 import { getStore } from "@netlify/blobs";
