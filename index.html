@@ -5276,17 +5276,34 @@ function App() {
     queueMicrotask(() => { try { window.umami?.track(); } catch {} });
   }, [view, journalSlug]);
 
-  // Mobile-only: reset scroll to the top on every view change. Without
-  // this, switching from a deep-scrolled position (e.g. the bib at the
-  // bottom of the home page → Checkout) leaves the new view's header
-  // off-screen and the customer has to scroll up manually. Desktop's
-  // taller viewport hides the issue, so we gate this on Tailwind's
-  // <lg breakpoint to avoid an unnecessary scroll jump on big screens
-  // where the user might have intentionally chosen their scroll spot.
+  // Mobile-only: reset scroll to the top on every view change, and
+  // reset the pinch-zoom level too. Without this, switching from a
+  // deep-scrolled position (e.g. the bib at the bottom of the home
+  // page → Checkout) leaves the new view's header off-screen, AND
+  // any zoom-in the user had applied carries over to the new view.
+  //
+  // There's no JS API to reset pinch-zoom directly, but iOS Safari
+  // (and most mobile browsers) snaps back to scale 1.0 when the
+  // viewport meta tag temporarily switches to user-scalable=no.
+  // Toggling it for ~80ms is enough to trigger the reset; we then
+  // restore the original so the user can re-zoom freely on the new
+  // view if they want to.
+  //
+  // Gated on Tailwind's <lg breakpoint so we don't yank scroll
+  // position or pinch-zoom out from under a desktop user.
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!window.matchMedia?.("(max-width: 1023px)").matches) return;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) return;
+    const original = viewport.getAttribute("content");
+    viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+    const restoreId = setTimeout(() => {
+      viewport.setAttribute("content", original);
+    }, 80);
+    return () => clearTimeout(restoreId);
   }, [view, journalSlug]);
 
   // --- PAID-FEATURE STUBS (off by default; see CONFIG.PAID_FEATURES) ---
