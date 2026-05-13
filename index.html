@@ -5347,6 +5347,7 @@ function App() {
       if (existing) return c.map((i) => (i.id === id ? { ...i, qty: i.qty + qty } : i));
       return [...c, {
         id, name: PRODUCT.name, subtitle,
+        productKey: isAlphabet ? `blanket-${layout?.key ?? "default"}` : `blanket-default`,
         price, image: PRODUCT.gallery[0],
         qty, colorHex: color.hex,
         alphabet: isAlphabet ? selection : null,
@@ -11326,10 +11327,11 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
     if (!id) return null;
     if (id.startsWith?.("bib-")) return "bib";
     if (id.startsWith?.("blanket-")) {
-      // Cart ids: `blanket-{alphabet}-{layout}` — extract the layout suffix
-      // and map to TRUSTED_PRODUCTS key `blanket-{layout}`.
+      // Cart ids: `blanket-{alphabet}-{layout}-{blockDmc}-{letterDmc}[...]`
+      // The layout key uses underscores, never hyphens, so parts[2] is
+      // always the complete layout key. Extract only that.
       const parts = id.split("-");
-      if (parts.length >= 3) return `blanket-${parts.slice(2).join("-")}`;
+      if (parts.length >= 3) return `blanket-${parts[2]}`;
       return "blanket";
     }
     return null;
