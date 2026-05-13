@@ -19,7 +19,7 @@ import { json }        from "./_lib/json.mjs";
 // Bumped on every diagnostic commit so we can prove which
 // build is actually running on the live site. Returned in
 // every error response below.
-const BUILD_TAG = "cdac3f6-diag-v2";
+const BUILD_TAG = "b8848f5-diag-v3";
 
 // Lazy-init the Stripe client INSIDE the handler so a missing
 // STRIPE_SECRET_KEY env var returns a clean JSON 503 instead of
@@ -99,13 +99,11 @@ function buildReturnUrls(originHeader) {
 }
 
 export default async (req, context) => {
-  // Top-level guard so ANY synchronous throw (env-var init,
-  // missing module, etc.) returns clean JSON instead of letting
-  // Netlify wrap the failure in its own opaque 502 HTML page.
+  console.log(`[${BUILD_TAG}] invoked at`, new Date().toISOString());
   try {
     return await handle(req, context);
   } catch (err) {
-    console.error("create-checkout-session crashed at top level:", err);
+    console.error(`[${BUILD_TAG}] crashed at top level:`, err);
     return json(500, {
       error:   "Function crashed before reaching Stripe — see message.",
       code:    err?.code    || "UNCAUGHT",
@@ -116,18 +114,21 @@ export default async (req, context) => {
 };
 
 async function handle(req, context) {
+  console.log(`[${BUILD_TAG}] step 1: method check`);
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
-  // Initialize Stripe client (will throw a clean error if the
-  // secret key env var is missing; caught by the outer guard).
+  console.log(`[${BUILD_TAG}] step 2: getStripe()`);
   const stripe = getStripe();
+  console.log(`[${BUILD_TAG}] step 2 OK`);
 
+  console.log(`[${BUILD_TAG}] step 3: parse body`);
   let body;
   try {
     body = await req.json();
   } catch {
     return json(400, { error: "Invalid JSON body" });
   }
+  console.log(`[${BUILD_TAG}] step 3 OK, cart length =`, body?.cart?.length);
 
   const { cart, userId, customerEmail, social_consent, gift } = body ?? {};
   if (!Array.isArray(cart) || cart.length === 0) {
@@ -197,6 +198,7 @@ async function handle(req, context) {
   // generic message to avoid leaking implementation details.
   const isProd = process.env.CONTEXT === "production";
 
+  console.log(`[${BUILD_TAG}] step 4: stripe.checkout.sessions.create`);
   let session;
   try {
     session = await stripe.checkout.sessions.create({
@@ -247,15 +249,36 @@ async function handle(req, context) {
   // of truth for what the customer just bought, keyed by Stripe's
   // session id. The webhook deletes the entry after persisting the
   // order, so this is short-lived ephemeral storage.
-  const pending = getStore({ name: "pending-orders", consistency: "strong" });
-  await pending.setJSON(session.id, {
-    cart,
-    userId: userId ?? null,
-    customerEmail: customerEmail ?? null,
-    social_consent: social_consent ?? null,
-    gift: gift ?? null,
-    createdAt: new Date().toISOString(),
-  });
+  //
+  // Wrapped in its own try + 4-second hard timeout so a hung or
+  // mis-configured Blobs call can't crash the whole function.
+  // If the stash fails we still hand the Stripe URL back to the
+  // browser — the customer can complete payment, and the only
+  // loss is admin-side data the webhook would have read.
+  console.log(`[${BUILD_TAG}] step 4 OK, session id =`, session?.id);
+  console.log(`[${BUILD_TAG}] step 5: blobs setJSON (with 4s timeout)`);
+  try {
+    const stashPromise = (async () => {
+      const pending = getStore({ name: "pending-orders", consistency: "strong" });
+      await pending.setJSON(session.id, {
+        cart,
+        userId: userId ?? null,
+        customerEmail: customerEmail ?? null,
+        social_consent: social_consent ?? null,
+        gift: gift ?? null,
+        createdAt: new Date().toISOString(),
+      });
+    })();
+    const timeout = new Promise((_, rej) =>
+      setTimeout(() => rej(new Error("Blobs setJSON timed out after 4s")), 4000)
+    );
+    await Promise.race([stashPromise, timeout]);
+  } catch (blobErr) {
+    // Log but don't fail the request — Stripe session is already
+    // created, so the customer should be allowed through.
+    console.error("Pending-order stash failed (continuing anyway):", blobErr?.message || blobErr);
+  }
 
-  return json(200, { url: session.url });
+  console.log(`[${BUILD_TAG}] step 6: returning Stripe URL to browser`);
+  return json(200, { url: session.url, build: BUILD_TAG });
 }
