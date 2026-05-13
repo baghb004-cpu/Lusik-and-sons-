@@ -11520,44 +11520,42 @@ function CheckoutView({ cart, subtotal, user, profile, onBack, updateQty, remove
           </div>
           <div className="mb-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
             {cart.map((item) => (
-              <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
-                <div className="flex gap-3 py-4" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
-                  <div className="relative shrink-0">
-                    <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
-                    {item.isCustom && (
-                      <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
-                    <div className="flex items-center gap-2 mb-2">
-                      {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                      <p className="text-xs opacity-60 truncate">{item.subtitle}</p>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
-                        <button
-                          onClick={() => updateQty(item.id, -1)}
-                          className="p-1.5"
-                          aria-label={item.qty === 1 ? "Remove item" : "Decrease quantity"}
-                        ><Minus size={11} /></button>
-                        <span className="text-xs w-5 text-center tabular-nums">{item.qty}</span>
-                        <button
-                          onClick={() => updateQty(item.id, 1)}
-                          className="p-1.5"
-                          aria-label="Increase quantity"
-                        ><Plus size={11} /></button>
-                      </div>
-                      <p className="text-sm tabular-nums" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => removeFromCart(item.id)}
-                    className="opacity-40 hover:opacity-100 self-start p-1"
-                    aria-label="Remove from cart"
-                  ><X size={14} /></button>
+              <div key={item.id} className="flex gap-3 py-4" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
+                <div className="relative shrink-0">
+                  <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                  {item.isCustom && (
+                    <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
+                  )}
                 </div>
-              </SwipeableRow>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
+                    <p className="text-xs opacity-60 truncate">{item.subtitle}</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
+                      <button
+                        onClick={() => updateQty(item.id, -1)}
+                        className="p-1.5"
+                        aria-label={item.qty === 1 ? "Remove item" : "Decrease quantity"}
+                      ><Minus size={11} /></button>
+                      <span className="text-xs w-5 text-center tabular-nums">{item.qty}</span>
+                      <button
+                        onClick={() => updateQty(item.id, 1)}
+                        className="p-1.5"
+                        aria-label="Increase quantity"
+                      ><Plus size={11} /></button>
+                    </div>
+                    <p className="text-sm tabular-nums" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeFromCart(item.id)}
+                  className="opacity-40 hover:opacity-100 self-start p-1"
+                  aria-label="Remove from cart"
+                ><X size={14} /></button>
+              </div>
             ))}
           </div>
           <div className="pt-2 space-y-1 text-sm">
