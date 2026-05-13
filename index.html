@@ -1350,16 +1350,6 @@ const PRODUCT = {
       enabled: true,
     },
   ],
-  // LETTERS — used by the bib's hand-stitched mode, where there's only room
-  // for one letter. The customer picks a single letter from this list.
-  letters: [
-    { display: "Ա", transliteration: "Ayb", language: "Armenian" },
-    { display: "Բ", transliteration: "Ben", language: "Armenian" },
-    { display: "Գ", transliteration: "Gim", language: "Armenian" },
-    { display: "A", transliteration: "A",   language: "English" },
-    { display: "B", transliteration: "B",   language: "English" },
-    { display: "C", transliteration: "C",   language: "English" },
-  ],
 };
 
 // === CUSTOM EMBROIDERY PRODUCTS ===
@@ -3191,7 +3181,8 @@ const auth = (() => {
 // is how the Functions know who's asking.
 //
 // Shape mirrors the old `supa` namespace so call sites stay short
-// and readable: `await db.getProfile(userId)` etc.
+// and readable: `await db.getProfile()` etc. The Functions identify
+// the user from the Identity JWT, so the wrappers don't take a userId.
 // ============================================================
 const db = (() => {
   const call = async (path, { method = "GET", body, auth: needAuth = true } = {}) => {
@@ -3214,11 +3205,14 @@ const db = (() => {
   };
 
   // --- PROFILES ---
-  const getProfile = async (_userId) => {
+  // The Functions identify the user from the Identity JWT, so these
+  // wrappers don't need a userId — the leading underscore on the old
+  // signature was a hint that the param was already dead.
+  const getProfile = async () => {
     const { error, data } = await call("/profile", { method: "GET" });
     return { profile: data?.profile ?? null, error };
   };
-  const updateProfile = async (_userId, updates) => {
+  const updateProfile = async (updates) => {
     const { error, data } = await call("/profile", { method: "PUT", body: updates });
     return { profile: data?.profile ?? null, error };
   };
@@ -3227,7 +3221,7 @@ const db = (() => {
   // The browser reads the file, base64-encodes it, and posts to the
   // avatar Function. The Function stores it in Netlify Blobs and
   // returns a relative URL the UI can put straight into <img src>.
-  const uploadAvatar = async (_userId, file) => {
+  const uploadAvatar = async (file) => {
     const fileToBase64 = (f) => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
@@ -3246,11 +3240,11 @@ const db = (() => {
   };
 
   // --- ADDRESSES ---
-  const listAddresses = async (_userId) => {
+  const listAddresses = async () => {
     const { error, data } = await call("/addresses", { method: "GET" });
     return { addresses: data?.addresses ?? [], error };
   };
-  const insertAddress = async (_userId, address) => {
+  const insertAddress = async (address) => {
     const { error, data } = await call("/addresses", { method: "POST", body: address });
     return { address: data?.address ?? null, error };
   };
@@ -3260,11 +3254,11 @@ const db = (() => {
   };
 
   // --- SAVED CART ---
-  const getSavedCart = async (_userId) => {
+  const getSavedCart = async () => {
     const { error, data } = await call("/saved-cart", { method: "GET" });
     return { cart: data?.cart ?? null, error };
   };
-  const saveCart = async (_userId, cartData) => {
+  const saveCart = async (cartData) => {
     const { error } = await call("/saved-cart", { method: "PUT", body: { cart: cartData } });
     return { error };
   };
@@ -3346,7 +3340,7 @@ const db = (() => {
   };
 
   // --- ORDERS ---
-  const listOrders = async (_userId) => {
+  const listOrders = async () => {
     const { error, data } = await call("/orders", { method: "GET" });
     return { orders: data?.orders ?? [], error };
   };
@@ -4964,8 +4958,8 @@ function App() {
       setIsAdmin(auth.isAdmin());
       // Fetch profile + saved cart in parallel
       const [{ profile: p }, { cart: savedCart }] = await Promise.all([
-        db.getProfile(session.user.id),
-        db.getSavedCart(session.user.id),
+        db.getProfile(),
+        db.getSavedCart(),
       ]);
       if (!mounted) return;
       setProfile(p ?? null);
@@ -5265,7 +5259,7 @@ function App() {
         const isDataUrl = typeof rest.image === "string" && rest.image.startsWith("data:");
         return { ...rest, image: isDataUrl ? null : rest.image };
       });
-      db.saveCart(user.id, stored).catch((err) => console.warn("Cart save failed:", err));
+      db.saveCart(stored).catch((err) => console.warn("Cart save failed:", err));
     }, CONFIG.CART_PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [cart, user]);
@@ -6746,7 +6740,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
   useEffect(() => {
     if (!user?.id) return;
     let mounted = true;
-    db.listAddresses(user.id).then(({ addresses: a, error }) => {
+    db.listAddresses().then(({ addresses: a, error }) => {
       if (!mounted) return;
       if (error) console.warn("listAddresses error:", error);
       setAddresses(a || []);
@@ -6759,7 +6753,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
     if (!user?.id) return;
     setSavingProfile(true);
     setProfileMsg({ type: "", text: "" });
-    const { profile: updated, error } = await db.updateProfile(user.id, {
+    const { profile: updated, error } = await db.updateProfile({
       full_name: fullName.trim() || null,
       phone: phone.trim() || null,
     });
@@ -6788,13 +6782,13 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
       return;
     }
     setAvatarBusy(true);
-    const { url, error } = await db.uploadAvatar(user.id, file);
+    const { url, error } = await db.uploadAvatar(file);
     if (error || !url) {
       setAvatarBusy(false);
       toast({ kind: "error", message: error?.message || "Couldn't upload that photo — please try again." });
       return;
     }
-    const { profile: updated, error: updErr } = await db.updateProfile(user.id, { avatar_url: url });
+    const { profile: updated, error: updErr } = await db.updateProfile({ avatar_url: url });
     setAvatarBusy(false);
     if (updErr) {
       toast({ kind: "error", message: "Photo uploaded but we couldn't save it to your profile — please try again." });
@@ -6811,7 +6805,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
     for (const k of required) {
       if (!newAddr[k]?.trim()) return; // HTML required attribute will catch this
     }
-    const { address, error } = await db.insertAddress(user.id, newAddr);
+    const { address, error } = await db.insertAddress(newAddr);
     if (error) {
       toast({ kind: "error", message: error.message || "Couldn't save that address — please try again." });
       return;
@@ -7261,7 +7255,7 @@ function OrderHistory({ userId, onReorder }) {
       if (attempts === 1) {
         await db.linkGuestOrders().catch(() => {});
       }
-      const { orders: rows } = await db.listOrders(userId);
+      const { orders: rows } = await db.listOrders();
       if (!mounted) return;
       setOrders(rows);
       setLoading(false);
@@ -8332,7 +8326,7 @@ function ActiveOrderTopBar({ user, onOpenAccount }) {
   useEffect(() => {
     if (!user?.id) { setActiveOrder(null); setLoaded(true); return; }
     let cancelled = false;
-    db.listOrders(user.id).then(({ orders }) => {
+    db.listOrders().then(({ orders }) => {
       if (cancelled) return;
       const active = (orders ?? []).find((o) => ACTIVE_ORDER_STATUSES.includes(o.fulfillment_status));
       setActiveOrder(active ?? null);
@@ -8960,43 +8954,23 @@ function NewsletterForm() {
 }
 
 // === CUSTOM PRODUCT CARD ===
-// File upload + preview-on-template + size picker + add to cart for the custom embroidery items.
-// Templates are inline SVG silhouettes with a defined "stitch zone" rectangle where
-// the uploaded image is overlaid (Shutterfly-style preview).
+// Personalized-name input + thread color + size picker + add to cart for
+// the bib. The bib is the only live custom product; it's machine-embroidery
+// only with a typed name (5-6 letters, white-only bib base).
 function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
-  // Production mode applies only to products that offer hand-stitching as
-  // an option (i.e. config.handStitchedPrice is set). For others (towel),
-  // there's only one mode and the toggle isn't shown.
-  const supportsHand = typeof config.handStitchedPrice === "number";
-  // "machine" is the default for upload-style products, "hand" only when
-  // the toggle is shown and the user picks it.
-  const [production, setProduction] = useState("machine");
-  const [letter, setLetter] = useState(null); // PRODUCT.letters entry, only used when production=hand
-
-  // `customMode` on the config determines what machine-mode collects:
-  //   "image"  — file upload (towels)
-  //   "name"   — short text input, max chars enforced (bibs)
-  // Defaults to "image" if not specified, since that was the original behavior.
-  const machineMode = config.customMode ?? "image";
-
-  const [imageData, setImageData] = useState(null); // data URL, only used when production=machine && machineMode=image
-  const [imageName, setImageName] = useState("");
-  const [customName, setCustomName] = useState(""); // only used when production=machine && machineMode=name
+  const [customName, setCustomName] = useState("");
   const [size, setSize] = useState("");
   const [error, setError] = useState("");
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef(null);
 
   // ============================================================
   // BIB COLOR PICKER STATE
   // ============================================================
-  // The bib's machine-embroidered name renders in a customer-chosen thread
-  // color. Some configs (towel) don't offer a color picker, so we gracefully
-  // no-op when threadColors/colorPresets aren't defined on the config.
+  // The bib's name renders in a customer-chosen thread color. We
+  // gracefully no-op the picker if a future product config omits
+  // threadColors / colorPresets.
   const supportsColor = Array.isArray(config.threadColors) && config.threadColors.length > 0
     && Array.isArray(config.colorPresets) && config.colorPresets.length > 0;
 
-  // Default to the configured default preset (or first preset).
   const defaultPreset = supportsColor
     ? (config.colorPresets.find(p => p.key === config.defaultPresetKey) ?? config.colorPresets[0])
     : null;
@@ -9038,8 +9012,7 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
     setColorMode("preset");
   };
 
-  // When the customer manually picks a color from the palette, drop preset
-  // + any multi-color list — custom mode is always single-color.
+  // Manual color pick drops the preset + any multi-color list.
   const setBibCustomColor = (c) => {
     setLetterColor(c);
     setLetterColorList(null);
@@ -9047,176 +9020,58 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
     setColorMode("custom");
   };
 
-  // Switching production mode resets the inputs that don't apply to the
-  // newly chosen path. Otherwise the old data lingers and the cart shows
-  // misleading metadata.
-  const switchProduction = (next) => {
-    setProduction(next);
-    if (next === "hand") {
-      setImageData(null);
-      setImageName("");
-      setCustomName("");
-    } else {
-      setLetter(null);
-    }
-    setError("");
-  };
-
-  const handleFile = (file) => {
-    setError("");
-    if (!file) return;
-    if (!CONFIG.UPLOAD_ACCEPTED_TYPES.includes(file.type)) {
-      setError("Please upload a PNG or JPEG file.");
-      return;
-    }
-    if (file.size > CONFIG.UPLOAD_MAX_BYTES) {
-      const mb = (file.size / (1024 * 1024)).toFixed(1);
-      setError(`That file is ${mb} MB. Max size is 5 MB.`);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImageData(e.target.result);
-      setImageName(file.name);
-    };
-    reader.onerror = () => setError("Couldn't read that file. Try another.");
-    reader.readAsDataURL(file);
-  };
-
-  const onFileInputChange = (e) => handleFile(e.target.files?.[0]);
-
-  const onDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleFile(e.dataTransfer.files?.[0]);
-  };
-
-  const removeImage = () => {
-    setImageData(null);
-    setImageName("");
-    setError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // Validation depends on which production mode the user selected, and for
-  // machine mode, whether this product collects a name or an image.
-  const canAdd = (() => {
-    if (!size) return false;
-    if (production === "hand") return !!letter;
-    // production === "machine"
-    if (machineMode === "name") {
-      const trimmed = customName.trim();
-      const max = config.maxNameLength ?? 6;
-      return trimmed.length > 0 && trimmed.length <= max;
-    }
-    return !!imageData;
-  })();
-
-  const currentPrice = production === "hand" ? config.handStitchedPrice : config.price;
+  const maxNameLength = config.maxNameLength ?? 6;
+  const cleanName = customName.trim();
+  const canAdd = !!size && cleanName.length > 0 && cleanName.length <= maxNameLength;
 
   const handleAdd = (e) => {
     if (!size) { setError("Please choose a size."); return; }
-    if (production === "hand" && !letter) { setError("Please choose a letter."); return; }
-    if (production === "machine") {
-      if (machineMode === "name") {
-        const trimmed = customName.trim();
-        const max = config.maxNameLength ?? 6;
-        if (trimmed.length === 0) { setError("Please type a name to embroider."); return; }
-        if (trimmed.length > max) { setError(`Name must be ${max} letters or fewer — the bib is small.`); return; }
-      } else {
-        if (!imageData) { setError("Please upload an image first."); return; }
-      }
-    }
+    if (cleanName.length === 0) { setError("Please type a name to embroider."); return; }
+    if (cleanName.length > maxNameLength) { setError(`Name must be ${maxNameLength} letters or fewer — the bib is small.`); return; }
 
     if (e?.currentTarget && onCartFeedback) {
       const r = e.currentTarget.getBoundingClientRect();
       onCartFeedback(r.left + r.width / 2, r.top + r.height / 2);
     }
 
-    if (production === "hand") {
-      // Hand-stitched bib: looks more like a blanket order than an upload.
-      // We pass null for image, set a productKey suffix so the cart treats
-      // it as its own SKU, and stash the letter info in customMetadata so
-      // it survives into Stripe metadata and back out into the order record.
-      onAddCustom({
-        productKey: `${config.key}-hand`,
-        name: `${config.name} · Hand cross-stitched`,
-        price: config.handStitchedPrice,
+    // Build a friendly color description for the cart subtitle and
+    // record canonical color metadata for Lusik's order record.
+    const isMulti = Array.isArray(letterColorList) && letterColorList.length > 0;
+    const colorDesc = !supportsColor
+      ? ""
+      : isMulti
+        ? ` · ${letterColorList.map(c => c.name).join("/")}`
+        : ` · ${letterColor?.name ?? ""}`;
+    onAddCustom({
+      productKey: config.key,
+      name: config.name,
+      price: config.price,
+      size,
+      customImage: null,
+      customImageName: null,
+      subtitleOverride: `"${cleanName}" · ${size}${colorDesc}`,
+      customMetadata: {
+        production: "machine_embroidery_name",
+        personalized_name: cleanName,
         size,
-        customImage: null,
-        customImageName: null,
-        // Cart drawer reads `subtitle`; we set this so the row reads cleanly.
-        subtitleOverride: `Letter: ${letter.display} (${letter.transliteration}, ${letter.language}) · ${size}`,
-        customMetadata: {
-          production: "hand_cross_stitch",
-          letter_display: letter.display,
-          letter_translit: letter.transliteration,
-          letter_language: letter.language,
-          size,
-        },
-      });
-    } else if (machineMode === "name") {
-      // Machine-embroidered bib with a personalized name.
-      const cleanName = customName.trim();
-      // Build a friendly color description for the cart subtitle and
-      // record canonical color metadata for Lusik's order record.
-      const isMulti = Array.isArray(letterColorList) && letterColorList.length > 0;
-      const colorDesc = !supportsColor
-        ? ""
-        : isMulti
-          ? ` · ${letterColorList.map(c => c.name).join("/")}`
-          : ` · ${letterColor?.name ?? ""}`;
-      onAddCustom({
-        productKey: config.key,
-        name: config.name,
-        price: config.price,
-        size,
-        customImage: null,
-        customImageName: null,
-        subtitleOverride: `"${cleanName}" · ${size}${colorDesc}`,
-        customMetadata: {
-          production: "machine_embroidery_name",
-          personalized_name: cleanName,
-          size,
-          // Color metadata — null fields when no color picker exists, which
-          // keeps order data clean for non-color products. For single-color
-          // bibs the *_multi field is null; for Armenian Flag it lists the
-          // ordered hex+name list of letter colors.
-          thread_color_name: !isMulti && letterColor ? letterColor.name : null,
-          thread_color_hex: !isMulti && letterColor ? letterColor.hex : null,
-          thread_color_ref: !isMulti && letterColor ? letterColor.dmc : null,
-          thread_colors_multi: isMulti
-            ? letterColorList.map(c => `${c.name} (${c.hex})`).join(" | ")
-            : null,
-          color_preset_key: activePresetKey ?? null,
-        },
-      });
-    } else {
-      // Default: machine-embroidered with uploaded image (towel).
-      onAddCustom({
-        productKey: config.key,
-        name: config.name,
-        price: config.price,
-        size,
-        customImage: imageData,
-        customImageName: imageName,
-        customMetadata: {
-          production: "machine_embroidery",
-          size,
-          image_filename: imageName,
-        },
-      });
-    }
+        // Color metadata — null fields when no color picker exists, which
+        // keeps order data clean for non-color products. For single-color
+        // bibs the *_multi field is null; for Armenian Flag it lists the
+        // ordered hex+name list of letter colors.
+        thread_color_name: !isMulti && letterColor ? letterColor.name : null,
+        thread_color_hex:  !isMulti && letterColor ? letterColor.hex  : null,
+        thread_color_ref:  !isMulti && letterColor ? letterColor.dmc  : null,
+        thread_colors_multi: isMulti
+          ? letterColorList.map(c => `${c.name} (${c.hex})`).join(" | ")
+          : null,
+        color_preset_key: activePresetKey ?? null,
+      },
+    });
 
     // Reset for next custom order
-    setImageData(null);
-    setImageName("");
     setCustomName("");
     setSize("");
-    setLetter(null);
-    setProduction("machine");
     setError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -9226,39 +9081,25 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           `lg:top-24` clears the sticky nav (~80px) with breathing room. */}
       <div className="relative aspect-square overflow-hidden lg:sticky lg:top-24 lg:self-start" style={{ background: "linear-gradient(135deg, #FAF6EC 0%, #EFE7D6 100%)" }}>
         <ProductTemplate
-          productKey={config.key}
-          imageData={imageData}
-          letter={production === "hand" ? letter : null}
-          customName={production === "machine" && machineMode === "name" ? customName : null}
+          customName={customName}
           nameColor={supportsColor && !letterColorList ? letterColor?.hex : null}
           nameColors={supportsColor && letterColorList ? letterColorList.map(c => c.hex) : null}
         />
-        {/* Empty-state placeholder — shown only when NO content is present.
-            For name-mode bibs, this hides as soon as the customer types
-            anything in the name input. Shows a real "Romeo" bib photo so
-            the customer's first impression of this product is the actual
-            embroidered article, not a schematic SVG. The instructional
-            caption sits below the thumbnail. */}
-        {!imageData && !letter && !(machineMode === "name" && customName.trim().length > 0) && (
+        {/* Empty-state placeholder — hides as soon as the customer types.
+            Shows a real "Romeo" bib so the first impression is an actual
+            embroidered piece, not a schematic SVG. */}
+        {cleanName.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
-            {machineMode === "name" && (
-              <div className="w-28 lg:w-32 aspect-square overflow-hidden mb-3 shadow-sm" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
-                <img
-                  src={PHOTO_BIB_ROMEO}
-                  alt="Real example — a blue cursive 'Romeo' bib stitched by Lusik"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <div className="w-28 lg:w-32 aspect-square overflow-hidden mb-3 shadow-sm" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
+              <img
+                src={PHOTO_BIB_ROMEO}
+                alt="Real example — a blue cursive 'Romeo' bib stitched by Lusik"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div className="text-center">
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-50">{machineMode === "name" ? "Real example — 'Romeo'" : "Preview"}</p>
-              <p className="text-xs opacity-50 mt-1 italic">
-                {production === "hand"
-                  ? "Pick a letter to see it"
-                  : machineMode === "name"
-                    ? "Type a name to preview yours"
-                    : "Your design will appear here"}
-              </p>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-50">Real example — 'Romeo'</p>
+              <p className="text-xs opacity-50 mt-1 italic">Type a name to preview yours</p>
             </div>
           </div>
         )}
@@ -9271,135 +9112,45 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{config.name}</h3>
           <p className="text-sm opacity-70 leading-relaxed">{config.description}</p>
           <p className="font-display text-xl mt-3" style={{ fontWeight: 500 }}>
-            ${currentPrice}
-            {supportsHand && (
-              <span className="text-xs opacity-60 ml-2">
-                {production === "hand" ? "(hand)" : "(machine)"}
-              </span>
-            )}
+            ${config.price}
           </p>
         </div>
 
-        {/* Production-method toggle (only for products that offer both) */}
-        {supportsHand && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">1. How should it be made?</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => switchProduction("hand")}
-                className="px-3 py-2.5 text-xs leading-tight transition"
-                style={{
-                  border: `1px solid ${production === "hand" ? "#1A1612" : "rgba(26,22,18,0.12)"}`,
-                  background: production === "hand" ? "#1A1612" : "transparent",
-                  color: production === "hand" ? "#F5EFE3" : "#1A1612",
-                }}
-              >
-                <span style={{ fontWeight: 500 }}>By hand</span>
-                <br />
-                <span className="opacity-70">${config.handStitchedPrice} · letters Ա Բ Գ / A B C</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => switchProduction("machine")}
-                className="px-3 py-2.5 text-xs leading-tight transition"
-                style={{
-                  border: `1px solid ${production === "machine" ? "#1A1612" : "rgba(26,22,18,0.12)"}`,
-                  background: production === "machine" ? "#1A1612" : "transparent",
-                  color: production === "machine" ? "#F5EFE3" : "#1A1612",
-                }}
-              >
-                <span style={{ fontWeight: 500 }}>By machine</span>
-                <br />
-                <span className="opacity-70">${config.price} · upload your image</span>
-              </button>
-            </div>
-            <p className="text-[0.65rem] opacity-60 mt-2 leading-relaxed">
-              {production === "hand"
-                ? "Lusik cross-stitches one letter by hand. Takes longer, ships in 5–10 business days."
-                : "Lusik machine-embroiders your uploaded image. Faster turnaround, more design flexibility."}
-            </p>
-          </div>
-        )}
+        {/* Personalized name input */}
+        <div>
+          <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
+            1. Personalized name
+          </label>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            maxLength={maxNameLength}
+            placeholder="e.g. Anna"
+            className="w-full px-3 py-2.5 text-sm"
+            style={{
+              border: "1px solid var(--border-strong)",
+              background: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              fontFamily: "Fraunces, serif",
+            }}
+            aria-label="Personalized name to embroider"
+          />
+          <p className="text-[0.65rem] opacity-60 mt-1.5">
+            Up to {maxNameLength} letters · {cleanName.length}/{maxNameLength}
+          </p>
+          <p className="text-[0.6rem] opacity-50 italic mt-1">
+            Preview only — actual embroidery font may differ slightly.
+          </p>
+        </div>
 
-        {/* Letter picker — hand-stitched mode only */}
-        {production === "hand" && supportsHand && (
+        {/* BIB COLOR PICKER — preset/custom toggle, curated palette, Lusik's
+            named presets, multi-color Armenian Flag option. Compact because
+            the bib is a $22 item — color matters but shouldn't dominate. */}
+        {supportsColor && (
           <div>
             <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {supportsHand ? "2." : "1."} Choose a letter
-            </label>
-            <div className="grid grid-cols-6 gap-1.5">
-              {PRODUCT.letters.map((l) => {
-                const selected = letter && letter.display === l.display && letter.language === l.language;
-                return (
-                  <button
-                    key={`${l.language}-${l.display}`}
-                    type="button"
-                    onClick={() => setLetter(l)}
-                    title={`${l.transliteration} · ${l.language}`}
-                    className="aspect-square flex items-center justify-center transition"
-                    style={{
-                      background: selected ? "#1A1612" : "transparent",
-                      color: selected ? "#F5EFE3" : "#1A1612",
-                      border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
-                      fontFamily: "Fraunces, serif",
-                      fontSize: "1.25rem",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {l.display}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[0.65rem] opacity-60 mt-2 leading-relaxed">
-              Need a different letter? <a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline">Email Lusik</a>.
-            </p>
-          </div>
-        )}
-
-        {/* Machine-mode picker — either an image upload (towels) or a name
-            text input (bibs). Branches on `machineMode` set in the config. */}
-        {production === "machine" && machineMode === "name" && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {supportsHand ? "2." : "1."} Personalized name
-            </label>
-            <input
-              type="text"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              maxLength={config.maxNameLength ?? 6}
-              placeholder="e.g. Anna"
-              className="w-full px-3 py-2.5 text-sm"
-              style={{
-                border: "1px solid var(--border-strong)",
-                background: "var(--bg-surface)",
-                color: "var(--text-primary)",
-                fontFamily: "Fraunces, serif",
-              }}
-              aria-label="Personalized name to embroider"
-            />
-            <p className="text-[0.65rem] opacity-60 mt-1.5">
-              Up to {config.maxNameLength ?? 6} letters · {customName.trim().length}/{config.maxNameLength ?? 6}
-            </p>
-            <p className="text-[0.6rem] opacity-50 italic mt-1">
-              Preview only — actual embroidery font may differ slightly.
-            </p>
-          </div>
-        )}
-
-        {/* BIB COLOR PICKER — appears for machine-name-mode products that
-            define a color palette (config.threadColors + config.colorPresets).
-            Mirrors the blanket's color system in miniature: preset/custom
-            toggle, curated palette, Lusik's named presets, multi-color
-            Armenian Flag option. Layout is intentionally compact because the
-            bib is a $22 item — color choice is meaningful but should not
-            dominate the form. */}
-        {production === "machine" && machineMode === "name" && supportsColor && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {(supportsHand ? 3 : 2)}. Thread color
+              2. Thread color
             </label>
 
             {/* Real-thread reference strip — a stack of finished bibs in every
@@ -9545,66 +9296,13 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           </div>
         )}
 
-        {production === "machine" && machineMode === "image" && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {supportsHand ? "2." : "1."} Upload your design
-            </label>
-            {!imageData ? (
-              <div
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={onDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer p-5 text-center transition"
-                style={{
-                  border: `1.5px dashed ${dragOver ? "#B08842" : "rgba(26,22,18,0.25)"}`,
-                  background: dragOver ? "rgba(176,136,66,0.08)" : "transparent",
-                }}
-              >
-                <Send size={20} strokeWidth={1.25} className="mx-auto mb-2" style={{ color: "#B08842" }} />
-                <p className="text-sm font-display" style={{ fontWeight: 500 }}>Tap to upload</p>
-                <p className="text-xs opacity-60 mt-1">PNG or JPEG · up to 5 MB</p>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-3" style={{ border: "1px solid rgba(26,22,18,0.15)" }}>
-                <img src={imageData} alt="Your upload" className="w-12 h-12 object-cover" style={{ border: "1px solid rgba(26,22,18,0.1)" }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-display truncate" style={{ fontWeight: 500 }}>{imageName}</p>
-                  <p className="text-[0.65rem] opacity-60">Uploaded · preview above</p>
-                </div>
-                <button onClick={removeImage} className="text-xs underline opacity-70 hover:opacity-100" aria-label="Remove image">Remove</button>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={onFileInputChange}
-              className="hidden"
-              aria-label={`Upload image for ${config.name}`}
-            />
-          </div>
-        )}
-
         {error && <p className="text-xs" style={{ color: "#8B2C2C" }}>{error}</p>}
 
-        {/* Size picker — step number accounts for whether the hand-stitch
-            toggle is shown (adds 1 step) and whether a color picker is
-            shown (adds 1 step). Final step number is the next one after
-            name input + (optional) color picker. */}
+        {/* Size picker — name input is step 1, color (if present) is step 2,
+            so size is step 2 or 3 accordingly. */}
         <div>
           <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-            {(() => {
-              // Count earlier steps:
-              //   - hand/machine toggle: +1 step (when supportsHand)
-              //   - name OR upload input: always +1
-              //   - color picker: +1 (when supportsColor and name mode)
-              let step = 1; // name/upload always present
-              if (supportsHand) step += 1;
-              if (production === "machine" && machineMode === "name" && supportsColor) step += 1;
-              return `${step + 1}.`;
-            })()} Choose a size
+            {supportsColor ? "3." : "2."} Choose a size
           </label>
           <div className="grid grid-cols-1 gap-1.5">
             {config.sizes.map((s) => (
@@ -9653,7 +9351,7 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
             cursor: canAdd ? "pointer" : "not-allowed",
           }}
         >
-          Add to cart — ${currentPrice} <ArrowRight size={14} strokeWidth={1.5} />
+          Add to cart — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />
         </button>
       </div>
     </div>
@@ -9661,109 +9359,48 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
 }
 
 // === PRODUCT TEMPLATE ===
-// SVG silhouettes with a defined "stitch zone" where the uploaded image is overlaid.
-// Coordinates are in % so they scale with the container.
-function ProductTemplate({ productKey, imageData, letter, customName, nameColor, nameColors }) {
-  // Each product defines: silhouette path + stitch zone rect (where the design appears)
-  const templates = {
-    towel: {
-      // A folded towel viewed front-on
-      paths: [
-        { d: "M 25 18 L 75 18 L 75 88 L 25 88 Z", fill: "#FAF6EC", stroke: "#B08842", strokeWidth: 0.4 },
-        // Fringe lines at the bottom
-        ...[28, 35, 42, 49, 56, 63, 70].map((x) => ({
-          d: `M ${x} 88 L ${x} 92`, fill: "none", stroke: "#B08842", strokeWidth: 0.3,
-        })),
-        // Horizontal accent stripe
-        { d: "M 27 75 L 73 75", fill: "none", stroke: "rgba(176,136,66,0.4)", strokeWidth: 0.3 },
-        { d: "M 27 78 L 73 78", fill: "none", stroke: "rgba(176,136,66,0.4)", strokeWidth: 0.3 },
-      ],
-      stitchZone: { x: 35, y: 35, w: 30, h: 30 },
+// Bib silhouette + name-preview rendered as an SVG. Coordinates are in %
+// so the template scales with its container.
+function ProductTemplate({ customName, nameColor, nameColors }) {
+  // Baby bib silhouette: rounded shape with neck cutout at top, white
+  // fill matches the real product, gold stroke keeps it visible against
+  // the cream-gradient backdrop.
+  const paths = [
+    {
+      d: "M 38 22 C 38 28 44 30 50 30 C 56 30 62 28 62 22 C 70 22 80 30 80 50 C 80 78 65 88 50 88 C 35 88 20 78 20 50 C 20 30 30 22 38 22 Z",
+      fill: "#FFFFFF", stroke: "#B08842", strokeWidth: 0.4,
     },
-    bib: {
-      // Baby bib: rounded shape with neck cutout at top.
-      // Bibs ONLY come in white — fill is pure white (#FFFFFF) to match the
-      // real product. A subtle gold stroke outlines the silhouette so the
-      // bib stays visible against the cream-gradient backdrop.
-      paths: [
-        {
-          d: "M 38 22 C 38 28 44 30 50 30 C 56 30 62 28 62 22 C 70 22 80 30 80 50 C 80 78 65 88 50 88 C 35 88 20 78 20 50 C 20 30 30 22 38 22 Z",
-          fill: "#FFFFFF", stroke: "#B08842", strokeWidth: 0.4,
-        },
-        // Tie strings
-        { d: "M 38 22 C 32 18 26 18 22 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
-        { d: "M 62 22 C 68 18 74 18 78 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
-      ],
-      stitchZone: { x: 35, y: 45, w: 30, h: 28 },
-    },
-  };
-
-  const template = templates[productKey];
-  if (!template) return null;
-  const { stitchZone } = template;
-  // Whether the customer has provided ANY content (image, letter, OR typed name).
-  // If they haven't, the dashed "stitch zone" outline is shown as a hint.
+    { d: "M 38 22 C 32 18 26 18 22 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
+    { d: "M 62 22 C 68 18 74 18 78 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
+  ];
+  const stitchZone = { x: 35, y: 45, w: 30, h: 28 };
   const trimmedName = (customName ?? "").trim();
-  const hasContent = imageData || letter || trimmedName.length > 0;
-  const showZone = !hasContent;
+  const showZone = trimmedName.length === 0;
 
-  // For the typed-name preview, scale font size with name length so short
-  // names (3 letters) look balanced and long names (6 letters) still fit.
-  // The stitch zone width is 30 SVG units; with a serif font, each letter
-  // takes roughly 0.55 × fontSize horizontally. So:
-  //   max fontSize = (zone.w - margin) / (length × 0.55)
-  // We cap at 12 (~big enough to read) and floor at 5 (~stays inside zone).
-  const nameFontSize = (() => {
-    if (trimmedName.length === 0) return 10;
-    const safeWidth = stitchZone.w - 4; // 2-unit margin on each side
-    const ideal = safeWidth / (trimmedName.length * 0.55);
-    return Math.max(5, Math.min(12, ideal));
-  })();
+  // Scale font size with name length so short names (3 letters) look balanced
+  // and long names (6 letters) still fit. Stitch zone is 30 SVG units wide;
+  // each cursive letter takes roughly 0.55 × fontSize horizontally. Cap at
+  // 12 (readable) and floor at 5 (stays inside the zone).
+  const nameFontSize = trimmedName.length === 0
+    ? 10
+    : Math.max(5, Math.min(12, (stitchZone.w - 4) / (trimmedName.length * 0.55)));
 
   return (
     <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-      {template.paths.map((p, i) => (
+      {paths.map((p, i) => (
         <path key={i} d={p.d} fill={p.fill} stroke={p.stroke} strokeWidth={p.strokeWidth} strokeLinejoin="round" strokeLinecap="round" />
       ))}
-      {/* Stitch zone outline — visible only when neither image nor letter is set */}
       {showZone && (
         <rect
           x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h}
           fill="none" stroke="#B08842" strokeWidth={0.3} strokeDasharray="1 1" opacity="0.4"
         />
       )}
-      {/* Letter preview — for hand-stitched mode */}
-      {letter && !imageData && (
-        <>
-          <rect
-            x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h}
-            fill="none" stroke="#8B2C2C" strokeWidth={0.4} strokeDasharray="0.8 0.6" opacity="0.6"
-          />
-          <text
-            x={stitchZone.x + stitchZone.w / 2}
-            y={stitchZone.y + stitchZone.h / 2}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontFamily="Fraunces, serif"
-            fontSize="16"
-            fontWeight="500"
-            fill="#8B2C2C"
-          >
-            {letter.display}
-          </text>
-        </>
-      )}
-      {/* Typed-name preview — for machine-embroidered bib with personalized name.
-          Renders the customer's typed name centered inside the stitch zone,
-          using the Allura cursive Google Font to approximate the real
-          machine-embroidered cursive script Lusik uses on bibs (see Olen /
-          Romeo reference photos). Cursive scripts need MORE vertical room
-          than sans/serif because of ascenders/descenders, so we scale up.
-          - `nameColor`  : single hex color (string) for the whole name
-          - `nameColors` : array of hex colors; each letter cycles through them
-                          (used by Armenian Flag preset for red/blue/orange).
-          Falls back to charcoal when neither is provided. */}
-      {trimmedName.length > 0 && !letter && !imageData && (
+      {/* Typed-name preview — Allura cursive approximates the real
+          machine-embroidered script Lusik uses (see Olen / Romeo reference
+          photos). nameColors (array) is used by the Armenian Flag preset to
+          cycle per-letter colors; nameColor (single hex) is the default. */}
+      {trimmedName.length > 0 && (
         <text
           x={stitchZone.x + stitchZone.w / 2}
           y={stitchZone.y + stitchZone.h / 2}
@@ -9781,28 +9418,6 @@ function ProductTemplate({ productKey, imageData, letter, customName, nameColor,
               ))
             : trimmedName}
         </text>
-      )}
-      {/* Uploaded image clipped to stitch zone */}
-      {imageData && (
-        <>
-          <defs>
-            <clipPath id={`clip-${productKey}`}>
-              <rect x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h} />
-            </clipPath>
-          </defs>
-          <image
-            href={imageData}
-            x={stitchZone.x} y={stitchZone.y}
-            width={stitchZone.w} height={stitchZone.h}
-            preserveAspectRatio="xMidYMid meet"
-            clipPath={`url(#clip-${productKey})`}
-          />
-          {/* Subtle "stitched" border */}
-          <rect
-            x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h}
-            fill="none" stroke="#1A1612" strokeWidth={0.25} strokeDasharray="0.6 0.4" opacity="0.5"
-          />
-        </>
       )}
     </svg>
   );
