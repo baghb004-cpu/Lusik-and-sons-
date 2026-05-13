@@ -631,6 +631,30 @@
     font-weight: 500;
   }
 
+  /* ChatAssistant (Claude AI) — bottom-LEFT so it doesn't fight
+     the text-us widget (bottom-right) or the mobile bottom-nav. */
+  .chat-fab { animation: fadeIn 0.4s ease-out; }
+  .chat-panel { animation: chatPanelIn 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes chatPanelIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .chat-typing { display: inline-block; letter-spacing: 0.3em; animation: chatTyping 1.2s ease-in-out infinite; }
+  @keyframes chatTyping {
+    0%, 60%, 100% { opacity: 0.35; }
+    30%           { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chat-fab, .chat-panel { animation: none; }
+    .chat-typing           { animation: none; opacity: 0.6; }
+  }
+  /* Lift the chat-fab above the mobile bottom-nav, same as the
+     other bottom-anchored widgets. */
+  @media (max-width: 1023px) {
+    .chat-fab  { bottom: calc(70px + 1.5rem) !important; }
+    .chat-panel { bottom: calc(70px + 1.5rem) !important; }
+  }
+
   /* Subtle "I'm available" pulse ring around the button — only on first
      idle for new visitors, then quieted. CSS-only, no JS. */
   .textus-fab::before {
@@ -1021,6 +1045,7 @@ const Truck = (p) => <Icon {...p}><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 
 const Phone = (p) => <Icon {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></Icon>;
 const MapPin = (p) => <Icon {...p}><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></Icon>;
 const Send = (p) => <Icon {...p}><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></Icon>;
+const Sparkles = (p) => <Icon {...p}><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></Icon>;
 const Share2   = (p) => <Icon {...p}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></Icon>;
 const Bookmark = (p) => <Icon {...p}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></Icon>;
 const Trash2   = (p) => <Icon {...p}><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
@@ -1731,6 +1756,32 @@ const CONFIG = {
       TWILIO_AUTH_TOKEN:  "",                        // set as env var server-side
       TWILIO_FROM_NUMBER: "",                        // e.g. +18185551234
       TWILIO_TO_NUMBER:   "",                        // Lusik's phone
+    },
+
+    // -- AI chat assistant (Anthropic / Claude) ---------------
+    // Pay-as-you-go through the Anthropic API. Typical exchange
+    // costs ~$0.0015 with Haiku 4.5 (the default), so 100 chats
+    // a day = ~$5/mo. The server-side function (chat.mjs) caps
+    // each visitor at 30 turns/day so a single tab can't run up
+    // an unbounded bill.
+    //
+    // To turn on:
+    //   1. Sign up at console.anthropic.com, generate an API key.
+    //   2. Netlify → Site → Environment → ANTHROPIC_API_KEY.
+    //   3. (Optional) CHAT_MODEL env var to pick a different
+    //      model — defaults to claude-haiku-4-5-20251001.
+    //   4. Flip ENABLED below to true. The floating chat button
+    //      appears on every page; conversation history is held
+    //      in memory only (refresh clears it).
+    //
+    // The system prompt + product knowledge live server-side in
+    // chat.mjs, NOT here, so changing the assistant's behavior
+    // doesn't require a frontend redeploy.
+    CHAT_ASSISTANT: {
+      ENABLED: false,
+      LAUNCHER_LABEL: "Ask us anything",              // text on the floating button
+      WELCOME: "Hi! I'm the Lusik & Sons assistant. Ask me about the alphabet blanket, the bibs, sizing, shipping — anything I can help with.",
+      PLACEHOLDER: "Type your question…",
     },
   },
 
@@ -4470,6 +4521,209 @@ function TextUsWidget() {
   );
 }
 
+// ============================================================
+// ChatAssistant — floating AI chat (Anthropic / Claude)
+// ============================================================
+// Mounts only when CONFIG.PAID_FEATURES.CHAT_ASSISTANT.ENABLED.
+// Sits in the bottom-LEFT so it doesn't fight the text-us
+// widget (bottom-right) or the mobile-nav (full bottom edge).
+//
+// All API calls go to /.netlify/functions/chat which holds the
+// ANTHROPIC_API_KEY — never on the client. The function caps
+// each visitor at 30 turns/day, so worst-case daily spend is
+// bounded even if a single tab is abused.
+// ============================================================
+function ChatAssistant() {
+  const cfg = CONFIG.PAID_FEATURES?.CHAT_ASSISTANT;
+  // Short-circuit before any state hooks so this is literally
+  // zero-cost when the feature is off — no listeners, no DOM.
+  if (!cfg?.ENABLED) return null;
+
+  const [open, setOpen] = useState(false);
+  // Conversation history is held in memory only — refresh clears
+  // it. If we wanted persistence we'd stash it in localStorage,
+  // but ephemeral feels right for a chat-with-the-shop pattern.
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const scrollRef = useRef(null);
+
+  // Per-tab session id, used by the server-side rate limiter.
+  // localStorage so the per-day cap survives the user closing
+  // and reopening the chat panel without losing their slot.
+  const sessionIdRef = useRef(null);
+  useEffect(() => {
+    try {
+      let id = localStorage.getItem("ls_chat_session");
+      if (!id) {
+        id = (crypto.randomUUID?.() ?? `s_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+        localStorage.setItem("ls_chat_session", id);
+      }
+      sessionIdRef.current = id;
+    } catch { sessionIdRef.current = `s_${Date.now()}`; }
+  }, []);
+
+  // Auto-scroll to the newest message whenever the list grows.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, sending]);
+
+  async function send() {
+    const trimmed = input.trim();
+    if (!trimmed || sending) return;
+    setError("");
+    const next = [...messages, { role: "user", content: trimmed }];
+    setMessages(next);
+    setInput("");
+    setSending(true);
+    try {
+      const res = await fetch(`${CONFIG.FN_BASE}/chat`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ messages: next, sessionId: sessionIdRef.current }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error || "The assistant is having trouble right now.");
+        // Roll back the user turn so they can retry without it
+        // counting twice in the visible history.
+        setMessages(messages);
+        setInput(trimmed);
+        return;
+      }
+      setMessages([...next, { role: "assistant", content: data.reply || "" }]);
+      track("chat-message", { turnsUsed: data.turnsUsed });
+    } catch {
+      setError("Couldn't reach the assistant. Please try again.");
+      setMessages(messages);
+      setInput(trimmed);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => {
+          setOpen(true);
+          if (messages.length === 0 && cfg.WELCOME) {
+            setMessages([{ role: "assistant", content: cfg.WELCOME }]);
+          }
+        }}
+        className="fixed bottom-6 left-6 z-40 px-4 py-3 flex items-center gap-2 shadow-lg transition hover:opacity-90 chat-fab"
+        style={{
+          background: "var(--ink)",
+          color: "var(--text-on-ink)",
+          fontSize: "0.7rem",
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          fontWeight: 500,
+        }}
+        aria-label="Open chat assistant"
+      >
+        <Sparkles size={16} strokeWidth={1.75} />
+        <span className="hidden sm:inline">{cfg.LAUNCHER_LABEL || "Ask us anything"}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="fixed bottom-6 left-6 z-40 flex flex-col chat-panel theme-surface"
+      style={{
+        width: "min(360px, calc(100vw - 3rem))",
+        height: "min(560px, calc(100vh - 8rem))",
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-strong)",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+      }}
+      role="dialog"
+      aria-label="Chat assistant"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--border-default)" }}>
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} strokeWidth={1.75} style={{ color: "var(--accent)" }} />
+          <span className="font-display text-sm" style={{ fontWeight: 500 }}>Lusik & Sons</span>
+          <span className="text-[0.55rem] tracking-[0.2em] uppercase opacity-55">AI</span>
+        </div>
+        <button onClick={() => setOpen(false)} aria-label="Close chat" className="opacity-60 hover:opacity-100 transition">
+          <X size={18} strokeWidth={1.5} />
+        </button>
+      </div>
+
+      {/* Messages */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ background: "var(--bg-page)" }}>
+        {messages.map((m, i) => (
+          <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+            <div
+              className="px-3 py-2 text-sm max-w-[85%]"
+              style={{
+                background: m.role === "user" ? "var(--ink)" : "var(--bg-surface)",
+                color:      m.role === "user" ? "var(--text-on-ink)" : "var(--text-primary)",
+                border:     m.role === "user" ? "none" : "1px solid var(--border-default)",
+                borderRadius: 12,
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.5,
+              }}
+            >
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {sending && (
+          <div className="flex justify-start">
+            <div className="px-3 py-2 text-sm" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 12, color: "var(--text-muted)" }}>
+              <span className="chat-typing">●●●</span>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="text-xs italic" style={{ color: "var(--error)" }}>{error}</div>
+        )}
+      </div>
+
+      {/* Composer */}
+      <div className="flex items-center gap-2 px-3 py-2" style={{ borderTop: "1px solid var(--border-default)", background: "var(--bg-surface)" }}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+          placeholder={cfg.PLACEHOLDER || "Type your question…"}
+          disabled={sending}
+          className="flex-1 px-3 py-2 text-sm outline-none"
+          style={{
+            background: "var(--bg-page)",
+            color: "var(--text-primary)",
+            border: "1px solid var(--border-default)",
+          }}
+          aria-label="Type your message"
+        />
+        <button
+          onClick={send}
+          disabled={sending || !input.trim()}
+          className="px-3 py-2 transition"
+          style={{
+            background: "var(--ink)",
+            color: "var(--text-on-ink)",
+            opacity: sending || !input.trim() ? 0.4 : 1,
+          }}
+          aria-label="Send message"
+        >
+          <Send size={16} strokeWidth={1.75} />
+        </button>
+      </div>
+      <div className="px-3 py-1.5 text-[0.55rem] tracking-[0.15em] uppercase opacity-50 text-center" style={{ borderTop: "1px solid var(--border-soft)" }}>
+        AI-generated · Verify before relying
+      </div>
+    </div>
+  );
+}
+
 // === MAIN APP ===
 // Module-level analytics helper. Wraps window.umami.track() so
 // call sites can fire events without checking whether analytics
@@ -5856,6 +6110,10 @@ function App() {
 
       {/* TEXT-US WIDGET — floating, available on every view */}
       <TextUsWidget />
+
+      {/* CLAUDE AI CHAT — floating, gated by CONFIG.PAID_FEATURES.CHAT_ASSISTANT.ENABLED.
+          Renders nothing until the flag is flipped + ANTHROPIC_API_KEY is set. */}
+      <ChatAssistant />
 
       {/* BACK-TO-TOP BUTTON — floating above the text-us widget, fades in
           once the user scrolls past the threshold. */}
