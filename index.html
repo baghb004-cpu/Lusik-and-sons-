@@ -5943,7 +5943,7 @@ function App() {
       </nav>
 
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
-      {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} updateQty={updateQty} removeFromCart={removeFromCart} />}
+      {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
@@ -11096,7 +11096,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
 }
 
 // === CHECKOUT (Stripe handoff via Netlify Function) ===
-function CheckoutView({ cart, subtotal, user, profile, onBack, updateQty, removeFromCart }) {
+function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -11524,13 +11524,10 @@ function CheckoutView({ cart, subtotal, user, profile, onBack, updateQty, remove
         </div>
 
         <div>
-          <div className="flex items-baseline justify-between mb-6">
-            <h2 className="text-xs tracking-[0.3em] uppercase opacity-70">Order summary</h2>
-            <p className="text-[0.6rem] tracking-[0.15em] uppercase opacity-50">Edit below</p>
-          </div>
+          <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order summary</h2>
           <div className="mb-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
             {cart.map((item) => (
-              <div key={item.id} className="flex gap-3 py-4" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
+              <div key={item.id} className="flex gap-3 py-4 items-start" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="relative shrink-0">
                   <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                   {item.isCustom && (
@@ -11539,27 +11536,12 @@ function CheckoutView({ cart, subtotal, user, profile, onBack, updateQty, remove
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mt-1">
                     {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                    <p className="text-xs opacity-60 truncate">{item.subtitle}</p>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
-                      <button
-                        onClick={() => updateQty(item.id, -1)}
-                        className="p-1.5"
-                        aria-label={item.qty === 1 ? "Remove item" : "Decrease quantity"}
-                      ><Minus size={11} /></button>
-                      <span className="text-xs w-5 text-center tabular-nums">{item.qty}</span>
-                      <button
-                        onClick={() => updateQty(item.id, 1)}
-                        className="p-1.5"
-                        aria-label="Increase quantity"
-                      ><Plus size={11} /></button>
-                    </div>
-                    <p className="text-sm tabular-nums" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
+                    <p className="text-xs opacity-60 truncate">{item.subtitle} · Qty {item.qty}</p>
                   </div>
                 </div>
+                <p className="text-sm tabular-nums shrink-0" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
               </div>
             ))}
           </div>
