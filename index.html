@@ -11560,11 +11560,6 @@ function CheckoutView({ cart, subtotal, user, profile, onBack, updateQty, remove
                     <p className="text-sm tabular-nums" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="opacity-40 hover:opacity-100 self-start p-1"
-                  aria-label="Remove from cart"
-                ><X size={14} /></button>
               </div>
             ))}
           </div>
