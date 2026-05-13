@@ -11213,7 +11213,9 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   // with zero changes. The Function reads the Identity JWT from the
   // Authorization header (set below) when present, otherwise treats
   // the order as a guest checkout.
-  const checkoutFnUrl = `${CONFIG.FN_BASE}/create-checkout-session`;
+  // Cache-bust query param so Safari can't serve a stale POST
+  // response between deploys. The function ignores unknown params.
+  const checkoutFnUrl = `${CONFIG.FN_BASE}/create-checkout-session?v=${Date.now()}`;
 
   const handleCheckout = async () => {
     setBusy(true);
@@ -11298,17 +11300,15 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        // Branch + dev deploys return diagnostic Stripe fields
-        // (type/code/param/message). When present, surface them
-        // so debugging doesn't require pulling Netlify logs.
-        // Production omits these fields and we fall back to the
-        // friendly generic message.
-        const detail = [errBody?.code, errBody?.param, errBody?.message]
+        // Build tag (when present) proves which function bundle
+        // actually responded — invaluable for diagnosing "I
+        // pushed a fix but the same error keeps showing" cases.
+        const detail = [errBody?.code, errBody?.param, errBody?.message, errBody?.build && `build=${errBody.build}`]
           .filter(Boolean)
           .join(" · ");
         const msg = detail
           ? `${errBody?.error || "Checkout failed"} (${detail})`
-          : errBody?.error || `Checkout failed (HTTP ${res.status})`;
+          : errBody?.error || `Checkout failed (HTTP ${res.status} · no body — function crashed before responding)`;
         throw new Error(msg);
       }
       const { url } = await res.json();

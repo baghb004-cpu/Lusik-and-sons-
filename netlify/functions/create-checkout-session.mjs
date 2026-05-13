@@ -16,6 +16,11 @@ import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { json }        from "./_lib/json.mjs";
 
+// Bumped on every diagnostic commit so we can prove which
+// build is actually running on the live site. Returned in
+// every error response below.
+const BUILD_TAG = "cdac3f6-diag-v2";
+
 // Lazy-init the Stripe client INSIDE the handler so a missing
 // STRIPE_SECRET_KEY env var returns a clean JSON 503 instead of
 // throwing at module load (which would surface as a Netlify-
@@ -105,6 +110,7 @@ export default async (req, context) => {
       error:   "Function crashed before reaching Stripe — see message.",
       code:    err?.code    || "UNCAUGHT",
       message: err?.message || String(err),
+      build:   BUILD_TAG,
     });
   }
 };
@@ -233,6 +239,7 @@ async function handle(req, context) {
       code:     err?.code    ?? null,
       param:    err?.param   ?? null,
       message:  err?.message ?? null,
+      build:    BUILD_TAG,
     });
   }
 
