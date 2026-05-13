@@ -11326,10 +11326,10 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
     if (!id) return null;
     if (id.startsWith?.("bib-")) return "bib";
     if (id.startsWith?.("blanket-")) {
-      // Cart ids: `blanket-{alphabet}-{layout}` — extract the layout suffix
-      // and map to TRUSTED_PRODUCTS key `blanket-{layout}`.
+      // Cart ids: `blanket-{alphabet}-{layout}-{blockDMC}-{letterDMC}[...]`
+      // Extract just the layout (index 2) for the TRUSTED_PRODUCTS key.
       const parts = id.split("-");
-      if (parts.length >= 3) return `blanket-${parts.slice(2).join("-")}`;
+      if (parts.length >= 3) return `blanket-${parts[2]}`;
       return "blanket";
     }
     return null;
