@@ -5276,6 +5276,19 @@ function App() {
     queueMicrotask(() => { try { window.umami?.track(); } catch {} });
   }, [view, journalSlug]);
 
+  // Mobile-only: reset scroll to the top on every view change. Without
+  // this, switching from a deep-scrolled position (e.g. the bib at the
+  // bottom of the home page → Checkout) leaves the new view's header
+  // off-screen and the customer has to scroll up manually. Desktop's
+  // taller viewport hides the issue, so we gate this on Tailwind's
+  // <lg breakpoint to avoid an unnecessary scroll jump on big screens
+  // where the user might have intentionally chosen their scroll spot.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia?.("(max-width: 1023px)").matches) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [view, journalSlug]);
+
   // --- PAID-FEATURE STUBS (off by default; see CONFIG.PAID_FEATURES) ---
   // Each block below mounts the third-party script ONLY if its
   // flag is enabled AND the credentials are present. With both
