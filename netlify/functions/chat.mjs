@@ -85,17 +85,20 @@ const MAX_OUTPUT_TOKENS       = 512;    // ~ a paragraph
 const MAX_TURNS_PER_SESSION   = 30;     // per-session throttle (24h)
 
 // ============================================================
-// PER-SESSION RATE LIMITER (Netlify Blobs)
+// RATE LIMITER (Netlify Blobs)
 // ============================================================
-// Keyed by a sessionId the browser generates (uuid in
-// localStorage). 24-hour rolling window. Stops a single tab
-// from running up an unbounded API bill.
+// Keyed primarily on the resolved client IP (from context.ip /
+// x-nf-client-connection-ip) so rotating a localStorage uuid
+// can't reset the bucket. SessionId is folded in only as a
+// secondary disambiguator when the IP is missing. 24-hour
+// rolling window.
 // ============================================================
-async function checkAndIncrementSession(sessionId) {
-  if (!sessionId) return { ok: true, used: 0 };
+async function checkAndIncrementRateLimit(ip, sessionId) {
+  const subject = ip || sessionId;
+  if (!subject) return { ok: true, used: 0 };
   const store = getStore({ name: "chat-sessions", consistency: "strong" });
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const key = `${sessionId}/${today}`;
+  const key = `${subject}/${today}`;
   const current = await store.get(key, { type: "json" }) ?? { count: 0 };
   if (current.count >= MAX_TURNS_PER_SESSION) {
     return { ok: false, used: current.count };
@@ -121,8 +124,12 @@ export default async (req, context) => {
     return json(400, { error: "messages array required" });
   }
 
-  // Throttle by session
-  const rate = await checkAndIncrementSession(sessionId);
+  // Throttle by client IP (rotating sessionId can't dodge it).
+  const ip = context?.ip
+          || req.headers.get("x-nf-client-connection-ip")
+          || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+          || null;
+  const rate = await checkAndIncrementRateLimit(ip, sessionId);
   if (!rate.ok) {
     return json(429, {
       error: "You've reached the daily chat limit. Email hello@lusikandsons.com or text us directly — Lusik will get back to you.",

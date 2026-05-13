@@ -16,16 +16,10 @@ import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { json }        from "./_lib/json.mjs";
 
-// Bumped on every diagnostic commit so we can prove which
-// build is actually running on the live site. Returned in
-// every error response below.
-const BUILD_TAG = "b8848f5-diag-v3";
-
 // Lazy-init the Stripe client INSIDE the handler so a missing
 // STRIPE_SECRET_KEY env var returns a clean JSON 503 instead of
 // throwing at module load (which would surface as a Netlify-
-// wrapped 502 with no diagnostic body — exactly the symptom
-// that's been hiding the real cause of the live checkout 502).
+// wrapped 502 with no diagnostic body).
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
@@ -99,36 +93,32 @@ function buildReturnUrls(originHeader) {
 }
 
 export default async (req, context) => {
-  console.log(`[${BUILD_TAG}] invoked at`, new Date().toISOString());
   try {
     return await handle(req, context);
   } catch (err) {
-    console.error(`[${BUILD_TAG}] crashed at top level:`, err);
+    console.error("create-checkout-session crashed:", err);
+    const isProd = process.env.CONTEXT === "production";
     return json(500, {
-      error:   "Function crashed before reaching Stripe — see message.",
-      code:    err?.code    || "UNCAUGHT",
-      message: err?.message || String(err),
-      build:   BUILD_TAG,
+      error: "Function crashed before reaching Stripe.",
+      ...(isProd ? {} : {
+        code:    err?.code    || "UNCAUGHT",
+        message: err?.message || String(err),
+      }),
     });
   }
 };
 
 async function handle(req, context) {
-  console.log(`[${BUILD_TAG}] step 1: method check`);
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
-  console.log(`[${BUILD_TAG}] step 2: getStripe()`);
   const stripe = getStripe();
-  console.log(`[${BUILD_TAG}] step 2 OK`);
 
-  console.log(`[${BUILD_TAG}] step 3: parse body`);
   let body;
   try {
     body = await req.json();
   } catch {
     return json(400, { error: "Invalid JSON body" });
   }
-  console.log(`[${BUILD_TAG}] step 3 OK, cart length =`, body?.cart?.length);
 
   const { cart, userId, customerEmail, social_consent, gift } = body ?? {};
   if (!Array.isArray(cart) || cart.length === 0) {
@@ -198,7 +188,6 @@ async function handle(req, context) {
   // generic message to avoid leaking implementation details.
   const isProd = process.env.CONTEXT === "production";
 
-  console.log(`[${BUILD_TAG}] step 4: stripe.checkout.sessions.create`);
   let session;
   try {
     session = await stripe.checkout.sessions.create({
@@ -232,16 +221,15 @@ async function handle(req, context) {
       message: err?.message,
       raw:     err?.raw,
     });
-    // TEMPORARILY surfacing diagnostic detail in production too
-    // so we can pinpoint the live 502 without log access. Revert
-    // the gate (re-add `if (isProd) return generic`) once fixed.
+    if (isProd) {
+      return json(502, { error: "Payment provider rejected the request. Please try again." });
+    }
     return json(502, {
       error:    "Stripe rejected the request — see fields below for what to fix.",
       type:     err?.type    ?? null,
       code:     err?.code    ?? null,
       param:    err?.param   ?? null,
       message:  err?.message ?? null,
-      build:    BUILD_TAG,
     });
   }
 
@@ -255,8 +243,6 @@ async function handle(req, context) {
   // If the stash fails we still hand the Stripe URL back to the
   // browser — the customer can complete payment, and the only
   // loss is admin-side data the webhook would have read.
-  console.log(`[${BUILD_TAG}] step 4 OK, session id =`, session?.id);
-  console.log(`[${BUILD_TAG}] step 5: blobs setJSON (with 4s timeout)`);
   try {
     const stashPromise = (async () => {
       const pending = getStore({ name: "pending-orders", consistency: "strong" });
@@ -279,6 +265,5 @@ async function handle(req, context) {
     console.error("Pending-order stash failed (continuing anyway):", blobErr?.message || blobErr);
   }
 
-  console.log(`[${BUILD_TAG}] step 6: returning Stripe URL to browser`);
-  return json(200, { url: session.url, build: BUILD_TAG });
+  return json(200, { url: session.url });
 }

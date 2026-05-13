@@ -28,9 +28,21 @@ import {
   sendRefundNotification,
 } from "./_lib/email.mjs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
+// Lazy-init the Stripe client so a missing STRIPE_SECRET_KEY env var
+// returns a clean error in the handler instead of throwing at module
+// load (which would surface as a 502 with no diagnostic body).
+let _stripe = null;
+function getStripe() {
+  if (_stripe) return _stripe;
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    const err = new Error("STRIPE_SECRET_KEY env var is not set");
+    err.code = "ENV_MISSING_STRIPE_SECRET_KEY";
+    throw err;
+  }
+  _stripe = new Stripe(key, { apiVersion: "2024-06-20" });
+  return _stripe;
+}
 
 // Friendly customer-facing order number generator. Sequence-free
 // so we don't have to track state — month + 6 random base36 chars.
@@ -54,6 +66,14 @@ export default async (req) => {
 
   // Stripe needs the RAW request body to verify the signature.
   const rawBody = await req.text();
+
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (err) {
+    console.error("[webhook]", err.message);
+    return new Response("Server misconfigured", { status: 500 });
+  }
 
   let event;
   try {
@@ -89,10 +109,50 @@ export default async (req) => {
 
   // Pull the stashed cart from Blobs.
   const pendingStore = getStore({ name: "pending-orders", consistency: "strong" });
-  const pending = await pendingStore.get(session.id, { type: "json" });
+  let pending = await pendingStore.get(session.id, { type: "json" });
+  let reconstructed = false;
   if (!pending || !Array.isArray(pending.cart)) {
-    console.error("No pending cart found for session", session.id);
-    return new Response("No pending cart", { status: 200 }); // 200 so Stripe doesn't retry forever
+    // The stash can be missing if create-checkout-session hit its 4s
+    // Blobs timeout and let the customer through anyway. Recovering
+    // from Stripe's line items is lossy (no custom blanket metadata)
+    // but it beats silently dropping a paid order — Lusik can reach
+    // out to the customer for the missing design details.
+    console.warn("[webhook] No pending cart for session, reconstructing from Stripe:", session.id);
+    try {
+      const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+        expand: ["data.price.product"],
+        limit: 100,
+      });
+      const recoveredCart = [];
+      for (const li of lineItems.data) {
+        const product = li.price?.product;
+        const productKey = product?.metadata?.productKey;
+        if (!productKey || !TRUSTED_PRODUCTS[productKey]) continue;
+        recoveredCart.push({
+          productKey,
+          qty:      li.quantity ?? 1,
+          subtitle: li.description ?? product?.description ?? "",
+          isCustom: product?.metadata?.isCustom === "true",
+        });
+      }
+      if (recoveredCart.length === 0) {
+        // No way to write a meaningful order row. 500 so Stripe
+        // retries — maybe the next attempt finds the blob.
+        console.error("[webhook] Could not reconstruct any line items for session", session.id);
+        return new Response("Cart reconstruction failed", { status: 500 });
+      }
+      pending = {
+        cart:           recoveredCart,
+        userId:         session.metadata?.userId || null,
+        customerEmail:  session.customer_details?.email ?? null,
+        social_consent: null,
+        gift:           null,
+      };
+      reconstructed = true;
+    } catch (err) {
+      console.error("[webhook] Failed to reconstruct cart from Stripe:", err);
+      return new Response("Cart reconstruction failed", { status: 500 });
+    }
   }
 
   // Compute totals from trusted prices (do not trust the cart's
@@ -145,19 +205,23 @@ export default async (req) => {
     ? session.payment_intent
     : session.payment_intent?.id ?? null;
 
+  const reconstructedNote = reconstructed
+    ? "RECONSTRUCTED FROM STRIPE — original cart stash was lost. Custom blanket metadata (alphabet, layout, colors, personalization) is missing; reach out to the customer for those details before stitching."
+    : null;
   const inserted = await sql`
     INSERT INTO orders (
       order_number, stripe_session_id, stripe_payment_intent, user_id,
       customer_email, status, fulfillment_status,
       subtotal_cents, shipping_cents, tax_cents, total_cents,
-      shipping_address, social_consent, gift
+      shipping_address, social_consent, gift, admin_notes
     ) VALUES (
       ${orderNumber}, ${session.id}, ${paymentIntent}, ${pending.userId},
       ${customerEmail}, 'paid', 'in_progress',
       ${subtotalCents}, ${shippingCents}, ${taxCents}, ${totalCents},
       ${shippingAddr ? JSON.stringify(shippingAddr) : null}::jsonb,
       ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
-      ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb
+      ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb,
+      ${reconstructedNote}
     )
     RETURNING *
   `;

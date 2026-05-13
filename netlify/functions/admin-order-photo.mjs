@@ -81,15 +81,9 @@ export default async (req, context) => {
   // previous blob (if any) is left in storage for now; Netlify
   // Blobs are cheap and an audit trail of finished photos is
   // useful if Lusik ever wants to look back.
-  //
-  // When this is the first photo for the order, also stamp
-  // finished_photo_emailed_at = now() in the same statement —
-  // this gates the notification email so re-uploads don't
-  // re-trigger it.
   const updatedRows = await sql`
     UPDATE orders
-       SET finished_photo_key = ${key},
-           finished_photo_emailed_at = CASE WHEN ${isFirstPhoto} THEN now() ELSE finished_photo_emailed_at END
+       SET finished_photo_key = ${key}
      WHERE id = ${orderId}
      RETURNING *
   `;
@@ -97,10 +91,21 @@ export default async (req, context) => {
   // Fire the "Lusik just finished your blanket" email AFTER the
   // DB write. Same isolation as the other order emails: missing
   // RESEND_API_KEY or a Resend outage logs + returns false, but
-  // never throws and never blocks the upload.
+  // never throws and never blocks the upload. Stamp
+  // finished_photo_emailed_at ONLY on a successful send so a
+  // Resend outage doesn't permanently block the notification —
+  // Lusik can re-upload to retry.
   if (isFirstPhoto && updatedRows[0]) {
-    await sendFinishedPhotoNotification({ order: updatedRows[0] })
-      .catch((err) => console.warn("[admin-order-photo] finished-photo email failed:", err?.message ?? err));
+    const emailed = await sendFinishedPhotoNotification({ order: updatedRows[0] })
+      .catch((err) => {
+        console.warn("[admin-order-photo] finished-photo email failed:", err?.message ?? err);
+        return false;
+      });
+    if (emailed) {
+      await sql`
+        UPDATE orders SET finished_photo_emailed_at = now() WHERE id = ${orderId}
+      `;
+    }
   }
 
   const url = `/.netlify/functions/order-photo-get?key=${encodeURIComponent(key)}`;

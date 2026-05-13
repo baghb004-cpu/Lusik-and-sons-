@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Lusik & Sons — Hand-Embroidered Armenian Alphabet Blankets | Cypress, CA</title>
 <meta name="description" content="Hand cross-stitched baby blankets with the Armenian alphabet — Ա Բ Գ — or English A B C. Made by Lusik in Cypress, California." />
-<meta name="theme-color" content="#1A1612" />
 <meta name="author" content="Lusik & Sons" />
 
 <!-- =========================================================
@@ -1922,6 +1921,11 @@ const SHIPPING_CARRIERS = [
 // Keep posts in the 300–500 word range. Long enough to rank on
 // long-tail Armenian-craft searches, short enough that a
 // customer browsing on their phone actually reads to the end.
+//
+// NOTE: when you add or remove a post here, also update
+// `sitemap.xml` at the repo root — every post needs its own
+// <url> entry for Google to index it. Don't change a slug
+// once a post is shared; old URLs would 404.
 // ============================================================
 const JOURNAL_POSTS = [
   {
@@ -5252,7 +5256,16 @@ function App() {
       return;
     }
     const t = setTimeout(() => {
-      db.saveCart(user.id, cart).catch((err) => console.warn("Cart save failed:", err));
+      // Strip base64 blobs before the PUT — the saved_carts JSONB
+      // column is capped at 1 MB server-side, and a single custom-image
+      // bib would blow that cap on its own. The dropped fields are
+      // recreated next time the user opens the customizer.
+      const stored = cart.map((item) => {
+        const { customImage, ...rest } = item;
+        const isDataUrl = typeof rest.image === "string" && rest.image.startsWith("data:");
+        return { ...rest, image: isDataUrl ? null : rest.image };
+      });
+      db.saveCart(user.id, stored).catch((err) => console.warn("Cart save failed:", err));
     }, CONFIG.CART_PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [cart, user]);
@@ -11300,15 +11313,15 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        // Build tag (when present) proves which function bundle
-        // actually responded — invaluable for diagnosing "I
-        // pushed a fix but the same error keeps showing" cases.
-        const detail = [errBody?.code, errBody?.param, errBody?.message, errBody?.build && `build=${errBody.build}`]
+        // In prod the server returns just { error }; on branch deploys /
+        // netlify dev it also returns { code, param, message } for
+        // hands-free debugging. Render whatever came back.
+        const detail = [errBody?.code, errBody?.param, errBody?.message]
           .filter(Boolean)
           .join(" · ");
         const msg = detail
           ? `${errBody?.error || "Checkout failed"} (${detail})`
-          : errBody?.error || `Checkout failed (HTTP ${res.status} · no body — function crashed before responding)`;
+          : errBody?.error || `Checkout failed (HTTP ${res.status})`;
         throw new Error(msg);
       }
       const { url } = await res.json();
@@ -11326,10 +11339,11 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
     if (!id) return null;
     if (id.startsWith?.("bib-")) return "bib";
     if (id.startsWith?.("blanket-")) {
-      // Cart ids: `blanket-{alphabet}-{layout}` — extract the layout suffix
-      // and map to TRUSTED_PRODUCTS key `blanket-{layout}`.
+      // Cart ids: `blanket-{alphabet}-{layoutKey}-{blockDmc}-{letterDmc}[-multi-...][-c...]`.
+      // Layout keys themselves use underscores, never dashes — so parts[2] is
+      // the whole layout token. TRUSTED_PRODUCTS keys off `blanket-{layoutKey}`.
       const parts = id.split("-");
-      if (parts.length >= 3) return `blanket-${parts.slice(2).join("-")}`;
+      if (parts.length >= 3) return `blanket-${parts[2]}`;
       return "blanket";
     }
     return null;
