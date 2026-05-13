@@ -22,7 +22,17 @@
 //     replies are not warm/specific enough.
 // ============================================================
 
-import Anthropic from "@anthropic-ai/sdk";
+// NOTE: `@anthropic-ai/sdk` is intentionally NOT a static import.
+// Until chat is turned on (CONFIG.PAID_FEATURES.CHAT_ASSISTANT.ENABLED
+// + ANTHROPIC_API_KEY in env), the SDK isn't installed — keeping
+// it out of the function-bundle dependency list means a missing
+// package can't break unrelated function deploys. When you turn
+// chat on:
+//   1. Add `"@anthropic-ai/sdk": "^0.30.0"` to
+//      netlify/functions/package.json
+//   2. Set ANTHROPIC_API_KEY in Netlify env vars
+// Until then, this function short-circuits at the API-key check
+// below and never reaches the dynamic import.
 import { getStore } from "@netlify/blobs";
 import { json } from "./_lib/json.mjs";
 
@@ -135,6 +145,15 @@ export default async (req, context) => {
     return json(400, { error: "Last message must be from the user" });
   }
 
+  // Dynamic import so the bundle doesn't require the SDK to be
+  // installed unless this function is actually invoked at
+  // runtime. Throws a clean 503 if the package is missing.
+  let Anthropic;
+  try {
+    ({ default: Anthropic } = await import("@anthropic-ai/sdk"));
+  } catch {
+    return json(503, { error: "Chat assistant SDK not installed. Add @anthropic-ai/sdk to functions/package.json." });
+  }
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const model = process.env.CHAT_MODEL || "claude-haiku-4-5-20251001";
 
