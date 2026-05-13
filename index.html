@@ -9781,7 +9781,6 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
 
   const [activeImg, setActiveImg] = useState(0);
   const [color, setColor] = useState(product.colors[0]);
-  const [letter, setLetter] = useState(product.letters[0]);
   const [alphabet, setAlphabet] = useState(product.alphabets[0]);
   // Pick the first enabled layout as default. Customer changes via the picker.
   const enabledLayouts = product.layouts.filter(l => l.enabled);
