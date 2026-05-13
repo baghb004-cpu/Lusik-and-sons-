@@ -24,6 +24,13 @@
   directory = "netlify/functions"
   # Functions use Node 20+. `@netlify/neon` and `@netlify/blobs` need it.
   node_bundler = "esbuild"
+  # The Stripe SDK uses dynamic requires that esbuild can't statically
+  # analyze. Without this line, esbuild marks `stripe` as external and
+  # the bundle ships without it — at runtime the function fails with
+  # "Cannot find package 'stripe'" and every checkout 502s. Listing
+  # it here tells Netlify to package the real `stripe` node_modules
+  # folder alongside the bundle so the runtime import resolves.
+  external_node_modules = ["stripe"]
 
 # Pretty URL for the Stripe webhook so the dashboard URL is clean.
 [[redirects]]
