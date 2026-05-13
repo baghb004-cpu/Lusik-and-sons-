@@ -573,6 +573,40 @@
     .textus-fab { transition: none; }
   }
 
+  /* ============================================================
+     MOBILE LIFT — clear the bottom-nav (and the PDP sticky CTA)
+     ============================================================
+     On phones the MobileBottomNav sits along the bottom edge
+     and the chat bubble used to land right on top of the
+     ACCOUNT tab. Lift the whole bottom-right widget stack —
+     chat FAB, chat panel, proactive bubble, back-to-top — by
+     the height of the nav so they sit cleanly above it.
+
+     Threshold matches Tailwind's lg breakpoint (the same one
+     `lg:hidden` on the nav itself uses). 70px is enough to
+     clear the nav content on Android AND iOS, with iOS adding
+     its home-bar safe-area on top via the env() math below.
+
+     Bonus: this also clears the PDP's mobile sticky add-to-cart
+     bar in cases where the bottom-nav is hidden and the sticky
+     CTA is the thing at the bottom instead — both surfaces sit
+     in roughly the same height range.
+     ============================================================ */
+  @media (max-width: 1023px) {
+    .textus-fab {
+      bottom: calc(70px + max(20px, env(safe-area-inset-bottom)));
+    }
+    .textus-panel {
+      bottom: calc(70px + 58px + 32px + max(20px, env(safe-area-inset-bottom)));
+    }
+    .textus-proactive {
+      bottom: calc(70px + 58px + 18px + max(20px, env(safe-area-inset-bottom)));
+    }
+    .back-to-top {
+      bottom: calc(70px + 70px + max(20px, env(safe-area-inset-bottom)));
+    }
+  }
+
   /* === CART STATUS TOOLTIP === */
   /* Appears on hover/focus over the cart icon. Desktop only — on mobile,
      `:hover` typically doesn't fire and the existing badge handles status. */
