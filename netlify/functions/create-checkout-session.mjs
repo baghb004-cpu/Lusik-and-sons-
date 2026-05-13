@@ -146,6 +146,20 @@ export default async (req, context) => {
   const shippingOptions = buildShippingOptions(subtotalCents);
 
   // Create the Checkout Session.
+  //
+  // Automatic tax is off by default — turning it on requires
+  // completing Stripe Tax setup in the dashboard (origin address,
+  // product tax codes, activation). Set STRIPE_AUTOMATIC_TAX=true
+  // in Netlify env vars once that's done. Until then, Stripe
+  // will collect a flat 0 tax and you can configure it yourself.
+  const automaticTaxEnabled = String(process.env.STRIPE_AUTOMATIC_TAX || "").toLowerCase() === "true";
+
+  // Surface the underlying Stripe error to the browser in dev
+  // (netlify dev / branch deploys / deploy previews) so debugging
+  // doesn't require pulling logs. Production keeps the friendly
+  // generic message to avoid leaking implementation details.
+  const isProd = process.env.CONTEXT === "production";
+
   let session;
   try {
     session = await stripe.checkout.sessions.create({
@@ -157,7 +171,7 @@ export default async (req, context) => {
       cancel_url:  returnUrls.cancel_url,
       shipping_address_collection: { allowed_countries: ["US"] },
       shipping_options: shippingOptions,
-      automatic_tax: { enabled: true },
+      ...(automaticTaxEnabled ? { automatic_tax: { enabled: true } } : {}),
       // Stripe metadata has a 500-char-per-value cap, so we don't
       // shove the cart in here. Instead we stash it in Blobs keyed
       // by session.id and the webhook looks it up.
@@ -167,11 +181,31 @@ export default async (req, context) => {
         // the order admin can audit later without recomputing.
         subtotalCents: String(subtotalCents),
         freeShippingApplied: String(subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS),
+        automaticTaxEnabled: String(automaticTaxEnabled),
       },
     });
   } catch (err) {
-    console.error("Stripe session create failed:", err);
-    return json(502, { error: "Couldn't reach Stripe. Please try again." });
+    // Log the full error for the Netlify Functions log viewer.
+    console.error("Stripe session create failed:", {
+      type:    err?.type,
+      code:    err?.code,
+      param:   err?.param,
+      message: err?.message,
+      raw:     err?.raw,
+    });
+    // Return a more diagnosable payload in non-production. Never
+    // leak the API key, request IDs, or stack traces to the
+    // browser in production — just the friendly retry message.
+    if (isProd) {
+      return json(502, { error: "Couldn't reach Stripe. Please try again." });
+    }
+    return json(502, {
+      error:    "Stripe rejected the request — see fields below for what to fix.",
+      type:     err?.type    ?? null,
+      code:     err?.code    ?? null,
+      param:    err?.param   ?? null,
+      message:  err?.message ?? null,
+    });
   }
 
   // Stash the cart + auth context for the webhook. Single source

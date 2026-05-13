@@ -11298,7 +11298,18 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody?.error || `Checkout failed (HTTP ${res.status})`);
+        // Branch + dev deploys return diagnostic Stripe fields
+        // (type/code/param/message). When present, surface them
+        // so debugging doesn't require pulling Netlify logs.
+        // Production omits these fields and we fall back to the
+        // friendly generic message.
+        const detail = [errBody?.code, errBody?.param, errBody?.message]
+          .filter(Boolean)
+          .join(" · ");
+        const msg = detail
+          ? `${errBody?.error || "Checkout failed"} (${detail})`
+          : errBody?.error || `Checkout failed (HTTP ${res.status})`;
+        throw new Error(msg);
       }
       const { url } = await res.json();
       if (!url) throw new Error("No checkout URL returned");
