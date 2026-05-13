@@ -1174,32 +1174,6 @@ const PRODUCT = {
 // These products take a customer-uploaded image and run it through the embroidery machine.
 // Edit size labels and prices here. Sizes are placeholders — fill in real options as you finalize SKUs.
 const CUSTOM_PRODUCTS = {
-  // ⚠️ INACTIVE — Lusik decided to drop the custom-embroidered towel from
-  // the product lineup. No JSX references this entry anymore. The config
-  // is kept here so that if she changes her mind, restoring the towel is
-  // a single JSX line change (add another <CustomProductCard config=...>
-  // back to the custom section). Delete this block entirely if she's
-  // certain she won't bring it back.
-  towel: {
-    key: "towel",
-    name: "Custom Embroidered Towel",
-    tagline: "Your design, machine embroidered",
-    price: 35,
-    customMode: "image",   // accepts an uploaded image file
-    description: "Upload your image and we'll machine-embroider it onto a soft, absorbent towel. Great for housewarming, wedding, and bridal-shower gifts.",
-    sizes: [
-      "Washcloth · 12\" × 12\"",
-      "Fingertip · 11\" × 18\"",
-      "Hand Towel · 16\" × 28\"",
-      "Hand Towel XL · 18\" × 30\"",
-      "Bath Towel · 27\" × 52\"",
-      "Bath Sheet · 35\" × 60\"",
-      "Beach Towel · 30\" × 60\"",
-      "Beach Towel XL · 35\" × 70\"",
-      "Kitchen Towel · 18\" × 28\"",
-      "Spa Wrap · 28\" × 50\"",
-    ],
-  },
   bib: {
     key: "bib",
     name: "Baby Bib",
@@ -10628,8 +10602,6 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   // server-side helper, so the browser does the right thing pre-flight.
   function mapLegacyId(id) {
     if (!id) return null;
-    if (id.startsWith?.("bib-hand-")) return "bib-hand";  // must check before "bib-"
-    if (id.startsWith?.("towel-")) return "towel";
     if (id.startsWith?.("bib-")) return "bib";
     if (id.startsWith?.("blanket-")) {
       // Cart ids: `blanket-{alphabet}-{layout}` — extract the layout suffix

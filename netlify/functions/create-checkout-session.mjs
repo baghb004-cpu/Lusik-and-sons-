@@ -157,6 +157,7 @@ export default async (req, context) => {
       cancel_url:  returnUrls.cancel_url,
       shipping_address_collection: { allowed_countries: ["US"] },
       shipping_options: shippingOptions,
+      automatic_tax: { enabled: true },
       // Stripe metadata has a 500-char-per-value cap, so we don't
       // shove the cart in here. Instead we stash it in Blobs keyed
       // by session.id and the webhook looks it up.
