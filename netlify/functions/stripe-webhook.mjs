@@ -212,12 +212,14 @@ export default async (req) => {
   const reconstructedNote = reconstructed
     ? "RECONSTRUCTED FROM STRIPE — original cart stash was lost. Custom blanket metadata (alphabet, layout, colors, personalization) is missing; reach out to the customer for those details before stitching."
     : null;
+  const giftReminderOptIn = pending.gift_reminder_opt_in === true;
   const inserted = await sql`
     INSERT INTO orders (
       order_number, stripe_session_id, stripe_payment_intent, user_id,
       customer_email, status, fulfillment_status,
       subtotal_cents, shipping_cents, tax_cents, total_cents,
-      shipping_address, social_consent, gift, admin_notes
+      shipping_address, social_consent, gift, admin_notes,
+      gift_reminder_opt_in
     ) VALUES (
       ${orderNumber}, ${session.id}, ${paymentIntent}, ${pending.userId},
       ${customerEmail}, 'paid', 'in_progress',
@@ -225,7 +227,8 @@ export default async (req) => {
       ${shippingAddr ? JSON.stringify(shippingAddr) : null}::jsonb,
       ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
       ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb,
-      ${reconstructedNote}
+      ${reconstructedNote},
+      ${giftReminderOptIn}
     )
     RETURNING *
   `;

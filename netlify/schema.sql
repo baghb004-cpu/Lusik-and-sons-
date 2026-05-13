@@ -112,6 +112,8 @@ CREATE TABLE IF NOT EXISTS orders (
   finished_photo_emailed_at   TIMESTAMPTZ,             -- set when the customer was first emailed about the photo (dedupe gate)
   admin_notes                 TEXT,                    -- internal-only notes Lusik writes from the admin view
   shipped_at                  TIMESTAMPTZ,             -- set when fulfillment_status first transitions to "shipped"
+  gift_reminder_opt_in        BOOLEAN NOT NULL DEFAULT false,  -- customer opted in at checkout to a 1-year-later reminder
+  gift_reminder_sent_at       TIMESTAMPTZ,             -- set when the gift-reminder scheduled job emailed this customer (dedupe gate, one-shot)
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -126,6 +128,14 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes                TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at                 TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent      TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_cents             INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_reminder_opt_in       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_reminder_sent_at      TIMESTAMPTZ;
+
+-- Partial index so the daily reminder job can scan only the small set
+-- of pending reminders rather than the whole orders table.
+CREATE INDEX IF NOT EXISTS idx_orders_gift_reminder_pending
+  ON orders (created_at)
+  WHERE gift_reminder_opt_in = true AND gift_reminder_sent_at IS NULL;
 
 -- Index on stripe_payment_intent so refund webhooks (which arrive
 -- with a payment_intent reference) can find the matching order

@@ -822,3 +822,137 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
 
   return await sendEmail({ to, subject, html, text });
 }
+
+// ============================================================
+// sendGiftReminderEmail — one-year-later reminder
+// ============================================================
+// Fired by the daily gift-reminder scheduled function for orders
+// that opted in at checkout and are now ~11 months old. One-shot:
+// orders.gift_reminder_sent_at is stamped after a successful send.
+//
+// The wording is gentle on purpose. We're emailing someone who
+// hasn't heard from us in a year. "It's been a while, here's a
+// link if you want another" — not a sale, not urgency, no promo
+// code. The unsubscribe link is prominent.
+// ============================================================
+export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
+  const to = order.customer_email;
+  if (!to) {
+    console.warn("[email] customer email missing on gift reminder; skipping");
+    return false;
+  }
+
+  const ship         = order.shipping_address ?? {};
+  const customerName = ship.name ?? null;
+  const greeting     = customerName ? `Hi ${customerName.split(" ")[0]},` : "Hi there,";
+  const isGift       = order.gift?.is_gift === true;
+
+  const accent  = "#B08842";
+  const ink     = "#1A1612";
+  const cream   = "#F5EFE3";
+  const muted   = "#6B655D";
+  const baseUrl = process.env.URL || "https://lusikandsons.com";
+
+  const subject = isGift
+    ? "A small reminder from Lusik & Sons"
+    : "Has it really been a year?";
+
+  const openingLine = isGift
+    ? "It's been about a year since you ordered a hand-stitched piece as a gift. If another little one is on the way — yours, a friend's, family — Lusik is still at the same table, stitching the same way."
+    : "It's been about a year since your blanket left Lusik's hands. If there's another baby on the horizon — yours, a friend's, family — she's still at the same table, stitching the same way.";
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 18px 0;letter-spacing:-0.01em;line-height:1.2;">
+      It's been a year.
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 6px 0;">${esc(greeting)}</p>
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">${esc(openingLine)}</p>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 28px 0;">
+      No promo code, no rush. Just a note in case it's useful.
+    </p>
+
+    <div style="margin:24px 0 28px 0;">
+      <a href="${baseUrl}/" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+        Visit the shop →
+      </a>
+    </div>
+
+    <div style="margin-top:36px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
+      You're getting this one email because you ticked the box at checkout last year.
+      We won't send another. <a href="${esc(unsubscribeUrl)}" style="color:${muted};text-decoration:underline;">Unsubscribe anyway</a>.
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS`,
+    `It's been a year.`,
+    "",
+    greeting,
+    openingLine,
+    "",
+    `No promo code, no rush. Just a note in case it's useful.`,
+    "",
+    `Visit the shop: ${baseUrl}/`,
+    "",
+    `Made by hand in Cypress, California.`,
+    `${baseUrl}`,
+    "",
+    `You're getting this one email because you ticked the box at checkout last year. We won't send another.`,
+    `Unsubscribe: ${unsubscribeUrl}`,
+  ].join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}
+
+// ============================================================
+// signReminderToken / verifyReminderToken
+// ============================================================
+// HMAC capability tokens for the gift-reminder unsubscribe link.
+// The email recipient shouldn't have to sign in to opt out, and
+// a stranger shouldn't be able to spoof an unsubscribe against
+// someone else's order. A self-validating signed URL solves both.
+//
+// Falls back to STRIPE_WEBHOOK_SECRET if REMINDER_SECRET isn't
+// set — Stripe's secret is already long-lived and high-entropy.
+// ============================================================
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function reminderSecret() {
+  return process.env.REMINDER_SECRET
+      ?? process.env.STRIPE_WEBHOOK_SECRET
+      ?? "";
+}
+
+function b64url(buf) {
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function signReminderToken(orderId) {
+  const secret = reminderSecret();
+  if (!secret) return "";
+  return b64url(createHmac("sha256", secret).update(String(orderId)).digest());
+}
+
+export function verifyReminderToken(orderId, token) {
+  const secret = reminderSecret();
+  if (!secret || !token) return false;
+  const expected = signReminderToken(orderId);
+  const a = Buffer.from(token, "utf8");
+  const b = Buffer.from(expected, "utf8");
+  if (a.length !== b.length) return false;
+  try { return timingSafeEqual(a, b); } catch { return false; }
+}

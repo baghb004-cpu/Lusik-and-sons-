@@ -120,7 +120,7 @@ async function handle(req, context) {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  const { cart, social_consent, gift } = body ?? {};
+  const { cart, social_consent, gift, gift_reminder_opt_in } = body ?? {};
   if (!Array.isArray(cart) || cart.length === 0) {
     return json(400, { error: "Cart is empty" });
   }
@@ -270,6 +270,7 @@ async function handle(req, context) {
         customerEmail: customerEmail ?? null,
         social_consent: social_consent ?? null,
         gift: gift ?? null,
+        gift_reminder_opt_in: gift_reminder_opt_in === true,
         createdAt: new Date().toISOString(),
       });
     })();

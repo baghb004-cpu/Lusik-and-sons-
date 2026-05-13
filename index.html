@@ -10908,6 +10908,14 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [giftMessage,    setGiftMessage]    = useState("");
   const [giftHidePrices, setGiftHidePrices] = useState(false);
 
+  // --- ONE-YEAR REMINDER (optional, opt-in) ---
+  // Default off. If ticked, the order row carries gift_reminder_opt_in = true
+  // and a daily scheduled job emails the customer about 11 months later.
+  // Independent of giftIsGift — works for self-purchases too (the buyer's
+  // own baby growing up, repeat gifting, etc.). One-shot: once sent, never
+  // re-sent. Unsubscribe link in every email turns it off without sign-in.
+  const [giftReminderOptIn, setGiftReminderOptIn] = useState(false);
+
   // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
   // Default everything OFF — affirmative opt-in is the only thing
   // that grants Lusik permission to share photos of the customer's
@@ -11005,6 +11013,11 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             message:      giftIsGift ? giftMessage.trim() : "",
             hide_prices:  giftIsGift ? giftHidePrices : false,
           },
+          // Customer's one-year reminder opt-in. Stored verbatim on the
+          // order row by the webhook; a daily scheduled function reads
+          // it later. Nothing else here depends on this — declining
+          // doesn't affect checkout.
+          gift_reminder_opt_in: giftReminderOptIn,
           // Optional social-share consent. The stripe-webhook Function
           // persists this on the order row in orders.social_consent (JSONB)
           // when checkout completes, so Lusik sees it in her admin view.
@@ -11149,6 +11162,32 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 </p>
               </div>
             )}
+          </fieldset>
+
+          {/* ============================================================
+              OPTIONAL: ONE-YEAR REMINDER
+              ============================================================
+              Single checkbox, default off. Almost-no-friction add. Useful
+              for gift-givers (so they remember next year's baby shower)
+              and self-purchases alike. Sent at most once, ~11 months
+              after the order. */}
+          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · gentle reminder</legend>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={giftReminderOptIn}
+                onChange={(e) => setGiftReminderOptIn(e.target.checked)}
+                className="mt-0.5"
+                aria-describedby="gift-reminder-help"
+              />
+              <span className="text-xs leading-snug">
+                Send me one email next year if I might want another.
+                <span id="gift-reminder-help" className="block opacity-65 mt-0.5">
+                  We'll send it once, about 11 months from now. Not a marketing list — one email, with an unsubscribe link.
+                </span>
+              </span>
+            </label>
           </fieldset>
 
           {/* ============================================================
