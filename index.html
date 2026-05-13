@@ -9167,7 +9167,7 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           ? ` · ${letterColorList.map(c => c.name).join("/")}`
           : ` · ${letterColor?.name ?? ""}`;
       onAddCustom({
-        productKey: `${config.key}-name`,
+        productKey: config.key,
         name: config.name,
         price: config.price,
         size,
