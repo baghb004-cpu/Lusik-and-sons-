@@ -5349,6 +5349,7 @@ function App() {
         id, name: PRODUCT.name, subtitle,
         price, image: PRODUCT.gallery[0],
         qty, colorHex: color.hex,
+        productKey: isAlphabet ? `blanket-${layout?.key ?? "double_diag_br"}` : null,
         alphabet: isAlphabet ? selection : null,
         letter: isLetter ? selection : null,
         layout: isAlphabet ? layout : null,
@@ -11322,15 +11323,19 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
 
   // Map legacy IDs (without explicit productKey) — defensive copy of the
   // server-side helper, so the browser does the right thing pre-flight.
+  const KNOWN_LAYOUT_KEYS = ["double_diag_br"];
   function mapLegacyId(id) {
     if (!id) return null;
     if (id.startsWith?.("bib-")) return "bib";
     if (id.startsWith?.("blanket-")) {
-      // Cart ids: `blanket-{alphabet}-{layout}` — extract the layout suffix
-      // and map to TRUSTED_PRODUCTS key `blanket-{layout}`.
-      const parts = id.split("-");
-      if (parts.length >= 3) return `blanket-${parts.slice(2).join("-")}`;
-      return "blanket";
+      // Cart ids look like `blanket-{alphabet}-{layoutKey}-{blockDmc}-{letterDmc}...`
+      // Layout keys use underscores (e.g. double_diag_br), so we can't just
+      // split on "-" and slice — that fragments the layout key. Instead, check
+      // for known layout keys inside the id string.
+      for (const lk of KNOWN_LAYOUT_KEYS) {
+        if (id.includes(lk)) return `blanket-${lk}`;
+      }
+      return "blanket-double_diag_br";
     }
     return null;
   }
