@@ -19,7 +19,28 @@ import { json }        from "./_lib/json.mjs";
 // Bumped on every diagnostic commit so we can prove which
 // build is actually running on the live site. Returned in
 // every error response below.
-const BUILD_TAG = "b8848f5-diag-v3";
+const BUILD_TAG = "b8848f5-diag-v4";
+
+// Snapshot of what the Functions runtime can actually see, so a
+// missing STRIPE_SECRET_KEY error can tell us whether the var is
+// (a) absent entirely, (b) present but scoped wrong / mis-named,
+// or (c) present in the wrong deploy context. We only surface
+// KEY NAMES and lengths — never values — so it's safe to render
+// in the browser.
+function envDiagnostic() {
+  const allKeys = Object.keys(process.env);
+  const stripeKeys = allKeys
+    .filter((k) => /stripe/i.test(k))
+    .map((k) => `${k}(len=${(process.env[k] || "").length})`);
+  return {
+    context:        process.env.CONTEXT        || null,   // production | deploy-preview | branch-deploy | dev
+    branch:         process.env.BRANCH         || null,
+    deployId:       process.env.DEPLOY_ID      || null,
+    siteName:       process.env.SITE_NAME      || null,
+    stripeKeysSeen: stripeKeys,                            // e.g. ["STRIPE_SECRET_KEY(len=107)"]
+    totalEnvKeys:   allKeys.length,
+  };
+}
 
 // Lazy-init the Stripe client INSIDE the handler so a missing
 // STRIPE_SECRET_KEY env var returns a clean JSON 503 instead of
@@ -29,8 +50,18 @@ const BUILD_TAG = "b8848f5-diag-v3";
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
-    const err = new Error("STRIPE_SECRET_KEY env var is not set in this Netlify environment.");
+    const diag = envDiagnostic();
+    const err = new Error(
+      "STRIPE_SECRET_KEY env var is not set in this Netlify environment. " +
+      `context=${diag.context} branch=${diag.branch} ` +
+      `stripeKeysSeen=[${diag.stripeKeysSeen.join(", ") || "none"}] ` +
+      `totalEnvKeys=${diag.totalEnvKeys}. ` +
+      "Fix: in Netlify → Site → Environment variables, edit STRIPE_SECRET_KEY " +
+      "and confirm (1) Scopes includes \"Functions\", (2) the value is set for the " +
+      "deploy context shown above, then trigger a fresh deploy."
+    );
     err.code = "ENV_MISSING_STRIPE_SECRET_KEY";
+    err.diag = diag;
     throw err;
   }
   return new Stripe(key, { apiVersion: "2024-06-20" });
@@ -108,6 +139,7 @@ export default async (req, context) => {
       error:   "Function crashed before reaching Stripe — see message.",
       code:    err?.code    || "UNCAUGHT",
       message: err?.message || String(err),
+      diag:    err?.diag    || null,
       build:   BUILD_TAG,
     });
   }
