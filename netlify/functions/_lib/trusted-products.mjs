@@ -34,22 +34,4 @@ export const TRUSTED_PRODUCTS = {
     priceCents:  2200,
   },
 
-  // Hand-stitched bib has been removed from the catalog but the
-  // mapping still accepts it so any in-flight carts complete.
-  // Delete this entry once you're confident no carts predate the
-  // removal.
-  "bib-hand": {
-    name:        "Baby Bib (hand-stitched)",
-    variant:     "Hand-stitched single letter",
-    priceCents:  3500,
-  },
-
-  // Custom-image embroidered towel — currently inactive on the
-  // site but the mapping is here so reactivating the towel is a
-  // one-line index.html change.
-  "towel": {
-    name:        "Custom Embroidered Towel",
-    variant:     "Your design",
-    priceCents:  3500,
-  },
 };
