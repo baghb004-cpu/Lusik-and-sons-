@@ -335,12 +335,22 @@
   body, .theme-surface { transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
   html.no-transitions, html.no-transitions * { transition: none !important; }
 
-  /* overflow-x: hidden defends the layout against any element accidentally
-     pushing past the viewport width (e.g. a stray translateX, a wide image,
-     a fixed-min-width dropdown). Without this, an overflow makes <body>
-     wider than the screen, and elements like the top announce banner that
-     are width: 100% of body visibly stop short of the viewport edge. */
-  html, body { overflow-x: hidden; max-width: 100%; }
+  /* Defends the layout against any element accidentally pushing past the
+     viewport width (e.g. a stray translateX, a wide image, a fixed-min-
+     width dropdown). Without this, an overflow makes <body> wider than
+     the screen, and elements like the top announce banner that are
+     width: 100% of body visibly stop short of the viewport edge.
+
+     iOS Safari needs the more aggressive `width + position: relative`
+     pattern, not just overflow-x: hidden — a plain overflow-x clip
+     sometimes still lets a too-wide child poke out by a few pixels. */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    position: relative;
+  }
+  #root { overflow-x: hidden; width: 100%; max-width: 100vw; }
   body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); }
   .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
   .gold-line { background: linear-gradient(90deg, transparent, #B08842, transparent); height: 1px; }
