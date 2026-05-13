@@ -193,12 +193,9 @@ export default async (req, context) => {
       message: err?.message,
       raw:     err?.raw,
     });
-    // Return a more diagnosable payload in non-production. Never
-    // leak the API key, request IDs, or stack traces to the
-    // browser in production — just the friendly retry message.
-    if (isProd) {
-      return json(502, { error: "Couldn't reach Stripe. Please try again." });
-    }
+    // TEMPORARILY surfacing diagnostic detail in production too
+    // so we can pinpoint the live 502 without log access. Revert
+    // the gate (re-add `if (isProd) return generic`) once fixed.
     return json(502, {
       error:    "Stripe rejected the request — see fields below for what to fix.",
       type:     err?.type    ?? null,
