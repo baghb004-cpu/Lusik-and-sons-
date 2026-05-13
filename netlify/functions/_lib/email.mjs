@@ -956,3 +956,88 @@ export function verifyReminderToken(orderId, token) {
   if (a.length !== b.length) return false;
   try { return timingSafeEqual(a, b); } catch { return false; }
 }
+
+// ============================================================
+// sendWaitlistAvailableEmail — "the thing you waited for is here"
+// ============================================================
+// Fired by admin-waitlist-notify when Lusik clicks Notify on a
+// product that's now live. One-shot per (email, product_key):
+// product_waitlist.notified_at is stamped after a successful send
+// and the UNIQUE index prevents re-emails on duplicate signups.
+//
+// Args:
+//   to           — recipient email
+//   productName  — display name ("Hand-stitched bib", etc.)
+//   productUrl   — where to point the CTA (PDP, home anchor, etc.)
+//
+// Tone: short and warm. The recipient asked us to email them;
+// we're keeping the promise. No promo code, no urgency.
+// ============================================================
+export async function sendWaitlistAvailableEmail({ to, productName, productUrl }) {
+  if (!to) {
+    console.warn("[email] waitlist email missing recipient; skipping");
+    return false;
+  }
+
+  const accent  = "#B08842";
+  const ink     = "#1A1612";
+  const cream   = "#F5EFE3";
+  const muted   = "#6B655D";
+  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const href    = productUrl || `${baseUrl}/`;
+
+  const subject = `${productName} is ready.`;
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 18px 0;letter-spacing:-0.01em;line-height:1.2;">
+      ${esc(productName)} is ready.
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">
+      You asked us to email you when this was available — it is. Lusik is taking orders now.
+    </p>
+
+    <div style="margin:24px 0 28px 0;">
+      <a href="${esc(href)}" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+        Have a look →
+      </a>
+    </div>
+
+    <p style="font-size:14px;color:${muted};margin:0 0 24px 0;">
+      Made by hand, made-to-order. Each piece takes 5–10 business days before it ships.
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
+      You're getting this because you signed up for the ${esc(productName)} waitlist. This is a one-time send — we won't email you again from this list.
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS`,
+    `${productName} is ready.`,
+    "",
+    `You asked us to email you when this was available — it is. Lusik is taking orders now.`,
+    "",
+    `Have a look: ${href}`,
+    "",
+    `Made by hand, made-to-order. Each piece takes 5–10 business days before it ships.`,
+    "",
+    `Lusik & Sons · ${baseUrl}`,
+    "",
+    `You're getting this because you signed up for the ${productName} waitlist. This is a one-time send — we won't email you again from this list.`,
+  ].join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}

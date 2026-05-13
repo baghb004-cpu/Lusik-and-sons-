@@ -137,6 +137,38 @@ CREATE INDEX IF NOT EXISTS idx_orders_gift_reminder_pending
   ON orders (created_at)
   WHERE gift_reminder_opt_in = true AND gift_reminder_sent_at IS NULL;
 
+-- ============================================================
+-- product_waitlist
+-- ============================================================
+-- One row per (email, product_key). Customers sign up via the
+-- WaitlistModal for products still marked status: "placeholder"
+-- in CATALOG. When Lusik launches the product she clicks "Notify"
+-- in the admin panel; admin-waitlist-notify emails everyone with
+-- notified_at IS NULL and stamps the timestamp.
+--
+-- UNIQUE (lower(email), product_key) means a customer who signs
+-- up twice for the same product just updates their row — no
+-- duplicate emails, no surprise re-notifications.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_waitlist (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email        TEXT NOT NULL,
+  product_key  TEXT NOT NULL,
+  product_name TEXT,                  -- captured at signup for the email composer
+  notified_at  TIMESTAMPTZ,           -- stamped after a successful Resend send
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Lowercased email so case differences don't create duplicates.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_product_waitlist_email_product
+  ON product_waitlist (lower(email), product_key);
+
+-- Partial index for the admin "notify" sweep — only scan rows that
+-- still need a send.
+CREATE INDEX IF NOT EXISTS idx_product_waitlist_pending
+  ON product_waitlist (product_key)
+  WHERE notified_at IS NULL;
+
 -- Index on stripe_payment_intent so refund webhooks (which arrive
 -- with a payment_intent reference) can find the matching order
 -- without a full table scan.

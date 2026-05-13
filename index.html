@@ -989,18 +989,6 @@
   <input type="text"   name="bot-field" />
   <input type="email"  name="email" />
 </form>
-<!-- Waitlist signup for placeholder catalog items. Submissions land
-     in Netlify Forms under "waitlist" — one entry per email +
-     product_key pair. Lusik can export the list before launching a
-     placeholder to notify everyone. -->
-<form name="waitlist" data-netlify="true" netlify-honeypot="bot-field" hidden>
-  <input type="hidden" name="form-name"   value="waitlist" />
-  <input type="text"   name="bot-field" />
-  <input type="email"  name="email" />
-  <input type="text"   name="product_key" />
-  <input type="text"   name="product_name" />
-</form>
-
 <div id="root"></div>
 
 <!-- IMAGE DATA -->
@@ -3323,6 +3311,19 @@ const db = (() => {
     return { url: data?.url ?? null, key: data?.key ?? null, error };
   };
 
+  // --- ADMIN WAITLIST ---
+  const adminListWaitlists = async () => {
+    const { error, data } = await call("/admin-waitlist", { method: "GET" });
+    return { items: data?.items ?? [], error };
+  };
+  const adminNotifyWaitlist = async ({ product_key, product_name, product_url }) => {
+    const { error, data } = await call("/admin-waitlist-notify", {
+      method: "POST",
+      body: { product_key, product_name, product_url },
+    });
+    return { sent: data?.sent ?? 0, failed: data?.failed ?? 0, remaining: data?.remaining ?? 0, error };
+  };
+
   // --- SAVED DESIGNS ---
   // Customer-side "my designs" library. Each entry is the
   // compact picker state plus a label and timestamp.
@@ -3356,6 +3357,7 @@ const db = (() => {
     listOrders, linkGuestOrders,
     listSavedDesigns, saveDesign, deleteSavedDesign,
     adminListOrders, adminGetOrder, adminUpdateOrder, adminUploadOrderPhoto,
+    adminListWaitlists, adminNotifyWaitlist,
     exportAccountData, deleteAccount,
   };
 })();
@@ -3711,17 +3713,19 @@ function WaitlistModal({ product, onClose }) {
     }
     setBusy(true);
     try {
-      const body = new URLSearchParams({
-        "form-name": "waitlist",
-        "bot-field": bot,
-        email:        value,
-        product_key:  product.key,
-        product_name: product.name,
-      }).toString();
-      const res = await fetch("/", {
+      // Posts to a Netlify Function that persists the email →
+      // product_key pairing in our own DB (was Netlify Forms before;
+      // moved so the admin Notify sweep can actually email everyone
+      // when a placeholder product goes live).
+      const res = await fetch(`${CONFIG.FN_BASE}/waitlist`, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          "bot-field": bot,
+          email:        value,
+          product_key:  product.key,
+          product_name: product.name,
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       track("waitlist-signup", { productKey: product.key });
@@ -8148,6 +8152,10 @@ function AdminView({ user, onBack }) {
   const toast = useToast();
   const [orders, setOrders] = useState(null); // null = loading
   const [filter, setFilter] = useState("all");
+  // Waitlists summary — null while loading, [] when there are no signups
+  // yet. Loaded once on mount; refreshed locally after each Notify click.
+  const [waitlists, setWaitlists] = useState(null);
+  const [notifyingKey, setNotifyingKey] = useState(null);
 
   const refresh = useCallback(async () => {
     const { orders: rows, error } = await db.adminListOrders();
@@ -8158,6 +8166,49 @@ function AdminView({ user, onBack }) {
     }
     setOrders(rows);
   }, [toast]);
+
+  const refreshWaitlists = useCallback(async () => {
+    const { items, error } = await db.adminListWaitlists();
+    if (error) {
+      console.warn("[admin] waitlist load failed:", error.message);
+      setWaitlists([]);
+      return;
+    }
+    setWaitlists(items);
+  }, []);
+
+  useEffect(() => { refreshWaitlists(); }, [refreshWaitlists]);
+
+  const handleNotifyWaitlist = async (entry) => {
+    if (entry.pending === 0) return;
+    if (!confirm(`Send ${entry.pending} ${entry.product_name || entry.product_key} waitlist email${entry.pending === 1 ? "" : "s"} now? Each recipient gets one email saying the product is ready.`)) {
+      return;
+    }
+    setNotifyingKey(entry.product_key);
+    const { sent, failed, remaining, error } = await db.adminNotifyWaitlist({
+      product_key:  entry.product_key,
+      product_name: entry.product_name || entry.product_key,
+      product_url:  `${window.location.origin}/`,
+    });
+    setNotifyingKey(null);
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't send the waitlist notification." });
+      return;
+    }
+    if (sent > 0) {
+      toast({
+        kind: "success",
+        message: failed > 0
+          ? `Sent ${sent}. ${failed} failed — they'll retry next click. ${remaining} still pending.`
+          : (remaining > 0
+              ? `Sent ${sent}. ${remaining} more remain — click Notify again to send the next batch.`
+              : `Sent ${sent}. Waitlist cleared.`),
+      });
+    } else {
+      toast({ kind: "error", message: `No emails went out (${failed} failed). Try again or check the function logs.` });
+    }
+    refreshWaitlists();
+  };
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -8269,6 +8320,47 @@ function AdminView({ user, onBack }) {
           </button>
         </div>
       </div>
+
+      {/* Waitlists panel — one row per product with at least one signup.
+          Only renders when there's something to show; stays out of the
+          way otherwise so Lusik's main view is still orders. */}
+      {Array.isArray(waitlists) && waitlists.length > 0 && (
+        <div className="mb-8 p-5" style={{ border: "1px solid rgba(176,136,66,0.3)", background: "rgba(176,136,66,0.05)" }}>
+          <div className="flex items-baseline justify-between mb-3">
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#B08842", fontWeight: 600 }}>Waitlists</p>
+            <p className="text-[0.65rem] opacity-60 italic">Click Notify when a product goes live.</p>
+          </div>
+          <div className="space-y-2">
+            {waitlists.map((w) => (
+              <div key={w.product_key} className="flex items-center justify-between gap-3 py-1.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm" style={{ fontWeight: 500 }}>
+                    {w.product_name || w.product_key}
+                  </p>
+                  <p className="text-xs opacity-65">
+                    {w.pending} waiting{w.notified > 0 ? ` · ${w.notified} already notified` : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleNotifyWaitlist(w)}
+                  disabled={w.pending === 0 || notifyingKey === w.product_key}
+                  className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition disabled:opacity-30"
+                  style={{
+                    border: "1px solid #1A1612",
+                    background: w.pending > 0 ? "#1A1612" : "transparent",
+                    color: w.pending > 0 ? "#F5EFE3" : "#1A1612",
+                    fontWeight: 500,
+                    cursor: w.pending === 0 ? "not-allowed" : "pointer",
+                  }}
+                  title={w.pending === 0 ? "Nobody pending on this list" : `Email ${w.pending} recipient${w.pending === 1 ? "" : "s"}`}
+                >
+                  {notifyingKey === w.product_key ? "Sending…" : (w.pending === 0 ? "Cleared" : `Notify ${w.pending}`)}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {orders === null ? (
         <div className="space-y-4">
