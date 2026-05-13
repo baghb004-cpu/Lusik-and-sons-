@@ -4863,6 +4863,96 @@ function ThemeToggle({ compact = false }) {
   );
 }
 
+// === SWIPEABLE ROW ===
+// Wraps a cart-row child with a horizontal-swipe-to-delete gesture.
+// touch-action: pan-y tells the browser to handle vertical scroll itself,
+// leaving horizontal gestures to us — no preventDefault juggling needed.
+// Honors prefers-reduced-motion by rendering the children as-is (the
+// dedicated X button remains the universal path).
+function SwipeableRow({ onSwipeDelete, children }) {
+  const [dragX, setDragX] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const startRef = useRef(null);
+  const intentRef = useRef(null); // null | "horizontal" | "vertical"
+
+  const reducedMotion = typeof window !== "undefined"
+    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) return <>{children}</>;
+
+  const DELETE_THRESHOLD = -80; // px — drag past this on release to delete
+  const CLAIM_DIST = 12;        // px of movement before we decide what kind of gesture this is
+
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    startRef.current = { x: t.clientX, y: t.clientY };
+    intentRef.current = null;
+    setAnimating(false);
+  };
+
+  const onTouchMove = (e) => {
+    if (!startRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startRef.current.x;
+    const dy = t.clientY - startRef.current.y;
+
+    if (intentRef.current === null) {
+      if (Math.abs(dx) < CLAIM_DIST && Math.abs(dy) < CLAIM_DIST) return;
+      intentRef.current = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+    }
+    if (intentRef.current !== "horizontal") return;
+
+    // Only allow leftward drag (rightward would reveal nothing).
+    setDragX(Math.min(0, dx));
+  };
+
+  const onTouchEnd = () => {
+    if (intentRef.current === "horizontal") {
+      setAnimating(true);
+      if (dragX < DELETE_THRESHOLD) {
+        // Animate the row off-screen, then call the delete handler. The
+        // existing toast() infrastructure in App handles the undo.
+        setDragX(-9999);
+        setTimeout(() => onSwipeDelete?.(), 180);
+      } else {
+        setDragX(0);
+      }
+    }
+    startRef.current = null;
+    intentRef.current = null;
+  };
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Red delete backdrop — fades in proportionally with the drag */}
+      <div
+        className="absolute inset-0 flex items-center justify-end pr-6 pointer-events-none"
+        style={{
+          background: "#8B2C2C",
+          opacity: dragX < 0 ? Math.min(1, Math.abs(dragX) / 80) : 0,
+        }}
+        aria-hidden="true"
+      >
+        <span className="text-xs tracking-[0.2em] uppercase" style={{ color: "#F5EFE3", fontWeight: 500 }}>
+          Delete
+        </span>
+      </div>
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: animating ? "transform 0.18s ease-out" : "none",
+          background: "var(--bg-page)",
+          touchAction: "pan-y",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const t = useT();
   const toast = useToast();
@@ -5403,7 +5493,17 @@ function App() {
   };
 
   const updateQty = (id, delta) => {
-    setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0));
+    // Minus on qty=1 routes to removeFromCart so the customer gets the
+    // undo toast instead of a no-op clamp. Same UX as Amazon / Shopify
+    // checkouts and avoids stranding an item the customer wanted gone.
+    if (delta < 0) {
+      const item = cart.find((i) => i.id === id);
+      if (item && item.qty + delta < 1) {
+        removeFromCart(id);
+        return;
+      }
+    }
+    setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)));
   };
   const removeFromCart = (id) => {
     // Capture the removed line item so the toast's "Undo" can put it
@@ -5911,30 +6011,32 @@ function App() {
               <>
                 <div className="flex-1 overflow-y-auto">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
-                      <div className="relative">
-                        <img src={item.image} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
-                        {item.isCustom && (
-                          <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-display text-lg leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
-                        <div className="flex items-center gap-2 mb-3">
-                          {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                          <p className="text-xs opacity-60">{item.subtitle}</p>
+                    <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
+                      <div className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
+                        <div className="relative">
+                          <img src={item.image} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                          {item.isCustom && (
+                            <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
-                            <button onClick={() => updateQty(item.id, -1)} className="p-2"><Minus size={12} /></button>
-                            <span className="text-sm w-6 text-center">{item.qty}</span>
-                            <button onClick={() => updateQty(item.id, 1)} className="p-2"><Plus size={12} /></button>
+                        <div className="flex-1">
+                          <p className="font-display text-lg leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
+                          <div className="flex items-center gap-2 mb-3">
+                            {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
+                            <p className="text-xs opacity-60">{item.subtitle}</p>
                           </div>
-                          <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
+                              <button onClick={() => updateQty(item.id, -1)} className="p-2" aria-label={item.qty === 1 ? "Remove item" : "Decrease quantity"}><Minus size={12} /></button>
+                              <span className="text-sm w-6 text-center">{item.qty}</span>
+                              <button onClick={() => updateQty(item.id, 1)} className="p-2" aria-label="Increase quantity"><Plus size={12} /></button>
+                            </div>
+                            <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
+                          </div>
                         </div>
+                        <button onClick={() => removeFromCart(item.id)} className="opacity-40 hover:opacity-100" aria-label="Remove from cart"><X size={14} /></button>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="opacity-40 hover:opacity-100"><X size={14} /></button>
-                    </div>
+                    </SwipeableRow>
                   ))}
                 </div>
                 <div className="border-t p-6" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
