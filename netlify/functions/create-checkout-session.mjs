@@ -16,9 +16,20 @@ import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { json }        from "./_lib/json.mjs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
+// Lazy-init the Stripe client INSIDE the handler so a missing
+// STRIPE_SECRET_KEY env var returns a clean JSON 503 instead of
+// throwing at module load (which would surface as a Netlify-
+// wrapped 502 with no diagnostic body — exactly the symptom
+// that's been hiding the real cause of the live checkout 502).
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    const err = new Error("STRIPE_SECRET_KEY env var is not set in this Netlify environment.");
+    err.code = "ENV_MISSING_STRIPE_SECRET_KEY";
+    throw err;
+  }
+  return new Stripe(key, { apiVersion: "2024-06-20" });
+}
 
 // ============================================================
 // SHIPPING POLICY
@@ -83,7 +94,27 @@ function buildReturnUrls(originHeader) {
 }
 
 export default async (req, context) => {
+  // Top-level guard so ANY synchronous throw (env-var init,
+  // missing module, etc.) returns clean JSON instead of letting
+  // Netlify wrap the failure in its own opaque 502 HTML page.
+  try {
+    return await handle(req, context);
+  } catch (err) {
+    console.error("create-checkout-session crashed at top level:", err);
+    return json(500, {
+      error:   "Function crashed before reaching Stripe — see message.",
+      code:    err?.code    || "UNCAUGHT",
+      message: err?.message || String(err),
+    });
+  }
+};
+
+async function handle(req, context) {
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
+
+  // Initialize Stripe client (will throw a clean error if the
+  // secret key env var is missing; caught by the outer guard).
+  const stripe = getStripe();
 
   let body;
   try {
@@ -220,4 +251,4 @@ export default async (req, context) => {
   });
 
   return json(200, { url: session.url });
-};
+}
