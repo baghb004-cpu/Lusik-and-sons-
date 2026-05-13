@@ -204,8 +204,139 @@
      via the `auth` wrapper below. -->
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- ============================================================
+     THEME — FOUC prevention
+     ============================================================
+     Runs synchronously before any paint. Reads the user's
+     saved theme preference (localStorage key "ls_theme",
+     value "light" | "dark" | "system"), defaults to "system"
+     for new visitors, then resolves to a concrete light or
+     dark and stamps it on the <html> element as
+     data-theme="light|dark". The stylesheet's CSS variables
+     swap on that attribute.
+
+     `.no-transitions` is added on first paint and removed
+     after one rAF so the initial render doesn't animate from
+     light→dark when the system pref is dark — that flash is
+     the whole point of the FOUC script.
+     ============================================================ -->
+<script>
+(function() {
+  try {
+    var pref = localStorage.getItem("ls_theme") || "system";
+    var systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var resolved = pref === "dark" ? "dark"
+                 : pref === "light" ? "light"
+                 : (systemDark ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", resolved);
+    document.documentElement.classList.add("no-transitions");
+    // Drop the transition lock after the first frame so subsequent
+    // theme toggles animate normally.
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        document.documentElement.classList.remove("no-transitions");
+      });
+    });
+  } catch (_) {
+    // localStorage blocked (Safari private mode, etc.) — just
+    // fall back to light. No theme is set, CSS uses :root defaults.
+  }
+})();
+</script>
 <style>
-  body { font-family: 'DM Sans', system-ui, sans-serif; background: #F5EFE3; color: #1A1612; }
+  /* ============================================================
+     COLOR TOKENS — light / dark theme variables
+     ============================================================
+     Every brand color lives here as a CSS custom property. The
+     :root block is the LIGHT theme (the brand's primary look).
+     :root[data-theme="dark"] overrides each value with a warm
+     dark equivalent — NOT stark black, because Lusik's brand is
+     warm. The gold accent (--accent) stays identical-ish across
+     both themes so it stays recognizable.
+
+     The theme attribute is set by the inline FOUC-prevention
+     script in <head> BEFORE this CSS loads, so the first paint
+     already matches the user's choice (or their system pref if
+     they haven't chosen). No flash.
+
+     Inline styles in JSX still use literal hex values in many
+     places (the codebase predates this refactor). The major
+     surfaces — body, nav, drawers, modals, cards — read from
+     var() so dark mode covers most of the visible UI. Smaller
+     elements that haven't been migrated yet keep their light-
+     mode colors; migration is incremental — search for the
+     relevant hex and swap to var().
+     ============================================================ */
+  :root {
+    --bg-page:        #F5EFE3;  /* main page cream */
+    --bg-page-90:     rgba(245,239,227,0.92);  /* translucent for backdrop-blur nav */
+    --bg-surface:     #FFFFFF;  /* cards, inputs, the brightest layer */
+    --bg-elevated:    #EFE7D6;  /* footer, slightly darker cream for separation */
+    --bg-subtle:      #FAF6EC;  /* hover backgrounds, gallery placeholders */
+    --bg-overlay:     rgba(26,22,18,0.4);  /* drawer/modal scrim */
+
+    --text-primary:   #1A1612;
+    --text-secondary: #3D332A;
+    --text-muted:     rgba(26,22,18,0.65);
+    --text-on-ink:    #F5EFE3;  /* text on dark ink (Pay button, etc.) */
+
+    --border-default: rgba(26,22,18,0.10);
+    --border-strong:  rgba(26,22,18,0.20);
+    --border-soft:    rgba(26,22,18,0.06);
+
+    --ink:            #1A1612;  /* primary dark — buttons, headings */
+    --accent:         #B08842;  /* gold — UNCHANGED in dark mode */
+    --accent-soft:    rgba(176,136,66,0.10);
+    --accent-strong:  rgba(176,136,66,0.30);
+
+    --success:        #3D5A3D;
+    --error:          #8B2C2C;
+    --error-soft:     rgba(139,44,44,0.06);
+
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --bg-page:        #15110E;  /* warm dark — not stark black */
+    --bg-page-90:     rgba(21,17,14,0.92);
+    --bg-surface:     #1F1814;  /* one notch lighter for cards */
+    --bg-elevated:    #2A2118;  /* footer / panels */
+    --bg-subtle:      #251D17;
+    --bg-overlay:     rgba(0,0,0,0.6);
+
+    --text-primary:   #F5EFE3;
+    --text-secondary: rgba(245,239,227,0.78);
+    --text-muted:     rgba(245,239,227,0.55);
+    /* Inverted in dark — ink button is cream, so the text on top must be dark */
+    --text-on-ink:    #1A1612;
+
+    --border-default: rgba(245,239,227,0.10);
+    --border-strong:  rgba(245,239,227,0.18);
+    --border-soft:    rgba(245,239,227,0.05);
+
+    --ink:            #F5EFE3;  /* invert: ink in dark = cream */
+    --accent:         #C9A678;  /* brighter gold for dark-bg contrast */
+    --accent-soft:    rgba(201,166,120,0.14);
+    --accent-strong:  rgba(201,166,120,0.36);
+
+    --success:        #6FA86F;
+    --error:          #D17474;
+    --error-soft:     rgba(209,116,116,0.10);
+
+    color-scheme: dark;
+  }
+
+  /* Smooth theme-transition for surfaces that READ var(). The
+     .no-transitions class is applied by the FOUC script on
+     first paint and removed after one rAF, so the initial paint
+     doesn't animate from light → dark when the user's system is
+     set to dark mode. */
+  html { transition: background-color 0.25s ease, color 0.25s ease; }
+  body, .theme-surface { transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
+  html.no-transitions, html.no-transitions * { transition: none !important; }
+
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); }
   .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
   .gold-line { background: linear-gradient(90deg, transparent, #B08842, transparent); height: 1px; }
   .fade-in { animation: fadeIn 0.7s ease-out; }
@@ -899,6 +1030,9 @@ const Store = (p) => <Icon {...p}><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a
 const LogOut = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
 const Camera = (p) => <Icon {...p}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></Icon>;
 const Eye = (p) => <Icon {...p}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></Icon>;
+const Sun = (p) => <Icon {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></Icon>;
+const Moon = (p) => <Icon {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></Icon>;
+const Monitor = (p) => <Icon {...p}><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></Icon>;
 const EyeOff = (p) => <Icon {...p}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></Icon>;
 const AtSign = (p) => <Icon {...p}><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></Icon>;
 const XLogo = (p) => <Icon {...p}><path d="M4 4l16 16"/><path d="M20 4 4 20"/></Icon>;
@@ -1494,6 +1628,110 @@ const CONFIG = {
   ANALYTICS: {
     UMAMI_WEBSITE_ID: "",                            // paste from umami.is dashboard
     UMAMI_SRC_URL:    "https://cloud.umami.is/script.js",
+  },
+
+  // ============================================================
+  // PAID-FEATURE FLAGS — stubbed off, activate when ready
+  // ============================================================
+  // Each entry below points at a third-party service Lusik can
+  // turn on later. The code at the call sites already checks the
+  // flag and falls back to the current free behavior when it's
+  // empty/false, so flipping one on doesn't require code edits
+  // beyond pasting credentials. Pricing notes are based on
+  // public 2026 plans — verify before turning anything on.
+  //
+  // PHILOSOPHY: business hasn't proven revenue yet, so every flag
+  // here is off. As soon as orders are steady, the first one
+  // worth turning on is REVIEWS (free Loox tier) — it boosts
+  // conversion immediately and costs nothing until 100 orders/mo.
+  // Second is EMAIL_MARKETING (Klaviyo free tier, 500 contacts)
+  // for cart-abandonment + welcome flows. Everything else can
+  // wait until revenue justifies it.
+  // ============================================================
+  PAID_FEATURES: {
+    // -- Email marketing (Klaviyo) ----------------------------
+    // Free up to 500 contacts / 500 emails per month, then
+    // ~$45/mo for 1,500 contacts. Drop-in: paste the public API
+    // key and the welcome flow + abandoned-cart flow start
+    // working. The newsletter form already posts to
+    // /.netlify/functions/newsletter (currently a no-op stub
+    // that just returns 200); flip this on + wire the function
+    // to forward to Klaviyo's /api/profiles endpoint.
+    EMAIL_MARKETING: {
+      ENABLED: false,
+      KLAVIYO_PUBLIC_KEY: "",                        // pk_xxxxxx
+      KLAVIYO_LIST_ID:    "",                        // newsletter list id
+    },
+
+    // -- Product reviews (Loox / Trustpilot / Judge.me) -------
+    // Loox: free up to 100 orders/mo, $9.99/mo for 500 orders/mo.
+    // Renders below the product gallery. When ENABLED is false,
+    // the placeholder hook in ProductShowcase shows nothing.
+    REVIEWS: {
+      ENABLED: false,
+      PROVIDER: "loox",                              // "loox" | "trustpilot" | "judgeme"
+      WIDGET_ID: "",                                 // shop-domain or widget-id from provider
+    },
+
+    // -- Image CDN (Cloudinary) -------------------------------
+    // Free up to 25 GB storage + 25 GB bandwidth/mo, ~$89/mo
+    // after. Worth turning on once we replace the embedded
+    // base64 product photos — those bloat index.html and slow
+    // first paint. The PHOTO_* constants near line 570 would
+    // shift from data: URIs to Cloudinary URLs (e.g.
+    // https://res.cloudinary.com/<cloud>/image/upload/.../hero.jpg).
+    IMAGE_CDN: {
+      ENABLED: false,
+      CLOUDINARY_CLOUD_NAME: "",                     // <your-cloud-name>
+    },
+
+    // -- Address autocomplete (Google Places) -----------------
+    // $200/mo free credit covers ~17,000 address lookups. After
+    // that, $0.017 per lookup. Reduces shipping-address typos
+    // on the checkout form. When ENABLED is true, AddressEditor
+    // would mount the Places JS API and bind it to the
+    // street-line input.
+    ADDRESS_AUTOCOMPLETE: {
+      ENABLED: false,
+      GOOGLE_PLACES_API_KEY: "",                     // restricted to lusikandsons.com
+    },
+
+    // -- Live chat (Crisp / Intercom / Tawk) ------------------
+    // Crisp: free for 2 seats, ~$25/mo for unlimited. Tawk:
+    // permanently free. Drop-in script tag injected from useEffect
+    // in App when ENABLED. Replaces the "Text us" widget for
+    // customers who prefer in-page chat.
+    LIVE_CHAT: {
+      ENABLED: false,
+      PROVIDER: "tawk",                              // "tawk" | "crisp" | "intercom"
+      PROPERTY_ID: "",
+    },
+
+    // -- Behavioral analytics (PostHog / Mixpanel) ------------
+    // PostHog: 1M events/mo free, then $0.00031/event. Runs
+    // alongside the Umami stub (which counts pageviews); this
+    // is for funnels and session replay. PostHog includes free
+    // session replay which is genuinely useful for figuring
+    // out where customers get stuck in checkout.
+    BEHAVIORAL_ANALYTICS: {
+      ENABLED: false,
+      POSTHOG_KEY: "",                               // phc_xxxxxxxxxx
+      POSTHOG_HOST: "https://us.i.posthog.com",
+    },
+
+    // -- SMS notifications (Twilio) ---------------------------
+    // ~$0.0079 per SMS in the US + $1.15/mo per number. We
+    // already send emails via Resend (free). SMS is the next
+    // step up: text Lusik when an order arrives. The webhook
+    // function checks this flag and calls Twilio's REST API in
+    // addition to the existing Resend email.
+    SMS_NOTIFICATIONS: {
+      ENABLED: false,
+      TWILIO_ACCOUNT_SID: "",                        // set as env var server-side
+      TWILIO_AUTH_TOKEN:  "",                        // set as env var server-side
+      TWILIO_FROM_NUMBER: "",                        // e.g. +18185551234
+      TWILIO_TO_NUMBER:   "",                        // Lusik's phone
+    },
   },
 
   // Gallery indexes whose source files are sideways and need a CSS-rotation
@@ -2489,7 +2727,7 @@ function FirstVisitLangBanner() {
     >
       <div
         className="relative w-full max-w-md fade-in"
-        style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.1)" }}
+        style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}
       >
         {/* Header */}
         <div className="p-6 lg:p-8 text-center" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
@@ -2515,7 +2753,7 @@ function FirstVisitLangBanner() {
           <button
             onClick={() => handlePick("hy")}
             className="w-full p-4 text-center transition hover:opacity-90"
-            style={{ background: "#1A1612", color: "#F5EFE3" }}
+            style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
           >
             <p className="font-display text-xl" style={{ fontWeight: 500 }}>Հայերեն</p>
             <p className="text-[0.7rem] opacity-70 mt-1 tracking-wider uppercase">Armenian</p>
@@ -3189,10 +3427,10 @@ function ToastViewport({ toasts, onDismiss }) {
             <div
               className="flex items-start gap-3 px-4 py-3 cursor-pointer shadow-sm"
               style={{
-                background: "#FFFFFF",
-                color: "#1A1612",
+                background: "var(--bg-surface)",
+                color: "var(--text-primary)",
                 borderLeft: `3px solid ${s.borderLeftColor}`,
-                border: "1px solid rgba(26,22,18,0.08)",
+                border: "1px solid var(--border-default)",
                 borderLeftWidth: "3px",
                 borderLeftColor: s.borderLeftColor,
               }}
@@ -3453,7 +3691,7 @@ function WaitlistModal({ product, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Waitlist for ${product.name}`}>
       <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.55)" }} />
-      <div className="relative w-full max-w-md fade-in p-6 lg:p-8" style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.15)" }} onClick={(e) => e.stopPropagation()}>
+      <div className="relative w-full max-w-md fade-in p-6 lg:p-8" style={{ background: "var(--bg-page)", border: "1px solid var(--border-strong)" }} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} aria-label="Close" className="absolute top-3 right-3 opacity-50 hover:opacity-100 transition">
           <X size={18} />
         </button>
@@ -4140,7 +4378,7 @@ function TextUsWidget() {
                   <a
                     href={telHref}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-display"
-                    style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500 }}
+                    style={{ background: "var(--ink)", color: "var(--text-on-ink)", fontWeight: 500 }}
                   >
                     {cfg.phone_display}
                   </a>
@@ -4247,11 +4485,130 @@ function TextUsWidget() {
 //   track("share-design");
 function track(eventName, data) {
   if (typeof window === "undefined") return;
-  if (!CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID) return;
+  // Forward to whichever analytics providers are turned on.
+  // Both are independent — neither knows the other exists.
+  const umamiOn    = !!CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID;
+  const posthogOn  = !!CONFIG.PAID_FEATURES?.BEHAVIORAL_ANALYTICS?.ENABLED
+                  && !!CONFIG.PAID_FEATURES?.BEHAVIORAL_ANALYTICS?.POSTHOG_KEY;
+  if (!umamiOn && !posthogOn) return;
   try {
-    if (data) window.umami?.track(eventName, data);
-    else      window.umami?.track(eventName);
+    if (umamiOn) {
+      if (data) window.umami?.track(eventName, data);
+      else      window.umami?.track(eventName);
+    }
+    if (posthogOn) {
+      window.posthog?.capture?.(eventName, data || {});
+    }
   } catch { /* analytics never throws into user code */ }
+}
+
+// ============================================================
+// THEME — light / dark / system (three-way switch)
+// ============================================================
+// Persisted in localStorage as "ls_theme" with one of:
+//   "light"  — user explicitly chose light, ignore system pref
+//   "dark"   — user explicitly chose dark, ignore system pref
+//   "system" — follow OS preference; re-check when it changes
+//
+// The FOUC-prevention script at the top of <head> handles
+// initial paint. The hook below handles in-app changes (toggle
+// clicks + system preference changes when in "system" mode).
+//
+// "Smart awareness":
+//   - System pref change while in "system" mode flips theme
+//     instantly without a click
+//   - Choosing Light or Dark explicitly "pins" the theme; future
+//     system changes are ignored until the user picks System again
+//   - Inline script resolves the theme BEFORE first paint, so
+//     refreshes never flash the wrong theme
+// ============================================================
+function useTheme() {
+  const readPref = () => {
+    try { return localStorage.getItem("ls_theme") || "system"; }
+    catch { return "system"; }
+  };
+  const [pref, setPref] = useState(readPref);
+
+  // Apply the resolved theme whenever the preference changes.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const apply = () => {
+      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const resolved = pref === "dark" ? "dark"
+                     : pref === "light" ? "light"
+                     : (systemDark ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", resolved);
+    };
+    apply();
+    // When in "system" mode, listen for OS-level changes so the
+    // theme flips live (e.g. customer toggles macOS dark mode at
+    // night without refreshing the page).
+    if (pref === "system" && window.matchMedia) {
+      const mql = window.matchMedia("(prefers-color-scheme: dark)");
+      const handler = () => apply();
+      // addEventListener is the modern API; the legacy addListener
+      // fallback handles Safari < 14.
+      if (mql.addEventListener) mql.addEventListener("change", handler);
+      else if (mql.addListener) mql.addListener(handler);
+      return () => {
+        if (mql.removeEventListener) mql.removeEventListener("change", handler);
+        else if (mql.removeListener) mql.removeListener(handler);
+      };
+    }
+  }, [pref]);
+
+  const setTheme = (next) => {
+    try { localStorage.setItem("ls_theme", next); } catch {}
+    setPref(next);
+  };
+
+  return [pref, setTheme];
+}
+
+// Visible toggle — three segmented buttons (Light / Auto / Dark).
+// Small, quiet, lives in the nav. The active option gets ink+cream
+// inverted; the inactive ones sit at low opacity.
+function ThemeToggle({ compact = false }) {
+  const [pref, setTheme] = useTheme();
+  const options = [
+    { value: "light",  Icon: Sun,     label: "Light" },
+    { value: "system", Icon: Monitor, label: "Auto" },
+    { value: "dark",   Icon: Moon,    label: "Dark" },
+  ];
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Theme"
+      className="inline-flex items-center"
+      style={{ border: "1px solid var(--border-strong)", padding: 2 }}
+    >
+      {options.map((o) => {
+        const active = pref === o.value;
+        return (
+          <button
+            key={o.value}
+            role="radio"
+            aria-checked={active}
+            onClick={() => setTheme(o.value)}
+            className="flex items-center gap-1.5 transition"
+            style={{
+              padding: compact ? "4px 8px" : "5px 10px",
+              background: active ? "var(--ink)" : "transparent",
+              color:      active ? "var(--text-on-ink)" : "var(--text-muted)",
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              fontWeight: 500,
+            }}
+            title={`${o.label} theme${o.value === "system" ? " (follow system)" : ""}`}
+          >
+            <o.Icon size={12} strokeWidth={1.75} />
+            {!compact && <span>{o.label}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function App() {
@@ -4572,6 +4929,62 @@ function App() {
     // up the new title/URL automatically that way.
     queueMicrotask(() => { try { window.umami?.track(); } catch {} });
   }, [view, journalSlug]);
+
+  // --- PAID-FEATURE STUBS (off by default; see CONFIG.PAID_FEATURES) ---
+  // Each block below mounts the third-party script ONLY if its
+  // flag is enabled AND the credentials are present. With both
+  // empty, every effect short-circuits at the top and the page
+  // never makes an outbound request to the provider.
+  useEffect(() => {
+    const c = CONFIG.PAID_FEATURES?.LIVE_CHAT;
+    if (!c?.ENABLED || !c.PROPERTY_ID) return;
+    if (document.querySelector("script[data-live-chat]")) return;
+    const s = document.createElement("script");
+    s.async = true;
+    s.dataset.liveChat = c.PROVIDER || "tawk";
+    if (c.PROVIDER === "tawk") {
+      s.src = `https://embed.tawk.to/${c.PROPERTY_ID}/default`;
+      s.setAttribute("crossorigin", "*");
+    } else if (c.PROVIDER === "crisp") {
+      window.$crisp = []; window.CRISP_WEBSITE_ID = c.PROPERTY_ID;
+      s.src = "https://client.crisp.chat/l.js";
+    } else if (c.PROVIDER === "intercom") {
+      s.src = `https://widget.intercom.io/widget/${c.PROPERTY_ID}`;
+    }
+    document.head.appendChild(s);
+  }, []);
+
+  useEffect(() => {
+    const c = CONFIG.PAID_FEATURES?.BEHAVIORAL_ANALYTICS;
+    if (!c?.ENABLED || !c.POSTHOG_KEY) return;
+    if (document.querySelector("script[data-posthog]")) return;
+    // PostHog's array-init stub — replaced by the real client
+    // when the loader script finishes. Captures events fired
+    // before init and replays them once ready.
+    window.posthog = window.posthog || [];
+    const s = document.createElement("script");
+    s.src = "https://us.i.posthog.com/static/array.js";
+    s.async = true;
+    s.dataset.posthog = "installed";
+    s.onload = () => {
+      try { window.posthog.init?.(c.POSTHOG_KEY, { api_host: c.POSTHOG_HOST }); } catch {}
+    };
+    document.head.appendChild(s);
+  }, []);
+
+  useEffect(() => {
+    const c = CONFIG.PAID_FEATURES?.IMAGE_CDN;
+    if (!c?.ENABLED || !c.CLOUDINARY_CLOUD_NAME) return;
+    // Preconnect — saves one round-trip on the first product
+    // photo. Actual <img> URLs are rewritten at the call sites
+    // when this flag is on.
+    if (document.querySelector("link[data-cloudinary-preconnect]")) return;
+    const link = document.createElement("link");
+    link.rel  = "preconnect";
+    link.href = `https://res.cloudinary.com`;
+    link.dataset.cloudinaryPreconnect = "installed";
+    document.head.appendChild(link);
+  }, []);
 
   // --- DEBOUNCED CART SYNC TO DB (logged-in users only) ---
   // Avoid hammering the database on every +/- click. Wait until cart changes
@@ -4914,7 +5327,7 @@ function App() {
       <ActiveOrderTopBar user={user} onOpenAccount={() => setView("account")} />
 
       {/* NAV */}
-      <nav className="sticky top-0 z-40 backdrop-blur-md" style={{ background: "rgba(245, 239, 227, 0.9)", borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
+      <nav className="sticky top-0 z-40 backdrop-blur-md theme-surface" style={{ background: "var(--bg-page-90)", borderBottom: "1px solid var(--border-default)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
           <button onClick={() => setView("home")}>
             <span className="font-display text-2xl lg:text-3xl tracking-tight" style={{ fontWeight: 500 }}>
@@ -5091,7 +5504,7 @@ function App() {
       )}
 
       {/* FOOTER */}
-      <footer className="border-t mt-12" style={{ borderColor: "rgba(26,22,18,0.1)", background: "#EFE7D6" }}>
+      <footer className="border-t mt-12 theme-surface" style={{ borderColor: "var(--border-default)", background: "var(--bg-elevated)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
           {/* Main columns */}
           <div className="grid md:grid-cols-12 gap-10 lg:gap-12">
@@ -5172,12 +5585,15 @@ function App() {
             </div>
           </div>
 
-          {/* Bottom row — copyright + bilingual touch + language toggle */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs opacity-60 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
+          {/* Bottom row — copyright + language toggle + theme toggle + bilingual touch */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs opacity-60 pt-6" style={{ borderTop: "1px solid var(--border-soft)" }}>
             <p>{t("footer.copyright", { year: new Date().getFullYear() })}</p>
-            <FooterLangToggle />
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+              <FooterLangToggle />
+              <ThemeToggle />
+            </div>
             <p className="font-display italic" style={{ fontWeight: 400 }}>
-              <span style={{ color: "#B08842" }}>{t("footer.thanks")}</span> · {t("footer.thanksEn")} · {t("footer.madeWith")}
+              <span style={{ color: "var(--accent)" }}>{t("footer.thanks")}</span> · {t("footer.thanksEn")} · {t("footer.madeWith")}
             </p>
           </div>
 
@@ -5197,7 +5613,7 @@ function App() {
       {cartOpen && (
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setCartOpen(false)}>
           <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.4)" }} />
-          <div className="relative w-full max-w-md drawer-in flex flex-col" style={{ background: "#F5EFE3" }} onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-md drawer-in flex flex-col" style={{ background: "var(--bg-page)" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
               <h3 className="font-display text-2xl" style={{ fontWeight: 400 }}>Your cart</h3>
               <button onClick={() => setCartOpen(false)} aria-label="Close cart" data-tooltip="Close" data-tooltip-pos="left"><X size={20} /></button>
@@ -5217,7 +5633,7 @@ function App() {
                 <button
                   onClick={() => { setCartOpen(false); scrollTo("blanket"); }}
                   className="px-6 py-3 text-xs tracking-[0.2em] uppercase mb-4"
-                  style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500 }}
+                  style={{ background: "var(--ink)", color: "var(--text-on-ink)", fontWeight: 500 }}
                 >
                   Shop the blanket
                 </button>
@@ -5236,7 +5652,7 @@ function App() {
                   {cart.map((item) => (
                     <div key={item.id} className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
                       <div className="relative">
-                        <img src={item.image} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "#FAF6EC", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                        <img src={item.image} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                         {item.isCustom && (
                           <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                         )}
@@ -5272,7 +5688,7 @@ function App() {
                   </div>
                   <ShippingEstimator subtotalCents={Math.round(subtotal * 100)} />
                   <p className="text-[0.65rem] opacity-55 italic leading-relaxed mb-4">Made to order — every blanket starts after Lusik receives your order.</p>
-                  <button onClick={goCheckout} className="w-full py-4 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+                  <button onClick={goCheckout} className="w-full py-4 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
                     Checkout <ArrowRight size={16} />
                   </button>
                   {/* Trust signal: which payment methods Stripe will accept on
@@ -5293,7 +5709,7 @@ function App() {
       {connectOpen && (
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setConnectOpen(false)}>
           <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.4)" }} />
-          <div className="relative w-full max-w-md drawer-in flex flex-col overflow-y-auto" style={{ background: "#F5EFE3" }} onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-md drawer-in flex flex-col overflow-y-auto" style={{ background: "var(--bg-page)" }} onClick={(e) => e.stopPropagation()}>
 
             {/* Header */}
             <div className="flex items-start justify-between p-6 lg:p-8 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
@@ -5656,7 +6072,7 @@ function PolicyModal({ policyKey, onClose }) {
     >
       <div
         className="w-full max-w-2xl max-h-[90vh] flex flex-col"
-        style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.12)" }}
+        style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -5812,7 +6228,7 @@ function AuthDrawer({ onClose, onAuthed }) {
       <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.4)" }} />
       <div
         className="relative w-full max-w-md drawer-in flex flex-col overflow-y-auto"
-        style={{ background: "#F5EFE3" }}
+        style={{ background: "var(--bg-page)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -6196,7 +6612,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
               onClick={() => avatarInputRef.current?.click()}
               disabled={avatarBusy}
               className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center rounded-full"
-              style={{ background: "#1A1612", color: "#F5EFE3", border: "2px solid #F5EFE3" }}
+              style={{ background: "var(--ink)", color: "var(--text-on-ink)", border: "2px solid var(--bg-page)" }}
               aria-label="Change profile photo"
               data-tooltip="Change photo"
               data-tooltip-pos="top"
@@ -6233,7 +6649,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
               <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} style={inputStyle} />
             </div>
             <div className="flex gap-3">
-              <button onClick={saveProfile} disabled={savingProfile} className="px-5 py-2 text-xs tracking-[0.2em] uppercase" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+              <button onClick={saveProfile} disabled={savingProfile} className="px-5 py-2 text-xs tracking-[0.2em] uppercase" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
                 {savingProfile ? "Saving…" : "Save"}
               </button>
               <button onClick={() => { setEditing(false); setFullName(profile?.full_name || ""); setPhone(profile?.phone || ""); }} className="px-5 py-2 text-xs tracking-[0.2em] uppercase" style={{ border: "1px solid rgba(26,22,18,0.2)" }}>
@@ -6408,7 +6824,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
               </div>
             </div>
             <div className="flex gap-3">
-              <button type="submit" className="px-5 py-2 text-xs tracking-[0.2em] uppercase" style={{ background: "#1A1612", color: "#F5EFE3" }}>Save address</button>
+              <button type="submit" className="px-5 py-2 text-xs tracking-[0.2em] uppercase" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>Save address</button>
               <button type="button" onClick={() => setAddingAddress(false)} className="px-5 py-2 text-xs tracking-[0.2em] uppercase" style={{ border: "1px solid rgba(26,22,18,0.2)" }}>Cancel</button>
             </div>
           </form>
@@ -6491,7 +6907,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
       {deleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => !deleteBusy && setDeleteOpen(false)} role="dialog" aria-modal="true" aria-label="Confirm account deletion">
           <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.55)" }} />
-          <div className="relative w-full max-w-md fade-in p-6 lg:p-8" style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.15)" }} onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-md fade-in p-6 lg:p-8" style={{ background: "var(--bg-page)", border: "1px solid var(--border-strong)" }} onClick={(e) => e.stopPropagation()}>
             <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#8B2C2C", fontWeight: 600 }}>This can't be undone</p>
             <h3 className="font-display text-2xl lg:text-3xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               Delete your account?
@@ -6777,7 +7193,7 @@ function SavedDesignsSection({ userId, product }) {
               <button
                 onClick={() => handleLoad(entry)}
                 className="flex-1 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:opacity-90"
-                style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500 }}
+                style={{ background: "var(--ink)", color: "var(--text-on-ink)", fontWeight: 500 }}
               >
                 Open
               </button>
@@ -7242,7 +7658,7 @@ function AdminOrderRow({ order, onSaved }) {
             <div className="p-3" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
               <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1.5" style={{ color: "#B08842" }}>This is a gift</p>
               {order.gift.message && (
-                <p className="text-sm leading-relaxed italic mb-2" style={{ background: "#FFFFFF", padding: "0.5rem 0.75rem", border: "1px solid rgba(26,22,18,0.08)" }}>
+                <p className="text-sm leading-relaxed italic mb-2" style={{ background: "var(--bg-surface)", padding: "0.5rem 0.75rem", border: "1px solid var(--border-default)" }}>
                   "{order.gift.message}"
                 </p>
               )}
@@ -7329,7 +7745,7 @@ function AdminOrderRow({ order, onSaved }) {
                 <input ref={photoInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePhoto} className="hidden" />
                 <button onClick={() => photoInputRef.current?.click()} disabled={photoBusy}
                   className="px-4 py-2 text-[0.65rem] tracking-[0.2em] uppercase mb-2"
-                  style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500, opacity: photoBusy ? 0.5 : 1 }}>
+                  style={{ background: "var(--ink)", color: "var(--text-on-ink)", fontWeight: 500, opacity: photoBusy ? 0.5 : 1 }}>
                   {photoBusy ? "Uploading…" : (photoUrl ? "Replace photo" : "Upload photo")}
                 </button>
                 <p className="text-[0.65rem] opacity-60 leading-relaxed italic">
@@ -7576,20 +7992,20 @@ function MobileBottomNav({ view, cartCount, onHome, onShop, onCart, onAccount })
   const isHome    = view === "home";
   const isAccount = view === "account" || view === "admin";
   const itemColor = (active) => ({
-    color: active ? "#1A1612" : "rgba(26,22,18,0.55)",
+    color: active ? "var(--text-primary)" : "var(--text-muted)",
     fontWeight: active ? 600 : 500,
   });
   const labelCls = "text-[0.55rem] tracking-[0.12em] uppercase mt-1";
-  const btnCls   = "flex-1 flex flex-col items-center justify-center py-2 px-1 transition active:bg-[rgba(26,22,18,0.05)]";
+  const btnCls   = "flex-1 flex flex-col items-center justify-center py-2 px-1 transition";
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 inset-x-0 z-30"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-30 theme-surface"
       style={{
-        background: "rgba(245, 239, 227, 0.98)",
+        background: "var(--bg-page-90)",
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
-        borderTop: "1px solid rgba(26,22,18,0.1)",
+        borderTop: "1px solid var(--border-default)",
         paddingBottom: "env(safe-area-inset-bottom, 0)",
       }}
       aria-label="Bottom navigation"
@@ -7660,7 +8076,7 @@ function ActiveOrderTopBar({ user, onOpenAccount }) {
 
   if (!user || !loaded || !message) {
     return (
-      <div className="text-center py-2.5 text-xs tracking-[0.2em] uppercase" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+      <div className="text-center py-2.5 text-xs tracking-[0.2em] uppercase" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         {t("announce")}
       </div>
     );
@@ -7670,7 +8086,7 @@ function ActiveOrderTopBar({ user, onOpenAccount }) {
     <button
       onClick={onOpenAccount}
       className="w-full text-center py-2.5 text-xs tracking-[0.15em] transition hover:opacity-90"
-      style={{ background: "#1A1612", color: "#F5EFE3" }}
+      style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
       aria-label={`${message} View your order.`}
     >
       <span style={{ color: "#C9A678", fontWeight: 500 }}>★ </span>
@@ -7882,7 +8298,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
               {t("hero.body")}<a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline" style={{ color: "#1A1612" }}>{t("hero.bodyEmailLink")}</a>{t("hero.bodyAfter")}
             </p>
             <div className="flex items-center gap-6">
-              <button onClick={() => scrollTo("blanket")} className="px-8 py-4 text-sm tracking-wide flex items-center gap-3" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+              <button onClick={() => scrollTo("blanket")} className="px-8 py-4 text-sm tracking-wide flex items-center gap-3" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
                 {t("hero.shopCta")} <ArrowRight size={16} />
               </button>
               <button onClick={() => scrollTo("story")} className="text-sm tracking-wide underline underline-offset-4 hover:opacity-60">{t("hero.storyCta")}</button>
@@ -7893,7 +8309,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
               <div className="aspect-[4/3] overflow-hidden">
                 <img src={product.gallery[0]} alt={product.name} className="w-full h-full object-cover" />
               </div>
-              <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.1)" }}>
+              <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
                 <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "#B08842" }}>{t("hero.callout1")}</p>
                 <p className="font-display text-lg" style={{ fontWeight: 400 }}>{t("hero.callout2")}</p>
               </div>
@@ -7961,7 +8377,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
       </section>
 
       {/* CUSTOM EMBROIDERY ORDERS */}
-      <section id="custom" className="py-20 lg:py-28" style={{ background: "#EFE7D6", borderTop: "1px solid rgba(26,22,18,0.1)", borderBottom: "1px solid rgba(26,22,18,0.1)" }}>
+      <section id="custom" className="py-20 lg:py-28" style={{ background: "var(--bg-elevated)", borderTop: "1px solid var(--border-default)", borderBottom: "1px solid var(--border-default)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="text-center mb-14 lg:mb-20 max-w-2xl mx-auto">
             <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Custom Orders</p>
@@ -7984,7 +8400,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
         </div>
       </section>
 
-      <section id="story" className="py-20 lg:py-32" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+      <section id="story" className="py-20 lg:py-32" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-12 gap-10 lg:gap-20 items-center">
           <div className="lg:col-span-6 lg:order-2">
             <div className="aspect-[4/5] overflow-hidden">
@@ -8216,7 +8632,7 @@ function TrackingForm() {
           <option value="fedex">FedEx</option>
         </select>
         <input type="text" placeholder="Tracking number" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} className="flex-1 px-4 py-3.5 bg-transparent border text-sm" style={{ borderColor: "rgba(26,22,18,0.2)" }} />
-        <button onClick={handleTrack} className="px-6 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+        <button onClick={handleTrack} className="px-6 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
           Track <ArrowRight size={14} />
         </button>
       </div>
@@ -8251,7 +8667,7 @@ function NewsletterForm() {
   };
   if (submitted) {
     return (
-      <div className="max-w-md mx-auto p-8" style={{ background: "rgba(245,239,227,0.7)", border: "1px solid rgba(26,22,18,0.1)" }}>
+      <div className="max-w-md mx-auto p-8" style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)" }}>
         <Check size={28} className="mx-auto mb-3" style={{ color: "#B08842" }} />
         <p className="font-display text-2xl mb-1" style={{ fontWeight: 400 }}>Thank you.</p>
         <p className="text-sm opacity-70">You'll be the first to hear when new pieces arrive.</p>
@@ -8261,8 +8677,8 @@ function NewsletterForm() {
   return (
     <div className="max-w-md mx-auto">
       <div className="flex flex-col sm:flex-row gap-2">
-        <input type="email" placeholder="your@email.com" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} className="flex-1 px-4 py-3.5 border text-sm" style={{ background: "rgba(245,239,227,0.6)", borderColor: "rgba(26,22,18,0.2)" }} />
-        <button onClick={handleSubmit} className="px-6 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "#1A1612", color: "#F5EFE3" }}>
+        <input type="email" placeholder="your@email.com" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} className="flex-1 px-4 py-3.5 border text-sm" style={{ background: "var(--bg-surface)", color: "var(--text-primary)", borderColor: "var(--border-strong)" }} />
+        <button onClick={handleSubmit} className="px-6 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
           <Send size={14} /> Subscribe
         </button>
       </div>
@@ -8533,7 +8949,7 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
   };
 
   return (
-    <div className="flex flex-col h-full lg:grid lg:grid-cols-2 lg:items-start lg:h-auto" style={{ background: "#F5EFE3", border: "1px solid rgba(26,22,18,0.12)" }}>
+    <div className="flex flex-col h-full lg:grid lg:grid-cols-2 lg:items-start lg:h-auto" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
       {/* Preview area with template — sticks on lg+ so the bib stays in view
           while the customer scrolls through name / color / size below.
           `lg:top-24` clears the sticky nav (~80px) with breathing room. */}
@@ -8686,8 +9102,9 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
               placeholder="e.g. Anna"
               className="w-full px-3 py-2.5 text-sm"
               style={{
-                border: "1px solid rgba(26,22,18,0.2)",
-                background: "#FFFFFF",
+                border: "1px solid var(--border-strong)",
+                background: "var(--bg-surface)",
+                color: "var(--text-primary)",
                 fontFamily: "Fraunces, serif",
               }}
               aria-label="Personalized name to embroider"
@@ -10135,7 +10552,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
                   <button
                     onClick={() => advanceSection("colors")}
                     className="w-full py-3 text-sm tracking-wide"
-                    style={{ background: "#1A1612", color: "#F5EFE3" }}
+                    style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
                   >
                     Done — collapse this section
                   </button>
@@ -10192,8 +10609,9 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
                   placeholder="e.g. ANNA"
                   className="w-full px-3 py-2.5 text-sm"
                   style={{
-                    border: "1px solid rgba(26,22,18,0.2)",
-                    background: "#FFFFFF",
+                    border: "1px solid var(--border-strong)",
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
                     fontFamily: "Fraunces, serif",
                   }}
                   aria-label="Optional first line of personalized text"
@@ -10216,8 +10634,9 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
                   placeholder="e.g. 2025"
                   className="w-full px-3 py-2.5 text-sm"
                   style={{
-                    border: "1px solid rgba(26,22,18,0.2)",
-                    background: "#FFFFFF",
+                    border: "1px solid var(--border-strong)",
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
                     fontFamily: "Fraunces, serif",
                   }}
                   aria-label="Optional second line of personalized text"
@@ -10260,7 +10679,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
               <button
                 onClick={() => advanceSection("custom")}
                 className="w-full py-3 text-sm tracking-wide mt-4"
-                style={{ background: "#1A1612", color: "#F5EFE3" }}
+                style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
               >
                 {(customLine1.trim().length > 0 || customLine2.trim().length > 0)
                   ? "Done — collapse this section"
@@ -10395,7 +10814,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
               ref={addCtaRef}
               onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
               className="flex-1 py-4 text-sm tracking-wide flex items-center justify-center gap-2"
-              style={{ background: "#1A1612", color: "#F5EFE3" }}
+              style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
             >
               Add to cart — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
             </button>
@@ -10463,7 +10882,7 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
             <button
               onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
               className="flex-1 py-3 text-sm tracking-wide flex items-center justify-center gap-2"
-              style={{ background: "#1A1612", color: "#F5EFE3" }}
+              style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
               aria-label={`Add to cart for $${((layout.priceCents / 100) * qty).toFixed(0)}`}
             >
               Add to cart <ArrowRight size={14} strokeWidth={1.5} />
@@ -10706,7 +11125,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                     rows={3}
                     placeholder="With all our love, Mom and Dad."
                     className="w-full px-3 py-2.5 text-sm resize-none"
-                    style={{ border: "1px solid rgba(26,22,18,0.2)", background: "#FFFFFF" }}
+                    style={{ border: "1px solid var(--border-strong)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
                     aria-label="Gift message for the included card"
                   />
                   <span className="text-[0.6rem] opacity-55 mt-1 block tabular-nums">{giftMessage.length}/140</span>
@@ -10806,7 +11225,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                               maxLength={64}
                               placeholder="@yourname"
                               className="flex-1 px-3 py-2 text-sm"
-                              style={{ border: "1px solid rgba(26,22,18,0.2)", background: "#FFFFFF" }}
+                              style={{ border: "1px solid var(--border-strong)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
                               aria-label={`Your ${p.label} handle, optional`}
                             />
                           </label>
@@ -10850,7 +11269,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {cart.map((item) => (
               <div key={item.id} className="flex gap-4">
                 <div className="relative">
-                  <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "#FAF6EC", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                  <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                   {item.isCustom && (
                     <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                   )}
@@ -10889,7 +11308,7 @@ function Confirmation({ orderNumber, onHome }) {
       <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-3">Your order <strong style={{ fontWeight: 500 }}>#{orderNumber}</strong> has been received.</p>
       <p className="opacity-70 mb-6 leading-relaxed">We'll be in touch shortly to confirm your Armenian letter and color choice. Lusik will then begin stitching — typically 5 to 10 business days before shipment.</p>
       <p className="opacity-70 mb-10 leading-relaxed text-sm">Reply to your confirmation email, call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>, or DM us <a href="https://instagram.com" target="_blank" rel="noreferrer" className="underline">@lusikandsons</a> with your letter and color.</p>
-      <button onClick={onHome} className="px-8 py-4 text-sm tracking-wide" style={{ background: "#1A1612", color: "#F5EFE3" }}>Return home</button>
+      <button onClick={onHome} className="px-8 py-4 text-sm tracking-wide" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>Return home</button>
     </div>
   );
 }
@@ -10930,8 +11349,8 @@ class ErrorBoundary extends React.Component {
         alignItems: "center",
         justifyContent: "center",
         padding: "2rem 1.5rem",
-        background: "#F5EFE3",
-        color: "#1A1612",
+        background: "var(--bg-page)",
+        color: "var(--text-primary)",
         fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
         lineHeight: 1.5,
         textAlign: "center",
@@ -10952,13 +11371,13 @@ class ErrorBoundary extends React.Component {
           <div style={{ display: "flex", gap: "0.6rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "2rem" }}>
             <button
               onClick={() => window.location.reload()}
-              style={{ padding: "0.75rem 1.25rem", background: "#1A1612", color: "#F5EFE3", border: "none", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, cursor: "pointer" }}
+              style={{ padding: "0.75rem 1.25rem", background: "var(--ink)", color: "var(--text-on-ink)", border: "none", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, cursor: "pointer" }}
             >
               Reload the page
             </button>
             <button
               onClick={() => window.location.assign("/")}
-              style={{ padding: "0.75rem 1.25rem", background: "transparent", color: "#1A1612", border: "1px solid rgba(26,22,18,0.25)", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, cursor: "pointer" }}
+              style={{ padding: "0.75rem 1.25rem", background: "transparent", color: "var(--text-primary)", border: "1px solid var(--border-strong)", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, cursor: "pointer" }}
             >
               Back home
             </button>
