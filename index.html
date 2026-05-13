@@ -5870,7 +5870,7 @@ function App() {
       </nav>
 
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
-      {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
+      {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} updateQty={updateQty} removeFromCart={removeFromCart} />}
       {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
@@ -11007,9 +11007,17 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
 }
 
 // === CHECKOUT (Stripe handoff via Netlify Function) ===
-function CheckoutView({ cart, subtotal, user, profile, onBack }) {
+function CheckoutView({ cart, subtotal, user, profile, onBack, updateQty, removeFromCart }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // If the customer empties the cart from inside checkout (deleting
+  // every line item via the X / minus-on-1 / swipe), bounce back to
+  // the home view rather than render an empty "Almost there" page
+  // with no items to pay for. onBack() resets view → "home".
+  useEffect(() => {
+    if (cart.length === 0) onBack?.();
+  }, [cart.length, onBack]);
 
   // --- GIFT OPTIONS (optional) ---
   // The baby-blanket category is overwhelmingly gift purchases, so
@@ -11427,29 +11435,54 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
         </div>
 
         <div>
-          <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order summary</h2>
-          <div className="space-y-4 mb-6">
+          <div className="flex items-baseline justify-between mb-6">
+            <h2 className="text-xs tracking-[0.3em] uppercase opacity-70">Order summary</h2>
+            <p className="text-[0.6rem] tracking-[0.15em] uppercase opacity-50">Edit below</p>
+          </div>
+          <div className="mb-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
             {cart.map((item) => (
-              <div key={item.id} className="flex gap-4">
-                <div className="relative">
-                  <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
-                  {item.isCustom && (
-                    <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
-                  <div className="flex items-center gap-2">
-                    {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                    <p className="text-xs opacity-60">{item.subtitle} · Qty {item.qty}</p>
+              <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
+                <div className="flex gap-3 py-4" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
+                  <div className="relative shrink-0">
+                    <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                    {item.isCustom && (
+                      <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
+                    )}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
+                      <p className="text-xs opacity-60 truncate">{item.subtitle}</p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
+                        <button
+                          onClick={() => updateQty(item.id, -1)}
+                          className="p-1.5"
+                          aria-label={item.qty === 1 ? "Remove item" : "Decrease quantity"}
+                        ><Minus size={11} /></button>
+                        <span className="text-xs w-5 text-center tabular-nums">{item.qty}</span>
+                        <button
+                          onClick={() => updateQty(item.id, 1)}
+                          className="p-1.5"
+                          aria-label="Increase quantity"
+                        ><Plus size={11} /></button>
+                      </div>
+                      <p className="text-sm tabular-nums" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removeFromCart(item.id)}
+                    className="opacity-40 hover:opacity-100 self-start p-1"
+                    aria-label="Remove from cart"
+                  ><X size={14} /></button>
                 </div>
-                <p className="text-sm" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
-              </div>
+              </SwipeableRow>
             ))}
           </div>
-          <div className="border-t pt-4 space-y-1 text-sm" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
-            <div className="flex justify-between"><span className="opacity-70">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+          <div className="pt-2 space-y-1 text-sm">
+            <div className="flex justify-between"><span className="opacity-70">Subtotal</span><span className="tabular-nums">${subtotal.toFixed(2)}</span></div>
             <div className="flex justify-between"><span className="opacity-70">Shipping</span><span className="opacity-60">Calculated at Stripe</span></div>
             <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-60">Calculated at Stripe</span></div>
           </div>
