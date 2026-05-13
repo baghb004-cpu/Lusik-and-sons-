@@ -11303,8 +11303,17 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   return (
     <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
       <button onClick={onBack} className="text-sm tracking-wide opacity-70 hover:opacity-100 mb-8">← Continue shopping</button>
+      {/* min-w-0 on both grid children is load-bearing: CSS Grid items
+          default to min-width: auto, which means they refuse to shrink
+          below the intrinsic max-content width of their content (a
+          paragraph's "longest line if it didn't wrap"). On a narrow
+          portrait phone viewport (~390px) that intrinsic width can
+          exceed the viewport, pushing the layout past the right edge
+          even though the parent had px-6 padding to spare. Landscape
+          (~844px) doesn't surface the bug because the column is wide
+          enough to satisfy the unwrapped intrinsic width. */}
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
-        <div>
+        <div className="min-w-0">
           <h1 className="font-display text-4xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Almost there.</h1>
           <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-8">
             You'll be sent to our secure checkout, powered by Stripe. Apple Pay, Google Pay, and all major credit cards accepted. Shipping and tax calculated on the next page.
@@ -11523,7 +11532,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </p>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order summary</h2>
           <div className="mb-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
             {cart.map((item) => (
