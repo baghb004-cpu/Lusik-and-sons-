@@ -2,14 +2,25 @@
   "name": "lusik-and-sons",
   "private": true,
   "version": "0.0.0",
-  "description": "Root package.json so Netlify installs function dependencies (esp. `stripe`, which esbuild can't statically bundle and so must be present in node_modules at runtime).",
+  "description": "Root package.json so Netlify installs function dependencies (esp. `stripe`, which esbuild can't statically bundle and so must be present in node_modules at runtime). Also hosts the test harness — Playwright for browser smoke tests and Node's built-in test runner for backend unit tests.",
   "engines": {
     "node": ">=20"
+  },
+  "scripts": {
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test --test-reporter=spec netlify/functions/_lib/__tests__/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@netlify/blobs": "^8.0.0",
     "@netlify/functions": "^2.8.0",
     "@netlify/neon": "^0.1.0",
     "stripe": "^17.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "serve": "^14.2.4"
   }
 }

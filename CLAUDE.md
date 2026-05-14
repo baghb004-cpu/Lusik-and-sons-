@@ -273,8 +273,19 @@ Cart-ID shape is load-bearing for this flow: `mapLegacyId()` in `index.html` (se
 
 - Install the Netlify CLI once: `npm install -g netlify-cli`. Then `netlify dev` runs the static `index.html` + Functions + Identity on a single port (default `http://localhost:8888`). Use that, not `python3 -m http.server` — the latter won't proxy `/.netlify/functions/*` calls.
 - Hard-reload (Cmd/Ctrl-Shift-R) is usually necessary after edits because of the Babel transpile cache and Tailwind CDN behavior.
-- There are no automated tests. Verify changes by clicking through: home → product → add to cart (with each preset) → cart drawer → checkout (Stripe hand-off can be observed but actual payment requires the real Stripe test keys configured in Netlify).
 - Pre-launch checklist embedded near the top of `<head>` (OpenGraph block, lines 11–35) lists external assets that must exist at deploy time: `/og-image.jpg` (1200×630), `/favicon.ico`, `/apple-touch-icon.png`.
+
+### Test suite
+
+Two layers, both run by `npm test`:
+
+1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`) — Node's built-in test runner. No extra install. Tests the security-critical helpers: `requireUser`/`requireAdmin` shape and ADMIN_EMAILS fallback (`auth.test.mjs`), the HMAC unsubscribe-token sign/verify roundtrip (`email-tokens.test.mjs`), and the `TRUSTED_PRODUCTS` price-map shape + that the live blanket + bib SKUs exist (`trusted-products.test.mjs`). Run with `npm run test:unit`.
+
+2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a static-served `index.html`. Catches the kind of bugs that broke the site mid-session: JSX runtime crashes, missing imports, broken routes, cart-flow regressions. Backend calls are stubbed via `page.route()` since these run against a static server with no Functions wired up. Run with `npm run test:e2e` (first time: `npm run test:install` to pull the Chromium binary).
+
+The key E2E test that would have caught the cart-ID mismatch bug is in `smoke.spec.mjs` → "Pay with Stripe POSTs to create-checkout-session" — it intercepts the function call and asserts every cart item's `productKey` matches the shape `TRUSTED_PRODUCTS` recognizes.
+
+CI runs both on every push and PR (`.github/workflows/test.yml`).
 
 ### One-time Netlify setup (when you spin up a fresh site)
 
