@@ -48,9 +48,13 @@ test.describe("home page", () => {
 
   test("error boundary is NOT showing", async ({ page }) => {
     await page.goto("/");
-    // If a JSX crash bypassed the ErrorBoundary, this text is the
-    // fallback UI's headline. If we see it, the site is broken.
-    await expect(page.getByText(/we hit a snag/i)).not.toBeVisible({ timeout: 5_000 });
+    // If the React tree crashed at mount, the ErrorBoundary in
+    // src/main.jsx renders this headline. Healthy home pages
+    // never contain it. (The post-Vite-flip text is 'Something
+    // went wrong'; the pre-flip text was 'we hit a snag' — we
+    // match either with the OR so this assertion catches both
+    // versions if you ever revert.)
+    await expect(page.getByText(/something went wrong|we hit a snag/i)).not.toBeVisible({ timeout: 5_000 });
   });
 });
 

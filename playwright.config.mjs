@@ -2,9 +2,10 @@
 // Playwright config — browser smoke tests for the Lusik & Sons SPA
 // ============================================================
 // What this runs:
-//   `npm run test:e2e`    headless Chromium against a local static
-//                         server (no Netlify Functions, no Identity,
-//                         no Stripe). Backend calls are stubbed via
+//   `npm run test:e2e`    headless Chromium against a local
+//                         `vite preview` server (no Netlify
+//                         Functions, no Identity, no Stripe).
+//                         Backend calls are stubbed via
 //                         Playwright's `route` API inside each test.
 //   `npm run test:e2e:ui` same tests, with Playwright's interactive
 //                         UI mode so you can step through visually.
@@ -16,9 +17,13 @@
 // (JSX runtime crashes, missing imports, broken routes, cart
 // flow regressions) without depending on production services.
 //
-// The `webServer` block automatically launches `npx serve` before
-// the tests run and tears it down after, so you don't have to
-// remember to start anything yourself.
+// The `webServer` block automatically:
+//   1. Builds the SPA (`vite build` produces dist/)
+//   2. Serves dist/ on PORT (`vite preview`)
+//   3. Waits for the server to respond before running tests
+//   4. Tears it down on exit
+// `reuseExistingServer` skips steps 1-2 when running locally if
+// you already have `vite preview` running — handy for the UI mode.
 // ============================================================
 
 import { defineConfig, devices } from "@playwright/test";
@@ -54,17 +59,21 @@ export default defineConfig({
       use: { ...devices["Pixel 7"] },
     },
   ],
-  // `npx serve` boots a tiny static server on `index.html`. Playwright
-  // waits for it to respond on the port before running tests, and
-  // tears it down on exit. `reuseExistingServer` lets a long-running
-  // local server (if you happen to have one) skip the boot — handy
-  // for `npm run test:e2e:ui`.
+  // Build + preview. Post-Vite-flip the repo root index.html is a
+  // minimal entry that references /src/main.jsx as a module — that
+  // means we NEED a build step before serving, because a raw .jsx
+  // file can't be executed by the browser. `vite preview` serves
+  // the built dist/ folder. The `&&` chain handles both steps in
+  // one webServer command; Playwright then waits for the port.
+  //
+  // Build cost: ~2 seconds. Wait timeout bumped to 90s for CI cold
+  // cache (where npm just installed and Vite has nothing primed).
   webServer: {
-    command: `npx --yes serve -l ${PORT} -s .`,
+    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
     port: PORT,
     reuseExistingServer: !process.env.CI,
     stdout: "ignore",
     stderr: "pipe",
-    timeout: 30_000,
+    timeout: 90_000,
   },
 });
