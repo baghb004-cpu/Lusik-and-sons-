@@ -40,7 +40,16 @@ export default async (req, context) => {
     return json(400, { error: "Malformed key" });
   }
 
-  const isAdmin = auth.user.roles?.includes("admin");
+  // Admin check uses the same logic as requireAdmin() in _lib/auth.mjs —
+  // role on the JWT OR the ADMIN_EMAILS env fallback. Previously this
+  // function honored only the role, which would 403 admins still
+  // relying on the pre-role-assignment escape hatch.
+  const envAdminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const isAdmin = (auth.user.roles?.includes("admin"))
+              || (auth.user.email && envAdminEmails.includes(auth.user.email.toLowerCase()));
   if (!isAdmin) {
     const rows = await sql`SELECT user_id FROM orders WHERE id = ${orderId} LIMIT 1`;
     if (rows.length === 0)            return json(404, { error: "Not found" });
@@ -55,8 +64,12 @@ export default async (req, context) => {
   return new Response(result.data, {
     status: 200,
     headers: {
-      "Content-Type":  contentType,
-      "Cache-Control": "private, max-age=3600",
+      "Content-Type":          contentType,
+      "Cache-Control":         "private, max-age=3600",
+      // Browser must honor the declared Content-Type and not infer
+      // anything richer from the bytes — defense against a future
+      // upload path that accepts a wider type set.
+      "X-Content-Type-Options": "nosniff",
     },
   });
 };

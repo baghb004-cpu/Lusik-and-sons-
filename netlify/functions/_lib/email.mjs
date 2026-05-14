@@ -41,6 +41,22 @@
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 
+// Shared brand palette. Previously redeclared inside every composer;
+// hoisting it here means a color change ripples through every email
+// in one edit, and composers don't drift apart as new ones are added.
+export const PALETTE = Object.freeze({
+  accent: "#B08842",
+  ink:    "#1A1612",
+  cream:  "#F5EFE3",
+  muted:  "#6B655D",
+});
+
+// Resolves the public site URL at call time so a deploy can change
+// the Netlify-injected URL env var without rebuilding.
+export function baseUrl() {
+  return process.env.URL || "https://lusikandsons.com";
+}
+
 /**
  * Generic Resend send. Returns true on 2xx, false otherwise.
  * Never throws — callers shouldn't have to wrap in try/catch.
@@ -155,9 +171,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
   // Single-column, basic email-safe HTML. No external CSS, no
   // images — everything inline so it renders identically in
   // Apple Mail, Gmail, Outlook web, mobile clients.
-  const accent = "#B08842";
-  const ink    = "#1A1612";
-  const muted  = "#6B655D";
+  const { accent, ink, muted } = PALETTE;
 
   const itemRows = items.map((it) => {
     const variant = summarizeItem(it) || it.variantLabel || "";
@@ -207,7 +221,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     </div>
   ` : "";
 
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const url = baseUrl();
   const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:#F5EFE3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};">
   <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
@@ -238,7 +252,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     ${socialBlock}
 
     <div style="margin-top:36px;padding-top:20px;border-top:1px solid #E8E1D2;">
-      <a href="${baseUrl}/#admin" style="display:inline-block;padding:12px 20px;background:${ink};color:#F5EFE3;text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+      <a href="${url}/#admin" style="display:inline-block;padding:12px 20px;background:${ink};color:#F5EFE3;text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
         Open admin panel →
       </a>
     </div>
@@ -282,7 +296,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
       : ""
   }` : "",
     "",
-    `Open admin panel: ${baseUrl}/#admin`,
+    `Open admin panel: ${url}/#admin`,
   ].filter(Boolean).join("\n");
 
   return await sendEmail({ to, subject, html, text });
@@ -318,10 +332,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     : `Lusik is starting on your order`;
 
   // -------- HTML body --------
-  const accent = "#B08842";
-  const ink    = "#1A1612";
-  const cream  = "#F5EFE3";
-  const muted  = "#6B655D";
+  const { accent, ink, cream, muted } = PALETTE;
 
   const itemRows = items.map((it) => {
     const variant = summarizeItem(it) || it.variantLabel || "";
@@ -345,7 +356,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     </div>
   ` : "";
 
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const url = baseUrl();
   const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
   <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
@@ -396,7 +407,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Cypress, California.</em><br>
-      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
   </div>
@@ -435,7 +446,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     `  (760) 874-2333`,
     "",
     `Made by hand in Cypress, California.`,
-    `${baseUrl}`,
+    `${url}`,
   ].filter(Boolean).join("\n");
 
   return await sendEmail({ to: customerEmail, subject, html, text });
@@ -481,11 +492,8 @@ export async function sendFinishedPhotoNotification({ order }) {
     ? `A photo of the finished gift — ${orderNumber}`
     : `Lusik just finished your blanket`;
 
-  const accent  = "#B08842";
-  const ink     = "#1A1612";
-  const cream   = "#F5EFE3";
-  const muted   = "#6B655D";
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
 
   const openingLine = isGift
     ? "Lusik just finished the blanket you ordered. Here's a photo before it ships."
@@ -509,7 +517,7 @@ export async function sendFinishedPhotoNotification({ order }) {
       <p style="font-size:14px;color:${ink};margin:0 0 18px 0;line-height:1.6;">
         We've added it to your order page — sign in and have a look. It stays there as a small keepsake, available any time you'd like to see it again.
       </p>
-      <a href="${baseUrl}/" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+      <a href="${url}/" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
         View the photo →
       </a>
     </div>
@@ -529,7 +537,7 @@ export async function sendFinishedPhotoNotification({ order }) {
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Cypress, California.</em><br>
-      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
   </div>
@@ -546,7 +554,7 @@ export async function sendFinishedPhotoNotification({ order }) {
     "",
     `A photo of your finished piece is on your order page. Sign in and have`,
     `a look — it stays there as a small keepsake, available any time:`,
-    `  ${baseUrl}`,
+    `  ${url}`,
     "",
     `Order ${orderNumber} ships in the next day or two. You'll get a`,
     `tracking number by email when it goes out.`,
@@ -556,7 +564,7 @@ export async function sendFinishedPhotoNotification({ order }) {
     `  (760) 874-2333`,
     "",
     `Made by hand in Cypress, California.`,
-    `${baseUrl}`,
+    `${url}`,
   ].join("\n");
 
   return await sendEmail({ to, subject, html, text });
@@ -606,12 +614,9 @@ export async function sendShippedNotification({ order }) {
     ? `Your order is on its way — ${orderNumber}`
     : `Your order has shipped — ${orderNumber}`;
 
-  const accent = "#B08842";
-  const ink    = "#1A1612";
-  const cream  = "#F5EFE3";
-  const muted  = "#6B655D";
+  const { accent, ink, cream, muted } = PALETTE;
 
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const url = baseUrl();
 
   const trackingBlock = tracking ? `
     <div style="margin:22px 0;padding:18px 20px;background:#FFFFFF;border:1px solid #E8E1D2;">
@@ -633,7 +638,7 @@ export async function sendShippedNotification({ order }) {
       <div style="font-size:14px;color:${ink};line-height:1.6;">
         Lusik snapped a photo of the finished blanket before packing it up. You can see it any time on your order in your account:
         <div style="margin-top:10px;">
-          <a href="${baseUrl}/" style="color:${accent};text-decoration:none;font-weight:500;">View your order →</a>
+          <a href="${url}/" style="color:${accent};text-decoration:none;font-weight:500;">View your order →</a>
         </div>
       </div>
     </div>
@@ -676,7 +681,7 @@ export async function sendShippedNotification({ order }) {
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Cypress, California.</em><br>
-      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
   </div>
@@ -693,7 +698,7 @@ export async function sendShippedNotification({ order }) {
     "",
     tracking ? `TRACKING\n  ${carrier} ${tracking}${trackUrl ? `\n  ${trackUrl}` : ""}` : "",
     "",
-    hasPhoto ? `A photo of your finished piece is in your account at ${baseUrl}` : "",
+    hasPhoto ? `A photo of your finished piece is in your account at ${url}` : "",
     "",
     `WHEN IT ARRIVES`,
     `  If anything looks wrong — damaged in transit, a stitch you weren't expecting,`,
@@ -705,7 +710,7 @@ export async function sendShippedNotification({ order }) {
     `  (760) 874-2333`,
     "",
     `Made by hand in Cypress, California.`,
-    `${baseUrl}`,
+    `${url}`,
   ].filter(Boolean).join("\n");
 
   return await sendEmail({ to, subject, html, text });
@@ -738,11 +743,8 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
     ? `Your refund — ${orderNumber}`
     : `A partial refund on your order — ${orderNumber}`;
 
-  const accent  = "#B08842";
-  const ink     = "#1A1612";
-  const cream   = "#F5EFE3";
-  const muted   = "#6B655D";
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
 
   const headline = isFullRefund
     ? "We've refunded your order."
@@ -787,7 +789,7 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Cypress, California.</em><br>
-      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
   </div>
@@ -817,7 +819,7 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
     `  (760) 874-2333`,
     "",
     `Made by hand in Cypress, California.`,
-    `${baseUrl}`,
+    `${url}`,
   ].filter(Boolean).join("\n");
 
   return await sendEmail({ to, subject, html, text });
@@ -847,11 +849,8 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
   const greeting     = customerName ? `Hi ${customerName.split(" ")[0]},` : "Hi there,";
   const isGift       = order.gift?.is_gift === true;
 
-  const accent  = "#B08842";
-  const ink     = "#1A1612";
-  const cream   = "#F5EFE3";
-  const muted   = "#6B655D";
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
 
   const subject = isGift
     ? "A small reminder from Lusik & Sons"
@@ -879,14 +878,14 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
     </p>
 
     <div style="margin:24px 0 28px 0;">
-      <a href="${baseUrl}/" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+      <a href="${url}/" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
         Visit the shop →
       </a>
     </div>
 
     <div style="margin-top:36px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Cypress, California.</em><br>
-      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
     <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
@@ -906,10 +905,10 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
     "",
     `No promo code, no rush. Just a note in case it's useful.`,
     "",
-    `Visit the shop: ${baseUrl}/`,
+    `Visit the shop: ${url}/`,
     "",
     `Made by hand in Cypress, California.`,
-    `${baseUrl}`,
+    `${url}`,
     "",
     `You're getting this one email because you ticked the box at checkout last year. We won't send another.`,
     `Unsubscribe: ${unsubscribeUrl}`,
@@ -935,6 +934,13 @@ function reminderSecret() {
   return process.env.REMINDER_SECRET
       ?? process.env.STRIPE_WEBHOOK_SECRET
       ?? "";
+}
+
+// Surface a loud warning at module load when neither secret is set.
+// Without this, sign/verify return empty strings silently and every
+// unsubscribe link 400s with no diagnostic in the logs.
+if (!process.env.REMINDER_SECRET && !process.env.STRIPE_WEBHOOK_SECRET) {
+  console.warn("[email] Neither REMINDER_SECRET nor STRIPE_WEBHOOK_SECRET is set — gift-reminder unsubscribe links will not work. Set REMINDER_SECRET in Netlify env to enable.");
 }
 
 function b64url(buf) {
@@ -979,12 +985,9 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     return false;
   }
 
-  const accent  = "#B08842";
-  const ink     = "#1A1612";
-  const cream   = "#F5EFE3";
-  const muted   = "#6B655D";
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
-  const href    = productUrl || `${baseUrl}/`;
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
+  const href    = productUrl || `${url}/`;
 
   const subject = `${productName} is ready.`;
 
@@ -1014,7 +1017,7 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Cypress, California.</em><br>
-      Lusik &amp; Sons · <a href="${baseUrl}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
     <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
@@ -1034,7 +1037,7 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     "",
     `Made by hand, made-to-order. Each piece takes 5–10 business days before it ships.`,
     "",
-    `Lusik & Sons · ${baseUrl}`,
+    `Lusik & Sons · ${url}`,
     "",
     `You're getting this because you signed up for the ${productName} waitlist. This is a one-time send — we won't email you again from this list.`,
   ].join("\n");

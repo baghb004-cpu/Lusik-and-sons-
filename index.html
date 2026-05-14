@@ -1573,6 +1573,21 @@ const CATALOG = {
 // ============================================================
 const CONFIG = {
   // ============================================================
+  // SWIPE GESTURES — cart drawer + per-row swipe-to-delete
+  // ============================================================
+  // Two gesture machines share the same intent-detection model:
+  // (1) per-row leftward swipe to delete (SwipeableRow); (2) cart
+  // drawer rightward swipe to dismiss. Keeping the tunables here
+  // means both gestures stay in sync with each other so a tweak
+  // to one doesn't accidentally desync the feel of the other.
+  SWIPE: {
+    CLAIM_DIST_PX:        12,   // px of movement before we decide whether the gesture is ours
+    DELETE_THRESHOLD_PX:  80,   // leftward drag past this commits a row delete
+    DISMISS_THRESHOLD_PX: 100,  // rightward drag past this commits a drawer dismiss
+    COMMIT_ANIM_MS:       180,  // off-screen slide on commit, before unmount / handler fires
+  },
+
+  // ============================================================
   // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
   // ============================================================
   // No URLs or anon keys live here anymore. Identity reads its
@@ -3221,17 +3236,21 @@ const db = (() => {
     return { profile: data?.profile ?? null, error };
   };
 
+  // Read a File into a base64 string (without the data: prefix). Shared
+  // by every blob-upload wrapper below so the FileReader plumbing isn't
+  // duplicated per endpoint.
+  const fileToBase64 = (f) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(f);
+  });
+
   // --- AVATAR ---
   // The browser reads the file, base64-encodes it, and posts to the
   // avatar Function. The Function stores it in Netlify Blobs and
   // returns a relative URL the UI can put straight into <img src>.
   const uploadAvatar = async (file) => {
-    const fileToBase64 = (f) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(f);
-    });
     let dataBase64;
     try { dataBase64 = await fileToBase64(file); }
     catch (err) { return { url: null, error: { message: "Couldn't read file" } }; }
@@ -3311,12 +3330,6 @@ const db = (() => {
     return { order: data?.order ?? null, error };
   };
   const adminUploadOrderPhoto = async (orderId, file) => {
-    const fileToBase64 = (f) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(f);
-    });
     let dataBase64;
     try { dataBase64 = await fileToBase64(file); }
     catch { return { url: null, key: null, error: { message: "Couldn't read file" } }; }
@@ -4899,8 +4912,8 @@ function SwipeableRow({ onSwipeDelete, children }) {
     && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   if (reducedMotion) return <>{children}</>;
 
-  const DELETE_THRESHOLD = -80; // px — drag past this on release to delete
-  const CLAIM_DIST = 12;        // px of movement before we decide what kind of gesture this is
+  const DELETE_THRESHOLD = -CONFIG.SWIPE.DELETE_THRESHOLD_PX; // sign is negative since rows swipe leftward
+  const CLAIM_DIST       = CONFIG.SWIPE.CLAIM_DIST_PX;
 
   const onTouchStart = (e) => {
     const t = e.touches[0];
@@ -4948,7 +4961,7 @@ function SwipeableRow({ onSwipeDelete, children }) {
         // Animate the row off-screen, then call the delete handler. The
         // existing toast() infrastructure in App handles the undo.
         setDragX(-9999);
-        setTimeout(() => onSwipeDelete?.(), 180);
+        setTimeout(() => onSwipeDelete?.(), CONFIG.SWIPE.COMMIT_ANIM_MS);
       } else {
         setDragX(0);
       }
@@ -5032,7 +5045,6 @@ function App() {
     window.addEventListener("openPolicy", handler);
     return () => window.removeEventListener("openPolicy", handler);
   }, []);
-  const [orderNumber, setOrderNumber] = useState("");
 
   // --- AUTH STATE ---
   // user: Netlify Identity user object (id, email, ...) or null when logged out
@@ -5595,7 +5607,7 @@ function App() {
     const dx = t.clientX - cartDragStartRef.current.x;
     const dy = t.clientY - cartDragStartRef.current.y;
     if (cartDragIntentRef.current === null) {
-      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      if (Math.abs(dx) < CONFIG.SWIPE.CLAIM_DIST_PX && Math.abs(dy) < CONFIG.SWIPE.CLAIM_DIST_PX) return;
       cartDragIntentRef.current = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
     }
     if (cartDragIntentRef.current !== "horizontal") return;
@@ -5616,11 +5628,11 @@ function App() {
   const onCartDrawerTouchEnd = () => {
     if (cartDragIntentRef.current === "horizontal") {
       setCartDragging(false);
-      // Dismiss past ~100px (about a third of a typical drawer width).
-      // Otherwise spring back to 0.
-      if (cartDragX > 100) {
+      // Dismiss past the configured threshold (about a third of a
+      // typical drawer width). Otherwise spring back to 0.
+      if (cartDragX > CONFIG.SWIPE.DISMISS_THRESHOLD_PX) {
         setCartDragX(window.innerWidth);
-        setTimeout(() => setCartOpen(false), 180);
+        setTimeout(() => setCartOpen(false), CONFIG.SWIPE.COMMIT_ANIM_MS);
       } else {
         setCartDragX(0);
       }
@@ -5798,13 +5810,6 @@ function App() {
     }
   };
 
-  const completeOrder = () => {
-    const num = "LS-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-    setOrderNumber(num);
-    setView("confirmation");
-    setCart([]);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const scrollTo = (id) => {
     if (view !== "home") setView("home");
@@ -5974,7 +5979,6 @@ function App() {
 
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
-      {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
       {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
@@ -11601,23 +11605,6 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// === CONFIRMATION ===
-function Confirmation({ orderNumber, onHome }) {
-  return (
-    <div className="fade-in max-w-2xl mx-auto px-6 lg:px-12 py-20 lg:py-32 text-center">
-      <div className="w-16 h-16 rounded-full mx-auto mb-8 flex items-center justify-center" style={{ background: "#B08842" }}>
-        <Check size={28} style={{ color: "#F5EFE3" }} />
-      </div>
-      <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Order placed</p>
-      <h1 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Thank you.</h1>
-      <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-3">Your order <strong style={{ fontWeight: 500 }}>#{orderNumber}</strong> has been received.</p>
-      <p className="opacity-70 mb-6 leading-relaxed">We'll be in touch shortly to confirm your Armenian letter and color choice. Lusik will then begin stitching — typically 5 to 10 business days before shipment.</p>
-      <p className="opacity-70 mb-10 leading-relaxed text-sm">Reply to your confirmation email, call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>, or DM us <a href="https://instagram.com" target="_blank" rel="noreferrer" className="underline">@lusikandsons</a> with your letter and color.</p>
-      <button onClick={onHome} className="px-8 py-4 text-sm tracking-wide" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>Return home</button>
     </div>
   );
 }

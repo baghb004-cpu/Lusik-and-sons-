@@ -12,8 +12,8 @@
 // just no-ops the UPDATE.
 // ============================================================
 
-import { sql }                   from "./_lib/db.mjs";
-import { verifyReminderToken }   from "./_lib/email.mjs";
+import { sql }                              from "./_lib/db.mjs";
+import { verifyReminderToken, PALETTE, baseUrl } from "./_lib/email.mjs";
 
 export default async (req) => {
   if (req.method !== "GET") {
@@ -44,11 +44,8 @@ export default async (req) => {
 };
 
 function htmlResponse(status, message) {
-  const baseUrl = process.env.URL || "https://lusikandsons.com";
-  const ink    = "#1A1612";
-  const cream  = "#F5EFE3";
-  const accent = "#B08842";
-  const muted  = "#6B655D";
+  const url = baseUrl();
+  const { accent, ink, cream, muted } = PALETTE;
 
   const body = `<!doctype html>
 <html lang="en"><head>
@@ -73,7 +70,7 @@ function htmlResponse(status, message) {
     <div class="eyebrow">Lusik &amp; Sons</div>
     <h1>${escapeHtml(message)}</h1>
     <p>Thanks for letting us know.</p>
-    <a class="button" href="${baseUrl}/">Back to the shop</a>
+    <a class="button" href="${url}/">Back to the shop</a>
     <div class="footer">Made by hand in Cypress, California.</div>
   </div>
 </body></html>`;

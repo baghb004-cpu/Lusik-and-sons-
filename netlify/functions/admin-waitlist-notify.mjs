@@ -59,7 +59,9 @@ export default async (req, context) => {
       productName,
       productUrl,
     }).catch((err) => {
-      console.warn("[admin-waitlist-notify] send threw for", row.email, err?.message ?? err);
+      // Log the row id, not the email — admin-scoped logs still
+      // shouldn't have raw PII in them.
+      console.warn("[admin-waitlist-notify] send threw for row", row.id, err?.message ?? err);
       return false;
     });
     if (ok) {

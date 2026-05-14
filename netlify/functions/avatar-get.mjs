@@ -19,6 +19,14 @@ export default async (req) => {
   const key = url.searchParams.get("key");
   if (!key) return json(400, { error: "Missing key" });
 
+  // Shape gate before the blob lookup. Avatar keys are produced by
+  // avatar.mjs as `<uuid>/avatar-<ts>-<nonce>.<ext>` — anything else
+  // can't be a real key, and rejecting cheaply prevents attacker-
+  // controlled segments (".." etc.) from reaching the blob store.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/avatar-[0-9a-f-]+\.(png|jpe?g|webp)$/i.test(key)) {
+    return json(400, { error: "Malformed key" });
+  }
+
   const store = getStore({ name: STORE_NAME });
   const result = await store.getWithMetadata(key, { type: "arrayBuffer" });
   if (!result) return json(404, { error: "Not found" });
@@ -27,8 +35,11 @@ export default async (req) => {
   return new Response(result.data, {
     status: 200,
     headers: {
-      "Content-Type": contentType,
-      "Cache-Control": "public, max-age=3600",
+      "Content-Type":          contentType,
+      "Cache-Control":         "public, max-age=3600",
+      // Browser must honor the declared Content-Type — defense
+      // against a future upload path that accepts a wider type set.
+      "X-Content-Type-Options": "nosniff",
     },
   });
 };

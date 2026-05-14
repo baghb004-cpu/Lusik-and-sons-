@@ -95,7 +95,11 @@ const MAX_TURNS_PER_SESSION   = 30;     // per-session throttle (24h)
 // ============================================================
 async function checkAndIncrementRateLimit(ip, sessionId) {
   const subject = ip || sessionId;
-  if (!subject) return { ok: true, used: 0 };
+  // Deny when we can't identify the caller. In production Netlify
+  // populates context.ip reliably, so this branch is mostly
+  // theoretical — but "fail open" is the wrong default for a
+  // budget-spending endpoint.
+  if (!subject) return { ok: false, used: 0 };
   const store = getStore({ name: "chat-sessions", consistency: "strong" });
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `${subject}/${today}`;
