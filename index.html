@@ -9911,7 +9911,8 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     0,    2,    6,         // row 0:  (0,0), (0,2), (0,6)
     8,    10,              // row 1:  (1,1), (1,3)
     14,   16,   18,        // row 2:  (2,0), (2,2), (2,4)
-    23,   26,              // row 3:  (3,2), (3,5)
+    22,   24,   26,        // row 3:  (3,1), (3,3), (3,5)  — split around the
+                           //          removed (3,2) entry per the X-mark
     30,   32,   34,        // row 4:  (4,2), (4,4), (4,6)
     38,   40,              // row 5:  (5,3), (5,5)
     42,   46,   48,        // row 6:  (6,0), (6,4), (6,6)
@@ -10100,6 +10101,13 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
               border: isAlphabetCube
                 ? `${cellPx < 10 ? 1 : 2}px solid ${outlineColor}`
                 : "none",
+              // Inset alphabet cubes inside their grid cell so the cube
+              // doesn't fill the cell edge-to-edge. The visible breathing
+              // room makes every cube read at the same proportion as its
+              // neighbors — without this the cell-edge cubes (e.g. the
+              // bottom Գ at (6,2), right against the canvas's inner
+              // border) visually appeared larger than mid-grid cubes.
+              margin: isAlphabetCube ? (cellPx < 10 ? "1px" : "2px") : 0,
               boxShadow: cellDepthShadow,
               fontFamily: "Fraunces, serif",
               fontSize: `${letterPx}px`,
