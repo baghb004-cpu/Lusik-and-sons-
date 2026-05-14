@@ -928,22 +928,25 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
 // a stranger shouldn't be able to spoof an unsubscribe against
 // someone else's order. A self-validating signed URL solves both.
 //
-// Falls back to STRIPE_WEBHOOK_SECRET if REMINDER_SECRET isn't
-// set — Stripe's secret is already long-lived and high-entropy.
+// REMINDER_SECRET must be set explicitly. Older revisions of this
+// file fell back to STRIPE_WEBHOOK_SECRET, but cross-domain secret
+// reuse is a footgun: rotating Stripe's webhook secret (a routine
+// operational hygiene step) would silently invalidate every
+// outstanding unsubscribe URL — emails sent months earlier would
+// suddenly 400 with no diagnostic. Explicit-only means the failure
+// mode is "set the env var" once, not "you broke a year of links."
 // ============================================================
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 function reminderSecret() {
-  return process.env.REMINDER_SECRET
-      ?? process.env.STRIPE_WEBHOOK_SECRET
-      ?? "";
+  return process.env.REMINDER_SECRET ?? "";
 }
 
-// Surface a loud warning at module load when neither secret is set.
+// Surface a loud warning at module load when the secret is unset.
 // Without this, sign/verify return empty strings silently and every
 // unsubscribe link 400s with no diagnostic in the logs.
-if (!process.env.REMINDER_SECRET && !process.env.STRIPE_WEBHOOK_SECRET) {
-  console.warn("[email] Neither REMINDER_SECRET nor STRIPE_WEBHOOK_SECRET is set — gift-reminder unsubscribe links will not work. Set REMINDER_SECRET in Netlify env to enable.");
+if (!process.env.REMINDER_SECRET) {
+  console.warn("[email] REMINDER_SECRET is not set — gift-reminder unsubscribe links will not work. Set it in Netlify → Site → Environment to a long random string.");
 }
 
 function b64url(buf) {

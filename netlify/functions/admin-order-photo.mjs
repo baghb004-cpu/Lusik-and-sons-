@@ -17,6 +17,7 @@
 import { getStore }                  from "@netlify/blobs";
 import { sql }                       from "./_lib/db.mjs";
 import { requireAdmin }              from "./_lib/auth.mjs";
+import { sniffImageType }            from "./_lib/image-sniff.mjs";
 import { json }                      from "./_lib/json.mjs";
 import { sendFinishedPhotoNotification } from "./_lib/email.mjs";
 
@@ -64,6 +65,15 @@ export default async (req, context) => {
   catch { return json(400, { error: "Invalid base64" }); }
   if (bytes.length === 0 || bytes.length > MAX_BYTES) {
     return json(413, { error: `Image must be 1 byte – ${MAX_BYTES} bytes` });
+  }
+
+  // Magic-byte sniff — see _lib/image-sniff.mjs for rationale.
+  // Lusik's the only user of this endpoint, but admin endpoints
+  // get the same content-type-can't-lie treatment as customer
+  // ones; trust hierarchy doesn't excuse skipping defense in depth.
+  const sniffed = sniffImageType(bytes);
+  if (!sniffed || sniffed !== contentType) {
+    return json(415, { error: "Image content doesn't match declared type" });
   }
 
   // Key pattern: <order_id>/finished-<timestamp>.<ext>

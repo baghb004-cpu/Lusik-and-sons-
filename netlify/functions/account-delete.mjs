@@ -15,9 +15,15 @@
 //     so they're no longer linked to the customer, but the
 //     order itself stays for tax retention (California / IRS
 //     require keeping financial records for ~7 years). The
-//     order's customer_email stays on the row for the same
-//     reason — receipts have to be matchable to a buyer if
-//     tax authorities or Stripe ever ask.
+//     customer_email column is REWRITTEN to a non-matchable
+//     placeholder (`deleted-<userId>@lusik.invalid`) — this
+//     is critical: the original email value would otherwise
+//     let `link-guest-order` re-attach the deleted user's
+//     orders to a future signup that happens to use the same
+//     address. Stripe still holds the real email independently
+//     for tax / financial-record purposes; ours doesn't need
+//     to. `.invalid` is an RFC 6761 reserved TLD that no real
+//     mail server can ever resolve.
 //   - Finished-piece photos. Stored under <order_id>/... in
 //     Blobs, not under user_id, so they're already detached
 //     from identity. No way to look them up given just the
@@ -59,11 +65,19 @@ export default async (req, context) => {
   const profileRows = await sql`SELECT avatar_url FROM profiles WHERE id = ${user.id} LIMIT 1`;
   const avatarUrl   = profileRows[0]?.avatar_url ?? null;
 
-  // 2. Anonymize orders BEFORE deleting the profile row (since
-  //    orders.user_id has ON DELETE SET NULL anyway, but doing
-  //    it explicitly makes the intent obvious to anyone reading
-  //    the function later).
-  await sql`UPDATE orders SET user_id = NULL WHERE user_id = ${user.id}`;
+  // 2. Anonymize orders BEFORE deleting the profile row.
+  //    orders.user_id has ON DELETE SET NULL in the schema, but
+  //    doing it explicitly makes the intent obvious. Also rewrite
+  //    customer_email to a deterministic .invalid address so the
+  //    guest-order linkage code can never re-attach these rows to
+  //    a future signup with the same email. See header comment.
+  const placeholderEmail = `deleted-${user.id}@lusik.invalid`;
+  await sql`
+    UPDATE orders
+       SET user_id = NULL,
+           customer_email = ${placeholderEmail}
+     WHERE user_id = ${user.id}
+  `;
 
   // 3. Delete the profile row. ON DELETE CASCADE in the schema
   //    drops the customer's addresses + saved_carts. The

@@ -132,7 +132,13 @@ export default async (req, context) => {
       updates.carrier = c || null;
     }
     if ("tracking_number" in body) {
-      const t = body.tracking_number === null ? null : String(body.tracking_number).trim();
+      // Real-world carrier tracking numbers are 10–35 chars. Cap at
+      // 64 so an accidental copy-paste of a whole tracking URL still
+      // lands in the column but a bloated payload can't balloon the
+      // row indefinitely.
+      const t = body.tracking_number === null
+        ? null
+        : String(body.tracking_number).trim().slice(0, 64);
       updates.tracking_number = t || null;
     }
     if ("estimated_ship_date" in body) {
@@ -143,7 +149,13 @@ export default async (req, context) => {
       updates.estimated_ship_date = d || null;
     }
     if ("admin_notes" in body) {
-      const n = body.admin_notes === null ? null : String(body.admin_notes);
+      // Lusik writes operational notes here ("Bobby's mom called,
+      // wants extra pink in the border"). 4000 chars is roughly a
+      // page of text — plenty for any realistic note, hard cap on
+      // a fat-fingered megabyte paste.
+      const n = body.admin_notes === null
+        ? null
+        : String(body.admin_notes).slice(0, 4000);
       updates.admin_notes = n || null;
     }
 

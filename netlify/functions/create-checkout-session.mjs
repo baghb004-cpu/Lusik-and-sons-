@@ -194,7 +194,14 @@ async function handle(req, context) {
     if (!trusted) {
       return json(400, { error: `Unknown product key: ${key}` });
     }
-    const qty = Number.isInteger(item.qty) && item.qty > 0 ? item.qty : 1;
+    // Clamp qty defensively: positive integer, ceiling 99. Without
+    // the upper bound a client could send qty: 999999, which Stripe
+    // would either reject (returning a 502 from this function with
+    // no clean recovery for the customer) or accept and charge a
+    // surprising 6-figure amount. 99 mirrors the per-item cap that
+    // saved-cart already enforces in the browser.
+    const rawQty = Number.isInteger(item.qty) && item.qty > 0 ? item.qty : 1;
+    const qty = Math.min(99, rawQty);
 
     // Compose a single line description from whatever variant info
     // the browser passed (subtitle + size + colorHex). This shows

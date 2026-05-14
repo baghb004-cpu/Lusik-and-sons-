@@ -31,9 +31,22 @@ export default async (req, context) => {
   // confirmation required" — but if that ever gets toggled off, an
   // attacker could register with a victim's email and inherit every
   // guest order on that email (including shipping addresses + gift
-  // recipient PII). Verifying the flag here makes a config slip
-  // benign rather than a data leak.
-  if (user.raw?.email_verified !== true && user.raw?.app_metadata?.email_verified !== true) {
+  // recipient PII). Verifying here makes a config slip benign
+  // rather than a data leak.
+  //
+  // Netlify Identity records the "verified" signal in different
+  // places depending on the signup flow — `confirmed_at` is the
+  // canonical truth for the password-confirm flow (GoTrue sets it
+  // when the customer clicks the confirm link in their email),
+  // while OAuth signups land the boolean as `email_verified` at
+  // the top level OR inside `app_metadata`. Accept any of the
+  // three; treat absence everywhere as unverified.
+  const raw = user.raw ?? {};
+  const verified =
+    !!raw.confirmed_at ||
+    raw.email_verified === true ||
+    raw.app_metadata?.email_verified === true;
+  if (!verified) {
     return json(200, { linkedCount: 0 });
   }
 

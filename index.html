@@ -5583,8 +5583,14 @@ function App() {
     setTimeout(() => setBursts((b) => b.filter((burst) => burst.id !== id)), CONFIG.HEART_BURST_LIFETIME_MS);
   };
 
-  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-  const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
+  // Coerce qty + price defensively: saved-cart hydration can produce
+  // rows whose shape doesn't quite match what the current code expects
+  // (cart schema evolved across deploys), and a single `undefined` in
+  // the reduce poisons the whole subtotal to NaN — which then renders
+  // as "$NaN.00" and turns the checkout-start analytics event into a
+  // NaN cents payload that crashes Math.round downstream.
+  const cartCount = cart.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+  const subtotal = cart.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
 
   const addToCart = (color, qty = 1, selection = null, layout = null, colors = null) => {
     track("add-to-cart", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
@@ -11664,9 +11670,12 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [giftHidePrices, setGiftHidePrices] = useState(false);
   // Gift wrap: optional add-on. Price defined once in CONFIG.GIFT_WRAP_PRICE_CENTS;
   // browser shows the line in the order summary, server adds a matching Stripe
-  // line item so the customer is actually charged. Independent of giftIsGift —
-  // someone may want their own purchase wrapped (e.g. for storage gifting later),
-  // but the toggle only renders inside the gift block to keep the checkout calm.
+  // line item so the customer is actually charged. Gated on giftIsGift in three
+  // places (the checkbox only renders inside the gift block, the order-summary
+  // line is conditional on giftIsGift && giftWrap, and the payload sends
+  // `wrap: giftIsGift && giftWrap`). The mirror server-side gate in
+  // create-checkout-session.mjs also requires `is_gift === true`. To allow
+  // wrap on non-gift purchases, you'd have to flip all four gates together.
   const [giftWrap, setGiftWrap] = useState(false);
 
   // --- ONE-YEAR REMINDER (optional, opt-in) ---

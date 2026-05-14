@@ -36,22 +36,46 @@ export default async (req, context) => {
         return json(400, { error: `Missing or invalid field: ${key}` });
       }
     }
-    const country = (typeof a.country === "string" && a.country.trim()) || "US";
+
+    // Length caps. Without these the browser could paste megabytes
+    // into any field, bloating the row + every subsequent GET. Caps
+    // are generous enough for a real international shipping address.
+    const cap = (v, n) => (typeof v === "string" ? v.slice(0, n) : v);
+    const label       = cap(a.label,       80);
+    const recipient   = cap(a.recipient,  120);
+    const line1       = cap(a.line1,      200);
+    const line2       = cap(a.line2,      200);
+    const city        = cap(a.city,       100);
+    const state       = cap(a.state,       80);
+    const postalCode  = cap(a.postal_code, 20);
+    const country     = cap((typeof a.country === "string" && a.country.trim()) || "US", 3);
+    const isDefault   = !!a.is_default;
+
+    // If this address is being marked default, clear is_default on
+    // any other rows for the same user first. Without this mutual
+    // exclusion the UI shows two "default" rows and the GET ordering
+    // (`is_default DESC, created_at DESC`) picks arbitrarily.
+    if (isDefault) {
+      await sql`
+        UPDATE addresses SET is_default = false
+         WHERE user_id = ${user.id} AND is_default = true
+      `;
+    }
 
     const rows = await sql`
       INSERT INTO addresses (
         user_id, label, recipient, line1, line2, city, state, postal_code, country, is_default
       ) VALUES (
         ${user.id},
-        ${a.label ?? null},
-        ${a.recipient},
-        ${a.line1},
-        ${a.line2 ?? null},
-        ${a.city},
-        ${a.state},
-        ${a.postal_code},
+        ${label ?? null},
+        ${recipient},
+        ${line1},
+        ${line2 ?? null},
+        ${city},
+        ${state},
+        ${postalCode},
         ${country},
-        ${!!a.is_default}
+        ${isDefault}
       )
       RETURNING id, label, recipient, line1, line2, city, state, postal_code,
                 country, is_default, created_at
