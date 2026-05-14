@@ -17,6 +17,7 @@ import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
 import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { json }        from "./_lib/json.mjs";
+import { isAllowedOrigin } from "./_lib/origin.mjs";
 
 // Per-IP daily ceiling on checkout-session creation. A real
 // customer abandons + retries a few times across a day at worst;
@@ -97,33 +98,9 @@ function buildShippingOptions(subtotalCents) {
 //
 // Origin VALIDATION is load-bearing for security here: an attacker
 // can send any Origin header they want, and without a check Stripe
-// would happily redirect the customer to `https://evil.com/?order=
-// success` after payment — a perfect phishing setup ("your order
-// confirmation is on the next page, please re-enter your card").
-// Allow only origins we recognize as our own:
-//   - process.env.URL                — production canonical URL
-//   - process.env.DEPLOY_PRIME_URL    — deploy-preview / branch deploy
-//   - https://lusikandsons.com        — hardcoded production fallback
-//   - http://localhost:*              — `netlify dev` local
-// Anything else falls back to the hardcoded production URL.
-function isAllowedOrigin(origin) {
-  if (!origin || typeof origin !== "string") return false;
-  if (origin === process.env.URL) return true;
-  if (origin === process.env.DEPLOY_PRIME_URL) return true;
-  if (origin === "https://lusikandsons.com") return true;
-  // localhost variants for netlify dev. Match http://localhost(:port)?
-  // only — no IP literals, no other hostnames.
-  if (/^http:\/\/localhost(?::\d+)?$/.test(origin)) return true;
-  // Netlify deploy-preview / branch-deploy URLs are
-  // https://<hash>--<sitename>.netlify.app — accept any that match
-  // the site's URL pattern.
-  if (process.env.URL) {
-    const site = new URL(process.env.URL).hostname;
-    const previewRe = new RegExp(`^https://[a-z0-9-]+--${site.replace(/\./g, "\\.")}$`);
-    if (previewRe.test(origin)) return true;
-  }
-  return false;
-}
+// Allowlist implementation lives in _lib/origin.mjs so the unit
+// tests can import the SAME function the production code uses
+// instead of re-implementing it (and drifting silently).
 
 function buildReturnUrls(originHeader) {
   const fallback = process.env.URL || "https://lusikandsons.com";
