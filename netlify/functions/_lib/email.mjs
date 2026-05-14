@@ -39,6 +39,8 @@
 // can see it in the admin panel either way.
 // ============================================================
 
+import { CONTACT } from "./contact.mjs";
+
 const RESEND_API_URL = "https://api.resend.com/emails";
 
 // Shared brand palette. Previously redeclared inside every composer;
@@ -403,9 +405,9 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
       If anything is wrong — a name spelling, a color, second thoughts — please reach out now, before Lusik begins stitching:
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -445,8 +447,8 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     `  Total: ${dollars(order.total_cents)}`,
     "",
     `If anything is wrong, reach out now before Lusik begins stitching:`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,
@@ -533,9 +535,9 @@ export async function sendFinishedPhotoNotification({ order }) {
       One last chance — if anything looks off in the photo, tell us before it ships:
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -563,8 +565,8 @@ export async function sendFinishedPhotoNotification({ order }) {
     `tracking number by email when it goes out.`,
     "",
     `If anything looks off in the photo, tell us before it ships:`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,
@@ -677,9 +679,9 @@ export async function sendShippedNotification({ order }) {
       Questions, or want to order another?
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -709,8 +711,8 @@ export async function sendShippedNotification({ order }) {
     `  or remake it.`,
     "",
     `Questions or another order?`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,
@@ -785,9 +787,9 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
       Questions? It can take a few business days for the refund to show in your account — banks vary. If it's been longer than ten business days and you still don't see it:
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com?subject=Refund question - ${encodeURIComponent(orderNumber)}" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}?subject=Refund question - ${encodeURIComponent(orderNumber)}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -818,8 +820,8 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
     isFullRefund ? "" : `Remaining balance: ${dollars((order.total_cents ?? 0) - refundedCents)}`,
     "",
     `If you don't see the refund after ten business days:`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,

@@ -105,7 +105,14 @@ export default async (req, context) => {
   // finished_photo_emailed_at ONLY on a successful send so a
   // Resend outage doesn't permanently block the notification —
   // Lusik can re-upload to retry.
-  if (isFirstPhoto && updatedRows[0]) {
+  // Skip the email + timestamp stamp if the order row has no
+  // customer_email recorded (extremely rare — usually guest orders
+  // where Stripe didn't capture an email). Without this guard,
+  // sendFinishedPhotoNotification quietly returns false (no
+  // recipient) but `emailed` stays false forever, leaving us
+  // unable to ever stamp `finished_photo_emailed_at` and silently
+  // retrying on every re-upload.
+  if (isFirstPhoto && updatedRows[0] && updatedRows[0].customer_email) {
     const emailed = await sendFinishedPhotoNotification({ order: updatedRows[0] })
       .catch((err) => {
         console.warn("[admin-order-photo] finished-photo email failed:", err?.message ?? err);
