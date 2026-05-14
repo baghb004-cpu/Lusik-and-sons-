@@ -23,7 +23,7 @@ import { CollapsibleSection } from "./CollapsibleSection.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import {
   ArrowRight, Bookmark, ChevronLeft, ChevronRight,
-  Instagram, Mail, Minus, Phone, Plus, Share, X, ZoomIn,
+  Instagram, Mail, Minus, Phone, Plus, Share2, X, ZoomIn,
 } from "./icons.jsx";
 
 export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn, onStickyCtaShown }) {

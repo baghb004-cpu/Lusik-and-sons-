@@ -13,7 +13,7 @@ import { db } from "../lib/db.js";
 import { Skeleton } from "./Skeleton.jsx";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 import { useToast } from "./ToastProvider.jsx";
-import { Trash } from "./icons.jsx";
+import { Trash2 } from "./icons.jsx";
 
 export function SavedDesignsSection({ userId, product }) {
   const toast = useToast();
