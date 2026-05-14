@@ -159,6 +159,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
   const isGift       = pending?.gift?.is_gift === true;
   const giftMessage  = pending?.gift?.message ?? "";
   const giftHidePrices = pending?.gift?.hide_prices === true;
+  const giftWrap     = pending?.gift?.wrap === true;
   const social       = pending?.social_consent ?? null;
 
   // Compact subject line — order number, total, brief item count.
@@ -192,6 +193,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     <div style="margin:20px 0;padding:14px 16px;background:#FAF1DF;border-left:3px solid ${accent};">
       <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:8px;">This is a gift</div>
       ${giftMessage ? `<div style="font-style:italic;color:${ink};margin-bottom:8px;line-height:1.5;">"${esc(giftMessage)}"</div>` : ""}
+      ${giftWrap ? `<div style="font-size:13px;color:${ink};margin-bottom:4px;"><strong>★ Gift wrap requested</strong> — tissue + twine.</div>` : ""}
       ${giftHidePrices ? `<div style="font-size:13px;color:${ink};"><strong>⚠ Hide prices from the packing slip.</strong></div>` : ""}
     </div>
   ` : "";
@@ -276,7 +278,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     `NEW ORDER — ${orderNumber}`,
     `${dollars(order.total_cents)} · ${new Date(order.created_at ?? Date.now()).toLocaleString()}`,
     "",
-    isGift ? `★ THIS IS A GIFT${giftMessage ? `\n  Message: "${giftMessage}"` : ""}${giftHidePrices ? "\n  ⚠ Hide prices from packing slip" : ""}\n` : "",
+    isGift ? `★ THIS IS A GIFT${giftMessage ? `\n  Message: "${giftMessage}"` : ""}${giftWrap ? "\n  ★ Gift wrap requested" : ""}${giftHidePrices ? "\n  ⚠ Hide prices from packing slip" : ""}\n` : "",
     `ITEMS`,
     itemLines,
     `  Total: ${dollars(order.total_cents)}`,
@@ -351,6 +353,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
       <div style="font-size:14px;color:${ink};line-height:1.6;">
         Shipping to${recipientName ? ` <strong>${esc(recipientName)}</strong>` : ""} in ${esc(ship.city ?? "")}, ${esc(ship.state ?? ship.region ?? "")}.
         ${giftMessage ? `<div style="margin-top:10px;font-style:italic;">Your message: "${esc(giftMessage)}"</div>` : ""}
+        ${pending?.gift?.wrap ? `<div style="margin-top:10px;font-size:13px;">Gift wrap added — wrap in tissue and twine before shipping.</div>` : ""}
         ${pending?.gift?.hide_prices ? `<div style="margin-top:10px;font-size:13px;">We'll keep prices off the packing slip as requested.</div>` : ""}
       </div>
     </div>
@@ -436,7 +439,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     `  • Before it ships, we'll email a photo of the finished piece.`,
     `  • When it ships, you'll get a tracking number.`,
     "",
-    isGift ? `GIFT DETAILS\n  Shipping to${recipientName ? ` ${recipientName}` : ""} in ${ship.city ?? ""}, ${ship.state ?? ship.region ?? ""}.${giftMessage ? `\n  Your message: "${giftMessage}"` : ""}${pending?.gift?.hide_prices ? `\n  We'll keep prices off the packing slip as requested.` : ""}\n` : "",
+    isGift ? `GIFT DETAILS\n  Shipping to${recipientName ? ` ${recipientName}` : ""} in ${ship.city ?? ""}, ${ship.state ?? ship.region ?? ""}.${giftMessage ? `\n  Your message: "${giftMessage}"` : ""}${pending?.gift?.wrap ? `\n  Gift wrap will be added before shipping.` : ""}${pending?.gift?.hide_prices ? `\n  We'll keep prices off the packing slip as requested.` : ""}\n` : "",
     `ORDER ${orderNumber}`,
     itemLines,
     `  Total: ${dollars(order.total_cents)}`,

@@ -1662,6 +1662,19 @@ const CONFIG = {
   FREE_SHIPPING_THRESHOLD_CENTS: 15000,
 
   // ============================================================
+  // GIFT WRAP (optional add-on at checkout)
+  // ============================================================
+  // Customer opts in via the gift fieldset on CheckoutView. The
+  // browser shows "+$X.XX" in the order summary; the server adds
+  // a matching line item to the Stripe session so the customer is
+  // actually charged for it. Both sides read this same number, so
+  // there's only one place to change the price.
+  //
+  // Set to 0 to disable (the checkbox still renders but the line
+  // item adds nothing — equivalent to "free gift wrap").
+  GIFT_WRAP_PRICE_CENTS: 500,
+
+  // ============================================================
   // PRIVACY-FIRST ANALYTICS (opt-in, empty by default)
   // ============================================================
   // Both values empty = no script loaded, no requests made, no
@@ -8238,6 +8251,11 @@ function AdminOrderRow({ order, onSaved }) {
                   "{order.gift.message}"
                 </p>
               )}
+              {order.gift.wrap && (
+                <p className="text-xs opacity-80 mb-1" style={{ fontWeight: 500 }}>
+                  ★ Customer added gift wrap — tissue + twine before shipping.
+                </p>
+              )}
               {order.gift.hide_prices && (
                 <p className="text-xs opacity-80" style={{ fontWeight: 500 }}>
                   ⚠️ Customer asked: <span className="opacity-100">do NOT include prices on the packing slip.</span>
@@ -11554,6 +11572,12 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [giftIsGift,     setGiftIsGift]     = useState(false);
   const [giftMessage,    setGiftMessage]    = useState("");
   const [giftHidePrices, setGiftHidePrices] = useState(false);
+  // Gift wrap: optional add-on. Price defined once in CONFIG.GIFT_WRAP_PRICE_CENTS;
+  // browser shows the line in the order summary, server adds a matching Stripe
+  // line item so the customer is actually charged. Independent of giftIsGift —
+  // someone may want their own purchase wrapped (e.g. for storage gifting later),
+  // but the toggle only renders inside the gift block to keep the checkout calm.
+  const [giftWrap, setGiftWrap] = useState(false);
 
   // --- ONE-YEAR REMINDER (optional, opt-in) ---
   // Default off. If ticked, the order row carries gift_reminder_opt_in = true
@@ -11659,6 +11683,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             is_gift:      giftIsGift,
             message:      giftIsGift ? giftMessage.trim() : "",
             hide_prices:  giftIsGift ? giftHidePrices : false,
+            wrap:         giftIsGift && giftWrap,
           },
           // Customer's one-year reminder opt-in. Stored verbatim on the
           // order row by the webhook; a daily scheduled function reads
@@ -11810,6 +11835,22 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                     Hide prices from the packing slip inside the box.
                     <span className="block opacity-65 mt-0.5">
                       Your email receipt still goes to you with the total — this only affects what's printed and shipped with the order.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer mt-3">
+                  <input
+                    type="checkbox"
+                    checked={giftWrap}
+                    onChange={(e) => setGiftWrap(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 flex-shrink-0"
+                    style={{ accentColor: "#B08842" }}
+                  />
+                  <span className="text-xs leading-snug">
+                    <span style={{ fontWeight: 500 }}>Add gift wrap</span>
+                    <span className="tabular-nums opacity-80"> (+${(CONFIG.GIFT_WRAP_PRICE_CENTS / 100).toFixed(2)})</span>
+                    <span className="block opacity-65 mt-0.5">
+                      Lusik will wrap the piece in soft tissue and twine, with the card tucked inside. Ready to give.
                     </span>
                   </span>
                 </label>
@@ -11985,6 +12026,9 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </div>
           <div className="pt-2 space-y-1 text-sm">
             <div className="flex justify-between"><span className="opacity-70">Subtotal</span><span className="tabular-nums">${subtotal.toFixed(2)}</span></div>
+            {giftIsGift && giftWrap && (
+              <div className="flex justify-between"><span className="opacity-70">Gift wrap</span><span className="tabular-nums">+${(CONFIG.GIFT_WRAP_PRICE_CENTS / 100).toFixed(2)}</span></div>
+            )}
             <div className="flex justify-between"><span className="opacity-70">Shipping</span><span className="opacity-60">Calculated at Stripe</span></div>
             <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-60">Calculated at Stripe</span></div>
           </div>

@@ -41,6 +41,11 @@ function getStripe() {
 // ============================================================
 const FREE_SHIPPING_THRESHOLD_CENTS = 15000;
 
+// Gift wrap add-on price. MUST stay in sync with
+// CONFIG.GIFT_WRAP_PRICE_CENTS in index.html — the browser shows
+// this amount in the order summary, the server charges it.
+const GIFT_WRAP_PRICE_CENTS = 500;
+
 // Paid shipping options offered below the threshold. Mirrors
 // SHIPPING_CARRIERS in index.html. Stripe shows these on its
 // hosted checkout page; the customer picks one.
@@ -140,6 +145,7 @@ async function handle(req, context) {
                      ? rawGift.message.slice(0, 500)
                      : "",
       hide_prices: isGift && rawGift.hide_prices === true,
+      wrap:        isGift && rawGift.wrap === true,
     };
   })();
   const social_consent = (() => {
@@ -224,12 +230,34 @@ async function handle(req, context) {
 
   // Compute subtotal from the TRUSTED prices we just built into
   // line items (NOT from anything the browser sent). This is the
-  // number that decides whether free shipping applies.
+  // number that decides whether free shipping applies. Gift wrap
+  // is an add-on charged on top — it doesn't count toward the
+  // free-shipping threshold, otherwise wrapping a $145 order would
+  // push it over $150 and we'd be eating the shipping cost just
+  // because the customer ticked a box.
   const subtotalCents = lineItems.reduce(
     (sum, li) => sum + li.price_data.unit_amount * li.quantity,
     0,
   );
   const shippingOptions = buildShippingOptions(subtotalCents);
+
+  // Gift wrap add-on. Hardcoded price + name so the browser can't
+  // talk us into a free or discounted wrap. Appended after the
+  // subtotal computation so it doesn't affect free shipping.
+  if (gift?.wrap === true && GIFT_WRAP_PRICE_CENTS > 0) {
+    lineItems.push({
+      quantity: 1,
+      price_data: {
+        currency: "usd",
+        unit_amount: GIFT_WRAP_PRICE_CENTS,
+        product_data: {
+          name: "Gift wrap",
+          description: "Soft tissue and twine, with the card tucked inside.",
+          metadata: { productKey: "gift-wrap", isCustom: "false" },
+        },
+      },
+    });
+  }
 
   // Create the Checkout Session.
   //
