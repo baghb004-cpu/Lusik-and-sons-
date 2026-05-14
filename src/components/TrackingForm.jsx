@@ -23,7 +23,7 @@ export function TrackingForm() {
   };
   const handleTrack = () => {
     if (trackingNumber.trim()) {
-      window.open(trackUrls[carrier](trackingNumber.trim()), "_blank");
+      window.open(trackUrls[carrier](trackingNumber.trim()), "_blank", "noopener,noreferrer");
     }
   };
   return (

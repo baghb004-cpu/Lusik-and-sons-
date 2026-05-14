@@ -1165,7 +1165,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
             <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
               <Phone size={14} /> Call
             </button>
-            <button onClick={() => window.open("https://instagram.com")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
+            <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
               <Instagram size={14} /> DM
             </button>
             <button onClick={() => window.open("mailto:hello@lusikandsons.com?subject=Custom order inquiry")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>

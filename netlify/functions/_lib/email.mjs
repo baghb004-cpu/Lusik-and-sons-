@@ -104,6 +104,21 @@ function esc(s) {
     .replace(/'/g, "&#39;");
 }
 
+// Sanitize a user-controlled string before placing it in a Resend
+// `subject` field (which becomes part of the SMTP envelope).
+// Strips CR/LF + other control characters so a string containing
+// "\r\nBcc: attacker@evil.com" cannot smuggle a header. Resend's
+// HTTP API likely also rejects this shape, but we don't want to
+// trust that downstream.
+//
+// Hard cap at 200 chars — Subject lines beyond ~78 chars get
+// wrapped or truncated by most clients anyway, and this caps the
+// damage from a 50KB string burning Resend bandwidth.
+export function headerSafe(s, max = 200) {
+  if (s === null || s === undefined) return "";
+  return String(s).replace(/[\r\n\x00-\x1f\x7f]+/g, " ").trim().slice(0, max);
+}
+
 function dollars(cents) {
   return `$${((cents ?? 0) / 100).toFixed(2)}`;
 }
@@ -997,7 +1012,13 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
   const url = baseUrl();
   const href    = productUrl || `${url}/`;
 
-  const subject = `${productName} is ready.`;
+  // productName is admin-controlled but the admin types it via the
+  // admin UI — a stored XSS / SMTP-injection vector if a future
+  // refactor lets a customer populate it (or if an admin session
+  // gets compromised). headerSafe strips CR/LF/control chars and
+  // caps length so the value is safe in the Resend subject field.
+  const safeProductName = headerSafe(productName);
+  const subject = `${safeProductName} is ready.`;
 
   const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">

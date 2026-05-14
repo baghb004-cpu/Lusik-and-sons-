@@ -32,7 +32,15 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "assets",
     target: "es2020",
-    sourcemap: true,
+    // `hidden` emits source maps to dist/assets/ but strips the
+    // `//# sourceMappingURL=` comment from the JS bundle — so the
+    // public site never advertises them to bots/grabbers, while
+    // Sentry's upload step (once wired) can still pick them up
+    // from the dist/ folder for unminified stack traces. Until
+    // Sentry is live, the maps are local-only debug artifacts.
+    // Flip to `true` to re-enable browser DevTools sourcemap
+    // resolution against the deployed bundle.
+    sourcemap: "hidden",
     // IMPORTANT: do NOT auto-inline assets into the JS bundle.
     // The current index.html has base64 product photos that need
     // to migrate to /public/img/*.jpg — and Vite's default 4 KB

@@ -516,7 +516,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           <PaymentMethodsRow className="mt-4" />
 
           <p className="text-xs opacity-60 mt-4 leading-relaxed">
-            Or order the slow way: <button onClick={() => window.open("https://instagram.com")} className="underline">DM us on Instagram</button>, <button onClick={() => window.open("mailto:hello@lusikandsons.com")} className="underline">email</button>, or call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>.
+            Or order the slow way: <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">DM us on Instagram</button>, <button onClick={() => window.open("mailto:hello@lusikandsons.com")} className="underline">email</button>, or call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>.
           </p>
         </div>
 

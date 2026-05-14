@@ -132,13 +132,21 @@ export default async (req, context) => {
       updates.carrier = c || null;
     }
     if ("tracking_number" in body) {
-      // Real-world carrier tracking numbers are 10–35 chars. Cap at
-      // 64 so an accidental copy-paste of a whole tracking URL still
-      // lands in the column but a bloated payload can't balloon the
-      // row indefinitely.
-      const t = body.tracking_number === null
+      // Real-world carrier tracking numbers are 10–35 chars of
+      // alphanumerics, sometimes with a space or hyphen (USPS uses
+      // groups separated by spaces in display, FedEx uses contiguous
+      // alphanumerics, UPS the same). Whitelist alphanumerics + space
+      // + hyphen so a typo or paste artifact (newline, control char,
+      // angle bracket) can't ride into emails or tracking-URL
+      // builders. Cap at 64 so an accidental copy-paste of a whole
+      // tracking URL still lands in the column but a bloated payload
+      // can't balloon the row indefinitely.
+      let t = body.tracking_number === null
         ? null
         : String(body.tracking_number).trim().slice(0, 64);
+      if (t && !/^[A-Za-z0-9 -]+$/.test(t)) {
+        return json(400, { error: "tracking_number must contain only letters, digits, spaces, and hyphens" });
+      }
       updates.tracking_number = t || null;
     }
     if ("estimated_ship_date" in body) {

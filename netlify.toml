@@ -190,3 +190,34 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# ============================================================
+# Cache-Control — explicit per-path policy
+# ============================================================
+# Vite emits content-hashed filenames under /assets/* (e.g.
+# /assets/index-B3E06FGh.js). Those bytes never change for that
+# hash, so we tell the browser + every intermediate CDN to keep
+# them for a year and never revalidate — instant repeat loads,
+# zero network round-trips. `immutable` is the modern way to say
+# "don't even bother sending If-Modified-Since."
+#
+# /index.html and the SPA shell get the opposite: no-cache, so
+# a deploy with new asset hashes propagates immediately. The
+# index.html file is tiny, the cost of re-fetching is one
+# round-trip per page load worst-case.
+# ============================================================
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Same idea for the root path (Netlify serves index.html for /).
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

@@ -83,8 +83,16 @@ export function encodeDesignToUrl(state: DesignPickerState): string | null {
   }
 }
 
+// Hard cap on `?d=` length. A legitimate compact design serializes
+// to <200 base64 chars; a multi-KB string can only be a typo or
+// a malicious share link probing for a parse-bomb. 4 KB is
+// generous headroom for any future expansion and bounds the
+// worst-case JSON.parse cost.
+const MAX_ENCODED_LENGTH = 4096;
+
 export function decodeDesignFromUrl(encoded: string | null | undefined): DesignCompact | null {
   if (!encoded || typeof encoded !== "string") return null;
+  if (encoded.length > MAX_ENCODED_LENGTH) return null;
   try {
     const compact = JSON.parse(atob(encoded));
     if (!compact || typeof compact !== "object") return null;
