@@ -9999,6 +9999,15 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     : `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='%23FFFFFF'/><rect x='1' y='1' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='2' y='2' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='7' y='1' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='8' y='2' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='1' y='7' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='2' y='8' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='7' y='7' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='8' y='8' width='2' height='2' fill='rgba(0,0,0,0.025)'/></svg>`;
   const waffleBackground = `url("data:image/svg+xml;utf8,${waffleSvg}")`;
 
+  // Pomegranate motif as a CSS background-image. Previously rendered
+  // as an inline <svg> per cell, which meant 13–18 React-rendered SVG
+  // elements per preview; serving it as a data URL on the cell's
+  // background lets the browser handle one cached image and 0
+  // additional React elements.
+  const pomegranateStroke = darkMode ? "rgba(245,239,227,0.28)" : "rgba(176,136,66,0.45)";
+  const pomegranateSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${pomegranateStroke}' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='14' r='6'/><path d='M 7.5 9 L 8.5 7 L 9.5 9 L 10.5 7 L 11.5 9 L 12.5 7 L 13.5 9 L 14.5 7 L 15.5 9'/><line x1='12' y1='5' x2='12' y2='7'/></svg>`;
+  const pomegranateBackground = `url("data:image/svg+xml;utf8,${encodeURIComponent(pomegranateSvg)}")`;
+
   // ============================================================
   // FRINGE EDGES — yarn strands on the top + bottom of the blanket
   // ============================================================
@@ -10114,13 +10123,15 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
               justifyContent: "center",
               // Background: alphabet cubes get the white "cube face" (the
               // 3D cube reads as a clean square sitting on the fabric).
-              // Every other cell shows the waffle-weave fabric so the
-              // texture is visible in the empty space, behind text, and
-              // under the pomegranate motifs — exactly how it looks on
-              // the real blanket.
+              // Pomegranate cells stack a centered pomegranate motif on
+              // top of the waffle-weave fabric via CSS layered
+              // backgrounds — saves rendering an inline <svg> per cell.
+              // Every other cell shows just the waffle weave.
               background: isAlphabetCube
                 ? (darkMode ? "transparent" : "#FFFFFF")
-                : waffleBackground,
+                : isPomegranate
+                  ? `${pomegranateBackground} center / 70% no-repeat, ${waffleBackground} 0 0 / 12px repeat`
+                  : waffleBackground,
               // Cube outline + depth only on alphabet cubes. Text cells get
               // no border so they read as "embroidered onto the blanket"
               // rather than another framed letter. Border width scales
@@ -10149,34 +10160,7 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
               letterSpacing: isTextCell ? "-0.5px" : "normal",
             }}
           >
-            {isPomegranate ? (
-              // Small pomegranate line-art icon. Sized to ~70% of the cell
-              // so the motif reads as a delicate impression on the fabric
-              // (matching the woven pomegranate texture on the real
-              // blanket), not as a heavy printed graphic. Stroke color
-              // picks up the muted accent so it sits behind the cubes
-              // visually rather than competing with them.
-              <svg
-                viewBox="0 0 24 24"
-                width={Math.round(cellPx * 0.7)}
-                height={Math.round(cellPx * 0.7)}
-                fill="none"
-                stroke={darkMode ? "rgba(245,239,227,0.28)" : "rgba(176,136,66,0.45)"}
-                strokeWidth="1.1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                {/* Fruit body */}
-                <circle cx="12" cy="14" r="6" />
-                {/* Crown / calyx — a small five-point zigzag at the top */}
-                <path d="M 7.5 9 L 8.5 7 L 9.5 9 L 10.5 7 L 11.5 9 L 12.5 7 L 13.5 9 L 14.5 7 L 15.5 9" />
-                {/* Stem */}
-                <line x1="12" y1="5" x2="12" y2="7" />
-              </svg>
-            ) : (
-              cell?.glyph ?? ""
-            )}
+            {cell?.glyph ?? ""}
           </div>
         );
       })}

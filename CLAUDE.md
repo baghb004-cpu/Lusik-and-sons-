@@ -20,36 +20,53 @@ Deploy target is **Netlify**. The static `index.html` is the entire frontend —
 
 ### File layout inside `index.html`
 
-Approximate line ranges drift as the file grows; use these as starting points, not gospel:
+Line numbers drift as the file grows — these are point-in-time snapshots from the audit / hardening pass. If they're off when you read this, use `grep -n '^function ComponentName'` for an exact location. The TABLE OF CONTENTS structure is stable even when individual line numbers shift.
 
 | Lines | Contents |
 | --- | --- |
-| 1–75 | `<head>`: meta tags, OpenGraph/Twitter cards, favicons, CDN script tags (React, Identity widget, Babel, Tailwind) |
-| 76–479 | `<style>`: custom CSS (animations, mega-menu, back-to-top, text-us widget, tooltips) |
-| ~485 | Loading splash + `<div id="root">` + image data placeholder script |
-| ~507 | SVG icon components (`<Icon>` wrapper + per-icon definitions) |
-| ~570 | `PHOTO_*` constants (mostly `/img/*.jpg` paths) |
-| ~611 | `PRODUCT` — the live Armenian Alphabet Blanket: gallery, specs, thread colors (DMC palette), color presets (Boys/Girls/Unisex/Purple/Armenian Flag), alphabets, layouts |
-| ~980 | `CATALOG` — multi-category catalog (blankets / bibs / towels / baby). Most items are `status: "placeholder"` pending Lusik's photos and pricing |
-| ~1085 | `CONFIG` — all tunable values: function base path, upload caps, cart storage key, debounce timing, text-us phone, etc. |
-| ~1160 | `SOCIAL_PLATFORMS` — tier1/tier2 social drawer entries |
-| ~1190 | `SOCIAL_CONSENT_PLATFORMS` — opt-in checkout list (Instagram / TikTok / Facebook / YouTube) |
-| ~1240 | `LANGUAGES`, `TRANSLATIONS` — i18n tables |
-| ~1860 | `LangContext` + `LanguageProvider` + `useT()` |
-| ~2210 | `auth` — Netlify Identity wrapper (signup, signin, signout, password reset, JWT) |
-| ~2370 | `db`   — fetch() wrapper around every Netlify Function (profile, addresses, saved-cart, orders, etc.) |
-| ~2480 | `BackToTopButton`, `TextUsWidget` (fixed-position UI) |
-| ~2810 | `App` — root component, holds cart + view + auth state |
-| ~3660 | `HeartBurst` — add-to-cart feedback animation |
-| ~3710 | `PolicyModal` — Privacy / Terms / Refunds (intentionally English-only) |
-| ~3920 | `AuthDrawer` — sign-in / sign-up |
-| ~4160 | `AccountView`, `OrderHistory`, `OrderCard` |
-| ~4640 | `HomeView`, `TrackingForm`, `NewsletterForm` |
-| ~5030 | `CustomProductCard` — bibs / custom-image embroidery flow |
-| ~5680 | `ProductTemplate`, `BlanketLayoutPreview` — SVG previews of the blanket layout |
-| ~6065 | `ProductShowcase` — the main PDP for the Armenian Alphabet Blanket |
-| ~6815 | `CheckoutView` — POSTs the cart to the `create-checkout-session` Function, redirects to Stripe |
-| ~7080 | `ReactDOM.createRoot(...).render(<LanguageProvider><App/></LanguageProvider>)` |
+| 1–80 | `<head>`: meta tags, OpenGraph/Twitter cards, favicons, CDN script tags (React, Identity widget, Babel, Tailwind), web manifest |
+| 80–1000 | `<style>`: custom CSS (animations, mega-menu, back-to-top, text-us widget, tooltips, print styles) |
+| ~1020 | Loading splash + `<div id="root">` + image data placeholder script |
+| ~1024 | `<Icon>` wrapper + per-icon SVG definitions (lucide-style) |
+| ~1100 | `PHOTO_*` constants — `/img/*.jpg` paths + a couple of base64-inlined reference shots |
+| ~1136 | `PRODUCT` — the live Armenian Alphabet Blanket: gallery, specs, thread colors (DMC palette), color presets (Boys/Girls/Unisex/Purple/Armenian Flag), alphabets, layouts |
+| ~1368 | `CUSTOM_PRODUCTS` — bib config (machine-embroidery only, name-mode, color palette + presets) |
+| ~1476 | `CATALOG` — multi-category catalog (blankets / bibs / towels / baby). Most items are `status: "placeholder"` pending Lusik's photos and pricing |
+| ~1580 | `CONFIG` — the dial board: function base path, upload caps, cart storage key, debounce timings, text-us phone, swipe tunables, paid-feature toggles, analytics, free shipping |
+| ~1843 | `SOCIAL_PLATFORMS` — tier1/tier2 social drawer entries |
+| ~1897 | `SOCIAL_CONSENT_PLATFORMS` — opt-in checkout list (Instagram / TikTok / Facebook / YouTube) |
+| ~1904 | `SHIPPING_CARRIERS` — USPS / UPS / FedEx + Track-package URL builders |
+| ~1945 | `JOURNAL_POSTS` — Lusik's Journal article data (slug, title, body nodes) |
+| ~2041 | `LANGUAGES`, `TRANSLATIONS` — i18n tables (en / hy / hyw) |
+| ~2657 | `LangContext` + `LanguageProvider` + `useT()` |
+| ~3015 | `auth` — Netlify Identity wrapper (signup, signin, signout, password reset, JWT) |
+| ~3212 | `db`   — fetch() wrapper around every Netlify Function (profile, addresses, saved-cart, orders, admin endpoints, waitlist) |
+| ~3426 | `ToastProvider` + `ToastViewport` — undo-toast infrastructure (used by cart-remove flow) |
+| ~3573 | `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection` — shared marketing fragments |
+| ~3734 | `WaitlistModal` — placeholder-product "notify me" signup (POSTs to `/.netlify/functions/waitlist`) |
+| ~4234 | `BackToTopButton`, `TextUsWidget` (fixed-position UI) |
+| ~4573 | `ChatAssistant` — off-by-default Anthropic-backed chat widget |
+| ~4911 | `SwipeableRow` — gesture wrapper for cart-row swipe-to-delete on mobile (tunables in `CONFIG.SWIPE`) |
+| ~5012 | `App` — root component. Owns cart, view, auth, cart-drawer swipe state. Also wires the global keydown handlers, view-change scroll-reset (mobile), and analytics page-view dispatch. |
+| ~6403 | `HeartBurst` — add-to-cart feedback animation |
+| ~6450 | `PolicyModal` — Privacy / Terms / Refunds (intentionally English-only) |
+| ~6667 | `AuthDrawer` — sign-in / sign-up |
+| ~6907 | `AccountView` |
+| ~7499 | `OrderHistory` (with post-checkout polling), `Skeleton`, `SavedDesignsSection` |
+| ~7797 | `OrderProgressTimeline`, `OrderCard` — per-order display + reorder action |
+| ~8083 | `AdminOrderRow` — Lusik's admin editor for one order (status, tracking, finished-photo upload, admin notes) |
+| ~8318 | `AdminView` — Lusik's order dashboard + Waitlists notify panel + CSV export |
+| ~8614 | `MobileBottomNav` — bottom tab bar for phones |
+| ~8679 | `ActiveOrderTopBar` — top banner that swaps between announce string and "your order is shipped → track" for signed-in customers with a live order |
+| ~8747 | `JournalListView`, `JournalPostView`, `JournalView` — Lusik's mini-blog |
+| ~8912 | `HomeView`, `TrackingForm`, `NewsletterForm` |
+| ~9323 | `CustomProductCard` — bib customizer (machine-name-only after the dead-code cleanup pass) |
+| ~9730 | `ProductTemplate` — SVG preview for the bib name embroidery |
+| ~9803 | `BlanketLayoutPreview` — the canonical 7x7 grid preview with alphabet cubes (top-right + bottom-left corner regions), name + year diagonals, scattered pomegranate motifs, waffle-weave fabric texture, and top + bottom fringe edges |
+| ~10212 | `CollapsibleSection` — picker step that collapses to a single-row summary |
+| ~10245 | `ProductShowcase` — the main PDP for the Armenian Alphabet Blanket |
+| ~11311 | `CheckoutView` — POSTs the cart to the `create-checkout-session` Function, redirects to Stripe. Order-summary rows are display-only (no qty controls). |
+| ~11861 | `ReactDOM.createRoot(...).render(<LanguageProvider><App/></LanguageProvider>)` |
 
 ## Backend — what's in this repo, and what's not
 
@@ -268,6 +285,53 @@ Cart-ID shape is load-bearing for this flow: `mapLegacyId()` in `index.html` (se
 5. Set environment variables in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
 6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to **both** `checkout.session.completed` and `charge.refunded` (so refunds you issue from the Stripe dashboard automatically update the order + email the customer). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 7. (Optional but recommended) Sign up at [resend.com](https://resend.com) — free tier covers 100 emails/day. Generate an API key under "API Keys" and set it as `RESEND_API_KEY` in Netlify. Set `ADMIN_NOTIFICATION_EMAIL` to wherever Lusik wants to receive new-order notifications. (Optionally verify `lusikandsons.com` in Resend → Domains and set `RESEND_FROM_EMAIL` to `Lusik & Sons <orders@lusikandsons.com>`; until then, emails come from `onboarding@resend.dev` which often lands in spam.)
+8. Set `REMINDER_SECRET` to a long random string. Used as the HMAC key for gift-reminder unsubscribe URLs (see "Gift-occasion reminder" below). If unset the code falls back to `STRIPE_WEBHOOK_SECRET` for backwards compatibility — works, but cross-domain secret reuse is a smell. Set it explicitly.
+
+## Features added in the hardening / polish pass
+
+A condensed list of things that exist now and weren't in the original architecture doc. Useful when a next-Claude session lands and needs to know what's already wired up.
+
+### Gift-occasion reminder (opt-in, one-year-later email)
+- Checkbox at checkout (default off) → stamped on `orders.gift_reminder_opt_in`.
+- `netlify/functions/gift-reminder.mjs` is a **scheduled function** that runs daily at 09:00 UTC. Finds orders ~11 months old with the opt-in set, claims each one with an atomic `UPDATE … SET sent_at = now() WHERE … AND sent_at IS NULL RETURNING id` (idempotent under concurrent runs), then sends the email via Resend.
+- `netlify/functions/unsubscribe-gift-reminder.mjs` — HMAC-signed unsubscribe URL embedded in each email. Token = `signReminderToken(orderId)` in `_lib/email.mjs`, verified with `timingSafeEqual`. No sign-in needed.
+- Schema: `orders.gift_reminder_opt_in BOOLEAN`, `orders.gift_reminder_sent_at TIMESTAMPTZ`, plus a partial index for the daily scan.
+
+### Product waitlist (placeholder catalog → real notification)
+- `netlify/functions/waitlist.mjs` — public POST, IP-keyed daily rate limit (20/day), strict regex on `productKey`, upserts into `product_waitlist` (UNIQUE on `lower(email), product_key`).
+- `netlify/functions/admin-waitlist.mjs` — admin GET returning per-product pending + notified counts. Does NOT return email addresses — admin sees counts only.
+- `netlify/functions/admin-waitlist-notify.mjs` — admin POST that sends `sendWaitlistAvailableEmail` to every entry with `notified_at IS NULL`, stamps the timestamp on success. Capped at 100 per call to protect Resend quota; response includes `remaining` so the admin UI prompts the next click.
+- `WaitlistsPanel` at the top of `AdminView` renders the per-product list with Notify buttons.
+
+### Cart UX
+- `SwipeableRow` (`index.html` ~4911) — touch handlers + axis-claim gesture machine for left-swipe-to-delete on cart rows. Honors `prefers-reduced-motion`, handles `touchcancel` + multi-touch. Tunables in `CONFIG.SWIPE`.
+- Cart drawer also gets a swipe-right-to-dismiss gesture (`App` ~5012, look for `cartDragX` and `onCartDrawerTouchMove`). Same `CONFIG.SWIPE` tunables.
+- Cart icon's `-` button: tapping minus on `qty === 1` routes to `removeFromCart` (with undo toast) instead of being a no-op.
+- Cart drawer dismissal layered: X button, backdrop click, Escape key, swipe-right. Pick any.
+
+### Mobile polish
+- View-change scroll-reset: `useEffect` on `[view, journalSlug]` that calls `window.scrollTo(0, 0)` when `matchMedia('(max-width: 1023px)')` matches. Fixes the "tap Checkout from the bottom of home page → land on Checkout footer" footgun.
+- Defensive `overflow-x: hidden` + `max-width: 100vw` on `html` and `body` so a stray transformed descendant can't push past the viewport edge on iOS Safari.
+
+### Blanket preview
+The `BlanketLayoutPreview` component went through several iterations during the polish pass. Current state:
+- **7x7 grid** (was 5x5). More room for the cubes to breathe and for the personalization to sit cleanly between them.
+- **Both alphabet diagonals slope ↘**: upper at top-right corner region (positions `[4, 12, 20]` → row 0–2, col 4–6), lower at bottom-left corner region (positions `[28, 36, 44]` → row 4–6, col 0–2). Diagonally opposite corners.
+- **Year + name as 4-cell diagonals** parallel to their nearest alphabet: year at `[3, 11, 19, 27]`, name at `[21, 29, 37, 45]`. Each digit / letter renders in its own cell. Longer text distributes (e.g. a 6-char name gets `["Bo","bb","y",""]`).
+- **Pomegranate motifs** at 18 hand-picked empty cells, all on the even-(row+col) checkerboard so no two are ever edge-adjacent. Rendered as a CSS layered background — the pomegranate SVG is centered at 70% of cell size on top of the waffle tile.
+- **Waffle-weave fabric texture** as a 12px SVG tile background on every non-alphabet cell.
+- **Grid lines** between cells: the 1px gap between cells shows the container's grid-line color (rgba muted accent).
+- **Fringe edges** (top + bottom) when `size >= 80`: SVG tile of 3 short vertical strands repeated horizontally, wrapped around the canvas in a vertical stack. Bottom strip uses the SVG as-is; top strip applies `transform: scaleY(-1)` to make the strands point upward.
+- All cubes get a 2px margin inside their cell so they don't fill the cell edge-to-edge. Catalog thumbnails (`size < 80`) get a 1px margin so the smaller cubes don't get a margin that's larger than the cube itself.
+
+### Security additions
+- `link-guest-order.mjs` requires `email_verified === true` on the JWT before claiming guest orders by email match. If Identity's email-confirmation gets toggled off, this prevents inheritance of someone else's guest orders.
+- `create-checkout-session.mjs` derives `userId` and `customerEmail` from the JWT (never from the body) and validates `gift` + `social_consent` shapes (caps message at 500 chars, whitelists platform IDs).
+- `avatar.mjs` keys avatar blobs with `${user.id}/avatar-${ts}-${nonce}.${ext}` (8-byte hex nonce) so leaking a user_id isn't enough to enumerate timestamps.
+- `avatar-get.mjs` + `order-photo-get.mjs` both UUID-shape-gate keys before any blob lookup, and set `X-Content-Type-Options: nosniff` on responses.
+
+### Email composers (`_lib/email.mjs`)
+Shared `PALETTE` and `baseUrl()` exported from `_lib/email.mjs` so composers (and `unsubscribe-gift-reminder.mjs`) don't redeclare the brand palette in every function.
 
 ## Working in this repo
 
