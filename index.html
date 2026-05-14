@@ -1138,6 +1138,28 @@ const PRODUCT = {
   name: "The Armenian Alphabet Blanket",
   subtitle: "Hand cross-stitched by Lusik",
   price: 65,
+  // ============================================================
+  // PRODUCT VIDEO (optional)
+  // ============================================================
+  // A short loop of Lusik's hands cross-stitching — the single
+  // most differentiating asset for the brand. When `video.src` is
+  // a real URL the ProductShowcase renders a muted, looping,
+  // autoplay video alongside the photo gallery; when `src` is
+  // empty / null the section is hidden entirely so the page stays
+  // clean until Lusik provides one.
+  //
+  // Recommended format: a 10-20 second mute-able MP4, H.264, 1080p,
+  // <8 MB. Host on Netlify (drop in /public) or a CDN; the `poster`
+  // image shows before playback starts (use the first frame).
+  //
+  // ⚠️ TODO_LUSIK: record + upload a hands-stitching clip and put
+  // the path here. Until then this stays blank and the section
+  // doesn't render.
+  video: {
+    src: "",                      // e.g. "/img/lusik-stitching.mp4"
+    poster: "",                   // e.g. "/img/lusik-stitching-poster.jpg" — first frame, prevents flash
+    caption: "Lusik's hands at work — a single Ա stitched live.",
+  },
   gallery: [
     PHOTO_HERO_OLEN,           // Olen bib + Olen/2026 blanket together — the killer "real order" photo
     PHOTO_OLEN_2026_BLANKET,   // Same OLEN/2026 blanket, solo (no bib) — quieter follow-up shot
@@ -10705,6 +10727,39 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
                   </button>
                 ))}
               </div>
+
+              {/* Stitching video. Renders only when product.video.src is
+                  a real URL — until Lusik provides one, this section is
+                  hidden entirely. Muted + playsInline so iOS Safari
+                  allows autoplay; loop so it cycles forever; preload
+                  metadata only so the customer's bandwidth isn't burned
+                  on a video they may not watch. */}
+              {product.video?.src && (
+                <div className="mt-4">
+                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-60" style={{ color: "#B08842" }}>
+                    Watch Lusik stitch
+                  </p>
+                  <div className="relative aspect-video overflow-hidden" style={{ background: "rgba(26,22,18,0.04)" }}>
+                    <video
+                      src={product.video.src}
+                      poster={product.video.poster || undefined}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="metadata"
+                      controls
+                      className="w-full h-full object-cover"
+                      aria-label={product.video.caption || "Lusik stitching the blanket"}
+                    />
+                  </div>
+                  {product.video.caption && (
+                    <p className="text-[0.65rem] opacity-60 italic mt-2 leading-relaxed">
+                      {product.video.caption}
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
