@@ -3799,6 +3799,11 @@ function WaitlistModal({ product, onClose }) {
               type="email"
               required
               autoFocus
+              autoComplete="email"
+              inputMode="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -3918,6 +3923,11 @@ function NewsletterSignup() {
           type="email"
           name="email"
           required
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -6803,6 +6813,7 @@ function AuthDrawer({ onClose, onAuthed }) {
             <label className="text-xs tracking-[0.2em] uppercase opacity-70 block mb-1.5">Email</label>
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false}
               required autoComplete="email"
               className={inputCls} style={inputStyle}
             />
@@ -7177,7 +7188,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
             </div>
             <div>
               <label className="text-xs tracking-[0.2em] uppercase opacity-70 block mb-1.5">Phone</label>
-              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} style={inputStyle} />
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" className={inputCls} style={inputStyle} />
             </div>
             <div className="flex gap-3">
               <button onClick={saveProfile} disabled={savingProfile} className="px-5 py-2 text-xs tracking-[0.2em] uppercase" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
@@ -7453,6 +7464,10 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
             <input
               type="text"
               value={deleteConfirm}
+              autoComplete="off"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
               onChange={(e) => setDeleteConfirm(e.target.value)}
               autoFocus
               disabled={deleteBusy}
@@ -9259,7 +9274,7 @@ function TrackingForm() {
           <option value="ups">UPS</option>
           <option value="fedex">FedEx</option>
         </select>
-        <input type="text" placeholder="Tracking number" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} className="flex-1 px-4 py-3.5 bg-transparent border text-sm" style={{ borderColor: "rgba(26,22,18,0.2)" }} />
+        <input type="text" placeholder="Tracking number" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTrack()} autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} className="flex-1 px-4 py-3.5 bg-transparent border text-sm" style={{ borderColor: "rgba(26,22,18,0.2)" }} />
         <button onClick={handleTrack} className="px-6 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
           Track <ArrowRight size={14} />
         </button>
@@ -9305,7 +9320,7 @@ function NewsletterForm() {
   return (
     <div className="max-w-md mx-auto">
       <div className="flex flex-col sm:flex-row gap-2">
-        <input type="email" placeholder="your@email.com" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} className="flex-1 px-4 py-3.5 border text-sm" style={{ background: "var(--bg-surface)", color: "var(--text-primary)", borderColor: "var(--border-strong)" }} />
+        <input type="email" placeholder="your@email.com" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} autoComplete="email" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} className="flex-1 px-4 py-3.5 border text-sm" style={{ background: "var(--bg-surface)", color: "var(--text-primary)", borderColor: "var(--border-strong)" }} />
         <button onClick={handleSubmit} className="px-6 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
           <Send size={14} /> Subscribe
         </button>
@@ -9492,6 +9507,10 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
             value={customName}
             onChange={(e) => setCustomName(e.target.value)}
             maxLength={maxNameLength}
+            autoComplete="given-name"
+            autoCapitalize="words"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="e.g. Anna"
             className="w-full px-3 py-2.5 text-sm"
             style={{
@@ -11019,6 +11038,10 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
                   value={customLine1}
                   onChange={(e) => setCustomLine1(e.target.value)}
                   maxLength={6}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="e.g. ANNA"
                   className="w-full px-3 py-2.5 text-sm"
                   style={{
@@ -11044,6 +11067,10 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
                   value={customLine2}
                   onChange={(e) => setCustomLine2(e.target.value)}
                   maxLength={6}
+                  autoComplete="off"
+                  inputMode="numeric"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="e.g. 2025"
                   className="w-full px-3 py-2.5 text-sm"
                   style={{
@@ -11704,6 +11731,10 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                               value={socialHandles[p.id] ?? ""}
                               onChange={(e) => updateSocialHandle(p.id, e.target.value)}
                               maxLength={64}
+                              autoComplete="off"
+                              autoCapitalize="off"
+                              autoCorrect="off"
+                              spellCheck={false}
                               placeholder="@yourname"
                               className="flex-1 px-3 py-2 text-sm"
                               style={{ border: "1px solid var(--border-strong)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
