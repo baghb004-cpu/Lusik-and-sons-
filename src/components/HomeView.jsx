@@ -246,7 +246,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
             {[
               { Icon: ShoppingBag, label: "Shop online", detail: "Browse and check out", action: () => scrollTo("blanket") },
               { Icon: Phone, label: "Call us", detail: "(760) 874-2333", action: () => window.open("tel:+17608742333") },
-              { Icon: Instagram, label: "DM on Instagram", detail: "@lusikandsons", action: () => window.open("https://instagram.com", "_blank") },
+              { Icon: Instagram, label: "DM on Instagram", detail: "@lusikandsons", action: () => window.open("https://instagram.com", "_blank", "noopener,noreferrer") },
               { Icon: Mail, label: "Email inquiry", detail: "hello@lusikandsons.com", action: () => window.open("mailto:hello@lusikandsons.com") },
             ].map((c, i) => (
               <button key={i} onClick={c.action} className="w-full flex items-center gap-5 p-5 group hover:bg-[rgba(26,22,18,0.04)]" style={{ borderTop: i === 0 ? "1px solid rgba(26,22,18,0.1)" : "none", borderBottom: "1px solid rgba(26,22,18,0.1)" }}>
@@ -288,7 +288,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
                     5825 Lincoln Ave, Suite D<br />
                     Buena Park, CA 90620
                   </p>
-                  <a href="https://www.google.com/maps/search/?api=1&query=5825+Lincoln+Ave+Ste+D+Buena+Park+CA+90620" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-sm underline hover:opacity-60">
+                  <a href="https://www.google.com/maps/search/?api=1&query=5825+Lincoln+Ave+Ste+D+Buena+Park+CA+90620" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-sm underline hover:opacity-60">
                     Open in Maps <ArrowRight size={12} strokeWidth={1.5} />
                   </a>
                 </div>
@@ -330,15 +330,15 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
             <div>
               <p className="text-xs tracking-[0.2em] uppercase opacity-70 mb-4">Find a location near you</p>
               <div className="grid grid-cols-3 gap-2">
-                <button onClick={() => window.open("https://www.google.com/maps/search/USPS+near+me/", "_blank")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
+                <button onClick={() => window.open("https://www.google.com/maps/search/USPS+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
                   <MapPin size={18} />
                   <span style={{ fontWeight: 500 }}>USPS</span>
                 </button>
-                <button onClick={() => window.open("https://www.google.com/maps/search/UPS+Store+near+me/", "_blank")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
+                <button onClick={() => window.open("https://www.google.com/maps/search/UPS+Store+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
                   <MapPin size={18} />
                   <span style={{ fontWeight: 500 }}>UPS</span>
                 </button>
-                <button onClick={() => window.open("https://www.google.com/maps/search/FedEx+near+me/", "_blank")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
+                <button onClick={() => window.open("https://www.google.com/maps/search/FedEx+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
                   <MapPin size={18} />
                   <span style={{ fontWeight: 500 }}>FedEx</span>
                 </button>

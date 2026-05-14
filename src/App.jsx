@@ -133,13 +133,28 @@ export function App() {
   // --- CART HYDRATION FROM localStorage (guests) ---
   // We restore the guest cart immediately on mount. If the user logs in later,
   // we'll merge this with their saved DB cart.
+  //
+  // Shape validation: localStorage is mutable by the user, a browser
+  // extension, or a hostile other tab on the same origin. Even though
+  // server-side TRUSTED_PRODUCTS re-prices at checkout, a bogus
+  // negative price in storage would surface as a nonsense subtotal
+  // in the UI and a nonsense `totalCents` in analytics. Drop any
+  // line item that doesn't have the minimal shape we know about.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CONFIG.CART_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setCart(parsed);
-      }
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      const cleaned = parsed.filter((it) =>
+        it &&
+        typeof it === "object" &&
+        typeof it.id === "string" && it.id.length > 0 && it.id.length <= 256 &&
+        typeof it.name === "string" &&
+        Number.isFinite(it.price) && it.price >= 0 && it.price <= 100000 &&
+        Number.isFinite(it.qty)   && it.qty   >= 1 && it.qty   <= 99,
+      );
+      if (cleaned.length > 0) setCart(cleaned);
     } catch (_) {
       // Corrupted localStorage — ignore and continue with empty cart.
     }
@@ -1132,7 +1147,7 @@ export function App() {
               <p className="text-xs tracking-[0.3em] uppercase mb-4 opacity-70">{t("footer.findUs")}</p>
               <div className="flex flex-col gap-2 text-sm">
                 <a href="tel:+17608742333" className="hover:opacity-60 flex items-center gap-2"><Phone size={14} /> (760) 874-2333</a>
-                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:opacity-60 flex items-center gap-2"><Instagram size={14} /> @lusikandsons</a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-60 flex items-center gap-2"><Instagram size={14} /> @lusikandsons</a>
                 <a href="mailto:hello@lusikandsons.com" className="hover:opacity-60 flex items-center gap-2"><Mail size={14} /> hello@lusikandsons.com</a>
               </div>
               <p className="text-xs opacity-50 mt-4 leading-relaxed">
@@ -1297,7 +1312,7 @@ export function App() {
                       without competing. */}
                   <PaymentMethodsRow className="mt-4" />
                   <p className="text-xs text-center opacity-60 mt-3">
-                    Or <button onClick={() => window.open("https://instagram.com")} className="underline">DM us on Instagram</button> to order
+                    Or <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">DM us on Instagram</button> to order
                   </p>
                 </div>
               </>
@@ -1392,7 +1407,7 @@ export function App() {
                 {/* Tier 1 — the platforms that make sense for a craft business */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {SOCIAL_PLATFORMS.tier1.map((c, i) => (
-                    <a key={i} href={c.href} target="_blank" rel="noreferrer"
+                    <a key={i} href={c.href} target="_blank" rel="noopener noreferrer"
                        className="flex flex-col gap-2.5 p-4 hover:bg-[rgba(26,22,18,0.04)] transition"
                        style={{ border: "1px solid rgba(26,22,18,0.12)" }}>
                       <c.Icon size={20} strokeWidth={1.25} style={{ color: "#B08842" }} />
@@ -1412,7 +1427,7 @@ export function App() {
                   </summary>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-4">
                     {SOCIAL_PLATFORMS.tier2.map((c, i) => (
-                      <a key={i} href={c.href} target="_blank" rel="noreferrer"
+                      <a key={i} href={c.href} target="_blank" rel="noopener noreferrer"
                          className="flex flex-col items-center gap-1.5 p-3 hover:bg-[rgba(26,22,18,0.04)] transition text-center"
                          style={{ border: "1px solid rgba(26,22,18,0.08)" }}
                          data-tooltip={c.handle}

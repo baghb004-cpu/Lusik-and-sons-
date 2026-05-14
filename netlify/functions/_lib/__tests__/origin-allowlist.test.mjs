@@ -1,29 +1,19 @@
-// Open-redirect defense for the Stripe return URLs. We can't import
-// the helper without booting the whole create-checkout-session module
-// (Stripe initialization is module-level), so we re-implement the
-// allowlist inline and assert against the same patterns. If you
-// change the production helper, mirror the change here.
-//
+// ============================================================
+// Unit tests — _lib/origin.mjs (the open-redirect defense for
+// Stripe success/cancel URLs in create-checkout-session)
+// ============================================================
 // The risk if this drifts: an attacker sends Origin: https://evil.com,
 // Stripe sends the paid customer to evil.com after checkout, evil.com
 // shows a fake "please re-enter your card details" page. This file's
 // job is to make sure that's impossible.
+//
+// Imports the REAL function (no inline re-implementation) so a change
+// in production behavior can't slip past the suite.
+// ============================================================
+
 import { test } from "node:test";
 import assert from "node:assert/strict";
-
-function isAllowedOrigin(origin, env = {}) {
-  if (!origin || typeof origin !== "string") return false;
-  if (origin === env.URL) return true;
-  if (origin === env.DEPLOY_PRIME_URL) return true;
-  if (origin === "https://lusikandsons.com") return true;
-  if (/^http:\/\/localhost(?::\d+)?$/.test(origin)) return true;
-  if (env.URL) {
-    const site = new URL(env.URL).hostname;
-    const previewRe = new RegExp(`^https://[a-z0-9-]+--${site.replace(/\./g, "\\.")}$`);
-    if (previewRe.test(origin)) return true;
-  }
-  return false;
-}
+import { isAllowedOrigin } from "../origin.mjs";
 
 const PROD_ENV = { URL: "https://lusikandsons.com", DEPLOY_PRIME_URL: "https://lusikandsons.com" };
 
@@ -75,4 +65,26 @@ test("allows a real preview URL pattern", () => {
     true,
     "preview-style hash--host should match"
   );
+});
+
+test("rejects preview-style host when env.URL is missing", () => {
+  // Without env.URL we can't build the preview regex; the function
+  // should refuse rather than silently allow.
+  assert.equal(isAllowedOrigin("https://abc123--lusikandsons.com", {}), false);
+});
+
+test("rejects malformed env.URL gracefully (does not throw)", () => {
+  // A misconfigured Netlify env shouldn't crash the function — it
+  // should just deny the request and let the fallback take over.
+  const env = { URL: "not a url" };
+  assert.doesNotThrow(() => isAllowedOrigin("https://evil.com", env));
+  assert.equal(isAllowedOrigin("https://evil.com", env), false);
+});
+
+test("rejects DEPLOY_PRIME_URL pattern smuggling", () => {
+  // Just because DEPLOY_PRIME_URL is checked by exact match doesn't
+  // mean an attacker who guesses its value gets in — they'd have to
+  // present that EXACT string. Confirm the equality is strict.
+  const env = { URL: "https://lusikandsons.com", DEPLOY_PRIME_URL: "https://main--lusikandsons.netlify.app" };
+  assert.equal(isAllowedOrigin("https://main--lusikandsons.netlify.app.evil.com", env), false);
 });

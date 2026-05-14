@@ -17,6 +17,7 @@ import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
 import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { json }        from "./_lib/json.mjs";
+import { isAllowedOrigin } from "./_lib/origin.mjs";
 
 // Per-IP daily ceiling on checkout-session creation. A real
 // customer abandons + retries a few times across a day at worst;
@@ -97,33 +98,9 @@ function buildShippingOptions(subtotalCents) {
 //
 // Origin VALIDATION is load-bearing for security here: an attacker
 // can send any Origin header they want, and without a check Stripe
-// would happily redirect the customer to `https://evil.com/?order=
-// success` after payment — a perfect phishing setup ("your order
-// confirmation is on the next page, please re-enter your card").
-// Allow only origins we recognize as our own:
-//   - process.env.URL                — production canonical URL
-//   - process.env.DEPLOY_PRIME_URL    — deploy-preview / branch deploy
-//   - https://lusikandsons.com        — hardcoded production fallback
-//   - http://localhost:*              — `netlify dev` local
-// Anything else falls back to the hardcoded production URL.
-function isAllowedOrigin(origin) {
-  if (!origin || typeof origin !== "string") return false;
-  if (origin === process.env.URL) return true;
-  if (origin === process.env.DEPLOY_PRIME_URL) return true;
-  if (origin === "https://lusikandsons.com") return true;
-  // localhost variants for netlify dev. Match http://localhost(:port)?
-  // only — no IP literals, no other hostnames.
-  if (/^http:\/\/localhost(?::\d+)?$/.test(origin)) return true;
-  // Netlify deploy-preview / branch-deploy URLs are
-  // https://<hash>--<sitename>.netlify.app — accept any that match
-  // the site's URL pattern.
-  if (process.env.URL) {
-    const site = new URL(process.env.URL).hostname;
-    const previewRe = new RegExp(`^https://[a-z0-9-]+--${site.replace(/\./g, "\\.")}$`);
-    if (previewRe.test(origin)) return true;
-  }
-  return false;
-}
+// Allowlist implementation lives in _lib/origin.mjs so the unit
+// tests can import the SAME function the production code uses
+// instead of re-implementing it (and drifting silently).
 
 function buildReturnUrls(originHeader) {
   const fallback = process.env.URL || "https://lusikandsons.com";
@@ -181,6 +158,21 @@ async function handle(req, context) {
   if (!Array.isArray(cart) || cart.length === 0) {
     return json(400, { error: "Cart is empty" });
   }
+
+  // Idempotency key from the browser — forwarded to Stripe so a retry
+  // of the same POST (network blip, double-tap, refresh after a hung
+  // response) returns the original Checkout Session URL instead of
+  // creating a second one. Stripe retains the response for 24h keyed
+  // by this value. We accept up to 255 chars (Stripe's limit) of
+  // printable ASCII; anything malformed is silently dropped, which
+  // degrades to non-idempotent behavior — same risk as today, no
+  // regression. Required printable-ASCII whitelist avoids smuggling
+  // newlines into Stripe's HTTP header.
+  const rawKey = typeof body?.idempotency_key === "string" ? body.idempotency_key : "";
+  const idempotencyKey =
+    rawKey.length > 0 && rawKey.length <= 255 && /^[\x21-\x7e]+$/.test(rawKey)
+      ? rawKey
+      : null;
 
   // Sanitize the optional gift + social_consent payloads. The browser
   // can send anything here; without bounds an attacker could write a
@@ -335,6 +327,13 @@ async function handle(req, context) {
 
   let session;
   try {
+    // The Stripe SDK accepts a second `{ idempotencyKey }` arg on
+    // any POST. When the same key is replayed within 24h with an
+    // identical body, Stripe returns the original response (the
+    // same session.id + url) instead of creating a duplicate. We
+    // only attach the option when we received a well-formed key
+    // from the browser; without it, behavior is identical to before.
+    const stripeOpts = idempotencyKey ? { idempotencyKey } : undefined;
     session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -356,7 +355,7 @@ async function handle(req, context) {
         freeShippingApplied: String(subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS),
         automaticTaxEnabled: String(automaticTaxEnabled),
       },
-    });
+    }, stripeOpts);
   } catch (err) {
     // Log fields for the Netlify Functions log viewer. err.raw can
     // include partial card data on some error types, so omit it in

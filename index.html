@@ -191,9 +191,16 @@
 <meta name="apple-mobile-web-app-title" content="Lusik & Sons" />
 <meta name="mobile-web-app-capable" content="yes" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=Allura&display=swap" rel="stylesheet" />
+<!-- Self-hosted fonts. The woff2 files live in /public/fonts/ and the
+     @font-face declarations are in /public/fonts/fonts.css. See that
+     file's header for the regeneration procedure.
+
+     Why self-host: removes a CSP third-party origin (no fonts.googleapis
+     .com or fonts.gstatic.com allowlisting), removes a privacy concern
+     (Google can no longer fingerprint visitors via font CDN requests),
+     and removes a runtime dependency (a Google Fonts outage would
+     otherwise break our typography). -->
+<link rel="stylesheet" href="/fonts/fonts.css" />
 <!-- Netlify Identity widget. Replaces @supabase/supabase-js. Provides
      email/password signup, login, password reset, and JWT issuance.
      The widget is invisible by default; we drive it programmatically

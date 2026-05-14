@@ -77,7 +77,19 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
   // Shared add-to-cart for the primary CTA AND the mobile sticky
   // bar. Both pass the rect of whichever button was clicked so the
   // heart-burst animation originates from the right spot.
+  //
+  // Double-tap guard: at $65/blanket, a frustrated tap-tap on a
+  // sluggish phone would stack qty=2 (the SKU id collapses identical
+  // selections, see App.addToCart). The ref check rejects any second
+  // call within 600ms; the `adding` state additionally disables both
+  // buttons during the window so the user sees the tap registered.
+  const lastAddTsRef = useRef(0);
+  const [adding, setAdding] = useState(false);
   const addItemToCart = (originRect) => {
+    const now = Date.now();
+    if (adding || now - lastAddTsRef.current < 600) return;
+    lastAddTsRef.current = now;
+    setAdding(true);
     if (originRect) {
       onCartFeedback?.(
         originRect.left + originRect.width / 2,
@@ -92,6 +104,9 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
       customLine1: customLine1.trim(),  // optional name/initials, "" if blank
       customLine2: customLine2.trim(),  // optional year/date, "" if blank
     });
+    // Re-enable after the cart-drawer auto-open + heart-burst land.
+    // 600ms matches the throttle so the visual debounce ends in sync.
+    window.setTimeout(() => setAdding(false), 600);
   };
 
   const [activeImg, setActiveImg] = useState(0);
@@ -1116,8 +1131,15 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
             <button
               ref={addCtaRef}
               onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
-              className="flex-1 py-4 text-sm tracking-wide flex items-center justify-center gap-2"
-              style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
+              disabled={adding}
+              aria-busy={adding}
+              className="flex-1 py-4 text-sm tracking-wide flex items-center justify-center gap-2 transition-opacity"
+              style={{
+                background: "var(--ink)",
+                color: "var(--text-on-ink)",
+                opacity: adding ? 0.6 : 1,
+                cursor: adding ? "wait" : "pointer",
+              }}
             >
               Add to cart — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
             </button>
@@ -1143,7 +1165,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
             <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
               <Phone size={14} /> Call
             </button>
-            <button onClick={() => window.open("https://instagram.com")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
+            <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
               <Instagram size={14} /> DM
             </button>
             <button onClick={() => window.open("mailto:hello@lusikandsons.com?subject=Custom order inquiry")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
@@ -1184,8 +1206,15 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
             </div>
             <button
               onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
-              className="flex-1 py-3 text-sm tracking-wide flex items-center justify-center gap-2"
-              style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
+              disabled={adding}
+              aria-busy={adding}
+              className="flex-1 py-3 text-sm tracking-wide flex items-center justify-center gap-2 transition-opacity"
+              style={{
+                background: "var(--ink)",
+                color: "var(--text-on-ink)",
+                opacity: adding ? 0.6 : 1,
+                cursor: adding ? "wait" : "pointer",
+              }}
               aria-label={`Add to cart for $${((layout.priceCents / 100) * qty).toFixed(0)}`}
             >
               Add to cart <ArrowRight size={14} strokeWidth={1.5} />

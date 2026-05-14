@@ -66,3 +66,85 @@ test("GIFT_WRAP_PRICE_CENTS matches CONFIG in src/data/config.js", () => {
     `Pricing drift: server says ${GIFT_WRAP_PRICE_CENTS}, src/data/config.js says ${browserValue}. Update one of them.`
   );
 });
+
+// ============================================================
+// Per-SKU pricing drift — the real risk.
+// ============================================================
+// PRODUCT.layouts[].priceCents (browser display) must match
+// TRUSTED_PRODUCTS["blanket-<key>"].priceCents (server-trusted
+// for Stripe). Likewise CUSTOM_PRODUCTS.bib.price (in dollars,
+// integer) must match TRUSTED_PRODUCTS["bib"].priceCents / 100.
+//
+// If these drift, the customer sees one price in the UI and is
+// charged a different one at Stripe — silent revenue leak or
+// silent overcharge. Both are bad.
+//
+// We dynamic-import the browser data files because they're ESM
+// modules that may not coexist with this test in static analysis.
+// ============================================================
+const { PRODUCT }         = await import("../../../../src/data/product.js");
+const { CUSTOM_PRODUCTS } = await import("../../../../src/data/customProducts.js");
+const { TRUSTED_PRODUCTS } = await import("../trusted-products.mjs");
+
+test("every enabled PRODUCT.layout has a matching TRUSTED_PRODUCTS entry at the same price", () => {
+  for (const layout of PRODUCT.layouts) {
+    if (layout.enabled === false) continue; // disabled = not for sale
+    const key = `blanket-${layout.key}`;
+    const trusted = TRUSTED_PRODUCTS[key];
+    assert.ok(
+      trusted,
+      `Browser shows enabled layout '${layout.key}' but TRUSTED_PRODUCTS['${key}'] is missing — server will reject this SKU.`,
+    );
+    assert.equal(
+      layout.priceCents,
+      trusted.priceCents,
+      `Pricing drift for '${key}': browser shows ${layout.priceCents}, server trusts ${trusted.priceCents}.`,
+    );
+  }
+});
+
+test("PRODUCT.price (display dollars) matches the cheapest enabled layout / 100", () => {
+  // PRODUCT.price is the "starting at" headline. It must equal the
+  // minimum priceCents/100 across enabled layouts so the customer
+  // doesn't see e.g. "$65" but find no $65 variant exists.
+  const enabled = PRODUCT.layouts.filter((l) => l.enabled !== false);
+  assert.ok(enabled.length > 0, "No enabled layouts found in PRODUCT.layouts");
+  const minDollars = Math.min(...enabled.map((l) => l.priceCents)) / 100;
+  assert.equal(
+    PRODUCT.price,
+    minDollars,
+    `PRODUCT.price (${PRODUCT.price}) doesn't match the cheapest enabled layout's priceCents/100 (${minDollars}).`,
+  );
+});
+
+test("CUSTOM_PRODUCTS entries have matching TRUSTED_PRODUCTS prices", () => {
+  for (const [productKey, custom] of Object.entries(CUSTOM_PRODUCTS)) {
+    const trusted = TRUSTED_PRODUCTS[productKey];
+    assert.ok(
+      trusted,
+      `CUSTOM_PRODUCTS.${productKey} has no TRUSTED_PRODUCTS entry — server will reject this SKU.`,
+    );
+    assert.equal(
+      custom.price * 100,
+      trusted.priceCents,
+      `Pricing drift for '${productKey}': browser shows $${custom.price} (${custom.price * 100}¢), server trusts ${trusted.priceCents}¢.`,
+    );
+  }
+});
+
+test("every TRUSTED_PRODUCTS key matches a real browser SKU (no orphans)", () => {
+  // The reverse direction — a TRUSTED_PRODUCTS entry that no
+  // longer corresponds to a browser SKU isn't actively dangerous,
+  // but it's dead weight that drifts further from reality over
+  // time. Catching it now keeps the map honest.
+  const browserKeys = new Set([
+    ...PRODUCT.layouts.filter((l) => l.enabled !== false).map((l) => `blanket-${l.key}`),
+    ...Object.keys(CUSTOM_PRODUCTS),
+  ]);
+  for (const key of Object.keys(TRUSTED_PRODUCTS)) {
+    assert.ok(
+      browserKeys.has(key),
+      `TRUSTED_PRODUCTS['${key}'] has no matching browser SKU. Remove it or re-enable the matching layout.`,
+    );
+  }
+});

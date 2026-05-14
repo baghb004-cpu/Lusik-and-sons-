@@ -186,6 +186,16 @@ test.describe("checkout view", () => {
       expect(item.productKey, `cart item missing productKey: ${JSON.stringify(item)}`).toBeTruthy();
       expect(item.productKey).toMatch(/^(blanket-|bib$)/);
     }
+
+    // Idempotency key — must accompany every checkout POST so a
+    // retried request (network blip, double-tap, refresh) gets the
+    // original Stripe Checkout Session back instead of creating a
+    // duplicate. Shape must be printable ASCII so it can ride in a
+    // header without smuggling CRLF.
+    expect(typeof receivedBody.idempotency_key).toBe("string");
+    expect(receivedBody.idempotency_key.length).toBeGreaterThan(8);
+    expect(receivedBody.idempotency_key.length).toBeLessThanOrEqual(255);
+    expect(receivedBody.idempotency_key).toMatch(/^[\x21-\x7e]+$/);
   });
 });
 

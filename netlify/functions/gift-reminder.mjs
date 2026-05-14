@@ -22,6 +22,8 @@
 import { sql }                  from "./_lib/db.mjs";
 import { sendGiftReminderEmail,
          signReminderToken }    from "./_lib/email.mjs";
+import { isScheduledInvocation,
+         forbidden }            from "./_lib/scheduled.mjs";
 
 // Cap per run. Resend free tier is 100/day, 3000/month. With a
 // realistic opt-in rate this is far more than we'd ever batch in
@@ -35,7 +37,16 @@ const MAX_PER_RUN = 50;
 // to order another gift.
 const ELIGIBILITY_INTERVAL = "11 months";
 
-export default async () => {
+export default async (req) => {
+  // HTTP gate — Netlify scheduled functions are reachable at the
+  // public function URL. Without this check an attacker could
+  // race-trigger reminder sends and burn Resend quota at the
+  // tier's daily/monthly limits. The atomic claim below makes
+  // double-sends impossible per-order, but a public endpoint
+  // still wastes function invocations + email quota. See
+  // _lib/scheduled.mjs for trigger paths.
+  if (!(await isScheduledInvocation(req))) return forbidden();
+
   const baseUrl = process.env.URL || "https://lusikandsons.com";
 
   const eligible = await sql`
