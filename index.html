@@ -1042,6 +1042,7 @@ const ChevronLeft = (p) => <Icon {...p}><path d="m15 18-6-6 6-6"/></Icon>;
 const ChevronRight = (p) => <Icon {...p}><path d="m9 18 6-6-6-6"/></Icon>;
 const ChevronDown = (p) => <Icon {...p}><path d="m6 9 6 6 6-6"/></Icon>;
 const ChevronUp = (p) => <Icon {...p}><path d="m18 15-6-6-6 6"/></Icon>;
+const ZoomIn = (p) => <Icon {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></Icon>;
 const Heart = (p) => <Icon {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></Icon>;
 const Shield = (p) => <Icon {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></Icon>;
 const Truck = (p) => <Icon {...p}><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></Icon>;
@@ -10327,6 +10328,25 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
   };
 
   const [activeImg, setActiveImg] = useState(0);
+  // Lightbox state — tap the main gallery image to zoom into a full-
+  // viewport overlay. Escape, the X button, and clicking the backdrop
+  // all close it; pinch-zoom on mobile is enabled by the browser
+  // default since the overlay sets touch-action: pinch-zoom.
+  const [zoomOpen, setZoomOpen] = useState(false);
+  useEffect(() => {
+    if (!zoomOpen) return;
+    const onKey = (e) => { if (e.key === "Escape") setZoomOpen(false); };
+    document.addEventListener("keydown", onKey);
+    // Lock body scroll while the lightbox is open so swipe / scroll
+    // gestures on the zoomed image don't also scroll the page underneath.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [zoomOpen]);
+
   const [color, setColor] = useState(product.colors[0]);
   const [alphabet, setAlphabet] = useState(product.alphabets[0]);
   // Pick the first enabled layout as default. Customer changes via the picker.
@@ -10651,17 +10671,31 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
             </>
           ) : (
             <>
-              {/* PHOTO GALLERY MODE — real product photos with thumbnail navigation. */}
+              {/* PHOTO GALLERY MODE — real product photos with thumbnail navigation.
+                  Tap the main image to open a fullscreen lightbox (zoom + pan).
+                  The next/prev arrow buttons stop click propagation so they don't
+                  also trigger the zoom open. */}
               <div className="relative aspect-[4/5] overflow-hidden mb-4" style={{ background: "rgba(26,22,18,0.04)" }}>
-                <img src={product.gallery[activeImg]} alt={product.name} className="w-full h-full object-cover" style={galleryRotationStyle(activeImg)} />
-                <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm" style={{ background: "rgba(245,239,227,0.6)" }}>
+                <button
+                  type="button"
+                  onClick={() => setZoomOpen(true)}
+                  className="absolute inset-0 w-full h-full block"
+                  aria-label={`Zoom photo ${activeImg + 1} of ${product.gallery.length}`}
+                  style={{ cursor: "zoom-in", padding: 0, border: 0, background: "transparent" }}
+                >
+                  <img src={product.gallery[activeImg]} alt={product.name} className="w-full h-full object-cover pointer-events-none" style={galleryRotationStyle(activeImg)} />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label="Previous photo">
                   <ChevronLeft size={18} />
                 </button>
-                <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm" style={{ background: "rgba(245,239,227,0.6)" }}>
+                <button onClick={(e) => { e.stopPropagation(); next(); }} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label="Next photo">
                   <ChevronRight size={18} />
                 </button>
-                <div className="absolute bottom-3 right-3 px-3 py-1 text-xs tracking-wide" style={{ background: "rgba(26,22,18,0.7)", color: "#F5EFE3" }}>
+                <div className="absolute bottom-3 right-3 px-3 py-1 text-xs tracking-wide pointer-events-none" style={{ background: "rgba(26,22,18,0.7)", color: "#F5EFE3" }}>
                   {activeImg + 1} / {product.gallery.length}
+                </div>
+                <div className="absolute bottom-3 left-3 px-2.5 py-1 text-[0.6rem] tracking-[0.15em] uppercase pointer-events-none flex items-center gap-1.5" style={{ background: "rgba(26,22,18,0.6)", color: "#F5EFE3" }}>
+                  <ZoomIn size={11} strokeWidth={2} /> Tap to zoom
                 </div>
               </div>
               <div className="grid grid-cols-6 gap-2">
@@ -11350,6 +11384,80 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
             >
               Add to cart <ArrowRight size={14} strokeWidth={1.5} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          GALLERY LIGHTBOX
+          ============================================================
+          Fullscreen overlay rendered above everything else when the
+          customer taps the main gallery image. Shows the current photo
+          at fit-to-viewport size with arrow + thumbnail navigation,
+          escape / X / backdrop-click to close, pinch-zoom enabled on
+          touch devices.
+          ============================================================ */}
+      {zoomOpen && (
+        <div
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ background: "rgba(15,12,10,0.92)", zIndex: 9999 }}
+          onClick={() => setZoomOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Photo ${activeImg + 1} of ${product.gallery.length}, zoomed`}
+        >
+          {/* Image — object-contain so the whole photo fits, regardless
+              of aspect ratio. touchAction: pinch-zoom lets iOS users
+              pinch-to-zoom for more detail. Click stops propagation
+              so tapping the image itself doesn't close the lightbox. */}
+          <img
+            src={product.gallery[activeImg]}
+            alt={product.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[92vw] max-h-[88vh] object-contain"
+            style={{ ...galleryRotationStyle(activeImg), touchAction: "pinch-zoom", cursor: "zoom-out" }}
+          />
+
+          {/* Close button — top-right, picks up the cream theme so it's
+              visible against the dark backdrop. */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
+            aria-label="Close zoomed photo"
+            className="absolute top-4 right-4 w-11 h-11 flex items-center justify-center backdrop-blur-sm"
+            style={{ background: "rgba(245,239,227,0.15)", color: "#F5EFE3" }}
+          >
+            <X size={22} />
+          </button>
+
+          {/* Prev / next arrows. Only render when there's more than one
+              photo (a single-photo gallery doesn't need them). */}
+          {product.gallery.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); prev(); }}
+                aria-label="Previous photo"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center backdrop-blur-sm"
+                style={{ background: "rgba(245,239,227,0.15)", color: "#F5EFE3" }}
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); next(); }}
+                aria-label="Next photo"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center backdrop-blur-sm"
+                style={{ background: "rgba(245,239,227,0.15)", color: "#F5EFE3" }}
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
+
+          {/* Photo counter at the bottom. */}
+          <div
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1.5 text-xs tracking-[0.15em] uppercase pointer-events-none"
+            style={{ background: "rgba(245,239,227,0.15)", color: "#F5EFE3" }}
+          >
+            {activeImg + 1} / {product.gallery.length}
           </div>
         </div>
       )}
