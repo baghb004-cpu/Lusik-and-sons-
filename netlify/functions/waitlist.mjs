@@ -20,9 +20,9 @@
 // random strings can't pad rows for non-existent products.
 // ============================================================
 
-import { getStore } from "@netlify/blobs";
 import { sql }  from "./_lib/db.mjs";
 import { json } from "./_lib/json.mjs";
+import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 
 // Cheap bot filter — same honeypot pattern the old Netlify Forms
 // flow used. Real users never fill it; bots scraping inputs do.
@@ -39,19 +39,6 @@ const MAX_SIGNUPS_PER_IP_PER_DAY = 20;
 // scribble HTML or path tricks into the column; loose enough that
 // adding a new product never requires updating this function.
 const PRODUCT_KEY_PATTERN = /^[a-z][a-z0-9_-]{0,63}$/;
-
-async function checkAndIncrementIpBucket(ip) {
-  if (!ip) return { ok: false, used: 0 }; // deny when we can't identify the caller
-  const store = getStore({ name: "waitlist-rate", consistency: "strong" });
-  const today = new Date().toISOString().slice(0, 10);
-  const key = `${ip}/${today}`;
-  const current = await store.get(key, { type: "json" }) ?? { count: 0 };
-  if (current.count >= MAX_SIGNUPS_PER_IP_PER_DAY) {
-    return { ok: false, used: current.count };
-  }
-  await store.setJSON(key, { count: current.count + 1 });
-  return { ok: true, used: current.count + 1 };
-}
 
 export default async (req, context) => {
   if (req.method !== "POST") {
@@ -77,13 +64,10 @@ export default async (req, context) => {
     return json(400, { error: "Unknown product." });
   }
 
-  // Rate-limit by IP. If both IP and the resolved fallback fail we
-  // deny — better to reject one signup than to leak abuse-budget.
-  const ip = context?.ip
-          || req.headers.get("x-nf-client-connection-ip")
-          || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-          || null;
-  const rate = await checkAndIncrementIpBucket(ip);
+  // Rate-limit by IP via the shared bucket. Deny if no IP was
+  // recoverable — better to reject one signup than to leak budget.
+  const ip = ipFromRequest(req, context);
+  const rate = await checkRateLimit({ bucket: "waitlist", ip, limit: MAX_SIGNUPS_PER_IP_PER_DAY });
   if (!rate.ok) {
     return json(429, { error: "Too many signups from this network today. Try again tomorrow or email hello@lusikandsons.com." });
   }

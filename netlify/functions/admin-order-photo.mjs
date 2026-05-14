@@ -17,6 +17,7 @@
 import { getStore }                  from "@netlify/blobs";
 import { sql }                       from "./_lib/db.mjs";
 import { requireAdmin }              from "./_lib/auth.mjs";
+import { sniffImageType }            from "./_lib/image-sniff.mjs";
 import { json }                      from "./_lib/json.mjs";
 import { sendFinishedPhotoNotification } from "./_lib/email.mjs";
 
@@ -66,6 +67,15 @@ export default async (req, context) => {
     return json(413, { error: `Image must be 1 byte – ${MAX_BYTES} bytes` });
   }
 
+  // Magic-byte sniff — see _lib/image-sniff.mjs for rationale.
+  // Lusik's the only user of this endpoint, but admin endpoints
+  // get the same content-type-can't-lie treatment as customer
+  // ones; trust hierarchy doesn't excuse skipping defense in depth.
+  const sniffed = sniffImageType(bytes);
+  if (!sniffed || sniffed !== contentType) {
+    return json(415, { error: "Image content doesn't match declared type" });
+  }
+
   // Key pattern: <order_id>/finished-<timestamp>.<ext>
   // Folder-by-order keeps the namespace tidy and lets us
   // (eventually) store multiple shots per order without name
@@ -95,7 +105,14 @@ export default async (req, context) => {
   // finished_photo_emailed_at ONLY on a successful send so a
   // Resend outage doesn't permanently block the notification —
   // Lusik can re-upload to retry.
-  if (isFirstPhoto && updatedRows[0]) {
+  // Skip the email + timestamp stamp if the order row has no
+  // customer_email recorded (extremely rare — usually guest orders
+  // where Stripe didn't capture an email). Without this guard,
+  // sendFinishedPhotoNotification quietly returns false (no
+  // recipient) but `emailed` stays false forever, leaving us
+  // unable to ever stamp `finished_photo_emailed_at` and silently
+  // retrying on every re-upload.
+  if (isFirstPhoto && updatedRows[0] && updatedRows[0].customer_email) {
     const emailed = await sendFinishedPhotoNotification({ order: updatedRows[0] })
       .catch((err) => {
         console.warn("[admin-order-photo] finished-photo email failed:", err?.message ?? err);

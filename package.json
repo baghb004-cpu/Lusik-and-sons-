@@ -2,14 +2,44 @@
   "name": "lusik-and-sons",
   "private": true,
   "version": "0.0.0",
-  "description": "Root package.json so Netlify installs function dependencies (esp. `stripe`, which esbuild can't statically bundle and so must be present in node_modules at runtime).",
+  "type": "module",
+  "description": "Root package.json. Hosts the SPA build pipeline (Vite + Tailwind PostCSS — migration in progress, see CLAUDE.md § Vite migration) and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external — DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
   "engines": {
     "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test --test-reporter=spec netlify/functions/_lib/__tests__/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@netlify/blobs": "^8.0.0",
     "@netlify/functions": "^2.8.0",
     "@netlify/neon": "^0.1.0",
+    "@sentry/react": "^10.53.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "stripe": "^17.0.0"
+  },
+  "devDependencies": {
+    "@axe-core/react": "^4.11.3",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^25.7.0",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "serve": "^14.2.4",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^6.0.3",
+    "vite": "^5.4.0"
   }
 }

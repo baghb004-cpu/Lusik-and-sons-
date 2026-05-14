@@ -33,8 +33,8 @@
 //   2. Set ANTHROPIC_API_KEY in Netlify env vars
 // Until then, this function short-circuits at the API-key check
 // below and never reaches the dynamic import.
-import { getStore } from "@netlify/blobs";
 import { json } from "./_lib/json.mjs";
+import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 
 // ============================================================
 // SYSTEM PROMPT — Lusik & Sons brand voice + product knowledge
@@ -83,38 +83,14 @@ const MAX_MESSAGES_IN_HISTORY = 20;     // truncate older turns
 const MAX_USER_MESSAGE_CHARS  = 1500;   // cap each user input
 const MAX_OUTPUT_TOKENS       = 512;    // ~ a paragraph
 const MAX_TURNS_PER_SESSION   = 30;     // per-session throttle (24h)
-
-// ============================================================
-// RATE LIMITER (Netlify Blobs)
-// ============================================================
-// Keyed primarily on the resolved client IP (from context.ip /
-// x-nf-client-connection-ip) so rotating a localStorage uuid
-// can't reset the bucket. SessionId is folded in only as a
-// secondary disambiguator when the IP is missing. 24-hour
-// rolling window.
-// ============================================================
-async function checkAndIncrementRateLimit(ip, sessionId) {
-  const subject = ip || sessionId;
-  // Deny when we can't identify the caller. In production Netlify
-  // populates context.ip reliably, so this branch is mostly
-  // theoretical — but "fail open" is the wrong default for a
-  // budget-spending endpoint.
-  if (!subject) return { ok: false, used: 0 };
-  const store = getStore({ name: "chat-sessions", consistency: "strong" });
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const key = `${subject}/${today}`;
-  const current = await store.get(key, { type: "json" }) ?? { count: 0 };
-  if (current.count >= MAX_TURNS_PER_SESSION) {
-    return { ok: false, used: current.count };
-  }
-  // Netlify Blobs doesn't auto-expire based on metadata, so the
-  // keys persist until manually cleaned. That's acceptable here:
-  // each key embeds the YYYY-MM-DD date, so the namespace grows
-  // linearly with active days (not active sessions). A scheduled
-  // cleanup of pre-yesterday keys is a future polish.
-  await store.setJSON(key, { count: current.count + 1 });
-  return { ok: true, used: current.count + 1 };
-}
+// IP ceiling is HIGHER than the per-session limit so a NAT'd
+// gateway (corporate office, university, CGNAT'd mobile carrier
+// where thousands of users share an IP) doesn't lock everyone
+// out the moment one user finishes 30 turns. Set generously
+// enough that a real customer never hits it; tight enough that
+// an attacker rotating localStorage sessionIds runs out of
+// per-IP budget before they bankrupt us.
+const MAX_TURNS_PER_IP        = 200;
 
 export default async (req, context) => {
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -131,17 +107,47 @@ export default async (req, context) => {
     return json(400, { error: "messages array required" });
   }
 
-  // Throttle by client IP (rotating sessionId can't dodge it).
-  const ip = context?.ip
-          || req.headers.get("x-nf-client-connection-ip")
-          || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-          || null;
-  const rate = await checkAndIncrementRateLimit(ip, sessionId);
-  if (!rate.ok) {
+  // Throttle on TWO axes: per-session (tighter, 30/day) and per-IP
+  // (looser, 200/day). Both must pass. The per-session limit is what
+  // a real customer hits; the per-IP limit only fires when many
+  // sessions share an IP (CGNAT / office / shared wifi), letting
+  // legitimate users on the same network coexist while still
+  // capping the network as a whole. An attacker rotating localStorage
+  // sessionIds will burn through their per-IP budget; an attacker on
+  // a botnet hits the per-session limit on each node.
+  const ip = ipFromRequest(req, context);
+  if (!ip) {
+    // No IP means we can't identify the caller — refuse to spend
+    // Anthropic budget for an unidentifiable source.
+    return json(429, { error: "Couldn't identify caller; please try again." });
+  }
+  if (!sessionId || typeof sessionId !== "string" || sessionId.length > 64) {
+    return json(400, { error: "sessionId required (short string)" });
+  }
+  const sessionRl = await checkRateLimit({
+    bucket: "chat-session",
+    // Compose with IP so a stale sessionId from another customer
+    // (e.g. someone signing in on a shared computer) doesn't carry
+    // over the previous user's history bucket.
+    ip: `${ip}|${sessionId}`,
+    limit: MAX_TURNS_PER_SESSION,
+  });
+  if (!sessionRl.ok) {
     return json(429, {
       error: "You've reached the daily chat limit. Email hello@lusikandsons.com or text us directly — Lusik will get back to you.",
     });
   }
+  const ipRl = await checkRateLimit({
+    bucket: "chat-ip",
+    ip,
+    limit: MAX_TURNS_PER_IP,
+  });
+  if (!ipRl.ok) {
+    return json(429, {
+      error: "Too many chat sessions from this network today. Please try again later, or email hello@lusikandsons.com.",
+    });
+  }
+  const rate = sessionRl; // for the response shape below
 
   // Sanitize incoming history: strip anything that isn't a plain
   // user/assistant text message, cap user-message length, keep

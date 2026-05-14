@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Lusik &amp; Sons — Journal CMS</title>
+
+    <!-- Netlify Identity widget — required by Decap CMS to authenticate
+         the editor via the same Identity account that has the role.
+         Loaded BEFORE the Decap CMS script so Decap can find it on
+         window.netlifyIdentity. -->
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  </head>
+  <body>
+    <!-- Decap CMS itself. Loaded from its CDN — same hosting model
+         as the Identity widget. Decap reads config.yml in this
+         folder for its collection definitions. -->
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+
+    <script>
+      // Redirect after Identity login. Without this, after clicking
+      // the confirm link in their email, the user lands on the home
+      // page instead of the CMS — which is confusing for a content
+      // editor flow.
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.on("init", (user) => {
+          if (!user) {
+            window.netlifyIdentity.on("login", () => {
+              document.location.href = "/admin/";
+            });
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

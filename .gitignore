@@ -1,0 +1,28 @@
+# Node / npm
+node_modules/
+npm-debug.log*
+
+# Vite build output. The active production deploy still serves
+# index.html from the repo root; once the migration completes
+# and netlify.toml's `publish` flips to "dist", Netlify will
+# rebuild this on every deploy. Either way, it stays out of git.
+dist/
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+.playwright-cache/
+
+# Netlify CLI local state
+.netlify/
+
+# Environment-variable files (NEVER commit secrets)
+.env
+.env.*
+!.env.example
+
+# Editor / OS noise
+.DS_Store
+.vscode/
+.idea/
+*.swp

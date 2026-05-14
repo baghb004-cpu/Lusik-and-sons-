@@ -1,0 +1,47 @@
+# ============================================================
+# Lighthouse CI — accessibility + performance + SEO gates
+# ============================================================
+# Runs on every push to non-main branches + every PR. Builds
+# the site, serves dist/ via `vite preview`, runs Lighthouse
+# against three URLs (home, journal index, one journal post),
+# and asserts category scores against the floors in
+# lighthouserc.json.
+#
+# Failing thresholds in lighthouserc.json are 'error' for
+# accessibility / best-practices / SEO (these BLOCK the merge)
+# and 'warn' for performance (lets you see it slipping without
+# blocking a fix that intentionally trades perf for a feature).
+#
+# The Lighthouse report URL gets posted as a PR comment so
+# reviewers can click through to the full audit.
+# ============================================================
+
+name: Lighthouse
+
+on:
+  push:
+    branches-ignore: [ "main" ]
+  pull_request:
+
+jobs:
+  lighthouse:
+    name: Lighthouse audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build site
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        run: npx lhci autorun
+        env:
+          # Lighthouse posts results to its public-storage server
+          # under this token; the PR comment links back here.
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

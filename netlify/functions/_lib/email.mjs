@@ -39,6 +39,8 @@
 // can see it in the admin panel either way.
 // ============================================================
 
+import { CONTACT } from "./contact.mjs";
+
 const RESEND_API_URL = "https://api.resend.com/emails";
 
 // Shared brand palette. Previously redeclared inside every composer;
@@ -159,6 +161,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
   const isGift       = pending?.gift?.is_gift === true;
   const giftMessage  = pending?.gift?.message ?? "";
   const giftHidePrices = pending?.gift?.hide_prices === true;
+  const giftWrap     = pending?.gift?.wrap === true;
   const social       = pending?.social_consent ?? null;
 
   // Compact subject line — order number, total, brief item count.
@@ -192,6 +195,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     <div style="margin:20px 0;padding:14px 16px;background:#FAF1DF;border-left:3px solid ${accent};">
       <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:8px;">This is a gift</div>
       ${giftMessage ? `<div style="font-style:italic;color:${ink};margin-bottom:8px;line-height:1.5;">"${esc(giftMessage)}"</div>` : ""}
+      ${giftWrap ? `<div style="font-size:13px;color:${ink};margin-bottom:4px;"><strong>★ Gift wrap requested</strong> — tissue + twine.</div>` : ""}
       ${giftHidePrices ? `<div style="font-size:13px;color:${ink};"><strong>⚠ Hide prices from the packing slip.</strong></div>` : ""}
     </div>
   ` : "";
@@ -276,7 +280,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     `NEW ORDER — ${orderNumber}`,
     `${dollars(order.total_cents)} · ${new Date(order.created_at ?? Date.now()).toLocaleString()}`,
     "",
-    isGift ? `★ THIS IS A GIFT${giftMessage ? `\n  Message: "${giftMessage}"` : ""}${giftHidePrices ? "\n  ⚠ Hide prices from packing slip" : ""}\n` : "",
+    isGift ? `★ THIS IS A GIFT${giftMessage ? `\n  Message: "${giftMessage}"` : ""}${giftWrap ? "\n  ★ Gift wrap requested" : ""}${giftHidePrices ? "\n  ⚠ Hide prices from packing slip" : ""}\n` : "",
     `ITEMS`,
     itemLines,
     `  Total: ${dollars(order.total_cents)}`,
@@ -351,6 +355,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
       <div style="font-size:14px;color:${ink};line-height:1.6;">
         Shipping to${recipientName ? ` <strong>${esc(recipientName)}</strong>` : ""} in ${esc(ship.city ?? "")}, ${esc(ship.state ?? ship.region ?? "")}.
         ${giftMessage ? `<div style="margin-top:10px;font-style:italic;">Your message: "${esc(giftMessage)}"</div>` : ""}
+        ${pending?.gift?.wrap ? `<div style="margin-top:10px;font-size:13px;">Gift wrap added — wrap in tissue and twine before shipping.</div>` : ""}
         ${pending?.gift?.hide_prices ? `<div style="margin-top:10px;font-size:13px;">We'll keep prices off the packing slip as requested.</div>` : ""}
       </div>
     </div>
@@ -400,9 +405,9 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
       If anything is wrong — a name spelling, a color, second thoughts — please reach out now, before Lusik begins stitching:
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -436,14 +441,14 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     `  • Before it ships, we'll email a photo of the finished piece.`,
     `  • When it ships, you'll get a tracking number.`,
     "",
-    isGift ? `GIFT DETAILS\n  Shipping to${recipientName ? ` ${recipientName}` : ""} in ${ship.city ?? ""}, ${ship.state ?? ship.region ?? ""}.${giftMessage ? `\n  Your message: "${giftMessage}"` : ""}${pending?.gift?.hide_prices ? `\n  We'll keep prices off the packing slip as requested.` : ""}\n` : "",
+    isGift ? `GIFT DETAILS\n  Shipping to${recipientName ? ` ${recipientName}` : ""} in ${ship.city ?? ""}, ${ship.state ?? ship.region ?? ""}.${giftMessage ? `\n  Your message: "${giftMessage}"` : ""}${pending?.gift?.wrap ? `\n  Gift wrap will be added before shipping.` : ""}${pending?.gift?.hide_prices ? `\n  We'll keep prices off the packing slip as requested.` : ""}\n` : "",
     `ORDER ${orderNumber}`,
     itemLines,
     `  Total: ${dollars(order.total_cents)}`,
     "",
     `If anything is wrong, reach out now before Lusik begins stitching:`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,
@@ -530,9 +535,9 @@ export async function sendFinishedPhotoNotification({ order }) {
       One last chance — if anything looks off in the photo, tell us before it ships:
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -560,8 +565,8 @@ export async function sendFinishedPhotoNotification({ order }) {
     `tracking number by email when it goes out.`,
     "",
     `If anything looks off in the photo, tell us before it ships:`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,
@@ -674,9 +679,9 @@ export async function sendShippedNotification({ order }) {
       Questions, or want to order another?
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -706,8 +711,8 @@ export async function sendShippedNotification({ order }) {
     `  or remake it.`,
     "",
     `Questions or another order?`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,
@@ -782,9 +787,9 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
       Questions? It can take a few business days for the refund to show in your account — banks vary. If it's been longer than ten business days and you still don't see it:
     </p>
     <p style="margin:0 0 28px 0;font-size:14px;color:${ink};">
-      <a href="mailto:hello@lusikandsons.com?subject=Refund question - ${encodeURIComponent(orderNumber)}" style="color:${accent};text-decoration:none;">hello@lusikandsons.com</a>
+      <a href="mailto:${CONTACT.email}?subject=Refund question - ${encodeURIComponent(orderNumber)}" style="color:${accent};text-decoration:none;">${CONTACT.email}</a>
       ${" · "}
-      <a href="tel:+17608742333" style="color:${accent};text-decoration:none;">(760) 874-2333</a>
+      <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -815,8 +820,8 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
     isFullRefund ? "" : `Remaining balance: ${dollars((order.total_cents ?? 0) - refundedCents)}`,
     "",
     `If you don't see the refund after ten business days:`,
-    `  hello@lusikandsons.com`,
-    `  (760) 874-2333`,
+    `  ${CONTACT.email}`,
+    `  ${CONTACT.phoneDisplay}`,
     "",
     `Made by hand in Cypress, California.`,
     `${url}`,
@@ -925,22 +930,25 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
 // a stranger shouldn't be able to spoof an unsubscribe against
 // someone else's order. A self-validating signed URL solves both.
 //
-// Falls back to STRIPE_WEBHOOK_SECRET if REMINDER_SECRET isn't
-// set — Stripe's secret is already long-lived and high-entropy.
+// REMINDER_SECRET must be set explicitly. Older revisions of this
+// file fell back to STRIPE_WEBHOOK_SECRET, but cross-domain secret
+// reuse is a footgun: rotating Stripe's webhook secret (a routine
+// operational hygiene step) would silently invalidate every
+// outstanding unsubscribe URL — emails sent months earlier would
+// suddenly 400 with no diagnostic. Explicit-only means the failure
+// mode is "set the env var" once, not "you broke a year of links."
 // ============================================================
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 function reminderSecret() {
-  return process.env.REMINDER_SECRET
-      ?? process.env.STRIPE_WEBHOOK_SECRET
-      ?? "";
+  return process.env.REMINDER_SECRET ?? "";
 }
 
-// Surface a loud warning at module load when neither secret is set.
+// Surface a loud warning at module load when the secret is unset.
 // Without this, sign/verify return empty strings silently and every
 // unsubscribe link 400s with no diagnostic in the logs.
-if (!process.env.REMINDER_SECRET && !process.env.STRIPE_WEBHOOK_SECRET) {
-  console.warn("[email] Neither REMINDER_SECRET nor STRIPE_WEBHOOK_SECRET is set — gift-reminder unsubscribe links will not work. Set REMINDER_SECRET in Netlify env to enable.");
+if (!process.env.REMINDER_SECRET) {
+  console.warn("[email] REMINDER_SECRET is not set — gift-reminder unsubscribe links will not work. Set it in Netlify → Site → Environment to a long random string.");
 }
 
 function b64url(buf) {
@@ -1040,6 +1048,121 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     `Lusik & Sons · ${url}`,
     "",
     `You're getting this because you signed up for the ${productName} waitlist. This is a one-time send — we won't email you again from this list.`,
+  ].join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}
+
+// ============================================================
+// sendCartAbandonmentRecovery — "we held your spot" email
+// ============================================================
+// Sent by the stripe-webhook when a checkout.session.expired
+// event fires AND we still have the pending cart blob (meaning
+// the customer didn't complete payment — successful payments
+// delete the blob first). One-shot: the blob is deleted after
+// this send, so even if Stripe re-fires the event we won't
+// double-email.
+//
+// Tone: gentle, no urgency, no discount code. Hand-craft brand —
+// "we still have your spot" reads better than "20% off, ends
+// tonight!" Lists the items they were buying so a tap on the CTA
+// feels like picking up where they left off.
+//
+// Args:
+//   to         — recipient email (from pending.customerEmail or
+//                Stripe's customer_details.email)
+//   items      — array of { productName, variantLabel, quantity,
+//                unitPriceCents } shaped like the order-confirmation
+//                items. Built from the trusted-products map.
+//   totalCents — sum of items (no shipping/tax — we don't know
+//                what they would have picked)
+// ============================================================
+export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
+  if (!to) {
+    console.warn("[email] cart-recovery missing recipient; skipping");
+    return false;
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    console.warn("[email] cart-recovery has no items; skipping");
+    return false;
+  }
+
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
+  const subject = `We saved your spot.`;
+
+  const itemRows = items.map((it) => {
+    const qty = it.quantity > 1 ? ` <span style="color:${muted};">× ${it.quantity}</span>` : "";
+    const variant = it.variantLabel ? `<div style="font-size:13px;color:${muted};margin-top:4px;line-height:1.5;">${esc(it.variantLabel)}</div>` : "";
+    return `
+      <div style="padding:14px 0;border-top:1px solid #E8E1D2;">
+        <div style="font-weight:600;color:${ink};">${esc(it.productName)}${qty}</div>
+        ${variant}
+      </div>
+    `;
+  }).join("");
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 18px 0;letter-spacing:-0.01em;line-height:1.2;">
+      We saved your spot.
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">
+      You started a checkout with us and didn't finish — no worries. Here's what was in your cart.
+    </p>
+
+    <div style="margin:24px 0;border-bottom:1px solid #E8E1D2;">
+      ${itemRows}
+      <div style="padding:14px 0;border-top:1px solid #E8E1D2;display:flex;justify-content:space-between;">
+        <span style="color:${muted};">Subtotal</span>
+        <span style="font-weight:600;">${dollars(totalCents)}</span>
+      </div>
+    </div>
+
+    <div style="margin:24px 0 28px 0;">
+      <a href="${esc(url)}/" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+        Pick up where you left off →
+      </a>
+    </div>
+
+    <p style="font-size:14px;color:${muted};margin:0 0 12px 0;">
+      Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
+      You're getting this because you started a checkout on lusikandsons.com. This is a one-time send — we won't email you again about this cart.
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS`,
+    `We saved your spot.`,
+    "",
+    `You started a checkout with us and didn't finish — no worries. Here's what was in your cart:`,
+    "",
+    ...items.map((it) => `  • ${it.productName}${it.quantity > 1 ? ` × ${it.quantity}` : ""}${it.variantLabel ? `\n      ${it.variantLabel}` : ""}`),
+    "",
+    `  Subtotal: ${dollars(totalCents)}`,
+    "",
+    `Pick up where you left off: ${url}/`,
+    "",
+    `Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
+    "",
+    `Lusik & Sons · ${url}`,
+    "",
+    `You're getting this because you started a checkout on lusikandsons.com. This is a one-time send — we won't email you again about this cart.`,
   ].join("\n");
 
   return await sendEmail({ to, subject, html, text });

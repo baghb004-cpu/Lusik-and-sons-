@@ -16,6 +16,7 @@
 import { getStore }    from "@netlify/blobs";
 import { randomBytes } from "node:crypto";
 import { requireUser } from "./_lib/auth.mjs";
+import { sniffImageType } from "./_lib/image-sniff.mjs";
 import { json }        from "./_lib/json.mjs";
 
 const MAX_BYTES        = 2 * 1024 * 1024;
@@ -56,6 +57,17 @@ export default async (req, context) => {
   }
   if (bytes.length === 0 || bytes.length > MAX_BYTES) {
     return json(413, { error: `Image must be 1 byte – ${MAX_BYTES} bytes` });
+  }
+
+  // Magic-byte sniff. The browser-supplied `contentType` is a hint
+  // only; an attacker can label HTML or JS as `image/png` and serve
+  // it through avatar-get to confuse downstream consumers that don't
+  // honor nosniff. Reject when the leading bytes don't match the
+  // claimed type. (X-Content-Type-Options: nosniff is set on the
+  // response, but defense-in-depth is cheap.)
+  const sniffed = sniffImageType(bytes);
+  if (!sniffed || sniffed !== contentType) {
+    return json(415, { error: "Image content doesn't match declared type" });
   }
 
   // Path: <user_id>/avatar-<ts>-<nonce>.<ext>. The random nonce

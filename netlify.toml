@@ -15,10 +15,14 @@
 # ============================================================
 
 [build]
-  # No build step. The static site is one file: index.html at the repo root.
-  # Functions installed automatically from their own package.json.
-  publish     = "."
-  command     = ""
+  # Vite migration complete (Phase 10 flip). The SPA is now built from
+  # src/ into dist/ on every deploy. Netlify CI runs `npm ci` to install
+  # root dependencies (Vite, React, Tailwind PostCSS, etc.) then
+  # `npm run build` (= `vite build`) to produce dist/. Functions are
+  # still installed from their own netlify/functions/package.json
+  # independently.
+  publish     = "dist"
+  command     = "npm ci && npm run build"
 
 [functions]
   directory = "netlify/functions"
@@ -61,3 +65,98 @@
 
 # Don't redirect /index.html or static files — the default behavior already
 # serves them correctly from `publish`.
+
+# ============================================================
+# SECURITY HEADERS
+# ============================================================
+# Every response on every path gets the same baseline headers.
+# This is the cheapest, broadest defense available — they raise
+# the cost of every common browser-side attack without touching
+# the application code.
+#
+# Header-by-header rationale:
+#
+# Content-Security-Policy
+#   Whitelists exactly which origins the browser is allowed to
+#   load from. Anything not on the list — including a script the
+#   attacker manages to inject via a stored XSS — is silently
+#   blocked by the browser. The current policy is necessarily
+#   permissive because the site loads Tailwind, React, and Babel
+#   from CDNs and runs Babel Standalone (eval) at boot to
+#   transpile JSX. Once the Vite migration ships, this whole
+#   block tightens substantially: 'unsafe-eval' can come out,
+#   the CDN allow-list shrinks to nothing, and we can switch to
+#   nonce-based 'unsafe-inline' replacement.
+#
+#   Origins permitted today:
+#     - 'self'                            our own pages + /img/* + functions
+#     - cdn.tailwindcss.com               Tailwind runtime JIT
+#     - unpkg.com                         React UMD + Babel Standalone
+#     - identity.netlify.com              Netlify Identity widget
+#     - fonts.googleapis.com (CSS)        Google Fonts stylesheet
+#     - fonts.gstatic.com   (font files)  Google Fonts binaries
+#     - cloud.umami.is                    optional analytics
+#     - https: (img-src only)             customer photos / Netlify Blob CDN
+#     - data:                             base64 inline images + fonts
+#     - api.anthropic.com (connect-src)   ChatAssistant when enabled
+#
+#   frame-ancestors 'none' = nobody can iframe our site, which
+#   kills click-jacking and most UI-redress attacks dead. (Also
+#   subsumes X-Frame-Options: DENY for modern browsers, but we
+#   send both because old browsers ignore frame-ancestors.)
+#
+#   form-action 'self' https://checkout.stripe.com — the only
+#   place a form on our site is allowed to POST to. Stripe
+#   Checkout is a navigation (window.location.href), not a form
+#   submit, so this is belt-and-suspenders for a future <form
+#   action> attack.
+#
+# Strict-Transport-Security
+#   "Always use HTTPS for this domain for the next 2 years; apply
+#   to every subdomain too." Browsers remember this header even
+#   after the user closes the tab. Once it's set, a man-in-the-
+#   middle attempt at downgrade to plaintext HTTP is auto-blocked
+#   client-side. `preload` is intentionally NOT included yet —
+#   only flip it on once lusikandsons.com is committed to HTTPS
+#   forever (irrevocable for ~6 months once Chrome picks it up).
+#
+# X-Frame-Options
+#   Legacy alias for `frame-ancestors 'none'`. Some old browsers
+#   only honor this one.
+#
+# X-Content-Type-Options
+#   `nosniff` tells the browser not to MIME-sniff a response that
+#   came with text/plain or application/octet-stream; render it
+#   as the declared type or nothing. Defends against the
+#   upload-this-as-image-but-it's-HTML attack the magic-byte
+#   sniffer in _lib/image-sniff.mjs already rejects server-side.
+#
+# Referrer-Policy
+#   `strict-origin-when-cross-origin` sends full referrer to our
+#   own domain (so logs see internal navigation) but only the
+#   origin to cross-origin HTTPS (so Stripe sees "this customer
+#   came from lusikandsons.com" but not which product page), and
+#   sends nothing on HTTPS→HTTP downgrades.
+#
+# Permissions-Policy
+#   The site doesn't use camera, microphone, geolocation, USB,
+#   payment-request API, etc. Disabling them with this header
+#   means a future stored XSS can't pop a "share your location"
+#   prompt to phish the customer.
+#
+# Cross-Origin-Opener-Policy
+#   Lets a future BroadcastChannel-based cross-tab signal work
+#   safely without exposing window.opener to cross-origin pages.
+#   Cheap to add even before we need it.
+# ============================================================
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://identity.netlify.com https://cloud.umami.is; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://api.anthropic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'; upgrade-insecure-requests"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+    Cross-Origin-Opener-Policy = "same-origin"

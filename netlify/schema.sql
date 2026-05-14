@@ -199,3 +199,53 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
+
+-- ============================================================
+-- Defensive CHECK constraints on orders status columns
+-- ============================================================
+-- Both `orders.status` and `orders.fulfillment_status` are TEXT
+-- with a documented enum set in the column comments. The browser
+-- never touches these directly (every write goes through a
+-- Function that whitelists values in JS), but defense-in-depth
+-- means the DB itself rejects a typo or a future-Claude bug that
+-- writes the wrong string. Without these constraints a malformed
+-- UPDATE silently lands a never-rendered value and the order
+-- card on the customer's account page just shows "unknown."
+--
+-- Idempotent: DROP IF EXISTS + ADD CONSTRAINT so re-running the
+-- schema doesn't error. Applying for the first time on a DB with
+-- existing data MAY fail if any row holds a value outside the
+-- whitelist — in that case, run
+--   SELECT DISTINCT status FROM orders;
+--   SELECT DISTINCT fulfillment_status FROM orders;
+-- first, fix the outliers (UPDATE ... SET status = 'paid' WHERE
+-- status NOT IN (...)), then re-apply this schema file.
+-- ============================================================
+
+-- orders.status: lifecycle of payment, NOT of fulfillment.
+--   paid                 — default at insert (webhook)
+--   refunded             — full refund applied
+--   partially_refunded   — partial refund applied (some money returned)
+--   cancelled            — manual cancellation; rarely used
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+ALTER TABLE orders ADD CONSTRAINT orders_status_check
+  CHECK (status IN ('paid', 'refunded', 'partially_refunded', 'cancelled'));
+
+-- orders.fulfillment_status: where the physical work is in Lusik's
+-- pipeline. Includes 'in_progress' as the legacy default written by
+-- stripe-webhook AND the more granular states Lusik picks from in
+-- the admin view (awaiting_lusik → in_production → quality_check →
+-- ready_to_ship → shipped → delivered). The 'refunded' value is set
+-- only on a FULL refund (partial leaves fulfillment alone).
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_fulfillment_status_check;
+ALTER TABLE orders ADD CONSTRAINT orders_fulfillment_status_check
+  CHECK (fulfillment_status IN (
+    'in_progress',
+    'awaiting_lusik',
+    'in_production',
+    'quality_check',
+    'ready_to_ship',
+    'shipped',
+    'delivered',
+    'refunded'
+  ));

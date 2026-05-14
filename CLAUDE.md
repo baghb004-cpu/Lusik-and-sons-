@@ -144,7 +144,13 @@ The `orders.shipped_at` timestamp gates this. Once it's set (the first save with
 
 The handler looks up the order by `stripe_payment_intent` (captured at order insert), updates `orders.status` to `refunded` or `partially_refunded`, flips `fulfillment_status` to `refunded` only on a full refund (partial refunds let the customer still receive most of their order), and stamps `refunded_cents` with the cumulative refund total. The cumulative-vs-stored comparison gates dedupe — Stripe sometimes fires the event multiple times for the same refund.
 
-**Stripe dashboard subscription requirement**: in the Stripe webhook configuration, both events need to be subscribed: `checkout.session.completed` AND `charge.refunded`. Without the second, the refund handling code never gets a chance to run.
+**On checkout abandonment** — the `stripe-webhook` Function also handles `checkout.session.expired` events (Stripe fires these ~24h after a session is created if the customer didn't pay):
+
+6. **Cart recovery** (`sendCartAbandonmentRecovery`) — "We saved your spot." Lists the items they were buying (productName, qty, variant), the subtotal computed from `TRUSTED_PRODUCTS`, and a CTA back to the home page. No urgency, no discount code — the brand voice is "we held it for you," not "act now."
+
+The handler reads the pending-orders Blob keyed by `session.id` (the same blob the success path normally consumes + deletes). Presence of the blob at expiry means the customer didn't complete payment. It sends the email and then deletes the blob, so a Stripe re-fire of the event can never produce a second email. If we have no recipient email or no recognizable items in the cart, the handler skips the send but still cleans up the blob.
+
+**Stripe dashboard subscription requirement**: in the Stripe webhook configuration, three events need to be subscribed: `checkout.session.completed`, `charge.refunded`, AND `checkout.session.expired`. Without the third, abandoned carts get no recovery email.
 
 Required env vars (set in Netlify dashboard → Site → Environment):
 
@@ -273,8 +279,19 @@ Cart-ID shape is load-bearing for this flow: `mapLegacyId()` in `index.html` (se
 
 - Install the Netlify CLI once: `npm install -g netlify-cli`. Then `netlify dev` runs the static `index.html` + Functions + Identity on a single port (default `http://localhost:8888`). Use that, not `python3 -m http.server` — the latter won't proxy `/.netlify/functions/*` calls.
 - Hard-reload (Cmd/Ctrl-Shift-R) is usually necessary after edits because of the Babel transpile cache and Tailwind CDN behavior.
-- There are no automated tests. Verify changes by clicking through: home → product → add to cart (with each preset) → cart drawer → checkout (Stripe hand-off can be observed but actual payment requires the real Stripe test keys configured in Netlify).
 - Pre-launch checklist embedded near the top of `<head>` (OpenGraph block, lines 11–35) lists external assets that must exist at deploy time: `/og-image.jpg` (1200×630), `/favicon.ico`, `/apple-touch-icon.png`.
+
+### Test suite
+
+Two layers, both run by `npm test`:
+
+1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`) — Node's built-in test runner. No extra install. Tests the security-critical helpers: `requireUser`/`requireAdmin` shape and ADMIN_EMAILS fallback (`auth.test.mjs`), the HMAC unsubscribe-token sign/verify roundtrip (`email-tokens.test.mjs`), and the `TRUSTED_PRODUCTS` price-map shape + that the live blanket + bib SKUs exist (`trusted-products.test.mjs`). Run with `npm run test:unit`.
+
+2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a static-served `index.html`. Catches the kind of bugs that broke the site mid-session: JSX runtime crashes, missing imports, broken routes, cart-flow regressions. Backend calls are stubbed via `page.route()` since these run against a static server with no Functions wired up. Run with `npm run test:e2e` (first time: `npm run test:install` to pull the Chromium binary).
+
+The key E2E test that would have caught the cart-ID mismatch bug is in `smoke.spec.mjs` → "Pay with Stripe POSTs to create-checkout-session" — it intercepts the function call and asserts every cart item's `productKey` matches the shape `TRUSTED_PRODUCTS` recognizes.
+
+CI runs both on every push and PR (`.github/workflows/test.yml`).
 
 ### One-time Netlify setup (when you spin up a fresh site)
 
@@ -283,9 +300,9 @@ Cart-ID shape is load-bearing for this flow: `mapLegacyId()` in `index.html` (se
 3. From a local checkout, `netlify link`, then `netlify database init` to provision the Postgres database.
 4. Apply the schema: `netlify db query --file netlify/schema.sql`.
 5. Set environment variables in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to **both** `checkout.session.completed` and `charge.refunded` (so refunds you issue from the Stripe dashboard automatically update the order + email the customer). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to **all three** of `checkout.session.completed`, `charge.refunded`, and `checkout.session.expired` (records new orders, handles refunds, fires the cart-abandonment recovery email). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 7. (Optional but recommended) Sign up at [resend.com](https://resend.com) — free tier covers 100 emails/day. Generate an API key under "API Keys" and set it as `RESEND_API_KEY` in Netlify. Set `ADMIN_NOTIFICATION_EMAIL` to wherever Lusik wants to receive new-order notifications. (Optionally verify `lusikandsons.com` in Resend → Domains and set `RESEND_FROM_EMAIL` to `Lusik & Sons <orders@lusikandsons.com>`; until then, emails come from `onboarding@resend.dev` which often lands in spam.)
-8. Set `REMINDER_SECRET` to a long random string. Used as the HMAC key for gift-reminder unsubscribe URLs (see "Gift-occasion reminder" below). If unset the code falls back to `STRIPE_WEBHOOK_SECRET` for backwards compatibility — works, but cross-domain secret reuse is a smell. Set it explicitly.
+8. Set `REMINDER_SECRET` to a long random string. Used as the HMAC key for gift-reminder unsubscribe URLs (see "Gift-occasion reminder" below). **Required** — there is no longer a fallback. Without it, unsubscribe links 400 with a warning logged at function start. Rotating this secret invalidates every outstanding unsubscribe link, which is why it must be its own value (rotating Stripe's webhook secret should never touch unsubscribe links).
 
 ## Features added in the hardening / polish pass
 
@@ -332,6 +349,165 @@ The `BlanketLayoutPreview` component went through several iterations during the 
 
 ### Email composers (`_lib/email.mjs`)
 Shared `PALETTE` and `baseUrl()` exported from `_lib/email.mjs` so composers (and `unsubscribe-gift-reminder.mjs`) don't redeclare the brand palette in every function.
+
+## Vite migration (in progress)
+
+The single-file SPA is being migrated to a Vite-built source tree, in
+phases, on the `claude/review-fix-website-d0rFL` branch. The point of
+the migration is to delete the runtime Babel-Standalone transpile +
+Tailwind CDN + React UMD dependency chain. Cost stays on Netlify's
+free Starter tier; backend (`netlify/functions/`) is NOT touched at any
+phase.
+
+**Production is unaffected until the final flip.** Every intermediate
+checkpoint leaves the site building and `netlify.toml`'s `publish = "."`
+keeps serving the hand-edited `index.html` from the repo root. The new
+`dist/` output is gitignored and not deployed until the last phase
+flips `publish = "dist"` and `command = "npm ci && npm run build"`.
+
+### Files in place after Phase B (scaffold)
+
+| File | Role |
+| --- | --- |
+| `vite.config.mjs` | Vite + React plugin, `build.outDir = "dist"`, `assetsInlineLimit: 0` so base64 photo migration doesn't get auto-inlined, dev-server proxy to functions on :9999 |
+| `tailwind.config.mjs` | PostCSS Tailwind config, `content` scans `index.html` + `src/**/*` |
+| `postcss.config.mjs` | tailwindcss + autoprefixer |
+| `src/main.jsx` | Stub entry — renders one line into `#vite-root` if present, otherwise no-op |
+| `src/styles/index.css` | `@tailwind` directives; the giant inline `<style>` block from index.html will paste in here later |
+| `.gitignore` | New: ignores `node_modules`, `dist`, Playwright artifacts, `.env*` |
+
+`npm run build` works locally and produces `dist/`. `npm run dev`
+spins up the Vite dev server. Neither is on the deploy path yet.
+
+### Phase plan (10 phases; one or two per session)
+
+Each phase is a single commit that leaves the repo building. Order is
+low-risk → high-risk so a bad surprise late in the sequence doesn't
+require unwinding earlier work.
+
+1. **Done — Scaffold** — `vite.config.mjs`, Tailwind/PostCSS configs,
+   `src/main.jsx` stub, `.gitignore`, devDependencies added.
+2. **Static assets** — `git mv` `/img/*` → `/public/img/*`. Move
+   `manifest.webmanifest`, `robots.txt`, `sitemap.xml`, `og-image.jpg`,
+   favicons into `/public/`. Vite copies `/public/*` verbatim into
+   `dist/` so the URLs don't change.
+3. **Data modules (pure)** — extract `PRODUCT`, `CUSTOM_PRODUCTS`,
+   `CATALOG`, `CONFIG`, `SOCIAL_PLATFORMS`, `SHIPPING_CARRIERS`,
+   `JOURNAL_POSTS`, `LANGUAGES`, `TRANSLATIONS` from `index.html` into
+   `src/data/*.js`. Pure data, no React; zero behavior change.
+4. **Library modules** — extract the `auth`, `db`, `analytics`,
+   `cartId` (`mapLegacyId`), and `tracking` (`getTrackingUrl`)
+   wrappers into `src/lib/*.js`. Same — non-React.
+5. **i18n** — extract `LangContext`, `LanguageProvider`, `useT` into
+   `src/i18n/LangContext.jsx`.
+6. **Leaf components** — `Icon`, all the per-icon SVGs, `Skeleton`,
+   `HeartBurst`, `CollapsibleSection`, `SwipeableRow`, `ToastProvider`,
+   `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection`,
+   `CustomerPhotosSection`.
+7. **Widget components** — `BackToTopButton`, `TextUsWidget`,
+   `ChatAssistant`, `MobileBottomNav`, `ActiveOrderTopBar`,
+   `WaitlistModal`, `PolicyModal`.
+8. **Domain components (bottom-up)** —
+   - product: `BlanketLayoutPreview` → `ProductTemplate` →
+     `CustomProductCard` → `ProductShowcase`
+   - account: `OrderCard` → `OrderProgressTimeline` →
+     `SavedDesignsSection` → `OrderHistory` → `AccountView`
+   - admin: `AdminOrderRow` → `WaitlistsPanel` → `AdminView`
+   - journal: `JournalListView` → `JournalPostView` → `JournalView`
+   - home + checkout: `HomeView`, `TrackingForm`, `NewsletterForm`,
+     `CheckoutView`, `AuthDrawer`
+9. **App + entry flip** — move `<App>` body into `src/App.jsx`, move
+   the `ReactDOM.createRoot(...).render(...)` call into `src/main.jsx`.
+   Rewrite the now-minimal `index.html` to only contain `<head>`
+   metadata + `<div id="root"></div>` + `<script type="module"
+   src="/src/main.jsx"></script>`. **DO NOT yet flip netlify.toml.**
+10. **The flip** — update `netlify.toml`:
+    ```toml
+    [build]
+      publish = "dist"
+      command = "npm ci && npm run build"
+    ```
+    Run a real $0.50 test purchase on the deploy preview before merging.
+    On merge, Netlify rebuilds and the site is now Vite-served.
+
+### Loadbearing risks during migration
+
+- **The base64 IIFE photos** at `~line 1011` of `index.html`. The
+  values are referenced from the JSX as `<img src={IMG_HERO}>`.
+  When extracted, move every `IMG_*` constant to a real file in
+  `/public/img/` and switch the references to URL strings (the
+  CONFIG.ROTATED_GALLERY_INDEXES mechanism stays untouched).
+- **Dynamic Tailwind class names**. PostCSS Tailwind only emits
+  classes it can statically see. Before flipping production, grep:
+  ```
+  rg '`[^`]*\$\{[^}]*\}[^`]*`' index.html src/ | grep -E '(bg-|text-|border-)'
+  ```
+  Each match either gets a `safelist` entry in `tailwind.config.mjs`
+  or refactors to inline `style={{}}` (recommended for arbitrary
+  hex values like DMC palette colors).
+- **The cart-ID shape is load-bearing for Stripe**. `mapLegacyId`
+  in `CheckoutView` must match what `_lib/trusted-products.mjs`
+  recognizes. The E2E smoke test `Pay with Stripe POSTs to
+  create-checkout-session` is the safety net — keep it green.
+- **React 18 automatic batching** changed how `setState` flushes
+  inside touch handlers. If `SwipeableRow` feels laggier
+  post-migration, wrap state updates in `flushSync`.
+- **netlify-identity-widget stays loaded from
+  `identity.netlify.com`** via a `<script>` tag in `index.html`.
+  Do NOT switch to the npm package — Netlify's own confirmation
+  redirect handler expects `window.netlifyIdentity` from their CDN.
+
+### Anti-patterns (do NOT do during migration)
+
+- Do NOT introduce a state-management library.
+- Do NOT split `CONFIG` — it stays a single dial-board file.
+- Do NOT add a router library; the `/journal*` effect is enough.
+- Do NOT migrate to TypeScript in the same PR series.
+- Do NOT merge `package.json` with `netlify/functions/package.json`.
+- Do NOT touch `netlify/functions/` in any migration commit.
+- Do NOT change the cart-ID shape; the smoke test will catch it.
+
+## TypeScript migration (in progress, gradual)
+
+The repo has a `tsconfig.json` and a `npm run typecheck` script. New code should be written as `.ts` / `.tsx`. Existing `.js` / `.jsx` files coexist via Vite's mixed-file support + tsconfig's `allowJs: true, checkJs: false` (so existing JS isn't yet type-checked, just allowed).
+
+### Already migrated to .ts (the foundation layer)
+
+- `src/data/languages.ts`
+- `src/data/shippingCarriers.ts`
+- `src/data/socialConsentPlatforms.ts`
+- `src/lib/cartId.ts`
+- `src/lib/tracking.ts`
+- `src/lib/galleryRotation.ts`
+- `src/lib/designUrl.ts`
+
+Each exports proper types (e.g. `ShippingCarrier`, `DesignPickerState`, `ResolvedDesign`). Downstream `.jsx` files import these and get autocomplete + type-checking at the boundary — but only when the .jsx consumer is itself migrated to .tsx.
+
+### To continue the migration (recommended order)
+
+1. **Remaining data modules**: `customProducts.js`, `catalog.js`, `socialPlatforms.js`, `journalPosts.js`, `config.js`, `product.js`. Each is mechanical — define interfaces matching the object shape, append `: TheInterface` to the export, done.
+
+2. **`src/lib/auth.js` + `src/lib/db.js`**: These wrap external services (Identity, Functions). Define interfaces for the `User`, `Order`, `Profile`, `Address`, `SavedDesign`, etc. — these become the type contract for every component that displays one of these.
+
+3. **`src/lib/analytics.js`**: Trivial. One function.
+
+4. **`src/lib/errorReporting.js`**: Trivial.
+
+5. **`src/i18n/translations.js`**: Generate a TypeScript type for the translation key paths so `useT()` returns a `(key: TranslationKey, vars?: …) => string` instead of `any`. Lots of safety upside — typos in translation keys become compile errors. Some work to map the nested object to a dotted-path union type.
+
+6. **`src/components/icons.jsx` → `icons.tsx`**: Define `IconProps = { size?: number; strokeWidth?: number; className?: string; style?: CSSProperties }` once, every icon uses it.
+
+7. **Leaf components**: `Skeleton`, `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection`, `CustomerPhotosSection`, `HeartBurst`, `CollapsibleSection`, `SwipeableRow`, `ToastProvider`. Define a Props interface, annotate.
+
+8. **Widget components**: `BackToTopButton`, `TextUsWidget`, `MobileBottomNav`, `ActiveOrderTopBar`, `PolicyModal`, `AuthDrawer`, `ChatAssistant`, `WaitlistModal`.
+
+9. **Domain components**: `TrackingForm`, `NewsletterForm`, `OrderCard`, `OrderHistory`, `SavedDesignsSection`, `AccountView`, `AdminOrderRow`, `AdminView`, `JournalView`, `ProductTemplate`, `BlanketLayoutPreview`, `CustomProductCard`, `ProductShowcase`, `CheckoutView`, `HomeView`.
+
+10. **Finally `App.jsx` → `App.tsx`** and `main.jsx` → `main.tsx`.
+
+11. **Flip `checkJs: true`** to retroactively type-check anything still on `.js`, OR set `allowJs: false` to force migration completion. Whichever.
+
+The migration is gradual on purpose — each file is independent. Run `npm run typecheck` after each file to confirm the migration is clean. If a type mismatch surfaces a real bug, fix it (don't widen the type to `any`).
 
 ## Working in this repo
 
