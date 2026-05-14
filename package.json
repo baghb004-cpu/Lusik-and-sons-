@@ -27,6 +27,8 @@
     "stripe": "^17.0.0"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.11.3",
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.48.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.0",

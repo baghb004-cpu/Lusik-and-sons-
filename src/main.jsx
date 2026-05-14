@@ -29,6 +29,22 @@ import { App } from "./App.jsx";
 // trip gets reported.
 initErrorReporting();
 
+// Dev-only accessibility auditor. axe-core logs violations to
+// the browser console as you navigate — bad ARIA, missing alt
+// text, low-contrast text, missing form labels. Bundled into
+// production is `false` because `import.meta.env.DEV` is a
+// Vite-replaced compile-time constant, so the whole block (and
+// the @axe-core/react module) is tree-shaken out of the
+// production build. Zero bundle cost in production.
+if (import.meta.env.DEV) {
+  // Dynamic import so the dep isn't pulled into the prod chunk
+  // graph at all. Awaits without blocking createRoot — if axe
+  // takes 200ms to load, the app still renders immediately.
+  import("@axe-core/react").then(({ default: axe }) => {
+    axe(React, { ReactDOM: { createRoot } }, 1000);
+  });
+}
+
 // ============================================================
 // ErrorBoundary — last-resort catch for uncaught render errors
 // ============================================================
