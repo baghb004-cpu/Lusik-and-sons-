@@ -9825,66 +9825,101 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     };
   });
 
-  // Optional customer text — placed on the MIDDLE DIAGONAL (col =
-  // row) that runs equidistant between the two alphabet diagonals.
-  // The canonical product (`double_diag_br`) puts the upper diagonal
-  // in the top-right corner region (col − row = +4) and the lower
-  // diagonal in the bottom-left corner region (col − row = −4), so
-  // the cells (2,2), (3,3), (4,4) all lie exactly between them — a
-  // natural three-cell zone for the optional personalization text.
+  // ============================================================
+  // YEAR + NAME placement — multi-cell diagonal text
+  // ============================================================
+  // The real blanket stitches the year and the name as letter-per-
+  // cell sequences PARALLEL to the alphabet diagonals — same ↘
+  // slope, one column offset from the alphabet so the two reads
+  // (alphabet + personalization) sit side-by-side as twin diagonals.
   //
-  // Cell positions used (7×7, pos = row*7 + col):
-  //   Name anchor: (2,2) → position 16   ← name sits ABOVE the year
-  //   Year anchor: (3,3) → position 24   ← year is at the geometric
-  //                                         center of the blanket
-  //   Reserve:     (4,4) → position 32   ← fallback if a future
-  //                                         layout occupies one of the
-  //                                         above
+  // For the canonical `double_diag_br` layout (alphabet at top-right
+  // corner and bottom-left corner regions):
   //
-  // The year is the prominent piece — centered, single line of context
-  // about WHEN the blanket was made. The name (if provided) reads
-  // ABOVE the year like a label naming who the blanket is for.
+  //   Year diagonal sits next to the upper alphabet, one column to
+  //   the LEFT — cells (0,3), (1,4), (2,5), (3,6) = positions
+  //   [3, 11, 19, 27]. 4 cells fit a 4-digit year ("2026").
   //
-  // Text is rendered WITHOUT a cube outline since the real product
+  //   Name diagonal sits next to the lower alphabet, one column to
+  //   the RIGHT — cells (3,0), (4,1), (5,2), (6,3) = positions
+  //   [21, 29, 37, 45]. 4 cells fit a 4-character name; longer
+  //   names get distributed across the cells (1–2 chars per cell).
+  //
+  // Text cells render WITHOUT a cube outline since the real product
   // stitches the name/year directly onto the waffle weave, not
   // inside an alphabet cube frame.
   const line1Trim = (customLine1 ?? "").trim();
   const line2Trim = (customLine2 ?? "").trim();
 
-  // The middle diagonal cells in row order, top to bottom. These
-  // sit on the col = row axis that runs between the upper-right and
-  // lower-left diagonals — the empty band where Lusik stitches the
-  // optional name + year. Filtering by empty-cell makes this layout-
-  // agnostic: if a future layout uses (3,3) for a letter, we'd skip
-  // to (2,2) or (4,4).
-  const middleDiagonalPositions = [16, 24, 32];
-  const availableMidline = middleDiagonalPositions.filter(pos => cells[pos] === null);
+  const yearCellPositions = [3, 11, 19, 27]; // (0,3) → (3,6) ↘
+  const nameCellPositions = [21, 29, 37, 45]; // (3,0) → (6,3) ↘
 
-  // Anchor the YEAR to the middle of the available midline (geometric
-  // center of the blanket) and the NAME to the cell directly ABOVE it.
-  // Year is the prominent centered piece; the name reads as a label
-  // one row up.
-  const midIdx     = Math.floor(availableMidline.length / 2);
-  const yearAnchor = availableMidline[midIdx] ?? null;
-  const nameAnchor = midIdx > 0 ? availableMidline[midIdx - 1] : null;
+  // Split a text string across N cells. ≤N chars: one per cell with
+  // trailing cells empty. >N chars: distribute as evenly as possible
+  // (longer text gets 2 chars per cell, etc.). Returns an array of
+  // length N with the per-cell glyph (empty string for blank cells).
+  const splitAcrossCells = (text, n) => {
+    if (!text) return Array(n).fill("");
+    if (text.length <= n) {
+      return Array.from({ length: n }, (_, i) => text[i] ?? "");
+    }
+    const perCell = Math.ceil(text.length / n);
+    return Array.from({ length: n }, (_, i) =>
+      text.slice(i * perCell, (i + 1) * perCell)
+    );
+  };
 
-  if (yearAnchor !== null) {
-    if (line2Trim.length > 0) {
-      cells[yearAnchor] = { kind: "text", glyph: line2Trim };
+  const placeTextDiagonal = (positions, text, placeholderLabel) => {
+    if (text.length > 0) {
+      const pieces = splitAcrossCells(text, positions.length);
+      positions.forEach((pos, i) => {
+        if (pieces[i] && cells[pos] === null) {
+          cells[pos] = { kind: "text", glyph: pieces[i] };
+        }
+      });
     } else if (showCustomTextHints) {
-      // Placeholder hint — shows the customer WHERE the year will be stitched
-      // before they've typed anything. Rendered faded + italic to read as a
-      // hint, not as real embroidered text.
-      cells[yearAnchor] = { kind: "text", glyph: "year", placeholder: true };
+      // Single-cell placeholder hint at the MIDDLE position of the
+      // diagonal — enough to show the customer WHERE their text will
+      // be stitched, without filling all four cells with a fake
+      // multi-char sample.
+      const hintPos = positions[Math.floor(positions.length / 2)];
+      if (cells[hintPos] === null) {
+        cells[hintPos] = { kind: "text", glyph: placeholderLabel, placeholder: true };
+      }
     }
-  }
-  if (nameAnchor !== null) {
-    if (line1Trim.length > 0) {
-      cells[nameAnchor] = { kind: "text", glyph: line1Trim };
-    } else if (showCustomTextHints) {
-      cells[nameAnchor] = { kind: "text", glyph: "name", placeholder: true };
+  };
+  placeTextDiagonal(yearCellPositions, line2Trim, "year");
+  placeTextDiagonal(nameCellPositions, line1Trim, "name");
+
+  // ============================================================
+  // POMEGRANATE MOTIF cells — light line-art decoration
+  // ============================================================
+  // The real blanket fabric has a woven pomegranate pattern in the
+  // empty squares — a heritage motif that's part of Lusik's design
+  // language (see Lusik's Journal post on the pomegranate). The
+  // preview hints at this with a sparse scattering of line-art
+  // pomegranate icons in selected empty cells.
+  //
+  // Positions are curated by hand for visual balance: every entry
+  // sits on an EVEN (row + col) checkerboard tile so no two
+  // pomegranates can ever be edge-adjacent — they read as a delicate
+  // scattered pattern, not a dense print. Cells already occupied by
+  // alphabet cubes / personalization text are skipped via the
+  // cells[pos] === null guard in the loop below.
+  const POMEGRANATE_POSITIONS = [
+    0,    6,         // row 0:  (0,0) and (0,6) — top corners flank the upper alphabet
+    8,               // row 1:  (1,1)
+    16,  18,         // row 2:  (2,2) and (2,4)
+    26,              // row 3:  (3,5)
+    32,  34,         // row 4:  (4,4) and (4,6)
+    38,  40,         // row 5:  (5,3) and (5,5)
+    42,  46,  48,    // row 6:  (6,0), (6,4), (6,6) — bottom corners flank the lower alphabet
+  ];
+  POMEGRANATE_POSITIONS.forEach((pos) => {
+    if (cells[pos] === null) {
+      cells[pos] = { kind: "pomegranate" };
     }
-  }
+  });
 
   // Grid frame border (the blanket's own outline)
   const borderColor = darkMode ? "rgba(245,239,227,0.18)" : "rgba(26,22,18,0.12)";
@@ -9965,6 +10000,7 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
         const filled = cell !== null;
         const isAlphabetCube = filled && cell.kind === "alphabet";
         const isTextCell = filled && cell.kind === "text";
+        const isPomegranate = filled && cell.kind === "pomegranate";
 
         // Per-cube depth direction. The preview array stores cubes
         // in two halves: the first `letters.length` entries are
@@ -10045,7 +10081,34 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
               letterSpacing: isTextCell ? "-0.5px" : "normal",
             }}
           >
-            {cell?.glyph ?? ""}
+            {isPomegranate ? (
+              // Small pomegranate line-art icon. Sized to ~70% of the cell
+              // so the motif reads as a delicate impression on the fabric
+              // (matching the woven pomegranate texture on the real
+              // blanket), not as a heavy printed graphic. Stroke color
+              // picks up the muted accent so it sits behind the cubes
+              // visually rather than competing with them.
+              <svg
+                viewBox="0 0 24 24"
+                width={Math.round(cellPx * 0.7)}
+                height={Math.round(cellPx * 0.7)}
+                fill="none"
+                stroke={darkMode ? "rgba(245,239,227,0.28)" : "rgba(176,136,66,0.45)"}
+                strokeWidth="1.1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {/* Fruit body */}
+                <circle cx="12" cy="14" r="6" />
+                {/* Crown / calyx — a small five-point zigzag at the top */}
+                <path d="M 7.5 9 L 8.5 7 L 9.5 9 L 10.5 7 L 11.5 9 L 12.5 7 L 13.5 9 L 14.5 7 L 15.5 9" />
+                {/* Stem */}
+                <line x1="12" y1="5" x2="12" y2="7" />
+              </svg>
+            ) : (
+              cell?.glyph ?? ""
+            )}
           </div>
         );
       })}
