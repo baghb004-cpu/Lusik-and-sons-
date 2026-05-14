@@ -120,10 +120,52 @@ async function handle(req, context) {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  const { cart, social_consent, gift, gift_reminder_opt_in } = body ?? {};
+  const { cart, social_consent: rawSocial, gift: rawGift, gift_reminder_opt_in } = body ?? {};
   if (!Array.isArray(cart) || cart.length === 0) {
     return json(400, { error: "Cart is empty" });
   }
+
+  // Sanitize the optional gift + social_consent payloads. The browser
+  // can send anything here; without bounds an attacker could write a
+  // multi-MB gift message into orders.gift JSONB (bloating row size,
+  // the admin email render, and the customer's portable export). We
+  // coerce types, cap strings, and whitelist platform IDs.
+  const SOCIAL_PLATFORMS = new Set(["instagram", "tiktok", "facebook", "youtube"]);
+  const gift = (() => {
+    if (!rawGift || typeof rawGift !== "object") return null;
+    const isGift = rawGift.is_gift === true;
+    return {
+      is_gift:     isGift,
+      message:     isGift && typeof rawGift.message === "string"
+                     ? rawGift.message.slice(0, 500)
+                     : "",
+      hide_prices: isGift && rawGift.hide_prices === true,
+    };
+  })();
+  const social_consent = (() => {
+    if (!rawSocial || typeof rawSocial !== "object") return null;
+    const allowed = rawSocial.allowed === true;
+    if (!allowed) return { allowed: false, platforms: [], handles: {}, consented_at: null };
+    const platforms = Array.isArray(rawSocial.platforms)
+      ? rawSocial.platforms.filter((p) => typeof p === "string" && SOCIAL_PLATFORMS.has(p))
+      : [];
+    const rawHandles = rawSocial.handles && typeof rawSocial.handles === "object" ? rawSocial.handles : {};
+    const handles = {};
+    for (const p of platforms) {
+      const h = rawHandles[p];
+      if (typeof h === "string" && h.trim().length > 0) {
+        handles[p] = h.trim().slice(0, 64);
+      }
+    }
+    return {
+      allowed:      true,
+      platforms,
+      handles,
+      consented_at: typeof rawSocial.consented_at === "string"
+                      ? rawSocial.consented_at.slice(0, 40)
+                      : null,
+    };
+  })();
 
   // userId and customerEmail are derived from the Identity JWT when
   // present — NEVER from the request body. A signed-in customer

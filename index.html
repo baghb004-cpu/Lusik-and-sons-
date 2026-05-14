@@ -4911,6 +4911,12 @@ function SwipeableRow({ onSwipeDelete, children }) {
 
   const onTouchMove = (e) => {
     if (!startRef.current) return;
+    // Bail on multi-touch (a pinch starts as touches[0] but adding a
+    // second finger should not continue counting as a swipe).
+    if (e.touches.length > 1) {
+      cancelGesture();
+      return;
+    }
     const t = e.touches[0];
     const dx = t.clientX - startRef.current.x;
     const dy = t.clientY - startRef.current.y;
@@ -4923,6 +4929,16 @@ function SwipeableRow({ onSwipeDelete, children }) {
 
     // Only allow leftward drag (rightward would reveal nothing).
     setDragX(Math.min(0, dx));
+  };
+
+  // Spring back to rest without committing. Used both for a normal
+  // release that didn't pass threshold AND for interrupted gestures
+  // (touchcancel from a system event, multi-touch promotion to pinch).
+  const cancelGesture = () => {
+    setAnimating(true);
+    setDragX(0);
+    startRef.current = null;
+    intentRef.current = null;
   };
 
   const onTouchEnd = () => {
@@ -4960,6 +4976,7 @@ function SwipeableRow({ onSwipeDelete, children }) {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onTouchCancel={cancelGesture}
         style={{
           transform: `translateX(${dragX}px)`,
           transition: animating ? "transform 0.18s ease-out" : "none",
@@ -5569,6 +5586,11 @@ function App() {
   };
   const onCartDrawerTouchMove = (e) => {
     if (!cartDragStartRef.current) return;
+    // Bail on multi-touch (a pinch should not be misread as a swipe).
+    if (e.touches.length > 1) {
+      onCartDrawerTouchCancel();
+      return;
+    }
     const t = e.touches[0];
     const dx = t.clientX - cartDragStartRef.current.x;
     const dy = t.clientY - cartDragStartRef.current.y;
@@ -5582,6 +5604,14 @@ function App() {
     // delete; this stays out of that lane by clamping to >= 0.
     if (!cartDragging) setCartDragging(true);
     setCartDragX(Math.max(0, dx));
+  };
+  // Used for both touchcancel (system interruption) and for multi-
+  // touch promotion (pinch starting mid-swipe). Springs back to 0.
+  const onCartDrawerTouchCancel = () => {
+    setCartDragging(false);
+    setCartDragX(0);
+    cartDragStartRef.current = null;
+    cartDragIntentRef.current = null;
   };
   const onCartDrawerTouchEnd = () => {
     if (cartDragIntentRef.current === "horizontal") {
@@ -6097,6 +6127,7 @@ function App() {
             onTouchStart={onCartDrawerTouchStart}
             onTouchMove={onCartDrawerTouchMove}
             onTouchEnd={onCartDrawerTouchEnd}
+            onTouchCancel={onCartDrawerTouchCancel}
           >
             <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
               <h3 className="font-display text-2xl" style={{ fontWeight: 400 }}>Your cart</h3>
@@ -6137,7 +6168,7 @@ function App() {
                     <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
                       <div className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
                         <div className="relative">
-                          <img src={item.image} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                          <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                           {item.isCustom && (
                             <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                           )}
@@ -7471,6 +7502,7 @@ function OrderHistory({ userId, onReorder }) {
     if (!userId) return;
     let mounted = true;
     let attempts = 0;
+    let pollTimer = null;
     const maxAttempts = justCheckedOut ? 6 : 1;
     const pollDelay = 2500;
 
@@ -7488,7 +7520,7 @@ function OrderHistory({ userId, onReorder }) {
       // If we're polling for a fresh order and didn't see one yet, retry.
       if (justCheckedOut && rows.length === 0 && attempts < maxAttempts) {
         setPollingForOrder(true);
-        setTimeout(fetchOnce, pollDelay);
+        pollTimer = setTimeout(fetchOnce, pollDelay);
       } else {
         setPollingForOrder(false);
         // Strip the URL param once we've found the order, so a refresh
@@ -7503,7 +7535,13 @@ function OrderHistory({ userId, onReorder }) {
     };
 
     fetchOnce();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      // Cancel any pending poll so the timer doesn't fire after
+      // unmount (would log a stale 401 on db.listOrders if the user
+      // signed out mid-poll).
+      if (pollTimer !== null) clearTimeout(pollTimer);
+    };
   }, [userId]);
 
   if (loading) {
@@ -11540,7 +11578,7 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {cart.map((item) => (
               <div key={item.id} className="flex gap-3 py-4 items-start" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="relative shrink-0">
-                  <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                  <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                   {item.isCustom && (
                     <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                   )}
