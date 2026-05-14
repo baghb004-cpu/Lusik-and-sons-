@@ -182,6 +182,21 @@ async function handle(req, context) {
     return json(400, { error: "Cart is empty" });
   }
 
+  // Idempotency key from the browser — forwarded to Stripe so a retry
+  // of the same POST (network blip, double-tap, refresh after a hung
+  // response) returns the original Checkout Session URL instead of
+  // creating a second one. Stripe retains the response for 24h keyed
+  // by this value. We accept up to 255 chars (Stripe's limit) of
+  // printable ASCII; anything malformed is silently dropped, which
+  // degrades to non-idempotent behavior — same risk as today, no
+  // regression. Required printable-ASCII whitelist avoids smuggling
+  // newlines into Stripe's HTTP header.
+  const rawKey = typeof body?.idempotency_key === "string" ? body.idempotency_key : "";
+  const idempotencyKey =
+    rawKey.length > 0 && rawKey.length <= 255 && /^[\x21-\x7e]+$/.test(rawKey)
+      ? rawKey
+      : null;
+
   // Sanitize the optional gift + social_consent payloads. The browser
   // can send anything here; without bounds an attacker could write a
   // multi-MB gift message into orders.gift JSONB (bloating row size,
@@ -335,6 +350,13 @@ async function handle(req, context) {
 
   let session;
   try {
+    // The Stripe SDK accepts a second `{ idempotencyKey }` arg on
+    // any POST. When the same key is replayed within 24h with an
+    // identical body, Stripe returns the original response (the
+    // same session.id + url) instead of creating a duplicate. We
+    // only attach the option when we received a well-formed key
+    // from the browser; without it, behavior is identical to before.
+    const stripeOpts = idempotencyKey ? { idempotencyKey } : undefined;
     session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -356,7 +378,7 @@ async function handle(req, context) {
         freeShippingApplied: String(subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS),
         automaticTaxEnabled: String(automaticTaxEnabled),
       },
-    });
+    }, stripeOpts);
   } catch (err) {
     // Log fields for the Netlify Functions log viewer. err.raw can
     // include partial card data on some error types, so omit it in

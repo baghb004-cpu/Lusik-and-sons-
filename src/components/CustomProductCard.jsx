@@ -81,10 +81,20 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
   const cleanName = customName.trim();
   const canAdd = !!size && cleanName.length > 0 && cleanName.length <= maxNameLength;
 
+  // Double-tap guard — same shape as ProductShowcase's add-to-cart.
+  // A frustrated double-tap on a slow phone would otherwise stack qty=2.
+  const lastAddTsRef = useRef(0);
+  const [adding, setAdding] = useState(false);
+
   const handleAdd = (e) => {
+    const now = Date.now();
+    if (adding || now - lastAddTsRef.current < 600) return;
     if (!size) { setError("Please choose a size."); return; }
     if (cleanName.length === 0) { setError("Please type a name to embroider."); return; }
     if (cleanName.length > maxNameLength) { setError(`Name must be ${maxNameLength} letters or fewer — the bib is small.`); return; }
+    lastAddTsRef.current = now;
+    setAdding(true);
+    window.setTimeout(() => setAdding(false), 600);
 
     if (e?.currentTarget && onCartFeedback) {
       const r = e.currentTarget.getBoundingClientRect();
@@ -407,12 +417,14 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
         {/* Add to cart */}
         <button
           onClick={handleAdd}
-          disabled={!canAdd}
+          disabled={!canAdd || adding}
+          aria-busy={adding}
           className="mt-2 w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
           style={{
             background: canAdd ? "#1A1612" : "rgba(26,22,18,0.15)",
             color: canAdd ? "#F5EFE3" : "rgba(26,22,18,0.5)",
-            cursor: canAdd ? "pointer" : "not-allowed",
+            cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
+            opacity: adding ? 0.6 : 1,
           }}
         >
           Add to cart — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />

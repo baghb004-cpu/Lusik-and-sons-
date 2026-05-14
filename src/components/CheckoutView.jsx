@@ -13,7 +13,7 @@
 // MIRRORED FROM index.html (~line 11649).
 // ============================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CONFIG } from "../data/config.js";
 import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
 import { auth } from "../lib/auth.js";
@@ -23,9 +23,34 @@ import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { PRODUCT } from "../data/product.js";
 
+// Generate a UUID for Stripe idempotency keys. crypto.randomUUID is
+// available in all evergreen browsers (Chrome 92+, Safari 15.4+,
+// Firefox 95+) and in any secure context (https or localhost). The
+// fallback covers exotic embedded WebViews that don't expose the
+// API yet — collision-resistant enough for a deduplication key with
+// a few-minute TTL on Stripe's side (24h).
+function newIdempotencyKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return (
+    Date.now().toString(36) + "-" +
+    Math.random().toString(36).slice(2) +
+    Math.random().toString(36).slice(2)
+  );
+}
+
 export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // Stripe idempotency key — generated once per checkout attempt and
+  // re-sent on retries until the request fully succeeds (then we mint
+  // a fresh one). Without this, if the first POST reaches the server
+  // but the network drops before the response, a retry creates a
+  // SECOND Stripe Checkout Session and the customer can pay twice.
+  // With the same key, Stripe returns the original session URL.
+  const idempotencyKeyRef = useRef(newIdempotencyKey());
 
   // If the customer empties the cart from inside checkout (deleting
   // every line item via the X / minus-on-1 / swipe), bounce back to
@@ -197,6 +222,12 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               : {},
             consented_at: socialAllow ? new Date().toISOString() : null,
           },
+          // Idempotency key — forwarded to Stripe so a retried POST
+          // (or a tap that the customer thinks didn't register)
+          // returns the original Checkout Session URL instead of
+          // creating a second one. Held in a ref so React re-renders
+          // during the in-flight request don't mint a new key.
+          idempotency_key: idempotencyKeyRef.current,
         }),
       });
       if (!res.ok) {
