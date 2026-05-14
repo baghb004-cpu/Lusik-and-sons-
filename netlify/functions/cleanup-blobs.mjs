@@ -49,6 +49,8 @@ const RATE_LIMIT_BUCKETS = [
   "waitlist",
   "checkout-start",
   "link-guest",
+  "chat-session",
+  "chat-ip",
 ];
 
 // Pending-orders blobs are keyed by Stripe session id (no date

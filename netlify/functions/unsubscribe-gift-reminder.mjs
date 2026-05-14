@@ -77,7 +77,16 @@ function htmlResponse(status, message) {
 
   return new Response(body, {
     status,
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      // The URL embeds an HMAC-signed token in the query string. We
+      // don't want a shared proxy to cache the response (and thereby
+      // the token-reveal landing page) for some other user.
+      "Cache-Control": "no-store",
+      // Belt-and-suspenders against an embed context that might
+      // ignore CSP — make the response un-iframeable directly too.
+      "X-Frame-Options": "DENY",
+    },
   });
 }
 
