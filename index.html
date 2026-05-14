@@ -10410,6 +10410,11 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
   // encoder above so saved designs round-trip identically to
   // shared links.
   const [savingDesign, setSavingDesign] = useState(false);
+  // Brief "Saved ✓" celebration on the Save button after a successful
+  // save — clears after 2.4s. Gives the customer in-place feedback
+  // beyond the toast, which they might miss if they're focused on
+  // the preview itself.
+  const [justSavedDesign, setJustSavedDesign] = useState(false);
   const handleSaveDesign = async () => {
     if (!user) {
       toast({
@@ -10443,6 +10448,8 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
     }
     track("save-design", { alphabet: alphabet?.key, layout: layout?.key });
     toast({ kind: "success", message: "Design saved to your account." });
+    setJustSavedDesign(true);
+    setTimeout(() => setJustSavedDesign(false), 2400);
   };
 
   // Build a shareable URL containing the current design and either
@@ -11136,26 +11143,42 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
           <div className="mb-6 p-5 lg:p-6" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.1)" }}>
             <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
               <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "#B08842" }}>Your blanket</p>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handleSaveDesign}
                   disabled={savingDesign}
-                  className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5 disabled:opacity-40"
+                  className="text-xs tracking-[0.15em] uppercase transition flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-40"
+                  style={{
+                    border: `1px solid ${justSavedDesign ? "#B08842" : "rgba(26,22,18,0.18)"}`,
+                    background: justSavedDesign ? "rgba(176,136,66,0.08)" : "transparent",
+                    color: justSavedDesign ? "#B08842" : "var(--text-primary)",
+                    fontWeight: 500,
+                  }}
                   aria-label="Save this design to your account"
-                  title={user ? "Save to your account for later" : "Sign in to save designs"}
+                  title={user ? "Save to your account so you can come back to it later" : "Sign in to save designs"}
                 >
-                  <Bookmark size={11} strokeWidth={1.75} /> {savingDesign ? "Saving…" : "Save"}
+                  <Bookmark size={12} strokeWidth={1.75} />
+                  {savingDesign ? "Saving…" : justSavedDesign ? "Saved ✓" : "Save design"}
                 </button>
                 <button
                   onClick={handleShareDesign}
-                  className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5"
+                  className="text-xs tracking-[0.15em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5 px-3 py-1.5"
+                  style={{ border: "1px solid rgba(26,22,18,0.18)", fontWeight: 500 }}
                   aria-label="Share this design"
                   title="Get a second opinion before you order"
                 >
-                  <Share2 size={11} strokeWidth={1.75} /> Share
+                  <Share2 size={12} strokeWidth={1.75} /> Share
                 </button>
               </div>
             </div>
+            {/* Promotion hint — guests see a soft sign-in nudge; signed-in
+                customers see a pointer to their account library so they
+                know the saved design will be retrievable later. */}
+            <p className="text-[0.65rem] opacity-55 italic mb-3 leading-snug">
+              {user
+                ? "Saved designs live in your account — pick up where you left off any time."
+                : "Sign in to save your design and pick up where you left off later."}
+            </p>
             <div className="flex items-center gap-5">
               <div style={{ width: "140px", flexShrink: 0 }}>
                 <BlanketLayoutPreview
