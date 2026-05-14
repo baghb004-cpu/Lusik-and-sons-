@@ -55,6 +55,25 @@ export default async () => {
   let sent = 0;
   let failed = 0;
   for (const order of eligible) {
+    // Atomic claim: stamp the timestamp BEFORE sending. The
+    // `WHERE gift_reminder_sent_at IS NULL` predicate means a
+    // concurrent invocation (Netlify retry, manual trigger, two
+    // overlapping cron runs) that picked the same order will
+    // see zero rows updated and skip — no double-send. If the
+    // Resend send fails we NULL the timestamp back out so the
+    // next run retries.
+    const claim = await sql`
+      UPDATE orders
+         SET gift_reminder_sent_at = now()
+       WHERE id = ${order.id}
+         AND gift_reminder_sent_at IS NULL
+       RETURNING id
+    `;
+    if (claim.length === 0) {
+      // Lost the race to another invocation. Skip silently.
+      continue;
+    }
+
     const token = signReminderToken(order.id);
     const unsubscribeUrl = `${baseUrl}/.netlify/functions/unsubscribe-gift-reminder?o=${encodeURIComponent(order.id)}&t=${encodeURIComponent(token)}`;
 
@@ -65,12 +84,14 @@ export default async () => {
       });
 
     if (ok) {
-      // Stamp the timestamp ONLY on success, so a Resend outage
-      // doesn't permanently block the reminder — next day's run
-      // picks it up again.
-      await sql`UPDATE orders SET gift_reminder_sent_at = now() WHERE id = ${order.id}`;
       sent += 1;
     } else {
+      // Release the claim so the next run can retry. If THIS
+      // update fails we accept a rare miss — better than a
+      // double-send loop.
+      await sql`
+        UPDATE orders SET gift_reminder_sent_at = NULL WHERE id = ${order.id}
+      `.catch((err) => console.warn("[gift-reminder] failed to release claim for", order.id, err?.message ?? err));
       failed += 1;
     }
   }

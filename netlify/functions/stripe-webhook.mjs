@@ -182,6 +182,16 @@ export default async (req) => {
     });
   }
 
+  // Refuse to insert an order row with zero trusted line items. Every
+  // productKey in the cart was missing from TRUSTED_PRODUCTS (likely a
+  // browser/server version skew where a renamed key shipped before the
+  // trusted map deployed). 500 so Stripe retries — better to delay
+  // than to write a $0 order Lusik can never fulfill.
+  if (items.length === 0) {
+    console.error("[webhook] No trusted items resolved for session", session.id, "— refusing to insert empty order");
+    return new Response("No trusted items in cart", { status: 500 });
+  }
+
   const totalCents    = session.amount_total ?? subtotalCents;
   const shippingCents = session.shipping_cost?.amount_total ?? 0;
   const taxCents      = session.total_details?.amount_tax ?? 0;

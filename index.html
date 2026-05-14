@@ -8867,7 +8867,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
     <div className="fade-in">
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
-          <div className="lg:col-span-5 slide-up">
+          <div className="lg:col-span-5 slide-up min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#B08842" }}>Cypress, California</p>
             <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-8" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
               {t("hero.headline")} <em style={{ fontWeight: 400 }}>{t("hero.headlineEm")}</em>.
@@ -8980,12 +8980,14 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
 
       <section id="story" className="py-20 lg:py-32" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-12 gap-10 lg:gap-20 items-center">
-          <div className="lg:col-span-6 lg:order-2">
+          <div className="lg:col-span-6 lg:order-2 min-w-0">
             <div className="aspect-[4/5] overflow-hidden">
-              <img src={product.gallery[7]} alt="Detail of cross-stitched alphabet block" className="w-full h-full object-cover" style={galleryRotationStyle(7)} />
+              {/* Fall back to gallery[0] if Lusik hasn't uploaded a 9th photo yet —
+                  prevents a broken <img> if PRODUCT.gallery has fewer than 8 entries. */}
+              <img src={product.gallery[7] ?? product.gallery[0]} alt="Detail of cross-stitched alphabet block" className="w-full h-full object-cover" style={galleryRotationStyle(7)} />
             </div>
           </div>
-          <div className="lg:col-span-6 lg:order-1">
+          <div className="lg:col-span-6 lg:order-1 min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#C9A678" }}>Our Story</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-8 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               From Armenia, to Little Armenia, to a small home in Cypress.
@@ -9056,7 +9058,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
 
       <section id="contact" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Get in Touch</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Four ways to order.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
@@ -9085,7 +9087,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
         {/* SEND A LETTER */}
         <div className="mt-20 lg:mt-24">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>By Post</p>
               <h3 className="font-display text-3xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
                 Send a <em style={{ fontWeight: 400 }}>letter</em>.
@@ -9140,7 +9142,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
       {/* SHIPPING & TRACKING */}
       <section id="shipping" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28 border-t" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Shipping & Tracking</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Drop-off & tracking, made easy.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
