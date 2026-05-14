@@ -1047,3 +1047,118 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
 
   return await sendEmail({ to, subject, html, text });
 }
+
+// ============================================================
+// sendCartAbandonmentRecovery — "we held your spot" email
+// ============================================================
+// Sent by the stripe-webhook when a checkout.session.expired
+// event fires AND we still have the pending cart blob (meaning
+// the customer didn't complete payment — successful payments
+// delete the blob first). One-shot: the blob is deleted after
+// this send, so even if Stripe re-fires the event we won't
+// double-email.
+//
+// Tone: gentle, no urgency, no discount code. Hand-craft brand —
+// "we still have your spot" reads better than "20% off, ends
+// tonight!" Lists the items they were buying so a tap on the CTA
+// feels like picking up where they left off.
+//
+// Args:
+//   to         — recipient email (from pending.customerEmail or
+//                Stripe's customer_details.email)
+//   items      — array of { productName, variantLabel, quantity,
+//                unitPriceCents } shaped like the order-confirmation
+//                items. Built from the trusted-products map.
+//   totalCents — sum of items (no shipping/tax — we don't know
+//                what they would have picked)
+// ============================================================
+export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
+  if (!to) {
+    console.warn("[email] cart-recovery missing recipient; skipping");
+    return false;
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    console.warn("[email] cart-recovery has no items; skipping");
+    return false;
+  }
+
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
+  const subject = `We saved your spot.`;
+
+  const itemRows = items.map((it) => {
+    const qty = it.quantity > 1 ? ` <span style="color:${muted};">× ${it.quantity}</span>` : "";
+    const variant = it.variantLabel ? `<div style="font-size:13px;color:${muted};margin-top:4px;line-height:1.5;">${esc(it.variantLabel)}</div>` : "";
+    return `
+      <div style="padding:14px 0;border-top:1px solid #E8E1D2;">
+        <div style="font-weight:600;color:${ink};">${esc(it.productName)}${qty}</div>
+        ${variant}
+      </div>
+    `;
+  }).join("");
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 18px 0;letter-spacing:-0.01em;line-height:1.2;">
+      We saved your spot.
+    </h1>
+
+    <p style="font-size:16px;color:${ink};margin:0 0 22px 0;">
+      You started a checkout with us and didn't finish — no worries. Here's what was in your cart.
+    </p>
+
+    <div style="margin:24px 0;border-bottom:1px solid #E8E1D2;">
+      ${itemRows}
+      <div style="padding:14px 0;border-top:1px solid #E8E1D2;display:flex;justify-content:space-between;">
+        <span style="color:${muted};">Subtotal</span>
+        <span style="font-weight:600;">${dollars(totalCents)}</span>
+      </div>
+    </div>
+
+    <div style="margin:24px 0 28px 0;">
+      <a href="${esc(url)}/" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+        Pick up where you left off →
+      </a>
+    </div>
+
+    <p style="font-size:14px;color:${muted};margin:0 0 12px 0;">
+      Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      <em>Made by hand in Cypress, California.</em><br>
+      Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
+      You're getting this because you started a checkout on lusikandsons.com. This is a one-time send — we won't email you again about this cart.
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS`,
+    `We saved your spot.`,
+    "",
+    `You started a checkout with us and didn't finish — no worries. Here's what was in your cart:`,
+    "",
+    ...items.map((it) => `  • ${it.productName}${it.quantity > 1 ? ` × ${it.quantity}` : ""}${it.variantLabel ? `\n      ${it.variantLabel}` : ""}`),
+    "",
+    `  Subtotal: ${dollars(totalCents)}`,
+    "",
+    `Pick up where you left off: ${url}/`,
+    "",
+    `Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
+    "",
+    `Lusik & Sons · ${url}`,
+    "",
+    `You're getting this because you started a checkout on lusikandsons.com. This is a one-time send — we won't email you again about this cart.`,
+  ].join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}

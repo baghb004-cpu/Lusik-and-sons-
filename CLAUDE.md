@@ -144,7 +144,13 @@ The `orders.shipped_at` timestamp gates this. Once it's set (the first save with
 
 The handler looks up the order by `stripe_payment_intent` (captured at order insert), updates `orders.status` to `refunded` or `partially_refunded`, flips `fulfillment_status` to `refunded` only on a full refund (partial refunds let the customer still receive most of their order), and stamps `refunded_cents` with the cumulative refund total. The cumulative-vs-stored comparison gates dedupe — Stripe sometimes fires the event multiple times for the same refund.
 
-**Stripe dashboard subscription requirement**: in the Stripe webhook configuration, both events need to be subscribed: `checkout.session.completed` AND `charge.refunded`. Without the second, the refund handling code never gets a chance to run.
+**On checkout abandonment** — the `stripe-webhook` Function also handles `checkout.session.expired` events (Stripe fires these ~24h after a session is created if the customer didn't pay):
+
+6. **Cart recovery** (`sendCartAbandonmentRecovery`) — "We saved your spot." Lists the items they were buying (productName, qty, variant), the subtotal computed from `TRUSTED_PRODUCTS`, and a CTA back to the home page. No urgency, no discount code — the brand voice is "we held it for you," not "act now."
+
+The handler reads the pending-orders Blob keyed by `session.id` (the same blob the success path normally consumes + deletes). Presence of the blob at expiry means the customer didn't complete payment. It sends the email and then deletes the blob, so a Stripe re-fire of the event can never produce a second email. If we have no recipient email or no recognizable items in the cart, the handler skips the send but still cleans up the blob.
+
+**Stripe dashboard subscription requirement**: in the Stripe webhook configuration, three events need to be subscribed: `checkout.session.completed`, `charge.refunded`, AND `checkout.session.expired`. Without the third, abandoned carts get no recovery email.
 
 Required env vars (set in Netlify dashboard → Site → Environment):
 
@@ -294,7 +300,7 @@ CI runs both on every push and PR (`.github/workflows/test.yml`).
 3. From a local checkout, `netlify link`, then `netlify database init` to provision the Postgres database.
 4. Apply the schema: `netlify db query --file netlify/schema.sql`.
 5. Set environment variables in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to **both** `checkout.session.completed` and `charge.refunded` (so refunds you issue from the Stripe dashboard automatically update the order + email the customer). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to **all three** of `checkout.session.completed`, `charge.refunded`, and `checkout.session.expired` (records new orders, handles refunds, fires the cart-abandonment recovery email). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 7. (Optional but recommended) Sign up at [resend.com](https://resend.com) — free tier covers 100 emails/day. Generate an API key under "API Keys" and set it as `RESEND_API_KEY` in Netlify. Set `ADMIN_NOTIFICATION_EMAIL` to wherever Lusik wants to receive new-order notifications. (Optionally verify `lusikandsons.com` in Resend → Domains and set `RESEND_FROM_EMAIL` to `Lusik & Sons <orders@lusikandsons.com>`; until then, emails come from `onboarding@resend.dev` which often lands in spam.)
 8. Set `REMINDER_SECRET` to a long random string. Used as the HMAC key for gift-reminder unsubscribe URLs (see "Gift-occasion reminder" below). If unset the code falls back to `STRIPE_WEBHOOK_SECRET` for backwards compatibility — works, but cross-domain secret reuse is a smell. Set it explicitly.
 

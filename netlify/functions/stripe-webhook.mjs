@@ -7,6 +7,7 @@
 //
 // Subscribe these events in the Stripe dashboard:
 //   - checkout.session.completed   (records new orders)
+//   - checkout.session.expired     (sends cart-abandonment recovery email)
 //   - charge.refunded              (updates orders on refund)
 //
 // Endpoint URL:
@@ -26,6 +27,7 @@ import {
   sendAdminOrderEmail,
   sendCustomerOrderConfirmation,
   sendRefundNotification,
+  sendCartAbandonmentRecovery,
 } from "./_lib/email.mjs";
 
 // Lazy-init the Stripe client so a missing STRIPE_SECRET_KEY env var
@@ -96,6 +98,9 @@ export default async (req) => {
   // so Stripe doesn't keep retrying.
   if (event.type === "charge.refunded") {
     return await handleChargeRefunded(event.data.object);
+  }
+  if (event.type === "checkout.session.expired") {
+    return await handleSessionExpired(event.data.object);
   }
   if (event.type !== "checkout.session.completed") {
     return new Response("ok (ignored)", { status: 200 });
@@ -367,6 +372,80 @@ async function handleChargeRefunded(charge) {
     refundedCents,
     isFullRefund:   isFull,
   }).catch((err) => console.warn("[webhook] refund email failed:", err?.message ?? err));
+
+  return new Response("ok", { status: 200 });
+}
+
+// ============================================================
+// checkout.session.expired — cart abandonment recovery
+// ============================================================
+// Stripe fires this event ~24 hours after a session is created
+// if the customer never completed payment. The presence of the
+// pending-orders blob for the session id means the order was
+// never written (successful payments delete it). We use that as
+// our "this customer abandoned" signal and send a single, gentle
+// recovery email.
+//
+// One-shot: we delete the blob after sending so a re-fire of the
+// event (which Stripe will retry on a non-2xx response) doesn't
+// produce a second email.
+// ============================================================
+async function handleSessionExpired(session) {
+  const pendingStore = getStore({ name: "pending-orders", consistency: "strong" });
+  const pending = await pendingStore.get(session.id, { type: "json" });
+
+  // No stash means either (a) the order was completed and the
+  // success handler already cleaned up, or (b) the stash never
+  // got written (4s Blobs timeout in create-checkout-session).
+  // In either case there's nothing to recover.
+  if (!pending || !Array.isArray(pending.cart) || pending.cart.length === 0) {
+    return new Response("ok (no pending cart)", { status: 200 });
+  }
+
+  // Recipient. Pending has the email we stashed at session create;
+  // fall back to Stripe's own customer_details in case the customer
+  // typed an email on the hosted checkout page that we didn't have.
+  const to = pending.customerEmail
+          ?? session.customer_details?.email
+          ?? null;
+  if (!to) {
+    // No way to reach them. Clean up the stash so the blob store
+    // doesn't accumulate orphans forever and move on.
+    await pendingStore.delete(session.id).catch(() => {});
+    return new Response("ok (no recipient)", { status: 200 });
+  }
+
+  // Build a trusted-products summary of what was in the cart. We
+  // intentionally don't trust prices in the blob — TRUSTED_PRODUCTS
+  // is the source of truth, same as the order-completion path.
+  let totalCents = 0;
+  const items = [];
+  for (const i of pending.cart) {
+    const t = TRUSTED_PRODUCTS[i.productKey];
+    if (!t) continue;
+    const qty = Number.isInteger(i.qty) && i.qty > 0 ? i.qty : 1;
+    totalCents += t.priceCents * qty;
+    items.push({
+      productName:   t.name,
+      variantLabel:  [t.variant, i.subtitle, i.size].filter(Boolean).join(" · "),
+      quantity:      qty,
+      unitPriceCents:t.priceCents,
+    });
+  }
+
+  // Nothing recognizable to remind them about — skip the email but
+  // still clean up the stash.
+  if (items.length === 0) {
+    await pendingStore.delete(session.id).catch(() => {});
+    return new Response("ok (no trusted items)", { status: 200 });
+  }
+
+  await sendCartAbandonmentRecovery({ to, items, totalCents })
+    .catch((err) => console.warn("[webhook] cart-recovery email failed:", err?.message ?? err));
+
+  // One-shot: delete the stash so we never double-email even if
+  // Stripe retries the event for some reason.
+  await pendingStore.delete(session.id).catch(() => {});
 
   return new Response("ok", { status: 200 });
 }
