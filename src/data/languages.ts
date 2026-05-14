@@ -15,7 +15,16 @@
 // MIRRORED FROM index.html (~line 2077).
 // ============================================================
 
-export const LANGUAGES = [
+export type LanguageDirection = "ltr" | "rtl";
+
+export interface Language {
+  code: string;
+  label: string;
+  native: string;
+  direction: LanguageDirection;
+}
+
+export const LANGUAGES: Language[] = [
   { code: "en", label: "English",  native: "English",  direction: "ltr" },
   { code: "hy", label: "Armenian", native: "Հայերեն", direction: "ltr" },
 ];

@@ -23,7 +23,7 @@ import { SOCIAL_PLATFORMS } from "./data/socialPlatforms.js";
 import { auth } from "./lib/auth.js";
 import { db } from "./lib/db.js";
 import { track } from "./lib/analytics.js";
-import { mapLegacyId } from "./lib/cartId.js";
+import { mapLegacyId } from "./lib/cartId";
 
 // i18n
 import { useT, useLang } from "./i18n/LangContext.jsx";

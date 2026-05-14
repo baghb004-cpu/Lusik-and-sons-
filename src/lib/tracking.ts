@@ -16,7 +16,10 @@
 // MIRRORED FROM index.html (~line 8000).
 // ============================================================
 
-export function getTrackingUrl(carrier, trackingNumber) {
+export function getTrackingUrl(
+  carrier: string | null | undefined,
+  trackingNumber: string | null | undefined,
+): string | null {
   if (!trackingNumber || !carrier) return null;
   const c = carrier.toLowerCase();
   if (c.includes("usps"))  return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(trackingNumber)}`;

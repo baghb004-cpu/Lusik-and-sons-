@@ -14,7 +14,14 @@
 // guard this if drift becomes a problem.
 // ============================================================
 
-export const SHIPPING_CARRIERS = [
+export interface ShippingCarrier {
+  id: string;
+  name: string;
+  price: number;
+  days: string;
+}
+
+export const SHIPPING_CARRIERS: ShippingCarrier[] = [
   { id: "usps",  name: "USPS Ground Advantage", price:  9.99, days: "3–5 business days" },
   { id: "ups",   name: "UPS Ground",            price: 14.99, days: "2–5 business days" },
   { id: "fedex", name: "FedEx Home Delivery",   price: 16.99, days: "2–5 business days" },

@@ -14,7 +14,7 @@
 // ============================================================
 
 import React from "react";
-import { getTrackingUrl } from "../lib/tracking.js";
+import { getTrackingUrl } from "../lib/tracking";
 import { ArrowRight, Check } from "./icons.jsx";
 
 export function OrderProgressTimeline({ status }) {

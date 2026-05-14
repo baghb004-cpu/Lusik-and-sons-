@@ -15,10 +15,10 @@
 
 import React, { useState } from "react";
 import { CONFIG } from "../data/config.js";
-import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms.js";
+import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
 import { auth } from "../lib/auth.js";
 import { track } from "../lib/analytics.js";
-import { mapLegacyId } from "../lib/cartId.js";
+import { mapLegacyId } from "../lib/cartId";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { ArrowRight } from "./icons.jsx";
 

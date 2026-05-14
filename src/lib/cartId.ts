@@ -25,10 +25,10 @@
 // MIRRORED FROM index.html (~line 11849, inside CheckoutView).
 // ============================================================
 
-export function mapLegacyId(id) {
+export function mapLegacyId(id: string | null | undefined): string | null {
   if (!id) return null;
-  if (id.startsWith?.("bib-")) return "bib";
-  if (id.startsWith?.("blanket-")) {
+  if (id.startsWith("bib-")) return "bib";
+  if (id.startsWith("blanket-")) {
     const parts = id.split("-");
     if (parts.length >= 3) return `blanket-${parts[2]}`;
     return "blanket";

@@ -11,7 +11,14 @@
 // gets deleted and this becomes the single source of truth.
 // ============================================================
 
-export const SOCIAL_CONSENT_PLATFORMS = [
+export type SocialConsentPlatformId = "instagram" | "tiktok" | "facebook" | "youtube";
+
+export interface SocialConsentPlatform {
+  id: SocialConsentPlatformId;
+  label: string;
+}
+
+export const SOCIAL_CONSENT_PLATFORMS: SocialConsentPlatform[] = [
   { id: "instagram", label: "Instagram" },
   { id: "tiktok",    label: "TikTok" },
   { id: "facebook",  label: "Facebook" },

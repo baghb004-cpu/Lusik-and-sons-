@@ -1,0 +1,46 @@
+{
+  "// intro": "TypeScript config for the SPA. The migration from JS to TS is gradual — both .js/.jsx and .ts/.tsx files coexist via Vite's mixed-file support. Run `npm run typecheck` to lint the TypeScript files for type errors without producing output.",
+  "// strict-comment": "`strict: true` is on for new code but `allowJs + checkJs: false` means existing .js files are imported as `any` — no per-file type-check noise as we migrate. To get JS files type-checked too once the codebase has a base of .ts files, flip checkJs.",
+
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    "allowJs": true,
+    "checkJs": false,
+
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    "noEmit": true,
+
+    "types": ["vite/client"]
+  },
+
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.js",
+    "src/**/*.jsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "netlify"
+  ]
+}

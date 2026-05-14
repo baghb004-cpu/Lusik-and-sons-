@@ -1,7 +1,7 @@
 // FooterLangToggle — MIRRORED FROM index.html (~line 2894).
 import React from "react";
 import { useLang } from "../i18n/LangContext.jsx";
-import { LANGUAGES } from "../data/languages.js";
+import { LANGUAGES } from "../data/languages";
 
 export function FooterLangToggle() {
   const { lang, setLang } = React.useContext(LangContext);

@@ -467,6 +467,48 @@ require unwinding earlier work.
 - Do NOT touch `netlify/functions/` in any migration commit.
 - Do NOT change the cart-ID shape; the smoke test will catch it.
 
+## TypeScript migration (in progress, gradual)
+
+The repo has a `tsconfig.json` and a `npm run typecheck` script. New code should be written as `.ts` / `.tsx`. Existing `.js` / `.jsx` files coexist via Vite's mixed-file support + tsconfig's `allowJs: true, checkJs: false` (so existing JS isn't yet type-checked, just allowed).
+
+### Already migrated to .ts (the foundation layer)
+
+- `src/data/languages.ts`
+- `src/data/shippingCarriers.ts`
+- `src/data/socialConsentPlatforms.ts`
+- `src/lib/cartId.ts`
+- `src/lib/tracking.ts`
+- `src/lib/galleryRotation.ts`
+- `src/lib/designUrl.ts`
+
+Each exports proper types (e.g. `ShippingCarrier`, `DesignPickerState`, `ResolvedDesign`). Downstream `.jsx` files import these and get autocomplete + type-checking at the boundary — but only when the .jsx consumer is itself migrated to .tsx.
+
+### To continue the migration (recommended order)
+
+1. **Remaining data modules**: `customProducts.js`, `catalog.js`, `socialPlatforms.js`, `journalPosts.js`, `config.js`, `product.js`. Each is mechanical — define interfaces matching the object shape, append `: TheInterface` to the export, done.
+
+2. **`src/lib/auth.js` + `src/lib/db.js`**: These wrap external services (Identity, Functions). Define interfaces for the `User`, `Order`, `Profile`, `Address`, `SavedDesign`, etc. — these become the type contract for every component that displays one of these.
+
+3. **`src/lib/analytics.js`**: Trivial. One function.
+
+4. **`src/lib/errorReporting.js`**: Trivial.
+
+5. **`src/i18n/translations.js`**: Generate a TypeScript type for the translation key paths so `useT()` returns a `(key: TranslationKey, vars?: …) => string` instead of `any`. Lots of safety upside — typos in translation keys become compile errors. Some work to map the nested object to a dotted-path union type.
+
+6. **`src/components/icons.jsx` → `icons.tsx`**: Define `IconProps = { size?: number; strokeWidth?: number; className?: string; style?: CSSProperties }` once, every icon uses it.
+
+7. **Leaf components**: `Skeleton`, `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection`, `CustomerPhotosSection`, `HeartBurst`, `CollapsibleSection`, `SwipeableRow`, `ToastProvider`. Define a Props interface, annotate.
+
+8. **Widget components**: `BackToTopButton`, `TextUsWidget`, `MobileBottomNav`, `ActiveOrderTopBar`, `PolicyModal`, `AuthDrawer`, `ChatAssistant`, `WaitlistModal`.
+
+9. **Domain components**: `TrackingForm`, `NewsletterForm`, `OrderCard`, `OrderHistory`, `SavedDesignsSection`, `AccountView`, `AdminOrderRow`, `AdminView`, `JournalView`, `ProductTemplate`, `BlanketLayoutPreview`, `CustomProductCard`, `ProductShowcase`, `CheckoutView`, `HomeView`.
+
+10. **Finally `App.jsx` → `App.tsx`** and `main.jsx` → `main.tsx`.
+
+11. **Flip `checkJs: true`** to retroactively type-check anything still on `.js`, OR set `allowJs: false` to force migration completion. Whichever.
+
+The migration is gradual on purpose — each file is independent. Run `npm run typecheck` after each file to confirm the migration is clean. If a type mismatch surfaces a real bug, fix it (don't widen the type to `any`).
+
 ## Working in this repo
 
 - Active development branch for documentation changes: `claude/add-claude-documentation-Vi3zH`.

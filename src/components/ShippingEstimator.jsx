@@ -2,7 +2,7 @@
 import React from "react";
 import { useState } from "react";
 import { CONFIG } from "../data/config.js";
-import { SHIPPING_CARRIERS } from "../data/shippingCarriers.js";
+import { SHIPPING_CARRIERS } from "../data/shippingCarriers";
 
 export function ShippingEstimator({ subtotalCents }) {
   const [zip, setZip]               = useState("");

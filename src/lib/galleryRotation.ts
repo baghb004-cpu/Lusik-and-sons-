@@ -14,9 +14,15 @@
 // MIRRORED FROM index.html (~line 1913).
 // ============================================================
 
+import type { CSSProperties } from "react";
 import { CONFIG } from "../data/config.js";
 
-export function galleryRotationStyle(i, shape = "portrait-4-5") {
+export type GalleryShape = "portrait-4-5" | "square";
+
+export function galleryRotationStyle(
+  i: number,
+  shape: GalleryShape = "portrait-4-5",
+): CSSProperties {
   if (!CONFIG.ROTATED_GALLERY_INDEXES.has(i)) return {};
   const scale = shape === "square" ? 1 : 1.25;
   return { transform: `rotate(90deg) scale(${scale})` };
