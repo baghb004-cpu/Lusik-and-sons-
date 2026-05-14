@@ -1,0 +1,525 @@
+// ============================================================
+// CheckoutView — the checkout step before Stripe takes over
+// ============================================================
+// Shows the order summary (display-only, no qty controls),
+// gift options (is_gift / message / hide_prices / wrap),
+// gift-reminder opt-in, social-share consent, then POSTs the
+// cart to /.netlify/functions/create-checkout-session and
+// redirects to the Stripe-hosted URL.
+//
+// Cart-ID shape (mapLegacyId) is load-bearing for the server's
+// TRUSTED_PRODUCTS map — see src/lib/cartId.js for the rules.
+//
+// MIRRORED FROM index.html (~line 11649).
+// ============================================================
+
+import React, { useState } from "react";
+import { CONFIG } from "../data/config.js";
+import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms.js";
+import { auth } from "../lib/auth.js";
+import { track } from "../lib/analytics.js";
+import { mapLegacyId } from "../lib/cartId.js";
+import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
+import { ArrowRight } from "./icons.jsx";
+
+export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  // If the customer empties the cart from inside checkout (deleting
+  // every line item via the X / minus-on-1 / swipe), bounce back to
+  // the home view rather than render an empty "Almost there" page
+  // with no items to pay for. onBack() resets view → "home".
+  useEffect(() => {
+    if (cart.length === 0) onBack?.();
+  }, [cart.length, onBack]);
+
+  // --- GIFT OPTIONS (optional) ---
+  // The baby-blanket category is overwhelmingly gift purchases, so
+  // these fields are first-class rather than buried in a "notes"
+  // textbox. Three independent toggles + a 140-char message that
+  // fits on the small thank-you card Lusik includes in the box:
+  //
+  //   giftIsGift        — flips the whole block on. Default off
+  //                       because most checkouts are for the buyer.
+  //   giftMessage       — short note printed/handwritten on the
+  //                       included card. Max 140 chars so it stays
+  //                       legible on a 3"x5" card.
+  //   giftHidePrices    — Lusik reads this and excludes the packing
+  //                       slip pricing when shipping. Stripe's email
+  //                       receipt still goes to the buyer regardless;
+  //                       this controls what's in the BOX.
+  //
+  // Everything ships to the Function as `gift` and ends up in
+  // orders.metadata + a JSONB column the webhook can stamp.
+  const [giftIsGift,     setGiftIsGift]     = useState(false);
+  const [giftMessage,    setGiftMessage]    = useState("");
+  const [giftHidePrices, setGiftHidePrices] = useState(false);
+  // Gift wrap: optional add-on. Price defined once in CONFIG.GIFT_WRAP_PRICE_CENTS;
+  // browser shows the line in the order summary, server adds a matching Stripe
+  // line item so the customer is actually charged. Gated on giftIsGift in three
+  // places (the checkbox only renders inside the gift block, the order-summary
+  // line is conditional on giftIsGift && giftWrap, and the payload sends
+  // `wrap: giftIsGift && giftWrap`). The mirror server-side gate in
+  // create-checkout-session.mjs also requires `is_gift === true`. To allow
+  // wrap on non-gift purchases, you'd have to flip all four gates together.
+  const [giftWrap, setGiftWrap] = useState(false);
+
+  // --- ONE-YEAR REMINDER (optional, opt-in) ---
+  // Default off. If ticked, the order row carries gift_reminder_opt_in = true
+  // and a daily scheduled job emails the customer about 11 months later.
+  // Independent of giftIsGift — works for self-purchases too (the buyer's
+  // own baby growing up, repeat gifting, etc.). One-shot: once sent, never
+  // re-sent. Unsubscribe link in every email turns it off without sign-in.
+  const [giftReminderOptIn, setGiftReminderOptIn] = useState(false);
+
+  // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
+  // Default everything OFF — affirmative opt-in is the only thing
+  // that grants Lusik permission to share photos of the customer's
+  // finished order on social media. Four independent fields,
+  // persisted with the order so Lusik knows what's allowed when she
+  // goes to post:
+  //   socialAllow      : true only after the customer ticks the box
+  //   socialPlatforms  : subset of SOCIAL_CONSENT_PLATFORMS ids they OK'd
+  //   socialHandles    : { [platformId]: "@handle" } — keyed by
+  //                      platform because almost nobody uses the same
+  //                      handle on Instagram, TikTok, Facebook, and
+  //                      YouTube. We preserve typed handles across
+  //                      toggling a platform off-then-on so a misclick
+  //                      doesn't make the customer retype, but at
+  //                      submit time we only include handles for
+  //                      platforms that are currently checked.
+  // Sent to the Function as `social_consent` under the snake_case
+  // convention used by the rest of the order metadata.
+  const [socialAllow, setSocialAllow] = useState(false);
+  const [socialPlatforms, setSocialPlatforms] = useState([]);
+  const [socialHandles, setSocialHandles] = useState({});
+  const toggleSocialPlatform = (id) => {
+    setSocialPlatforms((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
+  const updateSocialHandle = (id, value) => {
+    setSocialHandles((prev) => ({ ...prev, [id]: value }));
+  };
+
+  // Relative path — works in `netlify dev` locally and in production
+  // with zero changes. The Function reads the Identity JWT from the
+  // Authorization header (set below) when present, otherwise treats
+  // the order as a guest checkout.
+  // Cache-bust query param so Safari can't serve a stale POST
+  // response between deploys. The function ignores unknown params.
+  const checkoutFnUrl = `${CONFIG.FN_BASE}/create-checkout-session?v=${Date.now()}`;
+
+  const handleCheckout = async () => {
+    setBusy(true);
+    setError("");
+    track("checkout-start", { itemCount: cart.length, totalCents: Math.round(subtotal * 100) });
+
+    // Build the cart payload. Strip the giant base64 image data — the
+    // Function doesn't need it for the Stripe session (Stripe metadata
+    // has a 500-char cap per value). The full custom image stays in
+    // cart state and is recovered via Netlify Blobs on the order side.
+    // For now, we just mark which items are custom; image upload to
+    // Blobs is a future polish.
+    const safeCart = cart.map((item) => ({
+      productKey: item.productKey ?? mapLegacyId(item.id),
+      id: item.id,
+      qty: item.qty,
+      subtitle: item.subtitle,
+      size: item.size ?? null,
+      colorHex: item.colorHex ?? null,
+      isCustom: !!item.isCustom,
+      customImageName: item.customImageName ?? null,
+      // Always forward customMetadata if it exists. For custom-image uploads,
+      // we add size/filename info. For blanket orders, the cart's own
+      // customMetadata holds the alphabet + diagonal choice. For everything
+      // else, it's null. This metadata is what flows to Lusik's order email
+      // via Stripe → webhook → orders.order_items.custom_metadata.
+      customMetadata: item.customMetadata
+        ? item.customMetadata
+        : (item.isCustom
+          ? { size: item.size, image_filename: item.customImageName }
+          : null),
+    }));
+
+    // If the user is signed in, attach their Identity JWT so the
+    // Function can stamp the order with their user_id. Guests still
+    // check out fine — no header is sent in that case.
+    const headers = { "Content-Type": "application/json" };
+    try {
+      const token = await auth.getToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    } catch { /* ignore — guest checkout */ }
+
+    try {
+      const res = await fetch(checkoutFnUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          cart: safeCart,
+          userId: user?.id ?? null,
+          customerEmail: user?.email ?? profile?.email ?? null,
+          prefilledAddress: null, // future: pull from default saved address
+          // Optional gift options. The webhook persists these on the
+          // order so Lusik sees them in her admin view. When not a
+          // gift, all fields are explicit defaults so the order
+          // record clearly reads "not a gift" rather than "unknown."
+          gift: {
+            is_gift:      giftIsGift,
+            message:      giftIsGift ? giftMessage.trim() : "",
+            hide_prices:  giftIsGift ? giftHidePrices : false,
+            wrap:         giftIsGift && giftWrap,
+          },
+          // Customer's one-year reminder opt-in. Stored verbatim on the
+          // order row by the webhook; a daily scheduled function reads
+          // it later. Nothing else here depends on this — declining
+          // doesn't affect checkout.
+          gift_reminder_opt_in: giftReminderOptIn,
+          // Optional social-share consent. The stripe-webhook Function
+          // persists this on the order row in orders.social_consent (JSONB)
+          // when checkout completes, so Lusik sees it in her admin view.
+          // `allowed: false` is the legally-meaningful default — if the
+          // customer didn't tick the box, no permission was granted.
+          // `handles` is keyed by platform id; only platforms currently
+          // checked are included, and empty strings are dropped, so the
+          // saved record is exactly what Lusik should act on.
+          social_consent: {
+            allowed: socialAllow,
+            platforms: socialAllow ? socialPlatforms : [],
+            handles: socialAllow
+              ? Object.fromEntries(
+                  socialPlatforms
+                    .map((p) => [p, (socialHandles[p] ?? "").trim()])
+                    .filter(([, v]) => v.length > 0)
+                )
+              : {},
+            consented_at: socialAllow ? new Date().toISOString() : null,
+          },
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        // In prod the server returns just { error }; on branch deploys /
+        // netlify dev it also returns { code, param, message } for
+        // hands-free debugging. Render whatever came back.
+        const detail = [errBody?.code, errBody?.param, errBody?.message]
+          .filter(Boolean)
+          .join(" · ");
+        const msg = detail
+          ? `${errBody?.error || "Checkout failed"} (${detail})`
+          : errBody?.error || `Checkout failed (HTTP ${res.status})`;
+        throw new Error(msg);
+      }
+      const { url } = await res.json();
+      if (!url) throw new Error("No checkout URL returned");
+      window.location.href = url; // hand off to Stripe
+    } catch (err) {
+      setError(err?.message || "Couldn't start checkout. Please try again or contact us.");
+      setBusy(false);
+    }
+  };
+
+  // Map legacy IDs (without explicit productKey) — defensive copy of the
+  // server-side helper, so the browser does the right thing pre-flight.
+  function mapLegacyId(id) {
+    if (!id) return null;
+    if (id.startsWith?.("bib-")) return "bib";
+    if (id.startsWith?.("blanket-")) {
+      // Cart ids: `blanket-{alphabet}-{layoutKey}-{blockDmc}-{letterDmc}[-multi-...][-c...]`.
+      // Layout keys themselves use underscores, never dashes — so parts[2] is
+      // the whole layout token. TRUSTED_PRODUCTS keys off `blanket-{layoutKey}`.
+      const parts = id.split("-");
+      if (parts.length >= 3) return `blanket-${parts[2]}`;
+      return "blanket";
+    }
+    return null;
+  }
+
+  return (
+    <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
+      <button onClick={onBack} className="text-sm tracking-wide opacity-70 hover:opacity-100 mb-8">← Continue shopping</button>
+      {/* min-w-0 on both grid children is load-bearing: CSS Grid items
+          default to min-width: auto, which means they refuse to shrink
+          below the intrinsic max-content width of their content (a
+          paragraph's "longest line if it didn't wrap"). On a narrow
+          portrait phone viewport (~390px) that intrinsic width can
+          exceed the viewport, pushing the layout past the right edge
+          even though the parent had px-6 padding to spare. Landscape
+          (~844px) doesn't surface the bug because the column is wide
+          enough to satisfy the unwrapped intrinsic width. */}
+      <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
+        <div className="min-w-0">
+          <h1 className="font-display text-4xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Almost there.</h1>
+          <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-8">
+            You'll be sent to our secure checkout, powered by Stripe. Apple Pay, Google Pay, and all major credit cards accepted. Shipping and tax calculated on the next page.
+          </p>
+          {user ? (
+            <p className="text-sm opacity-70 mb-6 italic">Signing in as <span style={{ fontWeight: 500 }}>{user.email}</span> — your order will appear in your account.</p>
+          ) : (
+            <p className="text-sm opacity-70 mb-6 italic">Checking out as a guest. Sign in or make an account if you'd like to track your order later.</p>
+          )}
+
+          {error && (
+            <div className="text-sm p-3 mb-6" style={{ background: "rgba(139,44,44,0.08)", border: "1px solid rgba(139,44,44,0.25)", color: "#8B2C2C" }}>
+              {error}
+            </div>
+          )}
+
+          {/* ============================================================
+              OPTIONAL: GIFT OPTIONS
+              ============================================================
+              Most baby-blanket orders are gifts. This block lets the
+              buyer turn that on first-class — short message printed
+              on Lusik's included card, and a flag that tells her to
+              omit prices from the packing slip in the box. When the
+              headline checkbox is off, no gift metadata is sent. */}
+          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · gift options</legend>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={giftIsGift}
+                onChange={(e) => setGiftIsGift(e.target.checked)}
+                className="mt-0.5 w-4 h-4 flex-shrink-0"
+                style={{ accentColor: "#B08842" }}
+              />
+              <span className="text-sm leading-snug">
+                <span style={{ fontWeight: 500 }}>This is a gift.</span>
+                <span className="block text-xs opacity-65 mt-1 leading-relaxed">
+                  Lusik will include a small handwritten card with your message. You can also ask her to leave prices off the packing slip so the recipient never sees what was paid.
+                </span>
+              </span>
+            </label>
+
+            {giftIsGift && (
+              <div className="mt-4 pt-4" style={{ borderTop: "1px dashed rgba(176,136,66,0.3)" }}>
+                <label className="block mb-4">
+                  <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Message for the card <span className="normal-case tracking-normal opacity-70">(optional)</span></span>
+                  <textarea
+                    value={giftMessage}
+                    onChange={(e) => setGiftMessage(e.target.value.slice(0, 140))}
+                    maxLength={140}
+                    rows={3}
+                    placeholder="With all our love, Mom and Dad."
+                    className="w-full px-3 py-2.5 text-sm resize-none"
+                    style={{ border: "1px solid var(--border-strong)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
+                    aria-label="Gift message for the included card"
+                  />
+                  <span className="text-[0.6rem] opacity-55 mt-1 block tabular-nums">{giftMessage.length}/140</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={giftHidePrices}
+                    onChange={(e) => setGiftHidePrices(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 flex-shrink-0"
+                    style={{ accentColor: "#B08842" }}
+                  />
+                  <span className="text-xs leading-snug">
+                    Hide prices from the packing slip inside the box.
+                    <span className="block opacity-65 mt-0.5">
+                      Your email receipt still goes to you with the total — this only affects what's printed and shipped with the order.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer mt-3">
+                  <input
+                    type="checkbox"
+                    checked={giftWrap}
+                    onChange={(e) => setGiftWrap(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 flex-shrink-0"
+                    style={{ accentColor: "#B08842" }}
+                  />
+                  <span className="text-xs leading-snug">
+                    <span style={{ fontWeight: 500 }}>Add gift wrap</span>
+                    <span className="tabular-nums opacity-80"> (+${(CONFIG.GIFT_WRAP_PRICE_CENTS / 100).toFixed(2)})</span>
+                    <span className="block opacity-65 mt-0.5">
+                      Lusik will wrap the piece in soft tissue and twine, with the card tucked inside. Ready to give.
+                    </span>
+                  </span>
+                </label>
+                <p className="text-[0.65rem] opacity-55 mt-3 italic leading-snug">
+                  Shipping address is collected on the next page — if you're sending this to someone else, use their address there.
+                </p>
+              </div>
+            )}
+          </fieldset>
+
+          {/* ============================================================
+              OPTIONAL: ONE-YEAR REMINDER
+              ============================================================
+              Single checkbox, default off. Almost-no-friction add. Useful
+              for gift-givers (so they remember next year's baby shower)
+              and self-purchases alike. Sent at most once, ~11 months
+              after the order. */}
+          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · gentle reminder</legend>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={giftReminderOptIn}
+                onChange={(e) => setGiftReminderOptIn(e.target.checked)}
+                className="mt-0.5"
+                aria-describedby="gift-reminder-help"
+              />
+              <span className="text-xs leading-snug">
+                Send me one email next year if I might want another.
+                <span id="gift-reminder-help" className="block opacity-65 mt-0.5">
+                  We'll send it once, about 11 months from now. Not a marketing list — one email, with an unsubscribe link.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+
+          {/* ============================================================
+              OPTIONAL: SOCIAL-SHARE CONSENT
+              ============================================================
+              Default-off opt-in. The customer ticks the headline box,
+              chooses any subset of platforms, and (optionally) types a
+              handle for each platform they ticked. Handles are tracked
+              per-platform because almost nobody uses the same username
+              everywhere. Unticking the headline collapses everything
+              and zeroes the submitted payload, so "unchecked" stays the
+              legally-clean default. */}
+          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · share your story</legend>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={socialAllow}
+                onChange={(e) => setSocialAllow(e.target.checked)}
+                className="mt-0.5 w-4 h-4 flex-shrink-0"
+                style={{ accentColor: "#B08842" }}
+              />
+              <span className="text-sm leading-snug">
+                <span style={{ fontWeight: 500 }}>If you'd like, Lusik can share a photo of your finished piece.</span>
+                <span className="block text-xs opacity-65 mt-1 leading-relaxed">
+                  Just the blanket or bib — never your baby or anyone else. Tick the platforms you're on, and (if you'd like to be tagged) leave your handle for each one. Change your mind any time by emailing hello@lusikandsons.com.
+                </span>
+              </span>
+            </label>
+
+            {socialAllow && (
+              <div className="mt-4 pt-4" style={{ borderTop: "1px dashed rgba(176,136,66,0.3)" }}>
+                <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 mb-2">Which platforms?</p>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {SOCIAL_CONSENT_PLATFORMS.map((p) => {
+                    const checked = socialPlatforms.includes(p.id);
+                    return (
+                      <label
+                        key={p.id}
+                        className="flex items-center gap-2 px-3 py-2 cursor-pointer transition"
+                        style={{
+                          background: checked ? "rgba(176,136,66,0.12)" : "#FFFFFF",
+                          border: `1px solid ${checked ? "#B08842" : "rgba(26,22,18,0.15)"}`,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSocialPlatform(p.id)}
+                          className="w-3.5 h-3.5"
+                          style={{ accentColor: "#B08842" }}
+                        />
+                        <span className="text-sm">{p.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {socialPlatforms.length > 0 && (
+                  <div className="mt-1">
+                    <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 mb-2">Where should she tag you? <span className="normal-case tracking-normal opacity-70">(optional)</span></p>
+                    <div className="space-y-2">
+                      {SOCIAL_CONSENT_PLATFORMS
+                        .filter((p) => socialPlatforms.includes(p.id))
+                        .map((p) => (
+                          <label key={p.id} className="flex items-center gap-3">
+                            <span className="text-xs w-20 flex-shrink-0 opacity-80" style={{ fontWeight: 500 }}>{p.label}</span>
+                            <input
+                              type="text"
+                              value={socialHandles[p.id] ?? ""}
+                              onChange={(e) => updateSocialHandle(p.id, e.target.value)}
+                              maxLength={64}
+                              autoComplete="off"
+                              autoCapitalize="off"
+                              autoCorrect="off"
+                              spellCheck={false}
+                              placeholder="@yourname"
+                              className="flex-1 px-3 py-2 text-sm"
+                              style={{ border: "1px solid var(--border-strong)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
+                              aria-label={`Your ${p.label} handle, optional`}
+                            />
+                          </label>
+                        ))}
+                    </div>
+                    <span className="text-[0.65rem] opacity-55 mt-2 block italic">
+                      Leave any of these blank — Lusik will share without tagging if she isn't sure which account is yours.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </fieldset>
+
+          <button
+            onClick={handleCheckout}
+            disabled={busy || cart.length === 0}
+            className="w-full py-4 text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+            style={{
+              background: busy ? "rgba(26,22,18,0.5)" : "#1A1612",
+              color: "#F5EFE3",
+              cursor: busy ? "wait" : "pointer",
+            }}
+          >
+            {busy ? "Connecting to Stripe…" : "Pay with Stripe"}
+            {!busy && <ArrowRight size={16} strokeWidth={1.5} />}
+          </button>
+
+          {/* Accepted-payment row — Stripe handles all of these, but
+              customers don't know that until they see the icons. */}
+          <PaymentMethodsRow className="mt-4" />
+
+          <p className="text-xs opacity-60 mt-4 leading-relaxed">
+            Or order the slow way: <button onClick={() => window.open("https://instagram.com")} className="underline">DM us on Instagram</button>, <button onClick={() => window.open("mailto:hello@lusikandsons.com")} className="underline">email</button>, or call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>.
+          </p>
+        </div>
+
+        <div className="min-w-0">
+          <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order summary</h2>
+          <div className="mb-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
+            {cart.map((item) => (
+              <div key={item.id} className="flex gap-3 py-4 items-start" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
+                <div className="relative shrink-0">
+                  <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                  {item.isCustom && (
+                    <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
+                    <p className="text-xs opacity-60 truncate">{item.subtitle} · Qty {item.qty}</p>
+                  </div>
+                </div>
+                <p className="text-sm tabular-nums shrink-0" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="pt-2 space-y-1 text-sm">
+            <div className="flex justify-between"><span className="opacity-70">Subtotal</span><span className="tabular-nums">${subtotal.toFixed(2)}</span></div>
+            {giftIsGift && giftWrap && (
+              <div className="flex justify-between"><span className="opacity-70">Gift wrap</span><span className="tabular-nums">+${(CONFIG.GIFT_WRAP_PRICE_CENTS / 100).toFixed(2)}</span></div>
+            )}
+            <div className="flex justify-between"><span className="opacity-70">Shipping</span><span className="opacity-60">Calculated at Stripe</span></div>
+            <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-60">Calculated at Stripe</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
