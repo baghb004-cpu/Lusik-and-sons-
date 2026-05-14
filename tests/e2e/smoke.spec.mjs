@@ -29,6 +29,17 @@ function watchForConsoleErrors(page, errors) {
   });
 }
 
+// FirstVisitLangBanner is a full-screen modal that blocks the page
+// for any visitor without a stored language preference. Tests run
+// in a fresh browser context every time, so the banner shows up
+// and intercepts every click. Pre-seed localStorage with "en" so
+// the LangContext treats this run as a returning visitor.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => {
+    try { localStorage.setItem("lusik_lang_v1", "en"); } catch {}
+  });
+});
+
 test.describe("home page", () => {
   test("loads without console errors and shows brand + product", async ({ page }) => {
     const errors = [];
