@@ -80,18 +80,15 @@
 #   Whitelists exactly which origins the browser is allowed to
 #   load from. Anything not on the list — including a script the
 #   attacker manages to inject via a stored XSS — is silently
-#   blocked by the browser. The current policy is necessarily
-#   permissive because the site loads Tailwind, React, and Babel
-#   from CDNs and runs Babel Standalone (eval) at boot to
-#   transpile JSX. Once the Vite migration ships, this whole
-#   block tightens substantially: 'unsafe-eval' can come out,
-#   the CDN allow-list shrinks to nothing, and we can switch to
-#   nonce-based 'unsafe-inline' replacement.
+#   blocked by the browser.
 #
-#   Origins permitted today:
-#     - 'self'                            our own pages + /img/* + functions
-#     - cdn.tailwindcss.com               Tailwind runtime JIT
-#     - unpkg.com                         React UMD + Babel Standalone
+#   Post-Vite-flip the policy is significantly tighter than the
+#   pre-migration version: no Tailwind CDN, no unpkg, no
+#   'unsafe-eval' (Babel Standalone is gone, the bundle is
+#   pre-compiled at build time).
+#
+#   Origins permitted on /* :
+#     - 'self'                            our own pages + /assets/* + functions
 #     - identity.netlify.com              Netlify Identity widget
 #     - fonts.googleapis.com (CSS)        Google Fonts stylesheet
 #     - fonts.gstatic.com   (font files)  Google Fonts binaries
@@ -99,6 +96,17 @@
 #     - https: (img-src only)             customer photos / Netlify Blob CDN
 #     - data:                             base64 inline images + fonts
 #     - api.anthropic.com (connect-src)   ChatAssistant when enabled
+#     - js.stripe.com / hooks.stripe.com / checkout.stripe.com (frame-src)
+#                                         defensive: today checkout is a
+#                                         top-level redirect, but if anyone
+#                                         later swaps to Stripe Elements
+#                                         the iframe is already allow-listed
+#
+#   /admin/* gets a path-scoped override below that additionally
+#   allows unpkg.com (where Decap CMS loads from with SRI). That
+#   allowance is intentionally NOT in the global policy — the
+#   editor is invite-only and the rest of the site doesn't need
+#   to reach unpkg.
 #
 #   frame-ancestors 'none' = nobody can iframe our site, which
 #   kills click-jacking and most UI-redress attacks dead. (Also
@@ -153,10 +161,32 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://identity.netlify.com https://cloud.umami.is; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://api.anthropic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://cloud.umami.is; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://api.anthropic.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; child-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'; upgrade-insecure-requests"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains"
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
     Cross-Origin-Opener-Policy = "same-origin"
+
+# ============================================================
+# /admin/* — path-scoped CSP override for Decap CMS
+# ============================================================
+# Decap CMS is loaded from unpkg.com (pinned + SRI in
+# public/admin/index.html). It also bundles a webpack runtime
+# that uses `new Function()` in some code paths, so 'unsafe-eval'
+# is required *only* on this path. The admin is invite-only via
+# Netlify Identity, and the rest of the site never visits /admin/,
+# so this looser policy doesn't widen the public attack surface.
+#
+# Netlify applies the longest-matching path's headers, so this
+# block fully replaces the /* CSP for any URL under /admin/.
+# ============================================================
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://api.github.com https://unpkg.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

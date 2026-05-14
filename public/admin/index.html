@@ -13,10 +13,23 @@
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
   <body>
-    <!-- Decap CMS itself. Loaded from its CDN — same hosting model
-         as the Identity widget. Decap reads config.yml in this
-         folder for its collection definitions. -->
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <!-- Decap CMS itself. Pinned to an exact version with a Subresource
+         Integrity (SRI) hash + crossorigin so the browser refuses to
+         execute it if the bytes on unpkg ever change — defends against
+         a compromised CDN or a malicious package re-publish.
+
+         To upgrade Decap:
+           1. Pick the new version: https://www.npmjs.com/package/decap-cms
+           2. Recompute the SRI hash:
+              curl -sL https://unpkg.com/decap-cms@<VERSION>/dist/decap-cms.js | \
+                openssl dgst -sha384 -binary | openssl base64 -A
+           3. Update both the version in src= and the integrity= below.
+           4. Test the editor end-to-end before deploying. -->
+    <script
+      src="https://unpkg.com/decap-cms@3.8.4/dist/decap-cms.js"
+      integrity="sha384-JNjmpWfdPuQ3I7ac38W0teoHcVxx7YdfDVpcgehfGqcu6ZBt26m/nmmBM2FzuO41"
+      crossorigin="anonymous"
+    ></script>
 
     <script>
       // Redirect after Identity login. Without this, after clicking
