@@ -32,6 +32,7 @@
 // ============================================================
 
 import { getStore } from "@netlify/blobs";
+import { isScheduledInvocation, forbidden } from "./_lib/scheduled.mjs";
 
 // Daily at 04:00 UTC. Off-peak for everyone, no overlap with
 // the gift-reminder scheduled function (09:00 UTC) so a slow
@@ -112,7 +113,14 @@ async function cleanupRateLimitBucket(bucket, cutoffDate) {
   return { pruned, kept, errors };
 }
 
-export default async () => {
+export default async (req) => {
+  // HTTP gate — Netlify scheduled functions are reachable at the
+  // public function URL. Without this check an attacker could
+  // race-trigger pruning of pending-orders blobs that the webhook
+  // is about to consume, or rapidly inflate function-invocation
+  // counts against the project's plan. See _lib/scheduled.mjs.
+  if (!(await isScheduledInvocation(req))) return forbidden();
+
   const cutoff = new Date();
   cutoff.setUTCDate(cutoff.getUTCDate() - RETENTION_DAYS);
   const cutoffIso  = cutoff.toISOString();
