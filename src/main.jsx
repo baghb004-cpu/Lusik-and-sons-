@@ -19,8 +19,15 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/index.css";
+import { initErrorReporting, Sentry } from "./lib/errorReporting.js";
 import { LanguageProvider } from "./i18n/LangContext.jsx";
 import { App } from "./App.jsx";
+
+// Initialize error reporting BEFORE any other code runs. If
+// VITE_SENTRY_DSN isn't set this is a no-op; if it is, every
+// subsequent uncaught error / promise rejection / ErrorBoundary
+// trip gets reported.
+initErrorReporting();
 
 // ============================================================
 // ErrorBoundary — last-resort catch for uncaught render errors
@@ -39,6 +46,12 @@ class ErrorBoundary extends React.Component {
   }
   componentDidCatch(error, info) {
     console.error("[ErrorBoundary]", error, info?.componentStack);
+    // Forward to Sentry if it's been initialized. Sentry.captureException
+    // is a no-op when init() wasn't called (DSN not set), so this is
+    // safe to invoke unconditionally.
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info?.componentStack } },
+    });
   }
   render() {
     if (!this.state.hasError) return this.props.children;
