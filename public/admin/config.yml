@@ -1,0 +1,61 @@
+# ============================================================
+# Decap CMS configuration
+# ============================================================
+# This file is read by /admin/index.html on every page load.
+# Decap renders a browser editor UI based on the collections
+# defined below and commits changes to GitHub via Git Gateway.
+#
+# Setup requirements (one-time, in the Netlify dashboard):
+#   1. Site → Identity → Enable
+#   2. Site → Identity → Services → Git Gateway → Enable
+#      (Git Gateway is what lets the browser commit to GitHub
+#      without the user having a GitHub account themselves.)
+#   3. Site → Identity → Settings → Registration → Invite-only
+#      (so random visitors can't sign up for editor access)
+#   4. Site → Identity → Users → Invite User → Lusik's email
+#   5. Lusik clicks the confirm link in her email, sets a
+#      password, and lands at /admin/. She can now edit posts.
+#
+# When Lusik saves a post, Decap commits the markdown file
+# back to this repo on the `main` branch (or whatever
+# `branch` says below), which triggers a Netlify deploy.
+# Within ~2 minutes the new post is live.
+# ============================================================
+
+backend:
+  name: git-gateway
+  branch: main
+
+# Where Decap-uploaded media (images for journal posts) goes.
+# Vite copies /public/* into dist/ at build time, so the URL
+# `/journal-media/foo.jpg` resolves correctly in production.
+media_folder: "public/journal-media"
+public_folder: "/journal-media"
+
+# Friendly URL inside the editor for previewing a post in
+# context. Decap opens this URL in a side panel.
+site_url: "https://lusikandsons.com"
+display_url: "https://lusikandsons.com"
+logo_url: "https://lusikandsons.com/apple-touch-icon.png"
+
+collections:
+  - name: "journal"
+    label: "Journal Posts"
+    label_singular: "Post"
+    folder: "src/data/journal-posts"
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    summary: "{{title}} — {{publishedAt}}"
+    # The fields below match exactly what src/data/journalPosts.js
+    # expects to parse out of the frontmatter. Don't rename any of
+    # these without updating the parser.
+    fields:
+      - { label: "Slug",         name: "slug",        widget: "string", hint: "URL path: /journal/<slug>. NEVER change for an existing post — old links will 404." }
+      - { label: "Title",        name: "title",       widget: "string" }
+      - { label: "Excerpt",      name: "excerpt",     widget: "text",   hint: "One or two sentences shown on the index page." }
+      - { label: "Published",    name: "publishedAt", widget: "date",   format: "YYYY-MM-DD" }
+      - { label: "Read minutes", name: "readMinutes", widget: "number", default: 3, min: 1, max: 30, valueType: "int" }
+      - { label: "Body",         name: "body",        widget: "markdown", hint: "Use ## for section headings. Plain paragraphs become regular text." }
