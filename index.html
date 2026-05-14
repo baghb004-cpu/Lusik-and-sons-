@@ -1341,19 +1341,22 @@ const PRODUCT = {
     {
       key: "double_diag_br",
       label: "Two parallel diagonals",
-      shortLabel: "↙↙ Two parallel diagonals · A at top-right of each",
-      description: "Six letter squares placed in two parallel diagonals, both slanting top-right to bottom-left. The first letter sits at the top-right of each diagonal, with the alphabet running down toward the bottom-left. Alphabet stitched twice, once on each diagonal.",
+      shortLabel: "↘↘ Two parallel diagonals · A at top-left of each",
+      description: "Six letter squares placed in two parallel diagonals, both slanting top-left to bottom-right (↘). The first letter (A) sits at the top-left of each diagonal track. The upper diagonal hugs the top-right region of the blanket; the lower diagonal hugs the bottom-left region — so the two diagonals occupy diagonally opposite corners. Alphabet stitched twice, once on each diagonal.",
       letterCount: 6,
       priceCents: 6500,
-      // 7x7 grid positions for two parallel ↙↙ diagonals.
-      // Upper diagonal (top-right corner of the blanket):
-      //   row 0 col 5, row 1 col 4, row 2 col 3 = positions 5, 11, 17
-      // Lower diagonal (bottom-left corner of the blanket):
-      //   row 4 col 3, row 5 col 2, row 6 col 1 = positions 31, 37, 43
-      // Both diagonals share the same slope (row + col = 5 for upper,
-      // row + col = 7 for lower); the midline row + col = 6 runs
-      // between them and carries the optional name/year text.
-      preview: [5, 11, 17, 31, 37, 43],
+      // 7x7 grid positions for two parallel ↘↘ diagonals occupying
+      // diagonally opposite corners of the canvas.
+      // Upper diagonal (top-right corner region):
+      //   row 0 col 4, row 1 col 5, row 2 col 6 = positions 4, 12, 20
+      //   A at (0,4) — top-left of its own track; C reaches the right edge.
+      // Lower diagonal (bottom-left corner region):
+      //   row 4 col 0, row 5 col 1, row 6 col 2 = positions 28, 36, 44
+      //   A at (4,0) — top-left of its own track; C reaches the bottom edge.
+      // Both diagonals share the same slope (col − row = +4 for upper,
+      // −4 for lower); the geometric midline col = row runs between
+      // them and carries the optional name/year text.
+      preview: [4, 12, 20, 28, 36, 44],
       enabled: true,
     },
   ],
@@ -9822,20 +9825,19 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     };
   });
 
-  // Optional customer text — placed on the MIDDLE ANTI-DIAGONAL
-  // (row + col = 6) that runs equidistant between the two alphabet
-  // diagonals. The canonical product (`double_diag_br`) puts the
-  // upper diagonal on row + col = 5 (top-right region) and the
-  // lower on row + col = 7 (bottom-left region), so the cells
-  // (2,4), (3,3), (4,2) all lie exactly between them — a natural
-  // three-cell zone for the optional personalization text.
+  // Optional customer text — placed on the MIDDLE DIAGONAL (col =
+  // row) that runs equidistant between the two alphabet diagonals.
+  // The canonical product (`double_diag_br`) puts the upper diagonal
+  // in the top-right corner region (col − row = +4) and the lower
+  // diagonal in the bottom-left corner region (col − row = −4), so
+  // the cells (2,2), (3,3), (4,4) all lie exactly between them — a
+  // natural three-cell zone for the optional personalization text.
   //
   // Cell positions used (7×7, pos = row*7 + col):
-  //   Name anchor: (2,4) → position 18   ← name sits ABOVE the year
-  //                                         on the anti-diagonal
+  //   Name anchor: (2,2) → position 16   ← name sits ABOVE the year
   //   Year anchor: (3,3) → position 24   ← year is at the geometric
   //                                         center of the blanket
-  //   Reserve:     (4,2) → position 30   ← fallback if a future
+  //   Reserve:     (4,4) → position 32   ← fallback if a future
   //                                         layout occupies one of the
   //                                         above
   //
@@ -9849,17 +9851,19 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
   const line1Trim = (customLine1 ?? "").trim();
   const line2Trim = (customLine2 ?? "").trim();
 
-  // The middle anti-diagonal cells in order from top-right to bottom-left.
-  // Filtering by empty-cell makes this layout-agnostic: if a future
-  // layout uses (3,3) for a letter, we'd skip to (2,4) or (4,2).
-  const middleDiagonalPositions = [18, 24, 30];
+  // The middle diagonal cells in row order, top to bottom. These
+  // sit on the col = row axis that runs between the upper-right and
+  // lower-left diagonals — the empty band where Lusik stitches the
+  // optional name + year. Filtering by empty-cell makes this layout-
+  // agnostic: if a future layout uses (3,3) for a letter, we'd skip
+  // to (2,2) or (4,4).
+  const middleDiagonalPositions = [16, 24, 32];
   const availableMidline = middleDiagonalPositions.filter(pos => cells[pos] === null);
 
   // Anchor the YEAR to the middle of the available midline (geometric
   // center of the blanket) and the NAME to the cell directly ABOVE it.
-  // This is the inverse of the older OLEN/2026-style layout — the year
-  // is the bigger, more prominent piece centered on the blanket; the
-  // name reads as a quieter label on the row above it.
+  // Year is the prominent centered piece; the name reads as a label
+  // one row up.
   const midIdx     = Math.floor(availableMidline.length / 2);
   const yearAnchor = availableMidline[midIdx] ?? null;
   const nameAnchor = midIdx > 0 ? availableMidline[midIdx - 1] : null;
@@ -9964,11 +9968,13 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
 
         // Per-cube depth direction. The preview array stores cubes
         // in two halves: the first `letters.length` entries are
-        // the upper diagonal (top-right region), the rest are the
-        // lower diagonal (bottom-left region). For the ↙↙ layout:
-        // upper-diagonal cubes face up-and-LEFT, lower-diagonal
-        // cubes face up-and-RIGHT. Mirror = the two diagonals look
-        // like they're facing each other across the blanket.
+        // the upper diagonal (top-right corner region), the rest
+        // are the lower diagonal (bottom-left corner region).
+        // Direction is MIRRORED between the two halves so the
+        // diagonals look like a coherent pair rather than a
+        // randomly-rotated set: upper-diagonal cubes (top-right)
+        // show their back-top corner UP-AND-LEFT; lower-diagonal
+        // cubes (bottom-left) show it UP-AND-RIGHT.
         const isLowerDiagonal = isAlphabetCube && cell.idx >= letters.length;
         const cellDepthShadow = isAlphabetCube
           ? buildDepth(isLowerDiagonal ? 1 : -1)
