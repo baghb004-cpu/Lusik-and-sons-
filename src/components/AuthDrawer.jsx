@@ -152,7 +152,7 @@ export function AuthDrawer({ onClose, onAuthed }) {
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               autoComplete="email" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false}
-              required autoComplete="email"
+              required
               className={inputCls} style={inputStyle}
             />
           </div>

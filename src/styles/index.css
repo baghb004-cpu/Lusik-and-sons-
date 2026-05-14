@@ -23,3 +23,738 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================================
+   Migrated from index.html's inline <style> block at Phase 10.
+   Everything below was previously between <style> and </style>
+   in index.html. Vite + PostCSS Tailwind processes the file
+   normally; nothing about the actual CSS rules changes.
+   ============================================================ */
+
+  /* ============================================================
+     COLOR TOKENS — light / dark theme variables
+     ============================================================
+     Every brand color lives here as a CSS custom property. The
+     :root block is the LIGHT theme (the brand's primary look).
+     :root[data-theme="dark"] overrides each value with a warm
+     dark equivalent — NOT stark black, because Lusik's brand is
+     warm. The gold accent (--accent) stays identical-ish across
+     both themes so it stays recognizable.
+
+     The theme attribute is set by the inline FOUC-prevention
+     script in <head> BEFORE this CSS loads, so the first paint
+     already matches the user's choice (or their system pref if
+     they haven't chosen). No flash.
+
+     Inline styles in JSX still use literal hex values in many
+     places (the codebase predates this refactor). The major
+     surfaces — body, nav, drawers, modals, cards — read from
+     var() so dark mode covers most of the visible UI. Smaller
+     elements that haven't been migrated yet keep their light-
+     mode colors; migration is incremental — search for the
+     relevant hex and swap to var().
+     ============================================================ */
+  :root {
+    --bg-page:        #F5EFE3;  /* main page cream */
+    --bg-page-90:     rgba(245,239,227,0.92);  /* translucent for backdrop-blur nav */
+    --bg-surface:     #FFFFFF;  /* cards, inputs, the brightest layer */
+    --bg-elevated:    #EFE7D6;  /* footer, slightly darker cream for separation */
+    --bg-subtle:      #FAF6EC;  /* hover backgrounds, gallery placeholders */
+    --bg-overlay:     rgba(26,22,18,0.4);  /* drawer/modal scrim */
+
+    --text-primary:   #1A1612;
+    --text-secondary: #3D332A;
+    --text-muted:     rgba(26,22,18,0.65);
+    --text-on-ink:    #F5EFE3;  /* text on dark ink (Pay button, etc.) */
+
+    --border-default: rgba(26,22,18,0.10);
+    --border-strong:  rgba(26,22,18,0.20);
+    --border-soft:    rgba(26,22,18,0.06);
+
+    --ink:            #1A1612;  /* primary dark — buttons, headings */
+    --accent:         #B08842;  /* gold — UNCHANGED in dark mode */
+    --accent-soft:    rgba(176,136,66,0.10);
+    --accent-strong:  rgba(176,136,66,0.30);
+
+    --success:        #3D5A3D;
+    --error:          #8B2C2C;
+    --error-soft:     rgba(139,44,44,0.06);
+
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --bg-page:        #15110E;  /* warm dark — not stark black */
+    --bg-page-90:     rgba(21,17,14,0.92);
+    --bg-surface:     #1F1814;  /* one notch lighter for cards */
+    --bg-elevated:    #2A2118;  /* footer / panels */
+    --bg-subtle:      #251D17;
+    --bg-overlay:     rgba(0,0,0,0.6);
+
+    --text-primary:   #F5EFE3;
+    --text-secondary: rgba(245,239,227,0.78);
+    --text-muted:     rgba(245,239,227,0.55);
+    /* Inverted in dark — ink button is cream, so the text on top must be dark */
+    --text-on-ink:    #1A1612;
+
+    --border-default: rgba(245,239,227,0.10);
+    --border-strong:  rgba(245,239,227,0.18);
+    --border-soft:    rgba(245,239,227,0.05);
+
+    --ink:            #F5EFE3;  /* invert: ink in dark = cream */
+    --accent:         #C9A678;  /* brighter gold for dark-bg contrast */
+    --accent-soft:    rgba(201,166,120,0.14);
+    --accent-strong:  rgba(201,166,120,0.36);
+
+    --success:        #6FA86F;
+    --error:          #D17474;
+    --error-soft:     rgba(209,116,116,0.10);
+
+    color-scheme: dark;
+  }
+
+  /* Smooth theme-transition for surfaces that READ var(). The
+     .no-transitions class is applied by the FOUC script on
+     first paint and removed after one rAF, so the initial paint
+     doesn't animate from light → dark when the user's system is
+     set to dark mode. */
+  html { transition: background-color 0.25s ease, color 0.25s ease; }
+  body, .theme-surface { transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
+  html.no-transitions, html.no-transitions * { transition: none !important; }
+
+  /* Defends the layout against any element accidentally pushing past the
+     viewport width (e.g. a stray translateX, a wide image, a fixed-min-
+     width dropdown). Without this, an overflow makes <body> wider than
+     the screen, and elements like the top announce banner that are
+     width: 100% of body visibly stop short of the viewport edge.
+
+     iOS Safari needs the more aggressive `width + position: relative`
+     pattern, not just overflow-x: hidden — a plain overflow-x clip
+     sometimes still lets a too-wide child poke out by a few pixels. */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    position: relative;
+  }
+  #root { overflow-x: hidden; width: 100%; max-width: 100vw; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); }
+  .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
+  .gold-line { background: linear-gradient(90deg, transparent, #B08842, transparent); height: 1px; }
+  .fade-in { animation: fadeIn 0.7s ease-out; }
+  .slide-up { animation: slideUp 0.6s ease-out; }
+  .stagger-1 { animation-delay: 0.1s; animation-fill-mode: backwards; }
+  .stagger-2 { animation-delay: 0.2s; animation-fill-mode: backwards; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes drawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .drawer-in { animation: drawerIn 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
+  /* ============================================================
+     Toast notifications — slide in from the right edge (top of
+     viewport), stack vertically with a small gap. Position is
+     fixed at top-right on desktop, top-center on mobile.
+     prefers-reduced-motion replaces the slide with a quick fade.
+     ============================================================ */
+  .toast-viewport {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;            /* let clicks pass through gaps */
+    max-width: calc(100vw - 2rem);
+  }
+  @media (max-width: 640px) {
+    .toast-viewport { left: 1rem; right: 1rem; align-items: stretch; }
+  }
+  .toast-item {
+    pointer-events: auto;            /* but the toasts themselves are clickable */
+    width: min(360px, 100%);
+    animation: toastIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+  }
+  .toast-item.toast-leave { animation: toastOut 0.22s ease-out forwards; }
+  @keyframes toastIn  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastOut { from { opacity: 1; transform: translateX(0); }   to { opacity: 0; transform: translateX(24px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .toast-item       { animation: toastFadeIn 0.18s ease-out; }
+    .toast-item.toast-leave { animation: toastFadeOut 0.18s ease-out forwards; }
+    @keyframes toastFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes toastFadeOut { from { opacity: 1; } to { opacity: 0; } }
+  }
+
+  /* Sticky mobile add-to-cart bar — slides up from the bottom of
+     the viewport when the main PDP CTA scrolls out of view. Only
+     present on mobile (Tailwind lg:hidden on the JSX); the CSS
+     here just powers the entry animation. */
+  @keyframes stickyCtaIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sticky-cta-in { animation: stickyCtaIn 0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+  @media (prefers-reduced-motion: reduce) {
+    .sticky-cta-in { animation: fadeIn 0.22s ease-out; }
+  }
+
+  /* Order progress timeline — the current stage's circle softly
+     pulses to signal "this is happening right now." */
+  @keyframes orderStageRing {
+    0%   { box-shadow: 0 0 0 4px  rgba(176,136,66,0.15); }
+    50%  { box-shadow: 0 0 0 8px  rgba(176,136,66,0.05); }
+    100% { box-shadow: 0 0 0 4px  rgba(176,136,66,0.15); }
+  }
+  .order-stage-current { animation: orderStageRing 2.4s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .order-stage-current { animation: none; }
+  }
+
+  /* Skeleton shimmer — used as a placeholder while async data
+     loads. The gradient is set inline; this rule just animates
+     the background-position so it appears to move across. */
+  @keyframes skeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skeleton-shimmer { animation: skeletonShimmer 1.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer { animation: none; }
+  }
+
+  /* Heart-burst feedback on add-to-cart. Each particle uses CSS variables (--tx/--ty/--rot)
+     set inline for randomization. The pivot is positioned fixed at the click point. */
+  .heart-burst-pivot {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    width: 0;
+    height: 0;
+  }
+  .heart-particle {
+    position: absolute;
+    left: -8px;
+    top: -8px;
+    width: 16px;
+    height: 16px;
+    animation: heart-fly 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    will-change: transform, opacity;
+  }
+  @keyframes heart-fly {
+    0%   { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 0; }
+    15%  { opacity: 1; transform: translate(calc(var(--tx) * 0.15), calc(var(--ty) * 0.15)) scale(1.1) rotate(calc(var(--rot) * 0.15)); }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0.55) rotate(var(--rot)); opacity: 0; }
+  }
+
+  /* Cart icon pulse when count ticks up */
+  .cart-pulse { animation: cart-pulse 500ms cubic-bezier(0.4, 0, 0.2, 1); }
+  @keyframes cart-pulse {
+    0%, 100% { transform: scale(1); }
+    30%      { transform: scale(1.25); }
+  }
+
+  /* Honor users who prefer less motion */
+  @media (prefers-reduced-motion: reduce) {
+    .heart-particle { animation: none; opacity: 0; }
+    .cart-pulse { animation: none; }
+  }
+
+  /* === SHOP MEGA-MENU ===
+     Apple-style hover-to-open dropdown attached to the "Shop" nav trigger.
+     Desktop: appears on hover/focus of the trigger, stays open while cursor
+     is in the menu. Mobile: hidden, replaced by the existing mobile drawer
+     which gets an expanded products section.
+     Hover-intent: a small delay before close (200ms) so users don't lose
+     the menu by briefly leaving the trigger area on the way to the menu. */
+  .shop-menu-wrap {
+    position: relative;
+  }
+  .shop-menu-trigger {
+    /* Trigger uses the same look as other nav links so nothing visual is
+       added; behavior is what's different. */
+  }
+  .shop-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    margin-top: 0;
+    min-width: 640px;
+    max-width: 90vw;
+    background: #F5EFE3;
+    border: 1px solid rgba(26,22,18,0.08);
+    box-shadow: 0 16px 40px rgba(26,22,18,0.12), 0 4px 8px rgba(26,22,18,0.06);
+    padding: 32px 36px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 50;
+  }
+  /* The hover bridge — invisible gap between trigger and menu, so the cursor
+     can travel between them without triggering an unwanted close. */
+  .shop-menu::before {
+    content: "";
+    position: absolute;
+    top: -16px;
+    left: 0;
+    right: 0;
+    height: 16px;
+  }
+  .shop-menu-wrap:hover .shop-menu,
+  .shop-menu-wrap:focus-within .shop-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .shop-menu-col {
+    /* each category column in the dropdown */
+  }
+  .shop-menu-col-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(26,22,18,0.5);
+    margin-bottom: 12px;
+  }
+  .shop-menu-item {
+    display: block;
+    padding: 4px 0;
+    font-size: 0.95rem;
+    color: #1A1612;
+    text-decoration: none;
+    transition: color 120ms ease, padding-left 120ms ease;
+  }
+  .shop-menu-item:hover {
+    color: #B08842;
+    padding-left: 4px;
+  }
+  .shop-menu-item.placeholder {
+    opacity: 0.55;
+  }
+  .shop-menu-item-meta {
+    font-size: 0.7rem;
+    opacity: 0.55;
+    margin-left: 4px;
+  }
+  /* On mobile the mega-menu CSS is suppressed; the mobile drawer handles it. */
+  @media (max-width: 768px) {
+    .shop-menu { display: none; }
+  }
+
+  /* === BACK-TO-TOP BUTTON === */
+  /* Small floating button. Sits ABOVE the text-us widget so they don't
+     overlap. Hidden by default (opacity 0, pointer-events: none); shows
+     once .visible class is added by scroll listener. Respects iOS safe-area
+     insets so it doesn't get clipped on notched devices.
+     The 90px bottom offset = text-us widget height (58px) + 20px gap + 12px. */
+  .back-to-top {
+    position: fixed;
+    right: max(20px, env(safe-area-inset-right));
+    bottom: calc(max(20px, env(safe-area-inset-bottom)) + 70px);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #1A1612;
+    color: #F5EFE3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(26,22,18,0.22), 0 2px 4px rgba(26,22,18,0.12);
+    z-index: 39;  /* one below text-us widget (40), since text-us is more important */
+    transition: opacity 240ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    cursor: pointer;
+    border: 1px solid rgba(245,239,227,0.12);
+    font-family: inherit;
+    /* Hidden state — both opacity AND pointer-events so it can't be clicked
+       while invisible (some screen-reader users would otherwise reach it). */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+  }
+  .back-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .back-to-top:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(26,22,18,0.28), 0 2px 6px rgba(26,22,18,0.15);
+  }
+  .back-to-top:focus-visible {
+    outline: 2px solid #B08842;
+    outline-offset: 3px;
+  }
+  /* Respect users who've set reduced-motion in their OS — skip the smooth
+     scroll animation and just jump. Same principle on the transform. */
+  @media (prefers-reduced-motion: reduce) {
+    .back-to-top { transition: opacity 100ms ease; transform: none; }
+    .back-to-top:hover { transform: none; }
+  }
+
+  /* === TEXT-US WIDGET === */
+  /* Floating button anchored to the bottom-right. We use position:fixed and
+     env(safe-area-inset-*) so it lifts above the iOS home indicator on
+     iPhones and notched devices, instead of being clipped by them. */
+  .textus-fab {
+    position: fixed;
+    right: max(20px, env(safe-area-inset-right));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #3D5A3D;
+    color: #F5EFE3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(26,22,18,0.25), 0 2px 6px rgba(26,22,18,0.15);
+    z-index: 40;
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 200ms ease,
+                width 250ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-radius 250ms cubic-bezier(0.22, 1, 0.36, 1),
+                padding 250ms cubic-bezier(0.22, 1, 0.36, 1);
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    border: none;
+    font-family: inherit;
+  }
+  /* Expanded "pill" state for desktop default appearance */
+  .textus-fab.expanded {
+    width: auto;
+    border-radius: 999px;
+    padding: 0 22px 0 18px;
+    gap: 10px;
+  }
+  .textus-fab:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,22,18,0.3), 0 3px 8px rgba(26,22,18,0.18); }
+  .textus-fab:active { transform: translateY(0); }
+  .textus-fab-label {
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+  }
+
+  /* ChatAssistant (Claude AI) — bottom-LEFT so it doesn't fight
+     the text-us widget (bottom-right) or the mobile bottom-nav. */
+  .chat-fab { animation: fadeIn 0.4s ease-out; }
+  .chat-panel { animation: chatPanelIn 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes chatPanelIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .chat-typing { display: inline-block; letter-spacing: 0.3em; animation: chatTyping 1.2s ease-in-out infinite; }
+  @keyframes chatTyping {
+    0%, 60%, 100% { opacity: 0.35; }
+    30%           { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chat-fab, .chat-panel { animation: none; }
+    .chat-typing           { animation: none; opacity: 0.6; }
+  }
+  /* Lift the chat-fab above the mobile bottom-nav, same as the
+     other bottom-anchored widgets. */
+  @media (max-width: 1023px) {
+    .chat-fab  { bottom: calc(70px + 1.5rem) !important; }
+    .chat-panel { bottom: calc(70px + 1.5rem) !important; }
+  }
+
+  /* Subtle "I'm available" pulse ring around the button — only on first
+     idle for new visitors, then quieted. CSS-only, no JS. */
+  .textus-fab::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    border: 2px solid #3D5A3D;
+    opacity: 0;
+    animation: textus-ring 2.4s cubic-bezier(0.22, 1, 0.36, 1) 1.5s 2;
+    pointer-events: none;
+  }
+  @keyframes textus-ring {
+    0%   { transform: scale(0.95); opacity: 0; }
+    20%  { opacity: 0.5; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+
+  .textus-panel {
+    position: fixed;
+    right: max(20px, env(safe-area-inset-right));
+    bottom: calc(58px + 32px + max(20px, env(safe-area-inset-bottom)));
+    width: min(340px, calc(100vw - 40px));
+    background: #F5EFE3;
+    border: 1px solid rgba(26,22,18,0.12);
+    box-shadow: 0 16px 48px rgba(26,22,18,0.22), 0 4px 12px rgba(26,22,18,0.08);
+    z-index: 41;
+    transform-origin: bottom right;
+    animation: textus-panel-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes textus-panel-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Proactive "Can we help?" bubble that appears after a timer */
+  .textus-proactive {
+    position: fixed;
+    right: max(20px, env(safe-area-inset-right));
+    bottom: calc(58px + 18px + max(20px, env(safe-area-inset-bottom)));
+    width: min(280px, calc(100vw - 40px));
+    background: #F5EFE3;
+    border: 1px solid rgba(26,22,18,0.12);
+    box-shadow: 0 12px 36px rgba(26,22,18,0.2), 0 3px 10px rgba(26,22,18,0.08);
+    z-index: 41;
+    transform-origin: bottom right;
+    animation: textus-proactive-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .textus-proactive::after {
+    /* Little tail pointing toward the chat button */
+    content: "";
+    position: absolute;
+    bottom: -7px;
+    right: 22px;
+    width: 12px;
+    height: 12px;
+    background: #F5EFE3;
+    border-right: 1px solid rgba(26,22,18,0.12);
+    border-bottom: 1px solid rgba(26,22,18,0.12);
+    transform: rotate(45deg);
+  }
+  @keyframes textus-proactive-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .textus-fab::before { animation: none; }
+    .textus-panel { animation: none; }
+    .textus-proactive { animation: none; }
+    .textus-fab { transition: none; }
+  }
+
+  /* ============================================================
+     MOBILE LIFT — clear the bottom-nav (and the PDP sticky CTA)
+     ============================================================
+     On phones the MobileBottomNav sits along the bottom edge
+     and the chat bubble used to land right on top of the
+     ACCOUNT tab. Lift the whole bottom-right widget stack —
+     chat FAB, chat panel, proactive bubble, back-to-top — by
+     the height of the nav so they sit cleanly above it.
+
+     Threshold matches Tailwind's lg breakpoint (the same one
+     `lg:hidden` on the nav itself uses). 70px is enough to
+     clear the nav content on Android AND iOS, with iOS adding
+     its home-bar safe-area on top via the env() math below.
+
+     Bonus: this also clears the PDP's mobile sticky add-to-cart
+     bar in cases where the bottom-nav is hidden and the sticky
+     CTA is the thing at the bottom instead — both surfaces sit
+     in roughly the same height range.
+     ============================================================ */
+  @media (max-width: 1023px) {
+    .textus-fab {
+      bottom: calc(70px + max(20px, env(safe-area-inset-bottom)));
+    }
+    .textus-panel {
+      bottom: calc(70px + 58px + 32px + max(20px, env(safe-area-inset-bottom)));
+    }
+    .textus-proactive {
+      bottom: calc(70px + 58px + 18px + max(20px, env(safe-area-inset-bottom)));
+    }
+    .back-to-top {
+      bottom: calc(70px + 70px + max(20px, env(safe-area-inset-bottom)));
+    }
+  }
+
+  /* === CART STATUS TOOLTIP === */
+  /* Appears on hover/focus over the cart icon. Desktop only — on mobile,
+     `:hover` typically doesn't fire and the existing badge handles status. */
+  .cart-tooltip-wrap { position: relative; }
+  .cart-tooltip {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 200px;
+    background: #1A1612;
+    color: #F5EFE3;
+    padding: 10px 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 160ms;
+    pointer-events: none;
+    z-index: 50;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(26,22,18,0.18);
+  }
+  .cart-tooltip::before {
+    /* Little arrow pointing up to the cart icon */
+    content: "";
+    position: absolute;
+    top: -5px;
+    right: 14px;
+    width: 10px;
+    height: 10px;
+    background: #1A1612;
+    transform: rotate(45deg);
+  }
+  /* Only show on devices with real hover capability. This single line is
+     what makes the tooltip "desktop only" — touch devices return false. */
+  @media (hover: hover) {
+    .cart-tooltip-wrap:hover .cart-tooltip,
+    .cart-tooltip-wrap:focus-within .cart-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      transition: opacity 160ms ease, transform 160ms ease, visibility 0s;
+    }
+  }
+  .cart-tooltip-title { font-weight: 500; letter-spacing: 0.04em; margin-bottom: 2px; }
+  .cart-tooltip-meta  { opacity: 0.7; font-size: 11px; }
+
+  /* === GENERAL-PURPOSE TOOLTIPS === */
+  /* Any element with a `data-tooltip` attribute shows that text on hover.
+     Desktop only — @media (hover: hover) gates visibility. Touch devices
+     never see these. Position via `data-tooltip-pos`: top (default), bottom,
+     left, right. Keep text under 60 chars and don't use HTML. */
+  [data-tooltip] { position: relative; }
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    background: #1A1612;
+    color: #F5EFE3;
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(26,22,18,0.18);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 60;
+    transition: opacity 140ms ease, visibility 0s linear 140ms;
+  }
+  [data-tooltip]::after,
+  [data-tooltip][data-tooltip-pos="top"]::after {
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  [data-tooltip][data-tooltip-pos="bottom"]::after {
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  [data-tooltip][data-tooltip-pos="left"]::after {
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  [data-tooltip][data-tooltip-pos="right"]::after {
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  @media (hover: hover) {
+    [data-tooltip]:hover::after,
+    [data-tooltip]:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 140ms ease, visibility 0s;
+    }
+  }
+
+  button { transition: all 0.2s ease; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] .open-icon { transform: rotate(45deg); }
+  .open-icon { transition: transform 0.2s ease; }
+  .loading-screen { position: fixed; inset: 0; background: #F5EFE3; display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .loading-screen.hide { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+
+  /* ============================================================
+     Brand-polish CSS — small refinements that show up everywhere
+     ============================================================ */
+  /* Selected text picks up the brand gold instead of the system
+     default blue. Easy on the eyes, more cohesive with the rest
+     of the palette. */
+  ::selection { background: rgba(176,136,66,0.28); color: #1A1612; }
+
+  /* Keyboard-focused elements get a visible gold ring — uses
+     :focus-visible (NOT :focus) so the ring only appears for
+     keyboard / accessibility-tech users, never on mouse clicks.
+     2px outline + 2px offset clears most element backgrounds. */
+  *:focus-visible {
+    outline: 2px solid #B08842;
+    outline-offset: 2px;
+    border-radius: 1px;
+  }
+
+  /* Smooth scrolling for in-page anchor links (Story → FAQ etc.).
+     Honors prefers-reduced-motion automatically — the @media
+     query below overrides to instant for users who've opted out. */
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  /* ============================================================
+     PRINT STYLES
+     ============================================================
+     Strips the chrome (nav, toasts, drawers, floating widgets,
+     buttons) so the customer can print their order page, a
+     journal post, or any view cleanly. Ink-saving: backgrounds
+     drop, links become inline text, decorative borders go gold-
+     on-white. Page breaks fall sensibly between sections so a
+     long order doesn't split awkwardly mid-row.
+     ============================================================ */
+  @media print {
+    /* Reset body to print-friendly defaults. */
+    body { background: #FFFFFF !important; color: #000000 !important; }
+
+    /* Hide everything the customer didn't ask to print. */
+    nav,
+    .toast-viewport,
+    .textus-pill,
+    .textus-panel,
+    .textus-proactive,
+    .back-to-top,
+    .drawer-in,
+    [role="dialog"],
+    .lg\:hidden.fixed,
+    button[onclick],
+    .gold-line,
+    /* Cart, auth, connect drawers all use this pattern: */
+    .fixed.inset-0.z-50,
+    /* The dark announce / active-order strip at the top: */
+    body > div > div:first-child > div:first-child,
+    /* The whole-site footer trust signals + nav links: */
+    footer { display: none !important; }
+
+    /* Photos: convert to grayscale so they print legibly without
+       chewing through color toner. */
+    img { filter: grayscale(1); max-width: 100% !important; height: auto !important; }
+
+    /* Links: keep their underline but inline the URL after the
+       text. Useful for printed order pages where the customer
+       might want the tracking URL on paper. */
+    a[href^="http"]::after,
+    a[href^="https"]::after {
+      content: " (" attr(href) ")";
+      font-size: 0.75em;
+      color: #6B655D;
+    }
+    a[href^="mailto:"]::after,
+    a[href^="tel:"]::after { content: ""; }  /* mailto: + tel: URLs are noise on paper */
+
+    /* Page-break controls. Headings stay with their content;
+       order cards don't split across pages. */
+    h1, h2, h3 { page-break-after: avoid; }
+    article, .order-card, section { page-break-inside: avoid; }
+
+    /* Ink-saving: strip backgrounds + heavy borders, keep
+       structural ones thin and gray. */
+    [style*="background"] { background: transparent !important; }
+    [style*="border"] { border-color: #CCC !important; }
+  }

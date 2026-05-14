@@ -15,10 +15,14 @@
 # ============================================================
 
 [build]
-  # No build step. The static site is one file: index.html at the repo root.
-  # Functions installed automatically from their own package.json.
-  publish     = "."
-  command     = ""
+  # Vite migration complete (Phase 10 flip). The SPA is now built from
+  # src/ into dist/ on every deploy. Netlify CI runs `npm ci` to install
+  # root dependencies (Vite, React, Tailwind PostCSS, etc.) then
+  # `npm run build` (= `vite build`) to produce dist/. Functions are
+  # still installed from their own netlify/functions/package.json
+  # independently.
+  publish     = "dist"
+  command     = "npm ci && npm run build"
 
 [functions]
   directory = "netlify/functions"

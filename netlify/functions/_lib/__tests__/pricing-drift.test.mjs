@@ -26,42 +26,43 @@ import {
   GIFT_WRAP_PRICE_CENTS,
 } from "../pricing.mjs";
 
-// Resolve index.html relative to this test file so the test runs
-// from any cwd (npm test, npx node --test, IDE runner).
+// Post-Vite-migration the browser's CONFIG lives in src/data/config.js
+// instead of inline in index.html. Resolve relative to this test file so
+// the test runs from any cwd (npm test, npx node --test, IDE runner).
 const HERE = dirname(fileURLToPath(import.meta.url));
-const INDEX_HTML_PATH = resolve(HERE, "../../../../index.html");
-const indexHtml = readFileSync(INDEX_HTML_PATH, "utf8");
+const BROWSER_CONFIG_PATH = resolve(HERE, "../../../../src/data/config.js");
+const browserConfig = readFileSync(BROWSER_CONFIG_PATH, "utf8");
 
 function extractConfigNumber(key) {
   // Match `KEY: 12345,` or `KEY: 12345` with optional whitespace.
   // The CONFIG block uses `KEY: value,` shape consistently.
   const re = new RegExp(`\\b${key}:\\s*(\\d+)`);
-  const m = indexHtml.match(re);
+  const m = browserConfig.match(re);
   return m ? Number(m[1]) : null;
 }
 
-test("FREE_SHIPPING_THRESHOLD_CENTS matches CONFIG in index.html", () => {
+test("FREE_SHIPPING_THRESHOLD_CENTS matches CONFIG in src/data/config.js", () => {
   const browserValue = extractConfigNumber("FREE_SHIPPING_THRESHOLD_CENTS");
   assert.ok(
     browserValue !== null,
-    "CONFIG.FREE_SHIPPING_THRESHOLD_CENTS not found in index.html — did the key get renamed?"
+    "CONFIG.FREE_SHIPPING_THRESHOLD_CENTS not found in src/data/config.js — did the key get renamed?"
   );
   assert.equal(
     browserValue,
     FREE_SHIPPING_THRESHOLD_CENTS,
-    `Pricing drift: server says ${FREE_SHIPPING_THRESHOLD_CENTS}, index.html says ${browserValue}. Update one of them.`
+    `Pricing drift: server says ${FREE_SHIPPING_THRESHOLD_CENTS}, src/data/config.js says ${browserValue}. Update one of them.`
   );
 });
 
-test("GIFT_WRAP_PRICE_CENTS matches CONFIG in index.html", () => {
+test("GIFT_WRAP_PRICE_CENTS matches CONFIG in src/data/config.js", () => {
   const browserValue = extractConfigNumber("GIFT_WRAP_PRICE_CENTS");
   assert.ok(
     browserValue !== null,
-    "CONFIG.GIFT_WRAP_PRICE_CENTS not found in index.html — did the key get renamed?"
+    "CONFIG.GIFT_WRAP_PRICE_CENTS not found in src/data/config.js — did the key get renamed?"
   );
   assert.equal(
     browserValue,
     GIFT_WRAP_PRICE_CENTS,
-    `Pricing drift: server says ${GIFT_WRAP_PRICE_CENTS}, index.html says ${browserValue}. Update one of them.`
+    `Pricing drift: server says ${GIFT_WRAP_PRICE_CENTS}, src/data/config.js says ${browserValue}. Update one of them.`
   );
 });
