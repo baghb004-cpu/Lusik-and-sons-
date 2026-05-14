@@ -936,7 +936,11 @@ export function App() {
               <span>{user ? t("nav.account") : t("nav.signIn")}</span>
             </button>
             <div className="cart-tooltip-wrap">
-              <button onClick={() => setCartOpen(true)} className="relative flex items-center gap-2 hover:opacity-60">
+              <button
+                onClick={() => setCartOpen(true)}
+                className="relative flex items-center gap-2 hover:opacity-60"
+                aria-label={`Your cart${cartCount > 0 ? ` (${cartCount} item${cartCount === 1 ? "" : "s"})` : ""}`}
+              >
                 <span className={cartPulsing ? "cart-pulse inline-block" : "inline-block"}>
                   <ShoppingBag size={18} />
                 </span>
@@ -961,7 +965,11 @@ export function App() {
           </div>
           <div className="md:hidden flex items-center gap-4">
             <div className="cart-tooltip-wrap">
-              <button onClick={() => setCartOpen(true)} className="relative">
+              <button
+                onClick={() => setCartOpen(true)}
+                className="relative"
+                aria-label={`Your cart${cartCount > 0 ? ` (${cartCount} item${cartCount === 1 ? "" : "s"})` : ""}`}
+              >
                 <span className={cartPulsing ? "cart-pulse inline-block" : "inline-block"}>
                   <ShoppingBag size={20} />
                 </span>

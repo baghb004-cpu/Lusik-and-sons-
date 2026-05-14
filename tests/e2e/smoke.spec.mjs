@@ -88,7 +88,9 @@ test.describe("blanket purchase flow", () => {
     await page.getByRole("button", { name: /shop the blanket/i }).first().click();
 
     // Pick the Armenian alphabet (first option in the picker).
-    await page.getByRole("button", { name: /armenian alphabet/i }).first().click();
+    // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
+    // Match just the label so we don't depend on the exact glyph rendering.
+    await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
 
     // Add to cart. The button label varies by selection state, but
     // it always contains "Add to cart" once a valid config is made.
@@ -107,7 +109,9 @@ test.describe("checkout view", () => {
     // Add a blanket first.
     await page.goto("/");
     await page.getByRole("button", { name: /shop the blanket/i }).first().click();
-    await page.getByRole("button", { name: /armenian alphabet/i }).first().click();
+    // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
+    // Match just the label so we don't depend on the exact glyph rendering.
+    await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
     await page.getByRole("button", { name: /add to cart.*\$/i }).first().click();
 
     // Cart auto-opens. Click Checkout.
@@ -138,7 +142,9 @@ test.describe("checkout view", () => {
 
     await page.goto("/");
     await page.getByRole("button", { name: /shop the blanket/i }).first().click();
-    await page.getByRole("button", { name: /armenian alphabet/i }).first().click();
+    // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
+    // Match just the label so we don't depend on the exact glyph rendering.
+    await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
     await page.getByRole("button", { name: /add to cart.*\$/i }).first().click();
     await page.getByRole("button", { name: /^checkout/i }).click();
     await page.getByRole("button", { name: /pay with stripe/i }).click();
@@ -162,14 +168,18 @@ test.describe("journal navigation", () => {
   test("can navigate to a journal post and back", async ({ page }) => {
     await page.goto("/");
 
-    // Open the journal — nav link is in the header.
-    await page.getByRole("link", { name: /journal/i }).first().click();
+    // Open the journal. The header nav is a <button> (not <a>) that
+    // does SPA navigation via setView state. The role selector
+    // matches "Journal" exactly (avoids the journal-flavored text
+    // on links elsewhere on the page).
+    await page.getByRole("button", { name: /^journal$/i }).first().click();
 
     // Journal index renders a list of posts. Click the first one.
     await page.getByRole("article").first().click();
 
-    // Should now be on a journal post — has back-to-journal link.
-    await expect(page.getByText(/back to journal/i)).toBeVisible({ timeout: 5_000 });
+    // Should now be on a journal post — has an "All posts" back
+    // button (post-Vite-flip text; pre-flip was "back to journal").
+    await expect(page.getByRole("button", { name: /all posts|back to journal/i })).toBeVisible({ timeout: 5_000 });
 
     // URL should reflect the post slug.
     expect(page.url()).toMatch(/\/journal\/[a-z0-9-]+/);
