@@ -18,6 +18,15 @@
 import React, { useEffect } from "react";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 
+function formatPublishedDate(iso) {
+  if (!iso) return "";
+  // Construct in local time to avoid the off-by-one-day issue when a
+  // pure YYYY-MM-DD string is interpreted as UTC midnight.
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
 export function JournalListView({ posts, onSelectPost, onBack }) {
   return (
     <div className="fade-in max-w-4xl mx-auto px-6 lg:px-12 py-12 lg:py-20">

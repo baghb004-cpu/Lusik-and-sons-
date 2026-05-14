@@ -9,7 +9,7 @@
 // MIRRORED FROM index.html (~line 8465).
 // ============================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { db } from "../lib/db.js";
 import { Skeleton } from "./Skeleton.jsx";
 import { AdminOrderRow } from "./AdminOrderRow.jsx";

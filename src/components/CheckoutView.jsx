@@ -13,7 +13,7 @@
 // MIRRORED FROM index.html (~line 11649).
 // ============================================================
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CONFIG } from "../data/config.js";
 import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
 import { auth } from "../lib/auth.js";

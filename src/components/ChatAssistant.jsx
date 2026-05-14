@@ -16,7 +16,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { CONFIG } from "../data/config.js";
 import { track } from "../lib/analytics.js";
-import { X, Send } from "./icons.jsx";
+import { X, Send, Sparkles } from "./icons.jsx";
 
 export function ChatAssistant() {
   const cfg = CONFIG.PAID_FEATURES?.CHAT_ASSISTANT;

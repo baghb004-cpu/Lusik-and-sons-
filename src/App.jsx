@@ -18,6 +18,7 @@ import { PRODUCT } from "./data/product.js";
 import { CUSTOM_PRODUCTS } from "./data/customProducts.js";
 import { CATALOG } from "./data/catalog.js";
 import { SOCIAL_PLATFORMS } from "./data/socialPlatforms.js";
+import { JOURNAL_POSTS } from "./data/journalPosts.js";
 
 // Lib
 import { auth } from "./lib/auth.js";

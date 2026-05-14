@@ -81,19 +81,23 @@ test.describe("cart drawer", () => {
 
     // Open via the cart icon in the top nav.
     await page.getByRole("button", { name: /your cart/i }).first().click();
-    await expect(page.getByText(/your cart is empty/i)).toBeVisible({ timeout: 5_000 });
+    // "Your cart is empty" appears in both the cart-icon tooltip and
+    // the drawer body — target the drawer's <p> specifically.
+    const emptyState = page.locator("p", { hasText: /your cart is empty/i });
+    await expect(emptyState).toBeVisible({ timeout: 5_000 });
 
     // Close via the X button.
     await page.getByRole("button", { name: /close cart/i }).click();
-    await expect(page.getByText(/your cart is empty/i)).not.toBeVisible();
+    await expect(emptyState).not.toBeVisible();
   });
 
   test("Escape key closes the cart drawer", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /your cart/i }).first().click();
-    await expect(page.getByText(/your cart is empty/i)).toBeVisible();
+    const emptyState = page.locator("p", { hasText: /your cart is empty/i });
+    await expect(emptyState).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByText(/your cart is empty/i)).not.toBeVisible();
+    await expect(emptyState).not.toBeVisible();
   });
 });
 

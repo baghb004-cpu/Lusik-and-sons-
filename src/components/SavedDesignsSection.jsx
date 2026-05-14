@@ -14,6 +14,7 @@ import { Skeleton } from "./Skeleton.jsx";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import { Trash2 } from "./icons.jsx";
+import { resolveDesign } from "../lib/designUrl";
 
 export function SavedDesignsSection({ userId, product }) {
   const toast = useToast();
