@@ -7,8 +7,7 @@
 //
 // Keys MUST match the productKey shape produced by mapLegacyId()
 // in the browser (CheckoutView's pre-flight). Keep this list in
-// sync with PRODUCT.layouts (~line 800) and CUSTOM_PRODUCTS
-// (~line 870) in index.html.
+// sync with PRODUCT.layouts and CUSTOM_PRODUCTS in index.html.
 //
 // When you add a blanket layout or a new bib variant:
 //   1. Add an entry here with name, priceCents, productKey suffix.

@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Lusik & Sons — Hand-Embroidered Armenian Alphabet Blankets | Cypress, CA</title>
 <meta name="description" content="Hand cross-stitched baby blankets with the Armenian alphabet — Ա Բ Գ — or English A B C. Made by Lusik in Cypress, California." />
-<meta name="theme-color" content="#1A1612" />
 <meta name="author" content="Lusik & Sons" />
 
 <!-- =========================================================
@@ -336,6 +335,22 @@
   body, .theme-surface { transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
   html.no-transitions, html.no-transitions * { transition: none !important; }
 
+  /* Defends the layout against any element accidentally pushing past the
+     viewport width (e.g. a stray translateX, a wide image, a fixed-min-
+     width dropdown). Without this, an overflow makes <body> wider than
+     the screen, and elements like the top announce banner that are
+     width: 100% of body visibly stop short of the viewport edge.
+
+     iOS Safari needs the more aggressive `width + position: relative`
+     pattern, not just overflow-x: hidden — a plain overflow-x clip
+     sometimes still lets a too-wide child poke out by a few pixels. */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    position: relative;
+  }
+  #root { overflow-x: hidden; width: 100%; max-width: 100vw; }
   body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); }
   .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
   .gold-line { background: linear-gradient(90deg, transparent, #B08842, transparent); height: 1px; }
@@ -990,18 +1005,6 @@
   <input type="text"   name="bot-field" />
   <input type="email"  name="email" />
 </form>
-<!-- Waitlist signup for placeholder catalog items. Submissions land
-     in Netlify Forms under "waitlist" — one entry per email +
-     product_key pair. Lusik can export the list before launching a
-     placeholder to notify everyone. -->
-<form name="waitlist" data-netlify="true" netlify-honeypot="bot-field" hidden>
-  <input type="hidden" name="form-name"   value="waitlist" />
-  <input type="text"   name="bot-field" />
-  <input type="email"  name="email" />
-  <input type="text"   name="product_key" />
-  <input type="text"   name="product_name" />
-</form>
-
 <div id="root"></div>
 
 <!-- IMAGE DATA -->
@@ -1339,27 +1342,23 @@ const PRODUCT = {
       key: "double_diag_br",
       label: "Two parallel diagonals",
       shortLabel: "↘↘ Two parallel diagonals · A at top-left of each",
-      description: "Six letter squares placed in two parallel diagonals, both slanting top-left to bottom-right. The first letter sits at the top-left of each diagonal, with the alphabet running down toward the bottom-right. Alphabet stitched twice, once on each diagonal.",
+      description: "Six letter squares placed in two parallel diagonals, both slanting top-left to bottom-right (↘). The first letter (A) sits at the top-left of each diagonal track. The upper diagonal hugs the top-right region of the blanket; the lower diagonal hugs the bottom-left region — so the two diagonals occupy diagonally opposite corners. Alphabet stitched twice, once on each diagonal.",
       letterCount: 6,
       priceCents: 6500,
-      // 5x5 grid positions for two parallel ↘↘ diagonals, centered.
-      // Upper diagonal: row 0 col 1, row 1 col 2, row 2 col 3 = positions 1, 7, 13
-      // Lower diagonal: row 2 col 1, row 3 col 2, row 4 col 3 = positions 11, 17, 23
-      // Row 2 contains cells from both diagonals (one at col 1, one at col 3) —
-      // this is the only way to fit two parallel 3-cell diagonals in a 5x5 grid.
-      preview: [1, 7, 13, 11, 17, 23],
+      // 7x7 grid positions for two parallel ↘↘ diagonals occupying
+      // diagonally opposite corners of the canvas.
+      // Upper diagonal (top-right corner region):
+      //   row 0 col 4, row 1 col 5, row 2 col 6 = positions 4, 12, 20
+      //   A at (0,4) — top-left of its own track; C reaches the right edge.
+      // Lower diagonal (bottom-left corner region):
+      //   row 4 col 0, row 5 col 1, row 6 col 2 = positions 28, 36, 44
+      //   A at (4,0) — top-left of its own track; C reaches the bottom edge.
+      // Both diagonals share the same slope (col − row = +4 for upper,
+      // −4 for lower); the geometric midline col = row runs between
+      // them and carries the optional name/year text.
+      preview: [4, 12, 20, 28, 36, 44],
       enabled: true,
     },
-  ],
-  // LETTERS — used by the bib's hand-stitched mode, where there's only room
-  // for one letter. The customer picks a single letter from this list.
-  letters: [
-    { display: "Ա", transliteration: "Ayb", language: "Armenian" },
-    { display: "Բ", transliteration: "Ben", language: "Armenian" },
-    { display: "Գ", transliteration: "Gim", language: "Armenian" },
-    { display: "A", transliteration: "A",   language: "English" },
-    { display: "B", transliteration: "B",   language: "English" },
-    { display: "C", transliteration: "C",   language: "English" },
   ],
 };
 
@@ -1579,6 +1578,21 @@ const CATALOG = {
 // Adjust here rather than hunting through the codebase.
 // ============================================================
 const CONFIG = {
+  // ============================================================
+  // SWIPE GESTURES — cart drawer + per-row swipe-to-delete
+  // ============================================================
+  // Two gesture machines share the same intent-detection model:
+  // (1) per-row leftward swipe to delete (SwipeableRow); (2) cart
+  // drawer rightward swipe to dismiss. Keeping the tunables here
+  // means both gestures stay in sync with each other so a tweak
+  // to one doesn't accidentally desync the feel of the other.
+  SWIPE: {
+    CLAIM_DIST_PX:        12,   // px of movement before we decide whether the gesture is ours
+    DELETE_THRESHOLD_PX:  80,   // leftward drag past this commits a row delete
+    DISMISS_THRESHOLD_PX: 100,  // rightward drag past this commits a drawer dismiss
+    COMMIT_ANIM_MS:       180,  // off-screen slide on commit, before unmount / handler fires
+  },
+
   // ============================================================
   // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
   // ============================================================
@@ -1922,6 +1936,11 @@ const SHIPPING_CARRIERS = [
 // Keep posts in the 300–500 word range. Long enough to rank on
 // long-tail Armenian-craft searches, short enough that a
 // customer browsing on their phone actually reads to the end.
+//
+// NOTE: when you add or remove a post here, also update
+// `sitemap.xml` at the repo root — every post needs its own
+// <url> entry for Google to index it. Don't change a slug
+// once a post is shared; old URLs would 404.
 // ============================================================
 const JOURNAL_POSTS = [
   {
@@ -3187,7 +3206,8 @@ const auth = (() => {
 // is how the Functions know who's asking.
 //
 // Shape mirrors the old `supa` namespace so call sites stay short
-// and readable: `await db.getProfile(userId)` etc.
+// and readable: `await db.getProfile()` etc. The Functions identify
+// the user from the Identity JWT, so the wrappers don't take a userId.
 // ============================================================
 const db = (() => {
   const call = async (path, { method = "GET", body, auth: needAuth = true } = {}) => {
@@ -3210,26 +3230,33 @@ const db = (() => {
   };
 
   // --- PROFILES ---
-  const getProfile = async (_userId) => {
+  // The Functions identify the user from the Identity JWT, so these
+  // wrappers don't need a userId — the leading underscore on the old
+  // signature was a hint that the param was already dead.
+  const getProfile = async () => {
     const { error, data } = await call("/profile", { method: "GET" });
     return { profile: data?.profile ?? null, error };
   };
-  const updateProfile = async (_userId, updates) => {
+  const updateProfile = async (updates) => {
     const { error, data } = await call("/profile", { method: "PUT", body: updates });
     return { profile: data?.profile ?? null, error };
   };
+
+  // Read a File into a base64 string (without the data: prefix). Shared
+  // by every blob-upload wrapper below so the FileReader plumbing isn't
+  // duplicated per endpoint.
+  const fileToBase64 = (f) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(f);
+  });
 
   // --- AVATAR ---
   // The browser reads the file, base64-encodes it, and posts to the
   // avatar Function. The Function stores it in Netlify Blobs and
   // returns a relative URL the UI can put straight into <img src>.
-  const uploadAvatar = async (_userId, file) => {
-    const fileToBase64 = (f) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(f);
-    });
+  const uploadAvatar = async (file) => {
     let dataBase64;
     try { dataBase64 = await fileToBase64(file); }
     catch (err) { return { url: null, error: { message: "Couldn't read file" } }; }
@@ -3242,11 +3269,11 @@ const db = (() => {
   };
 
   // --- ADDRESSES ---
-  const listAddresses = async (_userId) => {
+  const listAddresses = async () => {
     const { error, data } = await call("/addresses", { method: "GET" });
     return { addresses: data?.addresses ?? [], error };
   };
-  const insertAddress = async (_userId, address) => {
+  const insertAddress = async (address) => {
     const { error, data } = await call("/addresses", { method: "POST", body: address });
     return { address: data?.address ?? null, error };
   };
@@ -3256,11 +3283,11 @@ const db = (() => {
   };
 
   // --- SAVED CART ---
-  const getSavedCart = async (_userId) => {
+  const getSavedCart = async () => {
     const { error, data } = await call("/saved-cart", { method: "GET" });
     return { cart: data?.cart ?? null, error };
   };
-  const saveCart = async (_userId, cartData) => {
+  const saveCart = async (cartData) => {
     const { error } = await call("/saved-cart", { method: "PUT", body: { cart: cartData } });
     return { error };
   };
@@ -3309,12 +3336,6 @@ const db = (() => {
     return { order: data?.order ?? null, error };
   };
   const adminUploadOrderPhoto = async (orderId, file) => {
-    const fileToBase64 = (f) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result?.toString().split(",")[1] ?? "");
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(f);
-    });
     let dataBase64;
     try { dataBase64 = await fileToBase64(file); }
     catch { return { url: null, key: null, error: { message: "Couldn't read file" } }; }
@@ -3323,6 +3344,19 @@ const db = (() => {
       body: { orderId, filename: file.name, contentType: file.type, dataBase64 },
     });
     return { url: data?.url ?? null, key: data?.key ?? null, error };
+  };
+
+  // --- ADMIN WAITLIST ---
+  const adminListWaitlists = async () => {
+    const { error, data } = await call("/admin-waitlist", { method: "GET" });
+    return { items: data?.items ?? [], error };
+  };
+  const adminNotifyWaitlist = async ({ product_key, product_name, product_url }) => {
+    const { error, data } = await call("/admin-waitlist-notify", {
+      method: "POST",
+      body: { product_key, product_name, product_url },
+    });
+    return { sent: data?.sent ?? 0, failed: data?.failed ?? 0, remaining: data?.remaining ?? 0, error };
   };
 
   // --- SAVED DESIGNS ---
@@ -3342,7 +3376,7 @@ const db = (() => {
   };
 
   // --- ORDERS ---
-  const listOrders = async (_userId) => {
+  const listOrders = async () => {
     const { error, data } = await call("/orders", { method: "GET" });
     return { orders: data?.orders ?? [], error };
   };
@@ -3358,6 +3392,7 @@ const db = (() => {
     listOrders, linkGuestOrders,
     listSavedDesigns, saveDesign, deleteSavedDesign,
     adminListOrders, adminGetOrder, adminUpdateOrder, adminUploadOrderPhoto,
+    adminListWaitlists, adminNotifyWaitlist,
     exportAccountData, deleteAccount,
   };
 })();
@@ -3713,17 +3748,19 @@ function WaitlistModal({ product, onClose }) {
     }
     setBusy(true);
     try {
-      const body = new URLSearchParams({
-        "form-name": "waitlist",
-        "bot-field": bot,
-        email:        value,
-        product_key:  product.key,
-        product_name: product.name,
-      }).toString();
-      const res = await fetch("/", {
+      // Posts to a Netlify Function that persists the email →
+      // product_key pairing in our own DB (was Netlify Forms before;
+      // moved so the admin Notify sweep can actually email everyone
+      // when a placeholder product goes live).
+      const res = await fetch(`${CONFIG.FN_BASE}/waitlist`, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          "bot-field": bot,
+          email:        value,
+          product_key:  product.key,
+          product_name: product.name,
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       track("waitlist-signup", { productKey: product.key });
@@ -4865,12 +4902,130 @@ function ThemeToggle({ compact = false }) {
   );
 }
 
+// === SWIPEABLE ROW ===
+// Wraps a cart-row child with a horizontal-swipe-to-delete gesture.
+// touch-action: pan-y tells the browser to handle vertical scroll itself,
+// leaving horizontal gestures to us — no preventDefault juggling needed.
+// Honors prefers-reduced-motion by rendering the children as-is (the
+// dedicated X button remains the universal path).
+function SwipeableRow({ onSwipeDelete, children }) {
+  const [dragX, setDragX] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const startRef = useRef(null);
+  const intentRef = useRef(null); // null | "horizontal" | "vertical"
+
+  const reducedMotion = typeof window !== "undefined"
+    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) return <>{children}</>;
+
+  const DELETE_THRESHOLD = -CONFIG.SWIPE.DELETE_THRESHOLD_PX; // sign is negative since rows swipe leftward
+  const CLAIM_DIST       = CONFIG.SWIPE.CLAIM_DIST_PX;
+
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    startRef.current = { x: t.clientX, y: t.clientY };
+    intentRef.current = null;
+    setAnimating(false);
+  };
+
+  const onTouchMove = (e) => {
+    if (!startRef.current) return;
+    // Bail on multi-touch (a pinch starts as touches[0] but adding a
+    // second finger should not continue counting as a swipe).
+    if (e.touches.length > 1) {
+      cancelGesture();
+      return;
+    }
+    const t = e.touches[0];
+    const dx = t.clientX - startRef.current.x;
+    const dy = t.clientY - startRef.current.y;
+
+    if (intentRef.current === null) {
+      if (Math.abs(dx) < CLAIM_DIST && Math.abs(dy) < CLAIM_DIST) return;
+      intentRef.current = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+    }
+    if (intentRef.current !== "horizontal") return;
+
+    // Only allow leftward drag (rightward would reveal nothing).
+    setDragX(Math.min(0, dx));
+  };
+
+  // Spring back to rest without committing. Used both for a normal
+  // release that didn't pass threshold AND for interrupted gestures
+  // (touchcancel from a system event, multi-touch promotion to pinch).
+  const cancelGesture = () => {
+    setAnimating(true);
+    setDragX(0);
+    startRef.current = null;
+    intentRef.current = null;
+  };
+
+  const onTouchEnd = () => {
+    if (intentRef.current === "horizontal") {
+      setAnimating(true);
+      if (dragX < DELETE_THRESHOLD) {
+        // Animate the row off-screen, then call the delete handler. The
+        // existing toast() infrastructure in App handles the undo.
+        setDragX(-9999);
+        setTimeout(() => onSwipeDelete?.(), CONFIG.SWIPE.COMMIT_ANIM_MS);
+      } else {
+        setDragX(0);
+      }
+    }
+    startRef.current = null;
+    intentRef.current = null;
+  };
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Red delete backdrop — fades in proportionally with the drag */}
+      <div
+        className="absolute inset-0 flex items-center justify-end pr-6 pointer-events-none"
+        style={{
+          background: "#8B2C2C",
+          opacity: dragX < 0 ? Math.min(1, Math.abs(dragX) / 80) : 0,
+        }}
+        aria-hidden="true"
+      >
+        <span className="text-xs tracking-[0.2em] uppercase" style={{ color: "#F5EFE3", fontWeight: 500 }}>
+          Delete
+        </span>
+      </div>
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={cancelGesture}
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: animating ? "transform 0.18s ease-out" : "none",
+          background: "var(--bg-page)",
+          touchAction: "pan-y",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const t = useT();
   const toast = useToast();
   const [cart, setCart] = useState([]);
   const [view, setView] = useState("home");
   const [cartOpen, setCartOpen] = useState(false);
+  // Swipe-to-dismiss state for the cart drawer. cartDragX is the
+  // current rightward drag offset in px; 0 means resting. Reset
+  // every time the drawer closes so the next open animates in cleanly.
+  const [cartDragX, setCartDragX] = useState(0);
+  // Toggled true once a horizontal drag is claimed; flipped back false
+  // on release. While true the transform style has no transition so
+  // the drawer tracks the finger 1:1; after release we let the 0.2s
+  // ease-out smooth the spring-back / off-screen slide.
+  const [cartDragging, setCartDragging] = useState(false);
+  const cartDragStartRef = useRef(null);
+  const cartDragIntentRef = useRef(null); // null | "horizontal" | "vertical"
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false); // sign-in/sign-up drawer
@@ -4896,7 +5051,6 @@ function App() {
     window.addEventListener("openPolicy", handler);
     return () => window.removeEventListener("openPolicy", handler);
   }, []);
-  const [orderNumber, setOrderNumber] = useState("");
 
   // --- AUTH STATE ---
   // user: Netlify Identity user object (id, email, ...) or null when logged out
@@ -4960,8 +5114,8 @@ function App() {
       setIsAdmin(auth.isAdmin());
       // Fetch profile + saved cart in parallel
       const [{ profile: p }, { cart: savedCart }] = await Promise.all([
-        db.getProfile(session.user.id),
-        db.getSavedCart(session.user.id),
+        db.getProfile(),
+        db.getSavedCart(),
       ]);
       if (!mounted) return;
       setProfile(p ?? null);
@@ -5184,6 +5338,25 @@ function App() {
     queueMicrotask(() => { try { window.umami?.track(); } catch {} });
   }, [view, journalSlug]);
 
+  // Mobile-only: reset scroll to the top on every view change. Without
+  // this, switching from a deep-scrolled position (e.g. the bib at the
+  // bottom of the home page → Checkout) leaves the new view's header
+  // off-screen. Desktop's taller viewport hides the issue, so we gate
+  // on Tailwind's <lg breakpoint to avoid a scroll jump on big screens.
+  //
+  // We previously also toggled the viewport meta tag to reset pinch-
+  // zoom on view change, but iOS Safari handled the rapid toggle
+  // inconsistently — sometimes it left the page laid out for the
+  // narrower no-scale viewport even after the restore, which produced
+  // a too-narrow page where elements like the announcement banner
+  // didn't fill the screen. Reverted; mobile users keep their zoom
+  // level across view changes, which is the platform default anyway.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia?.("(max-width: 1023px)").matches) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [view, journalSlug]);
+
   // --- PAID-FEATURE STUBS (off by default; see CONFIG.PAID_FEATURES) ---
   // Each block below mounts the third-party script ONLY if its
   // flag is enabled AND the credentials are present. With both
@@ -5252,7 +5425,16 @@ function App() {
       return;
     }
     const t = setTimeout(() => {
-      db.saveCart(user.id, cart).catch((err) => console.warn("Cart save failed:", err));
+      // Strip base64 blobs before the PUT — the saved_carts JSONB
+      // column is capped at 1 MB server-side, and a single custom-image
+      // bib would blow that cap on its own. The dropped fields are
+      // recreated next time the user opens the customizer.
+      const stored = cart.map((item) => {
+        const { customImage, ...rest } = item;
+        const isDataUrl = typeof rest.image === "string" && rest.image.startsWith("data:");
+        return { ...rest, image: isDataUrl ? null : rest.image };
+      });
+      db.saveCart(stored).catch((err) => console.warn("Cart save failed:", err));
     }, CONFIG.CART_PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [cart, user]);
@@ -5395,8 +5577,88 @@ function App() {
     setCartOpen(true);
   };
 
+  // Cart drawer dismissal: Escape key + swipe-right-to-dismiss on mobile.
+  // The X button at top-right and the backdrop click are still wired up
+  // in the JSX below; these are additional affordances for users who
+  // expect them (keyboard users on desktop, iOS users who instinctively
+  // swipe drawers off-screen).
+  useEffect(() => {
+    if (!cartOpen) {
+      // Reset gesture state when the drawer closes so the next open
+      // doesn't start mid-drag.
+      setCartDragX(0);
+      setCartDragging(false);
+      cartDragStartRef.current = null;
+      cartDragIntentRef.current = null;
+      return;
+    }
+    const onKey = (e) => { if (e.key === "Escape") setCartOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [cartOpen]);
+
+  const onCartDrawerTouchStart = (e) => {
+    const t = e.touches[0];
+    cartDragStartRef.current = { x: t.clientX, y: t.clientY };
+    cartDragIntentRef.current = null;
+  };
+  const onCartDrawerTouchMove = (e) => {
+    if (!cartDragStartRef.current) return;
+    // Bail on multi-touch (a pinch should not be misread as a swipe).
+    if (e.touches.length > 1) {
+      onCartDrawerTouchCancel();
+      return;
+    }
+    const t = e.touches[0];
+    const dx = t.clientX - cartDragStartRef.current.x;
+    const dy = t.clientY - cartDragStartRef.current.y;
+    if (cartDragIntentRef.current === null) {
+      if (Math.abs(dx) < CONFIG.SWIPE.CLAIM_DIST_PX && Math.abs(dy) < CONFIG.SWIPE.CLAIM_DIST_PX) return;
+      cartDragIntentRef.current = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+    }
+    if (cartDragIntentRef.current !== "horizontal") return;
+    // Only react to rightward drag (positive dx). Leftward swipes are
+    // already claimed by SwipeableRow inside the drawer for per-item
+    // delete; this stays out of that lane by clamping to >= 0.
+    if (!cartDragging) setCartDragging(true);
+    setCartDragX(Math.max(0, dx));
+  };
+  // Used for both touchcancel (system interruption) and for multi-
+  // touch promotion (pinch starting mid-swipe). Springs back to 0.
+  const onCartDrawerTouchCancel = () => {
+    setCartDragging(false);
+    setCartDragX(0);
+    cartDragStartRef.current = null;
+    cartDragIntentRef.current = null;
+  };
+  const onCartDrawerTouchEnd = () => {
+    if (cartDragIntentRef.current === "horizontal") {
+      setCartDragging(false);
+      // Dismiss past the configured threshold (about a third of a
+      // typical drawer width). Otherwise spring back to 0.
+      if (cartDragX > CONFIG.SWIPE.DISMISS_THRESHOLD_PX) {
+        setCartDragX(window.innerWidth);
+        setTimeout(() => setCartOpen(false), CONFIG.SWIPE.COMMIT_ANIM_MS);
+      } else {
+        setCartDragX(0);
+      }
+    }
+    cartDragStartRef.current = null;
+    cartDragIntentRef.current = null;
+  };
+
   const updateQty = (id, delta) => {
-    setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)).filter((i) => i.qty > 0));
+    // Minus on qty=1 routes to removeFromCart so the customer gets the
+    // undo toast instead of a no-op clamp. Same UX as Amazon / Shopify
+    // checkouts and avoids stranding an item the customer wanted gone.
+    if (delta < 0) {
+      const item = cart.find((i) => i.id === id);
+      if (item && item.qty + delta < 1) {
+        removeFromCart(id);
+        return;
+      }
+    }
+    setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)));
   };
   const removeFromCart = (id) => {
     // Capture the removed line item so the toast's "Undo" can put it
@@ -5554,13 +5816,6 @@ function App() {
     }
   };
 
-  const completeOrder = () => {
-    const num = "LS-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-    setOrderNumber(num);
-    setView("confirmation");
-    setCart([]);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const scrollTo = (id) => {
     if (view !== "home") setView("home");
@@ -5730,7 +5985,6 @@ function App() {
 
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
-      {view === "confirmation" && <Confirmation orderNumber={orderNumber} onHome={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
       {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
@@ -5867,7 +6121,24 @@ function App() {
       {cartOpen && (
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setCartOpen(false)}>
           <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.4)" }} />
-          <div className="relative w-full max-w-md drawer-in flex flex-col" style={{ background: "var(--bg-page)" }} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative w-full max-w-md drawer-in flex flex-col"
+            style={{
+              background: "var(--bg-page)",
+              // While the user is dragging, follow the finger 1:1. The
+              // transition kicks in only on release (spring-back to 0
+              // or dismiss-off-screen). Mid-drag we want crisp tracking
+              // with no smoothing lag, so the transition is null then.
+              transform: `translateX(${cartDragX}px)`,
+              transition: cartDragging ? "none" : "transform 0.2s ease-out",
+              touchAction: "pan-y",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={onCartDrawerTouchStart}
+            onTouchMove={onCartDrawerTouchMove}
+            onTouchEnd={onCartDrawerTouchEnd}
+            onTouchCancel={onCartDrawerTouchCancel}
+          >
             <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
               <h3 className="font-display text-2xl" style={{ fontWeight: 400 }}>Your cart</h3>
               <button onClick={() => setCartOpen(false)} aria-label="Close cart" data-tooltip="Close" data-tooltip-pos="left"><X size={20} /></button>
@@ -5904,30 +6175,32 @@ function App() {
               <>
                 <div className="flex-1 overflow-y-auto">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
-                      <div className="relative">
-                        <img src={item.image} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
-                        {item.isCustom && (
-                          <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-display text-lg leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
-                        <div className="flex items-center gap-2 mb-3">
-                          {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                          <p className="text-xs opacity-60">{item.subtitle}</p>
+                    <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
+                      <div className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
+                        <div className="relative">
+                          <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                          {item.isCustom && (
+                            <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
-                            <button onClick={() => updateQty(item.id, -1)} className="p-2"><Minus size={12} /></button>
-                            <span className="text-sm w-6 text-center">{item.qty}</span>
-                            <button onClick={() => updateQty(item.id, 1)} className="p-2"><Plus size={12} /></button>
+                        <div className="flex-1">
+                          <p className="font-display text-lg leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
+                          <div className="flex items-center gap-2 mb-3">
+                            {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
+                            <p className="text-xs opacity-60">{item.subtitle}</p>
                           </div>
-                          <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
+                              <button onClick={() => updateQty(item.id, -1)} className="p-2" aria-label={item.qty === 1 ? "Remove item" : "Decrease quantity"}><Minus size={12} /></button>
+                              <span className="text-sm w-6 text-center">{item.qty}</span>
+                              <button onClick={() => updateQty(item.id, 1)} className="p-2" aria-label="Increase quantity"><Plus size={12} /></button>
+                            </div>
+                            <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
+                          </div>
                         </div>
+                        <button onClick={() => removeFromCart(item.id)} className="opacity-40 hover:opacity-100" aria-label="Remove from cart"><X size={14} /></button>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="opacity-40 hover:opacity-100"><X size={14} /></button>
-                    </div>
+                    </SwipeableRow>
                   ))}
                 </div>
                 <div className="border-t p-6" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
@@ -6733,7 +7006,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
   useEffect(() => {
     if (!user?.id) return;
     let mounted = true;
-    db.listAddresses(user.id).then(({ addresses: a, error }) => {
+    db.listAddresses().then(({ addresses: a, error }) => {
       if (!mounted) return;
       if (error) console.warn("listAddresses error:", error);
       setAddresses(a || []);
@@ -6746,7 +7019,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
     if (!user?.id) return;
     setSavingProfile(true);
     setProfileMsg({ type: "", text: "" });
-    const { profile: updated, error } = await db.updateProfile(user.id, {
+    const { profile: updated, error } = await db.updateProfile({
       full_name: fullName.trim() || null,
       phone: phone.trim() || null,
     });
@@ -6775,13 +7048,13 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
       return;
     }
     setAvatarBusy(true);
-    const { url, error } = await db.uploadAvatar(user.id, file);
+    const { url, error } = await db.uploadAvatar(file);
     if (error || !url) {
       setAvatarBusy(false);
       toast({ kind: "error", message: error?.message || "Couldn't upload that photo — please try again." });
       return;
     }
-    const { profile: updated, error: updErr } = await db.updateProfile(user.id, { avatar_url: url });
+    const { profile: updated, error: updErr } = await db.updateProfile({ avatar_url: url });
     setAvatarBusy(false);
     if (updErr) {
       toast({ kind: "error", message: "Photo uploaded but we couldn't save it to your profile — please try again." });
@@ -6798,7 +7071,7 @@ function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReor
     for (const k of required) {
       if (!newAddr[k]?.trim()) return; // HTML required attribute will catch this
     }
-    const { address, error } = await db.insertAddress(user.id, newAddr);
+    const { address, error } = await db.insertAddress(newAddr);
     if (error) {
       toast({ kind: "error", message: error.message || "Couldn't save that address — please try again." });
       return;
@@ -7239,6 +7512,7 @@ function OrderHistory({ userId, onReorder }) {
     if (!userId) return;
     let mounted = true;
     let attempts = 0;
+    let pollTimer = null;
     const maxAttempts = justCheckedOut ? 6 : 1;
     const pollDelay = 2500;
 
@@ -7248,7 +7522,7 @@ function OrderHistory({ userId, onReorder }) {
       if (attempts === 1) {
         await db.linkGuestOrders().catch(() => {});
       }
-      const { orders: rows } = await db.listOrders(userId);
+      const { orders: rows } = await db.listOrders();
       if (!mounted) return;
       setOrders(rows);
       setLoading(false);
@@ -7256,7 +7530,7 @@ function OrderHistory({ userId, onReorder }) {
       // If we're polling for a fresh order and didn't see one yet, retry.
       if (justCheckedOut && rows.length === 0 && attempts < maxAttempts) {
         setPollingForOrder(true);
-        setTimeout(fetchOnce, pollDelay);
+        pollTimer = setTimeout(fetchOnce, pollDelay);
       } else {
         setPollingForOrder(false);
         // Strip the URL param once we've found the order, so a refresh
@@ -7271,7 +7545,13 @@ function OrderHistory({ userId, onReorder }) {
     };
 
     fetchOnce();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      // Cancel any pending poll so the timer doesn't fire after
+      // unmount (would log a stale 401 on db.listOrders if the user
+      // signed out mid-poll).
+      if (pollTimer !== null) clearTimeout(pollTimer);
+    };
   }, [userId]);
 
   if (loading) {
@@ -8039,6 +8319,10 @@ function AdminView({ user, onBack }) {
   const toast = useToast();
   const [orders, setOrders] = useState(null); // null = loading
   const [filter, setFilter] = useState("all");
+  // Waitlists summary — null while loading, [] when there are no signups
+  // yet. Loaded once on mount; refreshed locally after each Notify click.
+  const [waitlists, setWaitlists] = useState(null);
+  const [notifyingKey, setNotifyingKey] = useState(null);
 
   const refresh = useCallback(async () => {
     const { orders: rows, error } = await db.adminListOrders();
@@ -8049,6 +8333,49 @@ function AdminView({ user, onBack }) {
     }
     setOrders(rows);
   }, [toast]);
+
+  const refreshWaitlists = useCallback(async () => {
+    const { items, error } = await db.adminListWaitlists();
+    if (error) {
+      console.warn("[admin] waitlist load failed:", error.message);
+      setWaitlists([]);
+      return;
+    }
+    setWaitlists(items);
+  }, []);
+
+  useEffect(() => { refreshWaitlists(); }, [refreshWaitlists]);
+
+  const handleNotifyWaitlist = async (entry) => {
+    if (entry.pending === 0) return;
+    if (!confirm(`Send ${entry.pending} ${entry.product_name || entry.product_key} waitlist email${entry.pending === 1 ? "" : "s"} now? Each recipient gets one email saying the product is ready.`)) {
+      return;
+    }
+    setNotifyingKey(entry.product_key);
+    const { sent, failed, remaining, error } = await db.adminNotifyWaitlist({
+      product_key:  entry.product_key,
+      product_name: entry.product_name || entry.product_key,
+      product_url:  `${window.location.origin}/`,
+    });
+    setNotifyingKey(null);
+    if (error) {
+      toast({ kind: "error", message: error.message || "Couldn't send the waitlist notification." });
+      return;
+    }
+    if (sent > 0) {
+      toast({
+        kind: "success",
+        message: failed > 0
+          ? `Sent ${sent}. ${failed} failed — they'll retry next click. ${remaining} still pending.`
+          : (remaining > 0
+              ? `Sent ${sent}. ${remaining} more remain — click Notify again to send the next batch.`
+              : `Sent ${sent}. Waitlist cleared.`),
+      });
+    } else {
+      toast({ kind: "error", message: `No emails went out (${failed} failed). Try again or check the function logs.` });
+    }
+    refreshWaitlists();
+  };
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -8160,6 +8487,47 @@ function AdminView({ user, onBack }) {
           </button>
         </div>
       </div>
+
+      {/* Waitlists panel — one row per product with at least one signup.
+          Only renders when there's something to show; stays out of the
+          way otherwise so Lusik's main view is still orders. */}
+      {Array.isArray(waitlists) && waitlists.length > 0 && (
+        <div className="mb-8 p-5" style={{ border: "1px solid rgba(176,136,66,0.3)", background: "rgba(176,136,66,0.05)" }}>
+          <div className="flex items-baseline justify-between mb-3">
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#B08842", fontWeight: 600 }}>Waitlists</p>
+            <p className="text-[0.65rem] opacity-60 italic">Click Notify when a product goes live.</p>
+          </div>
+          <div className="space-y-2">
+            {waitlists.map((w) => (
+              <div key={w.product_key} className="flex items-center justify-between gap-3 py-1.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm" style={{ fontWeight: 500 }}>
+                    {w.product_name || w.product_key}
+                  </p>
+                  <p className="text-xs opacity-65">
+                    {w.pending} waiting{w.notified > 0 ? ` · ${w.notified} already notified` : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleNotifyWaitlist(w)}
+                  disabled={w.pending === 0 || notifyingKey === w.product_key}
+                  className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition disabled:opacity-30"
+                  style={{
+                    border: "1px solid #1A1612",
+                    background: w.pending > 0 ? "#1A1612" : "transparent",
+                    color: w.pending > 0 ? "#F5EFE3" : "#1A1612",
+                    fontWeight: 500,
+                    cursor: w.pending === 0 ? "not-allowed" : "pointer",
+                  }}
+                  title={w.pending === 0 ? "Nobody pending on this list" : `Email ${w.pending} recipient${w.pending === 1 ? "" : "s"}`}
+                >
+                  {notifyingKey === w.product_key ? "Sending…" : (w.pending === 0 ? "Cleared" : `Notify ${w.pending}`)}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {orders === null ? (
         <div className="space-y-4">
@@ -8319,7 +8687,7 @@ function ActiveOrderTopBar({ user, onOpenAccount }) {
   useEffect(() => {
     if (!user?.id) { setActiveOrder(null); setLoaded(true); return; }
     let cancelled = false;
-    db.listOrders(user.id).then(({ orders }) => {
+    db.listOrders().then(({ orders }) => {
       if (cancelled) return;
       const active = (orders ?? []).find((o) => ACTIVE_ORDER_STATUSES.includes(o.fulfillment_status));
       setActiveOrder(active ?? null);
@@ -8547,7 +8915,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
     <div className="fade-in">
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
-          <div className="lg:col-span-5 slide-up">
+          <div className="lg:col-span-5 slide-up min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#B08842" }}>Cypress, California</p>
             <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-8" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
               {t("hero.headline")} <em style={{ fontWeight: 400 }}>{t("hero.headlineEm")}</em>.
@@ -8660,12 +9028,14 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
 
       <section id="story" className="py-20 lg:py-32" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-12 gap-10 lg:gap-20 items-center">
-          <div className="lg:col-span-6 lg:order-2">
+          <div className="lg:col-span-6 lg:order-2 min-w-0">
             <div className="aspect-[4/5] overflow-hidden">
-              <img src={product.gallery[7]} alt="Detail of cross-stitched alphabet block" className="w-full h-full object-cover" style={galleryRotationStyle(7)} />
+              {/* Fall back to gallery[0] if Lusik hasn't uploaded a 9th photo yet —
+                  prevents a broken <img> if PRODUCT.gallery has fewer than 8 entries. */}
+              <img src={product.gallery[7] ?? product.gallery[0]} alt="Detail of cross-stitched alphabet block" className="w-full h-full object-cover" style={galleryRotationStyle(7)} />
             </div>
           </div>
-          <div className="lg:col-span-6 lg:order-1">
+          <div className="lg:col-span-6 lg:order-1 min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#C9A678" }}>Our Story</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-8 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               From Armenia, to Little Armenia, to a small home in Cypress.
@@ -8736,7 +9106,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
 
       <section id="contact" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Get in Touch</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Four ways to order.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
@@ -8765,7 +9135,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
         {/* SEND A LETTER */}
         <div className="mt-20 lg:mt-24">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>By Post</p>
               <h3 className="font-display text-3xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
                 Send a <em style={{ fontWeight: 400 }}>letter</em>.
@@ -8820,7 +9190,7 @@ function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback,
       {/* SHIPPING & TRACKING */}
       <section id="shipping" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28 border-t" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Shipping & Tracking</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Drop-off & tracking, made easy.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
@@ -8947,43 +9317,23 @@ function NewsletterForm() {
 }
 
 // === CUSTOM PRODUCT CARD ===
-// File upload + preview-on-template + size picker + add to cart for the custom embroidery items.
-// Templates are inline SVG silhouettes with a defined "stitch zone" rectangle where
-// the uploaded image is overlaid (Shutterfly-style preview).
+// Personalized-name input + thread color + size picker + add to cart for
+// the bib. The bib is the only live custom product; it's machine-embroidery
+// only with a typed name (5-6 letters, white-only bib base).
 function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
-  // Production mode applies only to products that offer hand-stitching as
-  // an option (i.e. config.handStitchedPrice is set). For others (towel),
-  // there's only one mode and the toggle isn't shown.
-  const supportsHand = typeof config.handStitchedPrice === "number";
-  // "machine" is the default for upload-style products, "hand" only when
-  // the toggle is shown and the user picks it.
-  const [production, setProduction] = useState("machine");
-  const [letter, setLetter] = useState(null); // PRODUCT.letters entry, only used when production=hand
-
-  // `customMode` on the config determines what machine-mode collects:
-  //   "image"  — file upload (towels)
-  //   "name"   — short text input, max chars enforced (bibs)
-  // Defaults to "image" if not specified, since that was the original behavior.
-  const machineMode = config.customMode ?? "image";
-
-  const [imageData, setImageData] = useState(null); // data URL, only used when production=machine && machineMode=image
-  const [imageName, setImageName] = useState("");
-  const [customName, setCustomName] = useState(""); // only used when production=machine && machineMode=name
+  const [customName, setCustomName] = useState("");
   const [size, setSize] = useState("");
   const [error, setError] = useState("");
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef(null);
 
   // ============================================================
   // BIB COLOR PICKER STATE
   // ============================================================
-  // The bib's machine-embroidered name renders in a customer-chosen thread
-  // color. Some configs (towel) don't offer a color picker, so we gracefully
-  // no-op when threadColors/colorPresets aren't defined on the config.
+  // The bib's name renders in a customer-chosen thread color. We
+  // gracefully no-op the picker if a future product config omits
+  // threadColors / colorPresets.
   const supportsColor = Array.isArray(config.threadColors) && config.threadColors.length > 0
     && Array.isArray(config.colorPresets) && config.colorPresets.length > 0;
 
-  // Default to the configured default preset (or first preset).
   const defaultPreset = supportsColor
     ? (config.colorPresets.find(p => p.key === config.defaultPresetKey) ?? config.colorPresets[0])
     : null;
@@ -9025,8 +9375,7 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
     setColorMode("preset");
   };
 
-  // When the customer manually picks a color from the palette, drop preset
-  // + any multi-color list — custom mode is always single-color.
+  // Manual color pick drops the preset + any multi-color list.
   const setBibCustomColor = (c) => {
     setLetterColor(c);
     setLetterColorList(null);
@@ -9034,176 +9383,58 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
     setColorMode("custom");
   };
 
-  // Switching production mode resets the inputs that don't apply to the
-  // newly chosen path. Otherwise the old data lingers and the cart shows
-  // misleading metadata.
-  const switchProduction = (next) => {
-    setProduction(next);
-    if (next === "hand") {
-      setImageData(null);
-      setImageName("");
-      setCustomName("");
-    } else {
-      setLetter(null);
-    }
-    setError("");
-  };
-
-  const handleFile = (file) => {
-    setError("");
-    if (!file) return;
-    if (!CONFIG.UPLOAD_ACCEPTED_TYPES.includes(file.type)) {
-      setError("Please upload a PNG or JPEG file.");
-      return;
-    }
-    if (file.size > CONFIG.UPLOAD_MAX_BYTES) {
-      const mb = (file.size / (1024 * 1024)).toFixed(1);
-      setError(`That file is ${mb} MB. Max size is 5 MB.`);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImageData(e.target.result);
-      setImageName(file.name);
-    };
-    reader.onerror = () => setError("Couldn't read that file. Try another.");
-    reader.readAsDataURL(file);
-  };
-
-  const onFileInputChange = (e) => handleFile(e.target.files?.[0]);
-
-  const onDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleFile(e.dataTransfer.files?.[0]);
-  };
-
-  const removeImage = () => {
-    setImageData(null);
-    setImageName("");
-    setError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // Validation depends on which production mode the user selected, and for
-  // machine mode, whether this product collects a name or an image.
-  const canAdd = (() => {
-    if (!size) return false;
-    if (production === "hand") return !!letter;
-    // production === "machine"
-    if (machineMode === "name") {
-      const trimmed = customName.trim();
-      const max = config.maxNameLength ?? 6;
-      return trimmed.length > 0 && trimmed.length <= max;
-    }
-    return !!imageData;
-  })();
-
-  const currentPrice = production === "hand" ? config.handStitchedPrice : config.price;
+  const maxNameLength = config.maxNameLength ?? 6;
+  const cleanName = customName.trim();
+  const canAdd = !!size && cleanName.length > 0 && cleanName.length <= maxNameLength;
 
   const handleAdd = (e) => {
     if (!size) { setError("Please choose a size."); return; }
-    if (production === "hand" && !letter) { setError("Please choose a letter."); return; }
-    if (production === "machine") {
-      if (machineMode === "name") {
-        const trimmed = customName.trim();
-        const max = config.maxNameLength ?? 6;
-        if (trimmed.length === 0) { setError("Please type a name to embroider."); return; }
-        if (trimmed.length > max) { setError(`Name must be ${max} letters or fewer — the bib is small.`); return; }
-      } else {
-        if (!imageData) { setError("Please upload an image first."); return; }
-      }
-    }
+    if (cleanName.length === 0) { setError("Please type a name to embroider."); return; }
+    if (cleanName.length > maxNameLength) { setError(`Name must be ${maxNameLength} letters or fewer — the bib is small.`); return; }
 
     if (e?.currentTarget && onCartFeedback) {
       const r = e.currentTarget.getBoundingClientRect();
       onCartFeedback(r.left + r.width / 2, r.top + r.height / 2);
     }
 
-    if (production === "hand") {
-      // Hand-stitched bib: looks more like a blanket order than an upload.
-      // We pass null for image, set a productKey suffix so the cart treats
-      // it as its own SKU, and stash the letter info in customMetadata so
-      // it survives into Stripe metadata and back out into the order record.
-      onAddCustom({
-        productKey: `${config.key}-hand`,
-        name: `${config.name} · Hand cross-stitched`,
-        price: config.handStitchedPrice,
+    // Build a friendly color description for the cart subtitle and
+    // record canonical color metadata for Lusik's order record.
+    const isMulti = Array.isArray(letterColorList) && letterColorList.length > 0;
+    const colorDesc = !supportsColor
+      ? ""
+      : isMulti
+        ? ` · ${letterColorList.map(c => c.name).join("/")}`
+        : ` · ${letterColor?.name ?? ""}`;
+    onAddCustom({
+      productKey: config.key,
+      name: config.name,
+      price: config.price,
+      size,
+      customImage: null,
+      customImageName: null,
+      subtitleOverride: `"${cleanName}" · ${size}${colorDesc}`,
+      customMetadata: {
+        production: "machine_embroidery_name",
+        personalized_name: cleanName,
         size,
-        customImage: null,
-        customImageName: null,
-        // Cart drawer reads `subtitle`; we set this so the row reads cleanly.
-        subtitleOverride: `Letter: ${letter.display} (${letter.transliteration}, ${letter.language}) · ${size}`,
-        customMetadata: {
-          production: "hand_cross_stitch",
-          letter_display: letter.display,
-          letter_translit: letter.transliteration,
-          letter_language: letter.language,
-          size,
-        },
-      });
-    } else if (machineMode === "name") {
-      // Machine-embroidered bib with a personalized name.
-      const cleanName = customName.trim();
-      // Build a friendly color description for the cart subtitle and
-      // record canonical color metadata for Lusik's order record.
-      const isMulti = Array.isArray(letterColorList) && letterColorList.length > 0;
-      const colorDesc = !supportsColor
-        ? ""
-        : isMulti
-          ? ` · ${letterColorList.map(c => c.name).join("/")}`
-          : ` · ${letterColor?.name ?? ""}`;
-      onAddCustom({
-        productKey: `${config.key}-name`,
-        name: config.name,
-        price: config.price,
-        size,
-        customImage: null,
-        customImageName: null,
-        subtitleOverride: `"${cleanName}" · ${size}${colorDesc}`,
-        customMetadata: {
-          production: "machine_embroidery_name",
-          personalized_name: cleanName,
-          size,
-          // Color metadata — null fields when no color picker exists, which
-          // keeps order data clean for non-color products. For single-color
-          // bibs the *_multi field is null; for Armenian Flag it lists the
-          // ordered hex+name list of letter colors.
-          thread_color_name: !isMulti && letterColor ? letterColor.name : null,
-          thread_color_hex: !isMulti && letterColor ? letterColor.hex : null,
-          thread_color_ref: !isMulti && letterColor ? letterColor.dmc : null,
-          thread_colors_multi: isMulti
-            ? letterColorList.map(c => `${c.name} (${c.hex})`).join(" | ")
-            : null,
-          color_preset_key: activePresetKey ?? null,
-        },
-      });
-    } else {
-      // Default: machine-embroidered with uploaded image (towel).
-      onAddCustom({
-        productKey: config.key,
-        name: config.name,
-        price: config.price,
-        size,
-        customImage: imageData,
-        customImageName: imageName,
-        customMetadata: {
-          production: "machine_embroidery",
-          size,
-          image_filename: imageName,
-        },
-      });
-    }
+        // Color metadata — null fields when no color picker exists, which
+        // keeps order data clean for non-color products. For single-color
+        // bibs the *_multi field is null; for Armenian Flag it lists the
+        // ordered hex+name list of letter colors.
+        thread_color_name: !isMulti && letterColor ? letterColor.name : null,
+        thread_color_hex:  !isMulti && letterColor ? letterColor.hex  : null,
+        thread_color_ref:  !isMulti && letterColor ? letterColor.dmc  : null,
+        thread_colors_multi: isMulti
+          ? letterColorList.map(c => `${c.name} (${c.hex})`).join(" | ")
+          : null,
+        color_preset_key: activePresetKey ?? null,
+      },
+    });
 
     // Reset for next custom order
-    setImageData(null);
-    setImageName("");
     setCustomName("");
     setSize("");
-    setLetter(null);
-    setProduction("machine");
     setError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -9213,39 +9444,25 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           `lg:top-24` clears the sticky nav (~80px) with breathing room. */}
       <div className="relative aspect-square overflow-hidden lg:sticky lg:top-24 lg:self-start" style={{ background: "linear-gradient(135deg, #FAF6EC 0%, #EFE7D6 100%)" }}>
         <ProductTemplate
-          productKey={config.key}
-          imageData={imageData}
-          letter={production === "hand" ? letter : null}
-          customName={production === "machine" && machineMode === "name" ? customName : null}
+          customName={customName}
           nameColor={supportsColor && !letterColorList ? letterColor?.hex : null}
           nameColors={supportsColor && letterColorList ? letterColorList.map(c => c.hex) : null}
         />
-        {/* Empty-state placeholder — shown only when NO content is present.
-            For name-mode bibs, this hides as soon as the customer types
-            anything in the name input. Shows a real "Romeo" bib photo so
-            the customer's first impression of this product is the actual
-            embroidered article, not a schematic SVG. The instructional
-            caption sits below the thumbnail. */}
-        {!imageData && !letter && !(machineMode === "name" && customName.trim().length > 0) && (
+        {/* Empty-state placeholder — hides as soon as the customer types.
+            Shows a real "Romeo" bib so the first impression is an actual
+            embroidered piece, not a schematic SVG. */}
+        {cleanName.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
-            {machineMode === "name" && (
-              <div className="w-28 lg:w-32 aspect-square overflow-hidden mb-3 shadow-sm" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
-                <img
-                  src={PHOTO_BIB_ROMEO}
-                  alt="Real example — a blue cursive 'Romeo' bib stitched by Lusik"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <div className="w-28 lg:w-32 aspect-square overflow-hidden mb-3 shadow-sm" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
+              <img
+                src={PHOTO_BIB_ROMEO}
+                alt="Real example — a blue cursive 'Romeo' bib stitched by Lusik"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div className="text-center">
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-50">{machineMode === "name" ? "Real example — 'Romeo'" : "Preview"}</p>
-              <p className="text-xs opacity-50 mt-1 italic">
-                {production === "hand"
-                  ? "Pick a letter to see it"
-                  : machineMode === "name"
-                    ? "Type a name to preview yours"
-                    : "Your design will appear here"}
-              </p>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-50">Real example — 'Romeo'</p>
+              <p className="text-xs opacity-50 mt-1 italic">Type a name to preview yours</p>
             </div>
           </div>
         )}
@@ -9258,135 +9475,48 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{config.name}</h3>
           <p className="text-sm opacity-70 leading-relaxed">{config.description}</p>
           <p className="font-display text-xl mt-3" style={{ fontWeight: 500 }}>
-            ${currentPrice}
-            {supportsHand && (
-              <span className="text-xs opacity-60 ml-2">
-                {production === "hand" ? "(hand)" : "(machine)"}
-              </span>
-            )}
+            ${config.price}
+          </p>
+          <p className="text-[0.65rem] opacity-60 mt-1.5">
+            Made to order · Cypress, CA
           </p>
         </div>
 
-        {/* Production-method toggle (only for products that offer both) */}
-        {supportsHand && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">1. How should it be made?</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => switchProduction("hand")}
-                className="px-3 py-2.5 text-xs leading-tight transition"
-                style={{
-                  border: `1px solid ${production === "hand" ? "#1A1612" : "rgba(26,22,18,0.12)"}`,
-                  background: production === "hand" ? "#1A1612" : "transparent",
-                  color: production === "hand" ? "#F5EFE3" : "#1A1612",
-                }}
-              >
-                <span style={{ fontWeight: 500 }}>By hand</span>
-                <br />
-                <span className="opacity-70">${config.handStitchedPrice} · letters Ա Բ Գ / A B C</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => switchProduction("machine")}
-                className="px-3 py-2.5 text-xs leading-tight transition"
-                style={{
-                  border: `1px solid ${production === "machine" ? "#1A1612" : "rgba(26,22,18,0.12)"}`,
-                  background: production === "machine" ? "#1A1612" : "transparent",
-                  color: production === "machine" ? "#F5EFE3" : "#1A1612",
-                }}
-              >
-                <span style={{ fontWeight: 500 }}>By machine</span>
-                <br />
-                <span className="opacity-70">${config.price} · upload your image</span>
-              </button>
-            </div>
-            <p className="text-[0.65rem] opacity-60 mt-2 leading-relaxed">
-              {production === "hand"
-                ? "Lusik cross-stitches one letter by hand. Takes longer, ships in 5–10 business days."
-                : "Lusik machine-embroiders your uploaded image. Faster turnaround, more design flexibility."}
-            </p>
-          </div>
-        )}
+        {/* Personalized name input */}
+        <div>
+          <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
+            1. Personalized name
+          </label>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            maxLength={maxNameLength}
+            placeholder="e.g. Anna"
+            className="w-full px-3 py-2.5 text-sm"
+            style={{
+              border: "1px solid var(--border-strong)",
+              background: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              fontFamily: "Fraunces, serif",
+            }}
+            aria-label="Personalized name to embroider"
+          />
+          <p className="text-[0.65rem] opacity-60 mt-1.5">
+            Up to {maxNameLength} letters · {cleanName.length}/{maxNameLength}
+          </p>
+          <p className="text-[0.6rem] opacity-50 italic mt-1">
+            Preview only — actual embroidery font may differ slightly.
+          </p>
+        </div>
 
-        {/* Letter picker — hand-stitched mode only */}
-        {production === "hand" && supportsHand && (
+        {/* BIB COLOR PICKER — preset/custom toggle, curated palette, Lusik's
+            named presets, multi-color Armenian Flag option. Compact because
+            the bib is a $22 item — color matters but shouldn't dominate. */}
+        {supportsColor && (
           <div>
             <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {supportsHand ? "2." : "1."} Choose a letter
-            </label>
-            <div className="grid grid-cols-6 gap-1.5">
-              {PRODUCT.letters.map((l) => {
-                const selected = letter && letter.display === l.display && letter.language === l.language;
-                return (
-                  <button
-                    key={`${l.language}-${l.display}`}
-                    type="button"
-                    onClick={() => setLetter(l)}
-                    title={`${l.transliteration} · ${l.language}`}
-                    className="aspect-square flex items-center justify-center transition"
-                    style={{
-                      background: selected ? "#1A1612" : "transparent",
-                      color: selected ? "#F5EFE3" : "#1A1612",
-                      border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
-                      fontFamily: "Fraunces, serif",
-                      fontSize: "1.25rem",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {l.display}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[0.65rem] opacity-60 mt-2 leading-relaxed">
-              Need a different letter? <a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline">Email Lusik</a>.
-            </p>
-          </div>
-        )}
-
-        {/* Machine-mode picker — either an image upload (towels) or a name
-            text input (bibs). Branches on `machineMode` set in the config. */}
-        {production === "machine" && machineMode === "name" && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {supportsHand ? "2." : "1."} Personalized name
-            </label>
-            <input
-              type="text"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              maxLength={config.maxNameLength ?? 6}
-              placeholder="e.g. Anna"
-              className="w-full px-3 py-2.5 text-sm"
-              style={{
-                border: "1px solid var(--border-strong)",
-                background: "var(--bg-surface)",
-                color: "var(--text-primary)",
-                fontFamily: "Fraunces, serif",
-              }}
-              aria-label="Personalized name to embroider"
-            />
-            <p className="text-[0.65rem] opacity-60 mt-1.5">
-              Up to {config.maxNameLength ?? 6} letters · {customName.trim().length}/{config.maxNameLength ?? 6}
-            </p>
-            <p className="text-[0.6rem] opacity-50 italic mt-1">
-              Preview only — actual embroidery font may differ slightly.
-            </p>
-          </div>
-        )}
-
-        {/* BIB COLOR PICKER — appears for machine-name-mode products that
-            define a color palette (config.threadColors + config.colorPresets).
-            Mirrors the blanket's color system in miniature: preset/custom
-            toggle, curated palette, Lusik's named presets, multi-color
-            Armenian Flag option. Layout is intentionally compact because the
-            bib is a $22 item — color choice is meaningful but should not
-            dominate the form. */}
-        {production === "machine" && machineMode === "name" && supportsColor && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {(supportsHand ? 3 : 2)}. Thread color
+              2. Thread color
             </label>
 
             {/* Real-thread reference strip — a stack of finished bibs in every
@@ -9532,66 +9662,13 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           </div>
         )}
 
-        {production === "machine" && machineMode === "image" && (
-          <div>
-            <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              {supportsHand ? "2." : "1."} Upload your design
-            </label>
-            {!imageData ? (
-              <div
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={onDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer p-5 text-center transition"
-                style={{
-                  border: `1.5px dashed ${dragOver ? "#B08842" : "rgba(26,22,18,0.25)"}`,
-                  background: dragOver ? "rgba(176,136,66,0.08)" : "transparent",
-                }}
-              >
-                <Send size={20} strokeWidth={1.25} className="mx-auto mb-2" style={{ color: "#B08842" }} />
-                <p className="text-sm font-display" style={{ fontWeight: 500 }}>Tap to upload</p>
-                <p className="text-xs opacity-60 mt-1">PNG or JPEG · up to 5 MB</p>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-3" style={{ border: "1px solid rgba(26,22,18,0.15)" }}>
-                <img src={imageData} alt="Your upload" className="w-12 h-12 object-cover" style={{ border: "1px solid rgba(26,22,18,0.1)" }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-display truncate" style={{ fontWeight: 500 }}>{imageName}</p>
-                  <p className="text-[0.65rem] opacity-60">Uploaded · preview above</p>
-                </div>
-                <button onClick={removeImage} className="text-xs underline opacity-70 hover:opacity-100" aria-label="Remove image">Remove</button>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={onFileInputChange}
-              className="hidden"
-              aria-label={`Upload image for ${config.name}`}
-            />
-          </div>
-        )}
-
         {error && <p className="text-xs" style={{ color: "#8B2C2C" }}>{error}</p>}
 
-        {/* Size picker — step number accounts for whether the hand-stitch
-            toggle is shown (adds 1 step) and whether a color picker is
-            shown (adds 1 step). Final step number is the next one after
-            name input + (optional) color picker. */}
+        {/* Size picker — name input is step 1, color (if present) is step 2,
+            so size is step 2 or 3 accordingly. */}
         <div>
           <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-            {(() => {
-              // Count earlier steps:
-              //   - hand/machine toggle: +1 step (when supportsHand)
-              //   - name OR upload input: always +1
-              //   - color picker: +1 (when supportsColor and name mode)
-              let step = 1; // name/upload always present
-              if (supportsHand) step += 1;
-              if (production === "machine" && machineMode === "name" && supportsColor) step += 1;
-              return `${step + 1}.`;
-            })()} Choose a size
+            {supportsColor ? "3." : "2."} Choose a size
           </label>
           <div className="grid grid-cols-1 gap-1.5">
             {config.sizes.map((s) => (
@@ -9640,7 +9717,7 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
             cursor: canAdd ? "pointer" : "not-allowed",
           }}
         >
-          Add to cart — ${currentPrice} <ArrowRight size={14} strokeWidth={1.5} />
+          Add to cart — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />
         </button>
       </div>
     </div>
@@ -9648,109 +9725,48 @@ function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
 }
 
 // === PRODUCT TEMPLATE ===
-// SVG silhouettes with a defined "stitch zone" where the uploaded image is overlaid.
-// Coordinates are in % so they scale with the container.
-function ProductTemplate({ productKey, imageData, letter, customName, nameColor, nameColors }) {
-  // Each product defines: silhouette path + stitch zone rect (where the design appears)
-  const templates = {
-    towel: {
-      // A folded towel viewed front-on
-      paths: [
-        { d: "M 25 18 L 75 18 L 75 88 L 25 88 Z", fill: "#FAF6EC", stroke: "#B08842", strokeWidth: 0.4 },
-        // Fringe lines at the bottom
-        ...[28, 35, 42, 49, 56, 63, 70].map((x) => ({
-          d: `M ${x} 88 L ${x} 92`, fill: "none", stroke: "#B08842", strokeWidth: 0.3,
-        })),
-        // Horizontal accent stripe
-        { d: "M 27 75 L 73 75", fill: "none", stroke: "rgba(176,136,66,0.4)", strokeWidth: 0.3 },
-        { d: "M 27 78 L 73 78", fill: "none", stroke: "rgba(176,136,66,0.4)", strokeWidth: 0.3 },
-      ],
-      stitchZone: { x: 35, y: 35, w: 30, h: 30 },
+// Bib silhouette + name-preview rendered as an SVG. Coordinates are in %
+// so the template scales with its container.
+function ProductTemplate({ customName, nameColor, nameColors }) {
+  // Baby bib silhouette: rounded shape with neck cutout at top, white
+  // fill matches the real product, gold stroke keeps it visible against
+  // the cream-gradient backdrop.
+  const paths = [
+    {
+      d: "M 38 22 C 38 28 44 30 50 30 C 56 30 62 28 62 22 C 70 22 80 30 80 50 C 80 78 65 88 50 88 C 35 88 20 78 20 50 C 20 30 30 22 38 22 Z",
+      fill: "#FFFFFF", stroke: "#B08842", strokeWidth: 0.4,
     },
-    bib: {
-      // Baby bib: rounded shape with neck cutout at top.
-      // Bibs ONLY come in white — fill is pure white (#FFFFFF) to match the
-      // real product. A subtle gold stroke outlines the silhouette so the
-      // bib stays visible against the cream-gradient backdrop.
-      paths: [
-        {
-          d: "M 38 22 C 38 28 44 30 50 30 C 56 30 62 28 62 22 C 70 22 80 30 80 50 C 80 78 65 88 50 88 C 35 88 20 78 20 50 C 20 30 30 22 38 22 Z",
-          fill: "#FFFFFF", stroke: "#B08842", strokeWidth: 0.4,
-        },
-        // Tie strings
-        { d: "M 38 22 C 32 18 26 18 22 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
-        { d: "M 62 22 C 68 18 74 18 78 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
-      ],
-      stitchZone: { x: 35, y: 45, w: 30, h: 28 },
-    },
-  };
-
-  const template = templates[productKey];
-  if (!template) return null;
-  const { stitchZone } = template;
-  // Whether the customer has provided ANY content (image, letter, OR typed name).
-  // If they haven't, the dashed "stitch zone" outline is shown as a hint.
+    { d: "M 38 22 C 32 18 26 18 22 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
+    { d: "M 62 22 C 68 18 74 18 78 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
+  ];
+  const stitchZone = { x: 35, y: 45, w: 30, h: 28 };
   const trimmedName = (customName ?? "").trim();
-  const hasContent = imageData || letter || trimmedName.length > 0;
-  const showZone = !hasContent;
+  const showZone = trimmedName.length === 0;
 
-  // For the typed-name preview, scale font size with name length so short
-  // names (3 letters) look balanced and long names (6 letters) still fit.
-  // The stitch zone width is 30 SVG units; with a serif font, each letter
-  // takes roughly 0.55 × fontSize horizontally. So:
-  //   max fontSize = (zone.w - margin) / (length × 0.55)
-  // We cap at 12 (~big enough to read) and floor at 5 (~stays inside zone).
-  const nameFontSize = (() => {
-    if (trimmedName.length === 0) return 10;
-    const safeWidth = stitchZone.w - 4; // 2-unit margin on each side
-    const ideal = safeWidth / (trimmedName.length * 0.55);
-    return Math.max(5, Math.min(12, ideal));
-  })();
+  // Scale font size with name length so short names (3 letters) look balanced
+  // and long names (6 letters) still fit. Stitch zone is 30 SVG units wide;
+  // each cursive letter takes roughly 0.55 × fontSize horizontally. Cap at
+  // 12 (readable) and floor at 5 (stays inside the zone).
+  const nameFontSize = trimmedName.length === 0
+    ? 10
+    : Math.max(5, Math.min(12, (stitchZone.w - 4) / (trimmedName.length * 0.55)));
 
   return (
     <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-      {template.paths.map((p, i) => (
+      {paths.map((p, i) => (
         <path key={i} d={p.d} fill={p.fill} stroke={p.stroke} strokeWidth={p.strokeWidth} strokeLinejoin="round" strokeLinecap="round" />
       ))}
-      {/* Stitch zone outline — visible only when neither image nor letter is set */}
       {showZone && (
         <rect
           x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h}
           fill="none" stroke="#B08842" strokeWidth={0.3} strokeDasharray="1 1" opacity="0.4"
         />
       )}
-      {/* Letter preview — for hand-stitched mode */}
-      {letter && !imageData && (
-        <>
-          <rect
-            x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h}
-            fill="none" stroke="#8B2C2C" strokeWidth={0.4} strokeDasharray="0.8 0.6" opacity="0.6"
-          />
-          <text
-            x={stitchZone.x + stitchZone.w / 2}
-            y={stitchZone.y + stitchZone.h / 2}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontFamily="Fraunces, serif"
-            fontSize="16"
-            fontWeight="500"
-            fill="#8B2C2C"
-          >
-            {letter.display}
-          </text>
-        </>
-      )}
-      {/* Typed-name preview — for machine-embroidered bib with personalized name.
-          Renders the customer's typed name centered inside the stitch zone,
-          using the Allura cursive Google Font to approximate the real
-          machine-embroidered cursive script Lusik uses on bibs (see Olen /
-          Romeo reference photos). Cursive scripts need MORE vertical room
-          than sans/serif because of ascenders/descenders, so we scale up.
-          - `nameColor`  : single hex color (string) for the whole name
-          - `nameColors` : array of hex colors; each letter cycles through them
-                          (used by Armenian Flag preset for red/blue/orange).
-          Falls back to charcoal when neither is provided. */}
-      {trimmedName.length > 0 && !letter && !imageData && (
+      {/* Typed-name preview — Allura cursive approximates the real
+          machine-embroidered script Lusik uses (see Olen / Romeo reference
+          photos). nameColors (array) is used by the Armenian Flag preset to
+          cycle per-letter colors; nameColor (single hex) is the default. */}
+      {trimmedName.length > 0 && (
         <text
           x={stitchZone.x + stitchZone.w / 2}
           y={stitchZone.y + stitchZone.h / 2}
@@ -9769,28 +9785,6 @@ function ProductTemplate({ productKey, imageData, letter, customName, nameColor,
             : trimmedName}
         </text>
       )}
-      {/* Uploaded image clipped to stitch zone */}
-      {imageData && (
-        <>
-          <defs>
-            <clipPath id={`clip-${productKey}`}>
-              <rect x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h} />
-            </clipPath>
-          </defs>
-          <image
-            href={imageData}
-            x={stitchZone.x} y={stitchZone.y}
-            width={stitchZone.w} height={stitchZone.h}
-            preserveAspectRatio="xMidYMid meet"
-            clipPath={`url(#clip-${productKey})`}
-          />
-          {/* Subtle "stitched" border */}
-          <rect
-            x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h}
-            fill="none" stroke="#1A1612" strokeWidth={0.25} strokeDasharray="0.6 0.4" opacity="0.5"
-          />
-        </>
-      )}
     </svg>
   );
 }
@@ -9799,19 +9793,29 @@ function ProductTemplate({ productKey, imageData, letter, customName, nameColor,
 // ============================================================
 // BLANKET LAYOUT PREVIEW
 // ============================================================
-// Renders a 5x5 grid representing the blanket. Some cells contain letters,
+// Renders a 7x7 grid representing the blanket. Some cells contain letters,
 // in the positions specified by the layout's `preview` array. The other
-// cells are empty with dashed borders, suggesting blanket area around them.
+// cells are empty (no border), reading as plain blanket fabric around them.
 //
 // For 6-letter layouts (double diagonal), the alphabet is stitched twice —
 // so positions 0,1,2 get letters[0..2] and positions 3,4,5 also get
 // letters[0..2] (the alphabet repeats).
 function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColor, letterColor, letterColors, customLine1, customLine2, showCustomTextHints = false }) {
-  // Build the 5x5 cells array. For each filled position in layout.preview,
-  // record both the LETTER glyph and the LETTER-INDEX (0, 1, 2, …). The
-  // letter-index lets us apply per-letter coloring when `letterColors` is
-  // provided (e.g. Armenian Flag preset: index 0 = red, 1 = blue, 2 = orange).
-  const cells = Array(25).fill(null);
+  // Build the 7x7 cells array (49 positions). For each filled position
+  // in layout.preview, record both the LETTER glyph and the LETTER-INDEX
+  // (0, 1, 2, …). The letter-index lets us apply per-letter coloring
+  // when `letterColors` is provided (e.g. Armenian Flag preset:
+  // index 0 = red, 1 = blue, 2 = orange).
+  //
+  // Why 7x7 instead of 5x5: at 5x5 the diagonals crowded the canvas
+  // edges and the cubes felt cramped. The 7x7 grid gives the parallel
+  // ↘↘ diagonals room to extend toward (but not into) the corners,
+  // matching how the real hand-stitched blanket reads — cubes occupy
+  // a central band, with breathing room of plain fabric on both
+  // sides. Cells are 1/7 of the canvas instead of 1/5, so cubes are
+  // automatically smaller and don't crowd.
+  const GRID = 7;
+  const cells = Array(GRID * GRID).fill(null);
   layout.preview.forEach((pos, i) => {
     cells[pos] = {
       kind: "alphabet",   // alphabet cube (the existing 3D outline+letter)
@@ -9821,70 +9825,103 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     };
   });
 
-  // Optional customer text — placed on the MIDDLE PARALLEL DIAGONAL
-  // that runs equidistant between the two alphabet diagonals. This
-  // matches the real "OLEN / 2026" blanket photo:
+  // ============================================================
+  // YEAR + NAME placement — multi-cell diagonal text
+  // ============================================================
+  // The real blanket stitches the year and the name as letter-per-
+  // cell sequences PARALLEL to the alphabet diagonals — same ↘
+  // slope, one column offset from the alphabet so the two reads
+  // (alphabet + personalization) sit side-by-side as twin diagonals.
   //
-  //   Alphabet diagonal positions (current `double_diag_br` layout):
-  //     Row 0: . A . . .
-  //     Row 1: . . B . .
-  //     Row 2: . A . C .   ← lower-A at col 1, upper-C at col 3
-  //     Row 3: . . B . .
-  //     Row 4: . . . C .
+  // For the canonical `double_diag_br` layout (alphabet at top-right
+  // corner and bottom-left corner regions):
   //
-  //   The cells (1,1), (2,2), (3,3) all lie on a third diagonal that
-  //   bisects the two alphabet diagonals — every cell on it is
-  //   exactly one cell away from both diagonals. That's where Lusik
-  //   actually stitches the optional name + year, with the name in
-  //   the geometric center (2,2) and the year on the cell above
-  //   (1,1). The result: personalization parallels the alphabet
-  //   rhythm rather than running down a stiff central column.
+  //   Year diagonal sits next to the upper alphabet, one column to
+  //   the LEFT — cells (0,3), (1,4), (2,5), (3,6) = positions
+  //   [3, 11, 19, 27]. 4 cells fit a 4-digit year ("2026").
   //
-  // Cell positions used (5×5, pos = row*5 + col):
-  //   Year anchor: (1,1) → position 6
-  //   Name anchor: (2,2) → position 12         ← true center of the blanket
-  //   Reserve:     (3,3) → position 18         ← fallback if a future
-  //                                              layout occupies one of the
-  //                                              above
+  //   Name diagonal sits next to the lower alphabet, one column to
+  //   the RIGHT — cells (3,0), (4,1), (5,2), (6,3) = positions
+  //   [21, 29, 37, 45]. 4 cells fit a 4-character name; longer
+  //   names get distributed across the cells (1–2 chars per cell).
   //
-  // Text is rendered WITHOUT a cube outline since the real product
+  // Text cells render WITHOUT a cube outline since the real product
   // stitches the name/year directly onto the waffle weave, not
   // inside an alphabet cube frame.
   const line1Trim = (customLine1 ?? "").trim();
   const line2Trim = (customLine2 ?? "").trim();
 
-  // The middle diagonal in order from top-left to bottom-right.
-  // Filtering by empty-cell makes this layout-agnostic: if a future
-  // layout uses (1,1) for a letter, we'd skip to (2,2) etc.
-  const middleDiagonalPositions = [6, 12, 18];
-  const availableMidline = middleDiagonalPositions.filter(pos => cells[pos] === null);
+  const yearCellPositions = [3, 11, 19, 27]; // (0,3) → (3,6) ↘
+  const nameCellPositions = [21, 29, 37, 45]; // (3,0) → (6,3) ↘
 
-  // Anchor the year to the TOP available midline cell and the name to
-  // the cell directly BELOW it — matches the OLEN/2026 photo (year
-  // above, name below). Doing it by anchor rather than by "first two
-  // available" keeps the placeholder hints in the same slot whether
-  // the customer has typed one, both, or neither line, so the
-  // preview doesn't shuffle as they type.
-  const yearAnchor = availableMidline[0] ?? null;
-  const nameAnchor = availableMidline.find(pos => pos > (yearAnchor ?? -1)) ?? null;
+  // Split a text string across N cells. ≤N chars: one per cell with
+  // trailing cells empty. >N chars: distribute as evenly as possible
+  // (longer text gets 2 chars per cell, etc.). Returns an array of
+  // length N with the per-cell glyph (empty string for blank cells).
+  const splitAcrossCells = (text, n) => {
+    if (!text) return Array(n).fill("");
+    if (text.length <= n) {
+      return Array.from({ length: n }, (_, i) => text[i] ?? "");
+    }
+    const perCell = Math.ceil(text.length / n);
+    return Array.from({ length: n }, (_, i) =>
+      text.slice(i * perCell, (i + 1) * perCell)
+    );
+  };
 
-  if (yearAnchor !== null) {
-    if (line2Trim.length > 0) {
-      cells[yearAnchor] = { kind: "text", glyph: line2Trim };
+  const placeTextDiagonal = (positions, text, placeholderLabel) => {
+    if (text.length > 0) {
+      const pieces = splitAcrossCells(text, positions.length);
+      positions.forEach((pos, i) => {
+        if (pieces[i] && cells[pos] === null) {
+          cells[pos] = { kind: "text", glyph: pieces[i] };
+        }
+      });
     } else if (showCustomTextHints) {
-      // Placeholder hint — shows the customer WHERE the year will be stitched
-      // before they've typed anything. Rendered faded + italic to read as a
-      // hint, not as real embroidered text.
-      cells[yearAnchor] = { kind: "text", glyph: "year", placeholder: true };
+      // Single-cell placeholder hint at the MIDDLE position of the
+      // diagonal — enough to show the customer WHERE their text will
+      // be stitched, without filling all four cells with a fake
+      // multi-char sample.
+      const hintPos = positions[Math.floor(positions.length / 2)];
+      if (cells[hintPos] === null) {
+        cells[hintPos] = { kind: "text", glyph: placeholderLabel, placeholder: true };
+      }
     }
-  }
-  if (nameAnchor !== null) {
-    if (line1Trim.length > 0) {
-      cells[nameAnchor] = { kind: "text", glyph: line1Trim };
-    } else if (showCustomTextHints) {
-      cells[nameAnchor] = { kind: "text", glyph: "name", placeholder: true };
+  };
+  placeTextDiagonal(yearCellPositions, line2Trim, "year");
+  placeTextDiagonal(nameCellPositions, line1Trim, "name");
+
+  // ============================================================
+  // POMEGRANATE MOTIF cells — light line-art decoration
+  // ============================================================
+  // The real blanket fabric has a woven pomegranate pattern in the
+  // empty squares — a heritage motif that's part of Lusik's design
+  // language (see Lusik's Journal post on the pomegranate). The
+  // preview hints at this with a sparse scattering of line-art
+  // pomegranate icons in selected empty cells.
+  //
+  // Positions are curated by hand for visual balance — denser
+  // through the middle of the canvas where the customer's eye is
+  // looking, sparser at the corners. The original "no two adjacent"
+  // rule was relaxed per Lusik's hand-drawn reference: the real
+  // blanket has pomegranate motifs woven on a tighter rhythm than
+  // a strict checkerboard, with neighbors visible across the
+  // empty squares between alphabet cubes.
+  const POMEGRANATE_POSITIONS = [
+    0,    2,    6,         // row 0:  (0,0), (0,2), (0,6)
+    8,    10,              // row 1:  (1,1), (1,3)
+    14,   16,   18,        // row 2:  (2,0), (2,2), (2,4)
+    22,   24,   26,        // row 3:  (3,1), (3,3), (3,5)  — split around the
+                           //          removed (3,2) entry per the X-mark
+    30,   32,   34,        // row 4:  (4,2), (4,4), (4,6)
+    38,   40,              // row 5:  (5,3), (5,5)
+    42,   46,   48,        // row 6:  (6,0), (6,4), (6,6)
+  ];
+  POMEGRANATE_POSITIONS.forEach((pos) => {
+    if (cells[pos] === null) {
+      cells[pos] = { kind: "pomegranate" };
     }
-  }
+  });
 
   // Grid frame border (the blanket's own outline)
   const borderColor = darkMode ? "rgba(245,239,227,0.18)" : "rgba(26,22,18,0.12)";
@@ -9910,43 +9947,105 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
   // flips per diagonal so the two parallel diagonals visually
   // "face inward" toward each other — exactly how Lusik
   // stitches them on the real blanket (see the close-up photo
-  // in the design notes). The upper diagonal's cubes show
-  // their back-top corner UP-AND-RIGHT; the lower diagonal's
-  // show it UP-AND-LEFT.
+  // in the design notes). For the ↙↙ layout: the upper
+  // diagonal (top-right region) shows its back-top corner
+  // UP-AND-LEFT; the lower diagonal (bottom-left region)
+  // shows it UP-AND-RIGHT.
   //
-  // Step count scales with `size`: tiny thumbnails get a 2-step
-  // wedge, the live preview at ~140px gets a 4-step wedge,
-  // hero shots get 5. Shadow color is the cube's outline color
-  // at ~73% opacity so the depth lines read as paler siblings
-  // of the front-face outline — same hue, less weight.
-  const depthSteps = size < 70 ? 2 : (size < 110 ? 3 : (size < 160 ? 4 : 5));
+  // Step count scales with the per-cell pixel size rather than
+  // raw canvas size so the wedge stays proportional when the
+  // grid resolution changes. A 17px cube (7x7 at size=120) gets
+  // 3 steps; a 6px cube (7x7 at size=44, catalog thumbnail) gets
+  // a single step. Shadow color is the cube's outline color at
+  // ~73% opacity so the depth lines read as paler siblings of
+  // the front-face outline — same hue, less weight.
+  const cellPx     = size / GRID;
+  const depthSteps = cellPx < 10 ? 1 : (cellPx < 14 ? 2 : (cellPx < 22 ? 3 : 4));
   const depthColor = blockColor ? `${blockColor}BB` : "rgba(176,136,66,0.7)";
   const buildDepth = (xSign) => Array.from({ length: depthSteps }, (_, i) =>
     `${(i + 1) * xSign}px ${-(i + 1)}px 0 0 ${depthColor}`
   ).join(", ");
 
-  // Extra padding on TOP (where every cube's depth extends up),
-  // and on BOTH left AND right (since upper-diagonal cubes
-  // extend right and lower-diagonal cubes extend left after the
-  // facing-flip). Bottom can stay tight.
+  // Symmetric padding on all four sides. Was previously asymmetric
+  // (more on top, less on bottom) which caused CSS Grid's `1fr`
+  // distribution to round unevenly — the bottom row of cells came
+  // out 1px taller than the rest, which made the bottom Գ cube
+  // visibly larger than its peers. Equal padding → equal cells.
   const padTopLR  = depthSteps + (size < 80 ? 3 : 6);
-  const padBottom = depthSteps + (size < 80 ? 1 : 2);
+  const padBottom = padTopLR;
 
-  return (
+  // ============================================================
+  // WAFFLE WEAVE background + grid lines
+  // ============================================================
+  // The real blanket fabric has a fine waffle weave — a regular
+  // grid of tiny raised squares. The preview hints at this with
+  // an SVG-tiled background under every non-alphabet cell, so
+  // the customer reads "fabric" rather than "blank white canvas".
+  //
+  // Grid lines: the gap between cells is 1-2px and the grid
+  // container's background-color shows through that gap as a
+  // light grey line, delineating each cell. Visual purpose: lets
+  // the customer see the structure their personalization sits
+  // in — same effect as the printed grid on Lusik's planning
+  // diagram.
+  const gridLineColor = darkMode
+    ? "rgba(245,239,227,0.18)"
+    : "rgba(176,136,66,0.22)";
+  // Waffle weave: a 12px SVG tile with four small raised squares
+  // in a 2×2 cluster. Stroke is faint so the texture sits BEHIND
+  // the cubes and text without competing.
+  const waffleSvg = darkMode
+    ? `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='transparent'/><rect x='1' y='1' width='4' height='4' fill='none' stroke='rgba(245,239,227,0.10)' stroke-width='0.5'/><rect x='7' y='1' width='4' height='4' fill='none' stroke='rgba(245,239,227,0.10)' stroke-width='0.5'/><rect x='1' y='7' width='4' height='4' fill='none' stroke='rgba(245,239,227,0.10)' stroke-width='0.5'/><rect x='7' y='7' width='4' height='4' fill='none' stroke='rgba(245,239,227,0.10)' stroke-width='0.5'/></svg>`
+    : `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='%23FFFFFF'/><rect x='1' y='1' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='2' y='2' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='7' y='1' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='8' y='2' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='1' y='7' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='2' y='8' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='7' y='7' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='8' y='8' width='2' height='2' fill='rgba(0,0,0,0.025)'/></svg>`;
+  const waffleBackground = `url("data:image/svg+xml;utf8,${waffleSvg}")`;
+
+  // ============================================================
+  // FRINGE EDGES — yarn strands on the top + bottom of the blanket
+  // ============================================================
+  // The real waffle-acrylic blanket Lusik sells has fringe along
+  // its top and bottom edges — short yarn strands hanging off the
+  // woven body. The preview hints at this with an SVG-tiled strip
+  // above and below the canvas, drawn as short vertical lines of
+  // slightly varying length for an organic feel.
+  //
+  // Only shown when the preview is large enough (size >= 80) for
+  // the fringe to read as fringe rather than visual noise. Catalog
+  // thumbnails skip it so they stay clean and square.
+  const showFringe = size >= 80;
+  const fringeHeight = Math.max(8, Math.round(size * 0.07));
+  const fringeColor = darkMode ? "rgba(245,239,227,0.45)" : "rgba(176,136,66,0.55)";
+  // 8px-wide tile with 3 strands of slightly varying length —
+  // strands attach to the TOP edge of the tile and extend downward
+  // (used directly for the bottom fringe; top fringe applies a
+  // vertical flip via transform: scaleY(-1) so the strands point up).
+  const fringeStrandSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='8' height='12'><line x1='1.5' y1='0' x2='1.5' y2='11' stroke='${fringeColor}' stroke-width='0.6' stroke-linecap='round'/><line x1='4' y1='0' x2='4' y2='9' stroke='${fringeColor}' stroke-width='0.6' stroke-linecap='round'/><line x1='6.5' y1='0' x2='6.5' y2='10' stroke='${fringeColor}' stroke-width='0.6' stroke-linecap='round'/></svg>`;
+  const fringeBackground = `url("data:image/svg+xml;utf8,${encodeURIComponent(fringeStrandSvg)}")`;
+
+  // The canvas itself stays aspect-square; when fringe is enabled we
+  // wrap it in an outer container that stacks: top fringe strip,
+  // canvas, bottom fringe strip. That keeps the cell grid uniform and
+  // avoids polluting the existing layout math; the only downside is the
+  // wrapper's total height becomes (size + 2*fringeHeight), so callers
+  // shouldn't constrain it to a square box if they want fringe to show.
+  const canvas = (
     <div
       className="aspect-square w-full"
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(5, 1fr)",
-        gridTemplateRows: "repeat(5, 1fr)",
-        gap: size < 80 ? "2px" : "3px",
-        border: `1px solid ${borderColor}`,
+        gridTemplateColumns: `repeat(${GRID}, 1fr)`,
+        gridTemplateRows: `repeat(${GRID}, 1fr)`,
+        // Gap doubles as the visible grid line between cells: the
+        // container's grid-line color shows through the 1px gap, so
+        // every cell has a clean grey separator on its right and
+        // bottom edges (and the outer border handles the perimeter).
+        gap: "1px",
+        border: `1px solid ${gridLineColor}`,
+        backgroundColor: gridLineColor,
         // Generous padding on top + both sides (every cube's depth
         // extends up; upper-diagonal extends right, lower extends
         // left after the facing-flip). Bottom can stay tight.
         padding: `${padTopLR}px ${padTopLR}px ${padBottom}px ${padTopLR}px`,
         maxWidth: `${size}px`,
-        background: darkMode ? "transparent" : "#FFFFFF",
         // overflow stays VISIBLE so depth shadows can extend naturally without
         // clipping the cube outlines themselves. The parent button container
         // handles any visual overflow at its own boundary.
@@ -9959,32 +10058,41 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
         const filled = cell !== null;
         const isAlphabetCube = filled && cell.kind === "alphabet";
         const isTextCell = filled && cell.kind === "text";
+        const isPomegranate = filled && cell.kind === "pomegranate";
 
         // Per-cube depth direction. The preview array stores cubes
         // in two halves: the first `letters.length` entries are
-        // the upper diagonal, the rest are the lower diagonal.
-        // Upper-diagonal cubes face up-and-right; lower-diagonal
-        // cubes face up-and-left. Mirror = the two diagonals look
-        // like they're facing each other across the blanket.
+        // the upper diagonal (top-right corner region), the rest
+        // are the lower diagonal (bottom-left corner region).
+        // Direction is MIRRORED between the two halves so the
+        // diagonals look like a coherent pair rather than a
+        // randomly-rotated set: upper-diagonal cubes (top-right)
+        // show their back-top corner UP-AND-LEFT; lower-diagonal
+        // cubes (bottom-left) show it UP-AND-RIGHT.
         const isLowerDiagonal = isAlphabetCube && cell.idx >= letters.length;
         const cellDepthShadow = isAlphabetCube
-          ? buildDepth(isLowerDiagonal ? -1 : 1)
+          ? buildDepth(isLowerDiagonal ? 1 : -1)
           : "none";
 
         // For alphabet cubes: single letter at ~55% of cell. For text cells
         // (optional name/year), the glyph may be multiple characters (up to 6),
         // so font size has to scale down as text length grows so it fits in
         // the cell. Estimate: each character takes ~0.55 × fontSize horizontally.
-        const cellInnerPx = (size - 10) / 5;
+        // The /GRID divisor keeps cube proportions correct when the grid size
+        // changes (was hardcoded /5 when the grid was 5x5).
+        const cellInnerPx = (size - 10) / GRID;
         let letterPx;
         if (isTextCell) {
           const len = Math.max(1, cell.glyph.length);
           // Available width = cell minus 2px each side
           const safeW = cellInnerPx - 4;
           const ideal = safeW / (len * 0.55);
-          letterPx = Math.max(5, Math.min(cellInnerPx * 0.4, ideal));
+          // Text cells are allowed to grow a touch larger than alphabet
+          // cubes since they're the customer's personalization — they
+          // should be readable. Cap at half the cell so they still fit.
+          letterPx = Math.max(5, Math.min(cellInnerPx * 0.5, ideal));
         } else {
-          letterPx = Math.max(7, Math.round(cellInnerPx * 0.55));
+          letterPx = Math.max(7, Math.round(cellInnerPx * 0.6));
         }
 
         const isPlaceholderText = isTextCell && cell.placeholder === true;
@@ -10004,16 +10112,30 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              // Background: alphabet cubes get the white "cube face"; text
-              // cells stay transparent so the text floats on the waffle weave
-              // without a frame around it.
+              // Background: alphabet cubes get the white "cube face" (the
+              // 3D cube reads as a clean square sitting on the fabric).
+              // Every other cell shows the waffle-weave fabric so the
+              // texture is visible in the empty space, behind text, and
+              // under the pomegranate motifs — exactly how it looks on
+              // the real blanket.
               background: isAlphabetCube
                 ? (darkMode ? "transparent" : "#FFFFFF")
-                : "transparent",
+                : waffleBackground,
               // Cube outline + depth only on alphabet cubes. Text cells get
               // no border so they read as "embroidered onto the blanket"
-              // rather than another framed letter.
-              border: isAlphabetCube ? `2px solid ${outlineColor}` : "none",
+              // rather than another framed letter. Border width scales
+              // with cell size so a tiny catalog-card thumbnail (cellPx < 10)
+              // doesn't end up with a 2px border drowning a 6px cube.
+              border: isAlphabetCube
+                ? `${cellPx < 10 ? 1 : 2}px solid ${outlineColor}`
+                : "none",
+              // Inset alphabet cubes inside their grid cell so the cube
+              // doesn't fill the cell edge-to-edge. The visible breathing
+              // room makes every cube read at the same proportion as its
+              // neighbors — without this the cell-edge cubes (e.g. the
+              // bottom Գ at (6,2), right against the canvas's inner
+              // border) visually appeared larger than mid-grid cubes.
+              margin: isAlphabetCube ? (cellPx < 10 ? "1px" : "2px") : 0,
               boxShadow: cellDepthShadow,
               fontFamily: "Fraunces, serif",
               fontSize: `${letterPx}px`,
@@ -10027,10 +10149,60 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
               letterSpacing: isTextCell ? "-0.5px" : "normal",
             }}
           >
-            {cell?.glyph ?? ""}
+            {isPomegranate ? (
+              // Small pomegranate line-art icon. Sized to ~70% of the cell
+              // so the motif reads as a delicate impression on the fabric
+              // (matching the woven pomegranate texture on the real
+              // blanket), not as a heavy printed graphic. Stroke color
+              // picks up the muted accent so it sits behind the cubes
+              // visually rather than competing with them.
+              <svg
+                viewBox="0 0 24 24"
+                width={Math.round(cellPx * 0.7)}
+                height={Math.round(cellPx * 0.7)}
+                fill="none"
+                stroke={darkMode ? "rgba(245,239,227,0.28)" : "rgba(176,136,66,0.45)"}
+                strokeWidth="1.1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {/* Fruit body */}
+                <circle cx="12" cy="14" r="6" />
+                {/* Crown / calyx — a small five-point zigzag at the top */}
+                <path d="M 7.5 9 L 8.5 7 L 9.5 9 L 10.5 7 L 11.5 9 L 12.5 7 L 13.5 9 L 14.5 7 L 15.5 9" />
+                {/* Stem */}
+                <line x1="12" y1="5" x2="12" y2="7" />
+              </svg>
+            ) : (
+              cell?.glyph ?? ""
+            )}
           </div>
         );
       })}
+    </div>
+  );
+
+  if (!showFringe) return canvas;
+
+  // Wrap the canvas in a vertical stack: top fringe + canvas + bottom
+  // fringe. The fringe strips are full-width, fringeHeight tall, with
+  // strands repeated horizontally. The top fringe is flipped on the Y
+  // axis so its strands point upward (away from the canvas); the bottom
+  // strip uses the SVG as-is so its strands point downward.
+  const fringeStripStyle = {
+    width: "100%",
+    height: `${fringeHeight}px`,
+    backgroundImage: fringeBackground,
+    backgroundRepeat: "repeat-x",
+    backgroundPosition: "top center",
+    pointerEvents: "none",
+  };
+  return (
+    <div style={{ width: "100%", maxWidth: `${size}px` }}>
+      <div style={{ ...fringeStripStyle, transform: "scaleY(-1)" }} aria-hidden="true" />
+      {canvas}
+      <div style={fringeStripStyle} aria-hidden="true" />
     </div>
   );
 }
@@ -10153,7 +10325,6 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
 
   const [activeImg, setActiveImg] = useState(0);
   const [color, setColor] = useState(product.colors[0]);
-  const [letter, setLetter] = useState(product.letters[0]);
   const [alphabet, setAlphabet] = useState(product.alphabets[0]);
   // Pick the first enabled layout as default. Customer changes via the picker.
   const enabledLayouts = product.layouts.filter(l => l.enabled);
@@ -11157,6 +11328,14 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // If the customer empties the cart from inside checkout (deleting
+  // every line item via the X / minus-on-1 / swipe), bounce back to
+  // the home view rather than render an empty "Almost there" page
+  // with no items to pay for. onBack() resets view → "home".
+  useEffect(() => {
+    if (cart.length === 0) onBack?.();
+  }, [cart.length, onBack]);
+
   // --- GIFT OPTIONS (optional) ---
   // The baby-blanket category is overwhelmingly gift purchases, so
   // these fields are first-class rather than buried in a "notes"
@@ -11178,6 +11357,14 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [giftIsGift,     setGiftIsGift]     = useState(false);
   const [giftMessage,    setGiftMessage]    = useState("");
   const [giftHidePrices, setGiftHidePrices] = useState(false);
+
+  // --- ONE-YEAR REMINDER (optional, opt-in) ---
+  // Default off. If ticked, the order row carries gift_reminder_opt_in = true
+  // and a daily scheduled job emails the customer about 11 months later.
+  // Independent of giftIsGift — works for self-purchases too (the buyer's
+  // own baby growing up, repeat gifting, etc.). One-shot: once sent, never
+  // re-sent. Unsubscribe link in every email turns it off without sign-in.
+  const [giftReminderOptIn, setGiftReminderOptIn] = useState(false);
 
   // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
   // Default everything OFF — affirmative opt-in is the only thing
@@ -11276,6 +11463,11 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             message:      giftIsGift ? giftMessage.trim() : "",
             hide_prices:  giftIsGift ? giftHidePrices : false,
           },
+          // Customer's one-year reminder opt-in. Stored verbatim on the
+          // order row by the webhook; a daily scheduled function reads
+          // it later. Nothing else here depends on this — declining
+          // doesn't affect checkout.
+          gift_reminder_opt_in: giftReminderOptIn,
           // Optional social-share consent. The stripe-webhook Function
           // persists this on the order row in orders.social_consent (JSONB)
           // when checkout completes, so Lusik sees it in her admin view.
@@ -11300,15 +11492,15 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        // Build tag (when present) proves which function bundle
-        // actually responded — invaluable for diagnosing "I
-        // pushed a fix but the same error keeps showing" cases.
-        const detail = [errBody?.code, errBody?.param, errBody?.message, errBody?.build && `build=${errBody.build}`]
+        // In prod the server returns just { error }; on branch deploys /
+        // netlify dev it also returns { code, param, message } for
+        // hands-free debugging. Render whatever came back.
+        const detail = [errBody?.code, errBody?.param, errBody?.message]
           .filter(Boolean)
           .join(" · ");
         const msg = detail
           ? `${errBody?.error || "Checkout failed"} (${detail})`
-          : errBody?.error || `Checkout failed (HTTP ${res.status} · no body — function crashed before responding)`;
+          : errBody?.error || `Checkout failed (HTTP ${res.status})`;
         throw new Error(msg);
       }
       const { url } = await res.json();
@@ -11326,10 +11518,11 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
     if (!id) return null;
     if (id.startsWith?.("bib-")) return "bib";
     if (id.startsWith?.("blanket-")) {
-      // Cart ids: `blanket-{alphabet}-{layout}` — extract the layout suffix
-      // and map to TRUSTED_PRODUCTS key `blanket-{layout}`.
+      // Cart ids: `blanket-{alphabet}-{layoutKey}-{blockDmc}-{letterDmc}[-multi-...][-c...]`.
+      // Layout keys themselves use underscores, never dashes — so parts[2] is
+      // the whole layout token. TRUSTED_PRODUCTS keys off `blanket-{layoutKey}`.
       const parts = id.split("-");
-      if (parts.length >= 3) return `blanket-${parts.slice(2).join("-")}`;
+      if (parts.length >= 3) return `blanket-${parts[2]}`;
       return "blanket";
     }
     return null;
@@ -11338,8 +11531,17 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   return (
     <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
       <button onClick={onBack} className="text-sm tracking-wide opacity-70 hover:opacity-100 mb-8">← Continue shopping</button>
+      {/* min-w-0 on both grid children is load-bearing: CSS Grid items
+          default to min-width: auto, which means they refuse to shrink
+          below the intrinsic max-content width of their content (a
+          paragraph's "longest line if it didn't wrap"). On a narrow
+          portrait phone viewport (~390px) that intrinsic width can
+          exceed the viewport, pushing the layout past the right edge
+          even though the parent had px-6 padding to spare. Landscape
+          (~844px) doesn't surface the bug because the column is wide
+          enough to satisfy the unwrapped intrinsic width. */}
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
-        <div>
+        <div className="min-w-0">
           <h1 className="font-display text-4xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Almost there.</h1>
           <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-8">
             You'll be sent to our secure checkout, powered by Stripe. Apple Pay, Google Pay, and all major credit cards accepted. Shipping and tax calculated on the next page.
@@ -11419,6 +11621,32 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 </p>
               </div>
             )}
+          </fieldset>
+
+          {/* ============================================================
+              OPTIONAL: ONE-YEAR REMINDER
+              ============================================================
+              Single checkbox, default off. Almost-no-friction add. Useful
+              for gift-givers (so they remember next year's baby shower)
+              and self-purchases alike. Sent at most once, ~11 months
+              after the order. */}
+          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · gentle reminder</legend>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={giftReminderOptIn}
+                onChange={(e) => setGiftReminderOptIn(e.target.checked)}
+                className="mt-0.5"
+                aria-describedby="gift-reminder-help"
+              />
+              <span className="text-xs leading-snug">
+                Send me one email next year if I might want another.
+                <span id="gift-reminder-help" className="block opacity-65 mt-0.5">
+                  We'll send it once, about 11 months from now. Not a marketing list — one email, with an unsubscribe link.
+                </span>
+              </span>
+            </label>
           </fieldset>
 
           {/* ============================================================
@@ -11532,52 +11760,35 @@ function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </p>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order summary</h2>
-          <div className="space-y-4 mb-6">
+          <div className="mb-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
             {cart.map((item) => (
-              <div key={item.id} className="flex gap-4">
-                <div className="relative">
-                  <img src={item.image} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+              <div key={item.id} className="flex gap-3 py-4 items-start" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
+                <div className="relative shrink-0">
+                  <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                   {item.isCustom && (
                     <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                   )}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
-                  <div className="flex items-center gap-2">
-                    {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                    <p className="text-xs opacity-60">{item.subtitle} · Qty {item.qty}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
+                    <p className="text-xs opacity-60 truncate">{item.subtitle} · Qty {item.qty}</p>
                   </div>
                 </div>
-                <p className="text-sm" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
+                <p className="text-sm tabular-nums shrink-0" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
               </div>
             ))}
           </div>
-          <div className="border-t pt-4 space-y-1 text-sm" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
-            <div className="flex justify-between"><span className="opacity-70">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+          <div className="pt-2 space-y-1 text-sm">
+            <div className="flex justify-between"><span className="opacity-70">Subtotal</span><span className="tabular-nums">${subtotal.toFixed(2)}</span></div>
             <div className="flex justify-between"><span className="opacity-70">Shipping</span><span className="opacity-60">Calculated at Stripe</span></div>
             <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-60">Calculated at Stripe</span></div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// === CONFIRMATION ===
-function Confirmation({ orderNumber, onHome }) {
-  return (
-    <div className="fade-in max-w-2xl mx-auto px-6 lg:px-12 py-20 lg:py-32 text-center">
-      <div className="w-16 h-16 rounded-full mx-auto mb-8 flex items-center justify-center" style={{ background: "#B08842" }}>
-        <Check size={28} style={{ color: "#F5EFE3" }} />
-      </div>
-      <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Order placed</p>
-      <h1 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Thank you.</h1>
-      <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-3">Your order <strong style={{ fontWeight: 500 }}>#{orderNumber}</strong> has been received.</p>
-      <p className="opacity-70 mb-6 leading-relaxed">We'll be in touch shortly to confirm your Armenian letter and color choice. Lusik will then begin stitching — typically 5 to 10 business days before shipment.</p>
-      <p className="opacity-70 mb-10 leading-relaxed text-sm">Reply to your confirmation email, call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>, or DM us <a href="https://instagram.com" target="_blank" rel="noreferrer" className="underline">@lusikandsons</a> with your letter and color.</p>
-      <button onClick={onHome} className="px-8 py-4 text-sm tracking-wide" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>Return home</button>
     </div>
   );
 }

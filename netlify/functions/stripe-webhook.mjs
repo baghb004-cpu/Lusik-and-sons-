@@ -28,9 +28,21 @@ import {
   sendRefundNotification,
 } from "./_lib/email.mjs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
+// Lazy-init the Stripe client so a missing STRIPE_SECRET_KEY env var
+// returns a clean error in the handler instead of throwing at module
+// load (which would surface as a 502 with no diagnostic body).
+let _stripe = null;
+function getStripe() {
+  if (_stripe) return _stripe;
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    const err = new Error("STRIPE_SECRET_KEY env var is not set");
+    err.code = "ENV_MISSING_STRIPE_SECRET_KEY";
+    throw err;
+  }
+  _stripe = new Stripe(key, { apiVersion: "2024-06-20" });
+  return _stripe;
+}
 
 // Friendly customer-facing order number generator. Sequence-free
 // so we don't have to track state — month + 6 random base36 chars.
@@ -55,6 +67,14 @@ export default async (req) => {
   // Stripe needs the RAW request body to verify the signature.
   const rawBody = await req.text();
 
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (err) {
+    console.error("[webhook]", err.message);
+    return new Response("Server misconfigured", { status: 500 });
+  }
+
   let event;
   try {
     event = stripe.webhooks.constructEvent(
@@ -63,8 +83,12 @@ export default async (req) => {
       process.env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (err) {
+    // Log the detailed reason (missing secret vs. mismatch vs.
+    // timestamp drift) but don't echo it back — the response is
+    // public and the detail would help an attacker tune their
+    // forgery attempts.
     console.warn("Webhook signature verification failed:", err.message);
-    return new Response(`Invalid signature: ${err.message}`, { status: 400 });
+    return new Response("Invalid signature", { status: 400 });
   }
 
   // Dispatch on event type. Anything we haven't subscribed to
@@ -89,10 +113,50 @@ export default async (req) => {
 
   // Pull the stashed cart from Blobs.
   const pendingStore = getStore({ name: "pending-orders", consistency: "strong" });
-  const pending = await pendingStore.get(session.id, { type: "json" });
+  let pending = await pendingStore.get(session.id, { type: "json" });
+  let reconstructed = false;
   if (!pending || !Array.isArray(pending.cart)) {
-    console.error("No pending cart found for session", session.id);
-    return new Response("No pending cart", { status: 200 }); // 200 so Stripe doesn't retry forever
+    // The stash can be missing if create-checkout-session hit its 4s
+    // Blobs timeout and let the customer through anyway. Recovering
+    // from Stripe's line items is lossy (no custom blanket metadata)
+    // but it beats silently dropping a paid order — Lusik can reach
+    // out to the customer for the missing design details.
+    console.warn("[webhook] No pending cart for session, reconstructing from Stripe:", session.id);
+    try {
+      const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+        expand: ["data.price.product"],
+        limit: 100,
+      });
+      const recoveredCart = [];
+      for (const li of lineItems.data) {
+        const product = li.price?.product;
+        const productKey = product?.metadata?.productKey;
+        if (!productKey || !TRUSTED_PRODUCTS[productKey]) continue;
+        recoveredCart.push({
+          productKey,
+          qty:      li.quantity ?? 1,
+          subtitle: li.description ?? product?.description ?? "",
+          isCustom: product?.metadata?.isCustom === "true",
+        });
+      }
+      if (recoveredCart.length === 0) {
+        // No way to write a meaningful order row. 500 so Stripe
+        // retries — maybe the next attempt finds the blob.
+        console.error("[webhook] Could not reconstruct any line items for session", session.id);
+        return new Response("Cart reconstruction failed", { status: 500 });
+      }
+      pending = {
+        cart:           recoveredCart,
+        userId:         session.metadata?.userId || null,
+        customerEmail:  session.customer_details?.email ?? null,
+        social_consent: null,
+        gift:           null,
+      };
+      reconstructed = true;
+    } catch (err) {
+      console.error("[webhook] Failed to reconstruct cart from Stripe:", err);
+      return new Response("Cart reconstruction failed", { status: 500 });
+    }
   }
 
   // Compute totals from trusted prices (do not trust the cart's
@@ -116,6 +180,16 @@ export default async (req) => {
       customImageUrl:i.customImageUrl ?? null,
       customMetadata:i.customMetadata ?? null,
     });
+  }
+
+  // Refuse to insert an order row with zero trusted line items. Every
+  // productKey in the cart was missing from TRUSTED_PRODUCTS (likely a
+  // browser/server version skew where a renamed key shipped before the
+  // trusted map deployed). 500 so Stripe retries — better to delay
+  // than to write a $0 order Lusik can never fulfill.
+  if (items.length === 0) {
+    console.error("[webhook] No trusted items resolved for session", session.id, "— refusing to insert empty order");
+    return new Response("No trusted items in cart", { status: 500 });
   }
 
   const totalCents    = session.amount_total ?? subtotalCents;
@@ -145,19 +219,26 @@ export default async (req) => {
     ? session.payment_intent
     : session.payment_intent?.id ?? null;
 
+  const reconstructedNote = reconstructed
+    ? "RECONSTRUCTED FROM STRIPE — original cart stash was lost. Custom blanket metadata (alphabet, layout, colors, personalization) is missing; reach out to the customer for those details before stitching."
+    : null;
+  const giftReminderOptIn = pending.gift_reminder_opt_in === true;
   const inserted = await sql`
     INSERT INTO orders (
       order_number, stripe_session_id, stripe_payment_intent, user_id,
       customer_email, status, fulfillment_status,
       subtotal_cents, shipping_cents, tax_cents, total_cents,
-      shipping_address, social_consent, gift
+      shipping_address, social_consent, gift, admin_notes,
+      gift_reminder_opt_in
     ) VALUES (
       ${orderNumber}, ${session.id}, ${paymentIntent}, ${pending.userId},
       ${customerEmail}, 'paid', 'in_progress',
       ${subtotalCents}, ${shippingCents}, ${taxCents}, ${totalCents},
       ${shippingAddr ? JSON.stringify(shippingAddr) : null}::jsonb,
       ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
-      ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb
+      ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb,
+      ${reconstructedNote},
+      ${giftReminderOptIn}
     )
     RETURNING *
   `;

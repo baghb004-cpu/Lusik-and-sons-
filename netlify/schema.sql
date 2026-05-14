@@ -112,6 +112,8 @@ CREATE TABLE IF NOT EXISTS orders (
   finished_photo_emailed_at   TIMESTAMPTZ,             -- set when the customer was first emailed about the photo (dedupe gate)
   admin_notes                 TEXT,                    -- internal-only notes Lusik writes from the admin view
   shipped_at                  TIMESTAMPTZ,             -- set when fulfillment_status first transitions to "shipped"
+  gift_reminder_opt_in        BOOLEAN NOT NULL DEFAULT false,  -- customer opted in at checkout to a 1-year-later reminder
+  gift_reminder_sent_at       TIMESTAMPTZ,             -- set when the gift-reminder scheduled job emailed this customer (dedupe gate, one-shot)
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -126,6 +128,46 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes                TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at                 TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent      TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_cents             INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_reminder_opt_in       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_reminder_sent_at      TIMESTAMPTZ;
+
+-- Partial index so the daily reminder job can scan only the small set
+-- of pending reminders rather than the whole orders table.
+CREATE INDEX IF NOT EXISTS idx_orders_gift_reminder_pending
+  ON orders (created_at)
+  WHERE gift_reminder_opt_in = true AND gift_reminder_sent_at IS NULL;
+
+-- ============================================================
+-- product_waitlist
+-- ============================================================
+-- One row per (email, product_key). Customers sign up via the
+-- WaitlistModal for products still marked status: "placeholder"
+-- in CATALOG. When Lusik launches the product she clicks "Notify"
+-- in the admin panel; admin-waitlist-notify emails everyone with
+-- notified_at IS NULL and stamps the timestamp.
+--
+-- UNIQUE (lower(email), product_key) means a customer who signs
+-- up twice for the same product just updates their row — no
+-- duplicate emails, no surprise re-notifications.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_waitlist (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email        TEXT NOT NULL,
+  product_key  TEXT NOT NULL,
+  product_name TEXT,                  -- captured at signup for the email composer
+  notified_at  TIMESTAMPTZ,           -- stamped after a successful Resend send
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Lowercased email so case differences don't create duplicates.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_product_waitlist_email_product
+  ON product_waitlist (lower(email), product_key);
+
+-- Partial index for the admin "notify" sweep — only scan rows that
+-- still need a send.
+CREATE INDEX IF NOT EXISTS idx_product_waitlist_pending
+  ON product_waitlist (product_key)
+  WHERE notified_at IS NULL;
 
 -- Index on stripe_payment_intent so refund webhooks (which arrive
 -- with a payment_intent reference) can find the matching order
