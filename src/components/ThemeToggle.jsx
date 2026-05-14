@@ -1,7 +1,7 @@
 // ThemeToggle — MIRRORED FROM index.html (~line 4993).
 import React from "react";
-import { useState, useEffect } from "react";
-import { Sun, Moon } from "./icons.jsx";
+import { Sun, Moon, Monitor } from "./icons.jsx";
+import { useTheme } from "../lib/useTheme.js";
 
 export function ThemeToggle({ compact = false }) {
   const [pref, setTheme] = useTheme();

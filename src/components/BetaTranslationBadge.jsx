@@ -1,6 +1,6 @@
 // BetaTranslationBadge — MIRRORED FROM index.html (~line 3003).
 import React from "react";
-import { useLang } from "../i18n/LangContext.jsx";
+import { LangContext, useT } from "../i18n/LangContext.jsx";
 
 export function BetaTranslationBadge() {
   const { lang } = React.useContext(LangContext);

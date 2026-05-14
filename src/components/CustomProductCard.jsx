@@ -11,6 +11,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
+import { PHOTO_BIB_ROMEO, PHOTO_BIB_STACK } from "../images/photos.js";
+import { PRODUCT } from "../data/product.js";
 
 export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
   const [customName, setCustomName] = useState("");

@@ -1,6 +1,6 @@
 // FirstVisitLangBanner — MIRRORED FROM index.html (~line 2815).
 import React from "react";
-import { useLang } from "../i18n/LangContext.jsx";
+import { LangContext } from "../i18n/LangContext.jsx";
 
 export function FirstVisitLangBanner() {
   const { bannerSeen, setBannerSeen, setLang, hydrated } = React.useContext(LangContext);

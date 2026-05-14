@@ -17,7 +17,16 @@ import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterForm } from "./NewsletterForm.jsx";
 import { TestimonialsSection } from "./TestimonialsSection.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
-import { ArrowRight, MapPin, Plus } from "./icons.jsx";
+import { ArrowRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
+import { galleryRotationStyle } from "../lib/galleryRotation";
+import {
+  PHOTO_BIB_PILE,
+  PHOTO_BIB_ROMEO,
+  PHOTO_BIB_STACK,
+  PHOTO_DATE_DETAIL,
+  PHOTO_PURPLE_SIDE,
+  PHOTO_YELLOWGREEN_2,
+} from "../images/photos.js";
 
 export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo, user, onRequireSignIn, onStickyCtaShown }) {
   const t = useT();

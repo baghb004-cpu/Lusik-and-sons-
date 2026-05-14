@@ -117,4 +117,8 @@ if (mount) {
       </LanguageProvider>
     </ErrorBoundary>
   );
+  // Hide the static loading splash once React has mounted. The .hide
+  // class fades opacity to 0 and removes pointer-events so it doesn't
+  // intercept clicks on the live app.
+  setTimeout(() => document.getElementById("loading")?.classList.add("hide"), 300);
 }

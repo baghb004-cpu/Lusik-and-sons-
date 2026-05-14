@@ -41,8 +41,14 @@ test.describe("home page", () => {
 
     // Tailwind CDN logs a console warning ("cdn.tailwindcss.com should
     // not be used in production") that we'd see on every page. Filter
-    // it out so it doesn't fail every test.
-    const realErrors = errors.filter((e) => !/tailwindcss\.com/i.test(e));
+    // it out so it doesn't fail every test. Also filter out failures
+    // to load third-party resources (Google Fonts, Netlify Identity
+    // widget) — these come from a sandboxed CI environment without
+    // open internet, not from app code.
+    const realErrors = errors.filter((e) =>
+      !/tailwindcss\.com/i.test(e) &&
+      !/Failed to load resource/i.test(e),
+    );
     expect(realErrors, `Unexpected console errors: ${realErrors.join("\n")}`).toEqual([]);
   });
 

@@ -2,6 +2,7 @@
 import React from "react";
 import { CATALOG } from "../data/catalog.js";
 import { ChevronDown } from "./icons.jsx";
+import { useT } from "../i18n/LangContext.jsx";
 
 export function ShopMegaMenu({ onShopBlanket, onShopCustom, onPlaceholderClick }) {
   const t = useT();

@@ -3,6 +3,7 @@ import React from "react";
 import { useState } from "react";
 import { track } from "../lib/analytics.js";
 import { Send } from "./icons.jsx";
+import { useToast } from "./ToastProvider.jsx";
 
 export function NewsletterSignup() {
   const toast = useToast();

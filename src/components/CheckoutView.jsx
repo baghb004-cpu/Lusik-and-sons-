@@ -21,6 +21,7 @@ import { track } from "../lib/analytics.js";
 import { mapLegacyId } from "../lib/cartId";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { ArrowRight } from "./icons.jsx";
+import { PRODUCT } from "../data/product.js";
 
 export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const [busy, setBusy] = useState(false);
