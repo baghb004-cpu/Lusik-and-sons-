@@ -1,0 +1,25 @@
+/* ============================================================
+   src/styles/index.css — the Vite-built stylesheet entry
+   ============================================================
+   Replaces both:
+     1. The Tailwind CDN <script> currently in index.html's <head>
+     2. The big inline <style> block in index.html (lines ~80-1000)
+   ...but NOT YET. This file is in place ready to be wired up.
+   The CSS-extraction step happens later in the migration sequence
+   (see CLAUDE.md § Vite migration phases).
+
+   When that step lands:
+     - Paste the entire current <style> block below the @tailwind
+       directives. Most of it is already valid CSS — no Tailwind
+       @apply conversion is required.
+     - Delete the CDN <script> tag from <head>.
+     - Verify the page renders identically on a deploy preview
+       before merging.
+
+   For now this file just declares the three Tailwind layers so
+   `npm run build` produces a non-empty CSS file we can verify.
+   ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

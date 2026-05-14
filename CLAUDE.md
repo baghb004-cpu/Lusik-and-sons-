@@ -350,6 +350,123 @@ The `BlanketLayoutPreview` component went through several iterations during the 
 ### Email composers (`_lib/email.mjs`)
 Shared `PALETTE` and `baseUrl()` exported from `_lib/email.mjs` so composers (and `unsubscribe-gift-reminder.mjs`) don't redeclare the brand palette in every function.
 
+## Vite migration (in progress)
+
+The single-file SPA is being migrated to a Vite-built source tree, in
+phases, on the `claude/review-fix-website-d0rFL` branch. The point of
+the migration is to delete the runtime Babel-Standalone transpile +
+Tailwind CDN + React UMD dependency chain. Cost stays on Netlify's
+free Starter tier; backend (`netlify/functions/`) is NOT touched at any
+phase.
+
+**Production is unaffected until the final flip.** Every intermediate
+checkpoint leaves the site building and `netlify.toml`'s `publish = "."`
+keeps serving the hand-edited `index.html` from the repo root. The new
+`dist/` output is gitignored and not deployed until the last phase
+flips `publish = "dist"` and `command = "npm ci && npm run build"`.
+
+### Files in place after Phase B (scaffold)
+
+| File | Role |
+| --- | --- |
+| `vite.config.mjs` | Vite + React plugin, `build.outDir = "dist"`, `assetsInlineLimit: 0` so base64 photo migration doesn't get auto-inlined, dev-server proxy to functions on :9999 |
+| `tailwind.config.mjs` | PostCSS Tailwind config, `content` scans `index.html` + `src/**/*` |
+| `postcss.config.mjs` | tailwindcss + autoprefixer |
+| `src/main.jsx` | Stub entry — renders one line into `#vite-root` if present, otherwise no-op |
+| `src/styles/index.css` | `@tailwind` directives; the giant inline `<style>` block from index.html will paste in here later |
+| `.gitignore` | New: ignores `node_modules`, `dist`, Playwright artifacts, `.env*` |
+
+`npm run build` works locally and produces `dist/`. `npm run dev`
+spins up the Vite dev server. Neither is on the deploy path yet.
+
+### Phase plan (10 phases; one or two per session)
+
+Each phase is a single commit that leaves the repo building. Order is
+low-risk → high-risk so a bad surprise late in the sequence doesn't
+require unwinding earlier work.
+
+1. **Done — Scaffold** — `vite.config.mjs`, Tailwind/PostCSS configs,
+   `src/main.jsx` stub, `.gitignore`, devDependencies added.
+2. **Static assets** — `git mv` `/img/*` → `/public/img/*`. Move
+   `manifest.webmanifest`, `robots.txt`, `sitemap.xml`, `og-image.jpg`,
+   favicons into `/public/`. Vite copies `/public/*` verbatim into
+   `dist/` so the URLs don't change.
+3. **Data modules (pure)** — extract `PRODUCT`, `CUSTOM_PRODUCTS`,
+   `CATALOG`, `CONFIG`, `SOCIAL_PLATFORMS`, `SHIPPING_CARRIERS`,
+   `JOURNAL_POSTS`, `LANGUAGES`, `TRANSLATIONS` from `index.html` into
+   `src/data/*.js`. Pure data, no React; zero behavior change.
+4. **Library modules** — extract the `auth`, `db`, `analytics`,
+   `cartId` (`mapLegacyId`), and `tracking` (`getTrackingUrl`)
+   wrappers into `src/lib/*.js`. Same — non-React.
+5. **i18n** — extract `LangContext`, `LanguageProvider`, `useT` into
+   `src/i18n/LangContext.jsx`.
+6. **Leaf components** — `Icon`, all the per-icon SVGs, `Skeleton`,
+   `HeartBurst`, `CollapsibleSection`, `SwipeableRow`, `ToastProvider`,
+   `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection`,
+   `CustomerPhotosSection`.
+7. **Widget components** — `BackToTopButton`, `TextUsWidget`,
+   `ChatAssistant`, `MobileBottomNav`, `ActiveOrderTopBar`,
+   `WaitlistModal`, `PolicyModal`.
+8. **Domain components (bottom-up)** —
+   - product: `BlanketLayoutPreview` → `ProductTemplate` →
+     `CustomProductCard` → `ProductShowcase`
+   - account: `OrderCard` → `OrderProgressTimeline` →
+     `SavedDesignsSection` → `OrderHistory` → `AccountView`
+   - admin: `AdminOrderRow` → `WaitlistsPanel` → `AdminView`
+   - journal: `JournalListView` → `JournalPostView` → `JournalView`
+   - home + checkout: `HomeView`, `TrackingForm`, `NewsletterForm`,
+     `CheckoutView`, `AuthDrawer`
+9. **App + entry flip** — move `<App>` body into `src/App.jsx`, move
+   the `ReactDOM.createRoot(...).render(...)` call into `src/main.jsx`.
+   Rewrite the now-minimal `index.html` to only contain `<head>`
+   metadata + `<div id="root"></div>` + `<script type="module"
+   src="/src/main.jsx"></script>`. **DO NOT yet flip netlify.toml.**
+10. **The flip** — update `netlify.toml`:
+    ```toml
+    [build]
+      publish = "dist"
+      command = "npm ci && npm run build"
+    ```
+    Run a real $0.50 test purchase on the deploy preview before merging.
+    On merge, Netlify rebuilds and the site is now Vite-served.
+
+### Loadbearing risks during migration
+
+- **The base64 IIFE photos** at `~line 1011` of `index.html`. The
+  values are referenced from the JSX as `<img src={IMG_HERO}>`.
+  When extracted, move every `IMG_*` constant to a real file in
+  `/public/img/` and switch the references to URL strings (the
+  CONFIG.ROTATED_GALLERY_INDEXES mechanism stays untouched).
+- **Dynamic Tailwind class names**. PostCSS Tailwind only emits
+  classes it can statically see. Before flipping production, grep:
+  ```
+  rg '`[^`]*\$\{[^}]*\}[^`]*`' index.html src/ | grep -E '(bg-|text-|border-)'
+  ```
+  Each match either gets a `safelist` entry in `tailwind.config.mjs`
+  or refactors to inline `style={{}}` (recommended for arbitrary
+  hex values like DMC palette colors).
+- **The cart-ID shape is load-bearing for Stripe**. `mapLegacyId`
+  in `CheckoutView` must match what `_lib/trusted-products.mjs`
+  recognizes. The E2E smoke test `Pay with Stripe POSTs to
+  create-checkout-session` is the safety net — keep it green.
+- **React 18 automatic batching** changed how `setState` flushes
+  inside touch handlers. If `SwipeableRow` feels laggier
+  post-migration, wrap state updates in `flushSync`.
+- **netlify-identity-widget stays loaded from
+  `identity.netlify.com`** via a `<script>` tag in `index.html`.
+  Do NOT switch to the npm package — Netlify's own confirmation
+  redirect handler expects `window.netlifyIdentity` from their CDN.
+
+### Anti-patterns (do NOT do during migration)
+
+- Do NOT introduce a state-management library.
+- Do NOT split `CONFIG` — it stays a single dial-board file.
+- Do NOT add a router library; the `/journal*` effect is enough.
+- Do NOT migrate to TypeScript in the same PR series.
+- Do NOT merge `package.json` with `netlify/functions/package.json`.
+- Do NOT touch `netlify/functions/` in any migration commit.
+- Do NOT change the cart-ID shape; the smoke test will catch it.
+
 ## Working in this repo
 
 - Active development branch for documentation changes: `claude/add-claude-documentation-Vi3zH`.
