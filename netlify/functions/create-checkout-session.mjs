@@ -14,6 +14,7 @@
 import Stripe          from "stripe";
 import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
+import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
 import { json }        from "./_lib/json.mjs";
 
 // Lazy-init the Stripe client INSIDE the handler so a missing
@@ -33,18 +34,12 @@ function getStripe() {
 // ============================================================
 // SHIPPING POLICY
 // ============================================================
-// Free U.S. shipping at or above this threshold. The cart-drawer
-// progress bar promises it; this is where we make it real on the
-// Stripe side. MUST stay in sync with CONFIG.FREE_SHIPPING_*
-// values in index.html — keep both updated when the promotion
-// changes.
+// Free U.S. shipping at or above FREE_SHIPPING_THRESHOLD_CENTS
+// (imported from _lib/pricing.mjs). The cart-drawer progress bar
+// promises it; this is where we make it real on the Stripe side.
+// The browser's matching constant lives in CONFIG.FREE_SHIPPING_*
+// in index.html and is guarded against drift by pricing-drift.test.mjs.
 // ============================================================
-const FREE_SHIPPING_THRESHOLD_CENTS = 15000;
-
-// Gift wrap add-on price. MUST stay in sync with
-// CONFIG.GIFT_WRAP_PRICE_CENTS in index.html — the browser shows
-// this amount in the order summary, the server charges it.
-const GIFT_WRAP_PRICE_CENTS = 500;
 
 // Paid shipping options offered below the threshold. Mirrors
 // SHIPPING_CARRIERS in index.html. Stripe shows these on its

@@ -23,6 +23,7 @@ import Stripe        from "stripe";
 import { getStore } from "@netlify/blobs";
 import { sql }      from "./_lib/db.mjs";
 import { TRUSTED_PRODUCTS }    from "./_lib/trusted-products.mjs";
+import { GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
 import {
   sendAdminOrderEmail,
   sendCustomerOrderConfirmation,
@@ -108,13 +109,13 @@ export default async (req) => {
 
   const session = event.data.object;
 
-  // Idempotency: if we've already written this session, do nothing.
-  const existing = await sql`
-    SELECT id FROM orders WHERE stripe_session_id = ${session.id}
-  `;
-  if (existing.length > 0) {
-    return new Response("ok (duplicate)", { status: 200 });
-  }
+  // Idempotency is enforced atomically at INSERT time via
+  // `ON CONFLICT (stripe_session_id) DO NOTHING RETURNING *`
+  // (further down). Doing a SELECT-then-INSERT race-loses under
+  // concurrent Stripe retries: two webhooks could both see "no
+  // row," both try to insert, and the second one would crash on
+  // the UNIQUE constraint with a 500 — which Stripe then retries
+  // forever. The atomic version handles concurrency correctly.
 
   // Pull the stashed cart from Blobs.
   const pendingStore = getStore({ name: "pending-orders", consistency: "strong" });
@@ -133,9 +134,17 @@ export default async (req) => {
         limit: 100,
       });
       const recoveredCart = [];
+      let recoveredGiftWrap = false;
       for (const li of lineItems.data) {
         const product = li.price?.product;
         const productKey = product?.metadata?.productKey;
+        // Gift-wrap is an add-on line item, not a product entry in
+        // TRUSTED_PRODUCTS. Detect it so Lusik knows to wrap the
+        // package even when the pending blob was lost.
+        if (productKey === "gift-wrap") {
+          recoveredGiftWrap = true;
+          continue;
+        }
         if (!productKey || !TRUSTED_PRODUCTS[productKey]) continue;
         recoveredCart.push({
           productKey,
@@ -155,7 +164,13 @@ export default async (req) => {
         userId:         session.metadata?.userId || null,
         customerEmail:  session.customer_details?.email ?? null,
         social_consent: null,
-        gift:           null,
+        // We can recover the wrap fact but not the message or
+        // hide-prices flag — those only lived in the lost blob.
+        // Marking is_gift = true is the conservative choice so
+        // the admin email still surfaces "this is a gift."
+        gift:           recoveredGiftWrap
+                          ? { is_gift: true, message: "", hide_prices: false, wrap: true }
+                          : null,
       };
       reconstructed = true;
     } catch (err) {
@@ -197,6 +212,14 @@ export default async (req) => {
     return new Response("No trusted items in cart", { status: 500 });
   }
 
+  // Gift wrap is an add-on charge added by create-checkout-session
+  // as a separate Stripe line item — not a row in pending.cart. To
+  // keep subtotal + shipping + tax === total in the orders row, add
+  // the wrap amount here when the flag is set.
+  if (pending.gift?.wrap === true) {
+    subtotalCents += GIFT_WRAP_PRICE_CENTS;
+  }
+
   const totalCents    = session.amount_total ?? subtotalCents;
   const shippingCents = session.shipping_cost?.amount_total ?? 0;
   const taxCents      = session.total_details?.amount_tax ?? 0;
@@ -228,6 +251,12 @@ export default async (req) => {
     ? "RECONSTRUCTED FROM STRIPE — original cart stash was lost. Custom blanket metadata (alphabet, layout, colors, personalization) is missing; reach out to the customer for those details before stitching."
     : null;
   const giftReminderOptIn = pending.gift_reminder_opt_in === true;
+  // Atomic insert. ON CONFLICT (stripe_session_id) DO NOTHING +
+  // RETURNING * means: if a concurrent webhook retry already wrote
+  // this order, the second call gets an empty result instead of a
+  // UNIQUE-violation crash. Empty result is the "duplicate" path —
+  // skip everything (item inserts, emails, blob delete) and return
+  // 200 so Stripe stops retrying.
   const inserted = await sql`
     INSERT INTO orders (
       order_number, stripe_session_id, stripe_payment_intent, user_id,
@@ -245,8 +274,15 @@ export default async (req) => {
       ${reconstructedNote},
       ${giftReminderOptIn}
     )
+    ON CONFLICT (stripe_session_id) DO NOTHING
     RETURNING *
   `;
+  if (inserted.length === 0) {
+    // Another webhook delivery already wrote this order. Don't
+    // re-insert line items, don't re-send emails, don't touch the
+    // pending blob — the first call already handled all of that.
+    return new Response("ok (duplicate)", { status: 200 });
+  }
   const orderId = inserted[0].id;
 
   // Insert line items one by one. With Neon's tagged template the
@@ -342,14 +378,19 @@ async function handleChargeRefunded(charge) {
   const isFull        = refundedCents >= chargeCents;
   const newStatus     = isFull ? "refunded" : "partially_refunded";
 
-  // Idempotency: if the running total matches what we've
-  // already recorded, this is a duplicate webhook. Skip the
-  // email but still update fulfillment_status if it's not
-  // already terminal, since Stripe sometimes fires the event
-  // multiple times for the same refund.
-  const alreadyApplied = order.refunded_cents === refundedCents;
-  if (alreadyApplied) {
-    return new Response("ok (duplicate refund event)", { status: 200 });
+  // Monotonic guard. `charge.amount_refunded` is the CUMULATIVE
+  // refunded total for the charge. We accept the event only when
+  // it strictly grows the number we've recorded — which rejects
+  // both (a) duplicate webhook deliveries of the same refund and
+  // (b) out-of-order events that would otherwise lower a higher
+  // recorded total. Using `===` for dedupe is wrong: if Lusik
+  // issues two equal partial refunds back-to-back, the second
+  // arrives with the SAME amount_refunded as the first plus
+  // delta — only an inequality check catches "new total is
+  // bigger" vs "old total again."
+  const storedRefunded = order.refunded_cents ?? 0;
+  if (refundedCents <= storedRefunded) {
+    return new Response("ok (duplicate or out-of-order refund event)", { status: 200 });
   }
 
   // For full refunds, also flip fulfillment_status to "refunded"
@@ -391,6 +432,20 @@ async function handleChargeRefunded(charge) {
 // produce a second email.
 // ============================================================
 async function handleSessionExpired(session) {
+  // Defensive race guard. Stripe normally won't fire `expired` for a
+  // session that already completed — but webhook event delivery
+  // ordering isn't guaranteed, and an `expired` event delivered
+  // late (after `completed` already wrote the order) would otherwise
+  // send a "we saved your spot" email to someone who already paid.
+  // Check the orders table first; if a row exists for this session
+  // we're past the point where recovery makes sense.
+  const existing = await sql`
+    SELECT id FROM orders WHERE stripe_session_id = ${session.id} LIMIT 1
+  `;
+  if (existing.length > 0) {
+    return new Response("ok (already converted)", { status: 200 });
+  }
+
   const pendingStore = getStore({ name: "pending-orders", consistency: "strong" });
   const pending = await pendingStore.get(session.id, { type: "json" });
 
