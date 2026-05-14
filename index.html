@@ -4422,6 +4422,10 @@ function BackToTopButton() {
 function TextUsWidget() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Unmount-safe timer for the "Copied!" badge. See note on
+  // justSavedTimerRef in ProductShowcase for the rationale.
+  const copiedTimerRef = useRef(null);
+  useEffect(() => () => { if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current); }, []);
 
   // canSms is best-effort: we assume mobile-touch devices have an SMS app.
   // Wrong guesses are cheap because we always also show the phone number.
@@ -4535,7 +4539,8 @@ function TextUsWidget() {
     try {
       await navigator.clipboard.writeText(cfg.phone_display);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 1800);
     } catch {
       // Older browsers / iframe restrictions: silently ignore.
     }
@@ -10569,8 +10574,13 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
   // Brief "Saved ✓" celebration on the Save button after a successful
   // save — clears after 2.4s. Gives the customer in-place feedback
   // beyond the toast, which they might miss if they're focused on
-  // the preview itself.
+  // the preview itself. The timer handle is captured in a ref so an
+  // unmount mid-celebration (user navigates away) clears it cleanly
+  // — without this, React logs a "state update on unmounted component"
+  // warning and the no-op work runs anyway.
   const [justSavedDesign, setJustSavedDesign] = useState(false);
+  const justSavedTimerRef = useRef(null);
+  useEffect(() => () => { if (justSavedTimerRef.current) clearTimeout(justSavedTimerRef.current); }, []);
   const handleSaveDesign = async () => {
     if (!user) {
       toast({
@@ -10605,7 +10615,8 @@ function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn
     track("save-design", { alphabet: alphabet?.key, layout: layout?.key });
     toast({ kind: "success", message: "Design saved to your account." });
     setJustSavedDesign(true);
-    setTimeout(() => setJustSavedDesign(false), 2400);
+    if (justSavedTimerRef.current) clearTimeout(justSavedTimerRef.current);
+    justSavedTimerRef.current = setTimeout(() => setJustSavedDesign(false), 2400);
   };
 
   // Build a shareable URL containing the current design and either

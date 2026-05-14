@@ -47,9 +47,19 @@ export default async (req, context) => {
   if (req.method === "PUT") {
     const body = await req.json().catch(() => ({}));
     // Whitelist: never trust the client to set id, email, created_at.
-    const fullName  = typeof body.full_name === "string" ? body.full_name : null;
-    const phone     = typeof body.phone === "string" ? body.phone : null;
-    const avatarUrl = typeof body.avatar_url === "string" ? body.avatar_url : null;
+    // Cap each field at a realistic upper bound so a fat-fingered
+    // megabyte paste can't bloat the row and every subsequent GET.
+    // avatar_url is internally-formatted by the avatar function, so
+    // a strict prefix check is the right shape-validator here.
+    const cap = (v, n) => (typeof v === "string" ? v.slice(0, n) : null);
+    const fullName  = cap(body.full_name, 120);
+    const phone     = cap(body.phone,      32);
+    const rawAvatar = cap(body.avatar_url, 512);
+    // Reject avatar_url shapes we didn't generate. Allow null (to
+    // clear the avatar) or our own canonical avatar-get URL.
+    const avatarUrl = rawAvatar === null || rawAvatar === ""
+      ? null
+      : (rawAvatar.startsWith("/.netlify/functions/avatar-get?key=") ? rawAvatar : null);
 
     const rows = await sql`
       UPDATE profiles

@@ -80,10 +80,18 @@ export default async (req) => {
 
   let event;
   try {
+    // Explicit tolerance of 300 seconds (Stripe's default, but spelled
+    // out so the security model is reviewable). The signature carries
+    // a fresh timestamp on every delivery and retry, so even a packet-
+    // captured webhook can only be replayed within this window — and
+    // each event type's idempotency path (ON CONFLICT for completed
+    // orders, monotonic check for refunds, orders-exist check for
+    // expired sessions) means a successful replay is inert anyway.
     event = stripe.webhooks.constructEvent(
       rawBody,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET,
+      300,
     );
   } catch (err) {
     // Log the detailed reason (missing secret vs. mismatch vs.

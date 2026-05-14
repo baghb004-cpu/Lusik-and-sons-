@@ -15,7 +15,17 @@ import Stripe          from "stripe";
 import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
+import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { json }        from "./_lib/json.mjs";
+
+// Per-IP daily ceiling on checkout-session creation. A real
+// customer abandons + retries a few times across a day at worst;
+// a botnet hammering this endpoint racks up Stripe session IDs
+// (free, but spammy) and uses our function-invocation budget.
+// Authenticated users still get the same limit — the bucket
+// protects the function tier, not the user — but signed-in
+// callers are already enumerable by Lusik, so we can be lenient.
+const MAX_CHECKOUT_STARTS_PER_IP_PER_DAY = 30;
 
 // Lazy-init the Stripe client INSIDE the handler so a missing
 // STRIPE_SECRET_KEY env var returns a clean JSON 503 instead of
@@ -84,8 +94,40 @@ function buildShippingOptions(subtotalCents) {
 // Where Stripe sends the customer after pay/cancel. We append the
 // ?order=success|cancelled flag that index.html's post-checkout
 // handler already understands.
+//
+// Origin VALIDATION is load-bearing for security here: an attacker
+// can send any Origin header they want, and without a check Stripe
+// would happily redirect the customer to `https://evil.com/?order=
+// success` after payment — a perfect phishing setup ("your order
+// confirmation is on the next page, please re-enter your card").
+// Allow only origins we recognize as our own:
+//   - process.env.URL                — production canonical URL
+//   - process.env.DEPLOY_PRIME_URL    — deploy-preview / branch deploy
+//   - https://lusikandsons.com        — hardcoded production fallback
+//   - http://localhost:*              — `netlify dev` local
+// Anything else falls back to the hardcoded production URL.
+function isAllowedOrigin(origin) {
+  if (!origin || typeof origin !== "string") return false;
+  if (origin === process.env.URL) return true;
+  if (origin === process.env.DEPLOY_PRIME_URL) return true;
+  if (origin === "https://lusikandsons.com") return true;
+  // localhost variants for netlify dev. Match http://localhost(:port)?
+  // only — no IP literals, no other hostnames.
+  if (/^http:\/\/localhost(?::\d+)?$/.test(origin)) return true;
+  // Netlify deploy-preview / branch-deploy URLs are
+  // https://<hash>--<sitename>.netlify.app — accept any that match
+  // the site's URL pattern.
+  if (process.env.URL) {
+    const site = new URL(process.env.URL).hostname;
+    const previewRe = new RegExp(`^https://[a-z0-9-]+--${site.replace(/\./g, "\\.")}$`);
+    if (previewRe.test(origin)) return true;
+  }
+  return false;
+}
+
 function buildReturnUrls(originHeader) {
-  const origin = originHeader || process.env.URL || "https://lusikandsons.com";
+  const fallback = process.env.URL || "https://lusikandsons.com";
+  const origin = isAllowedOrigin(originHeader) ? originHeader : fallback;
   return {
     success_url: `${origin}/?order=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url:  `${origin}/?order=cancelled`,
@@ -110,6 +152,21 @@ export default async (req, context) => {
 
 async function handle(req, context) {
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
+
+  // Rate-limit BEFORE doing any work. The check is a single Blobs
+  // read+write — cheaper than parsing JSON or initializing Stripe,
+  // so abusive callers pay the smallest possible cost. Deny when
+  // no IP could be recovered: better one rejected checkout than a
+  // bypass for an attacker who can strip headers.
+  const ip = ipFromRequest(req, context);
+  const rl = await checkRateLimit({
+    bucket: "checkout-start",
+    ip,
+    limit: MAX_CHECKOUT_STARTS_PER_IP_PER_DAY,
+  });
+  if (!rl.ok) {
+    return json(429, { error: "Too many checkout attempts from this network today. Please try again later or email hello@lusikandsons.com." });
+  }
 
   const stripe = getStripe();
 

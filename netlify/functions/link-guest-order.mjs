@@ -11,6 +11,7 @@
 
 import { sql }         from "./_lib/db.mjs";
 import { requireUser } from "./_lib/auth.mjs";
+import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { json }        from "./_lib/json.mjs";
 
 export default async (req, context) => {
@@ -20,6 +21,16 @@ export default async (req, context) => {
 
   if (req.method !== "POST") {
     return json(405, { error: "Method not allowed" });
+  }
+
+  // Authenticated, but still rate-limited per IP. The browser
+  // calls this once on signup + sign-in to claim guest orders;
+  // 20/day is generous for legitimate use and tight enough that
+  // a stolen JWT can't be used to hammer the DB.
+  const ip = ipFromRequest(req, context);
+  const rl = await checkRateLimit({ bucket: "link-guest", ip, limit: 20 });
+  if (!rl.ok) {
+    return json(429, { error: "Too many link attempts. Try again later." });
   }
 
   if (!user.email) {
