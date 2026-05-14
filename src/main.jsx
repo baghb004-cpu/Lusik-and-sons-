@@ -1,29 +1,91 @@
 // ============================================================
-// src/main.jsx — Vite build entrypoint (placeholder)
+// src/main.jsx — Vite build entrypoint
 // ============================================================
-// During the migration this file will end up calling
-// ReactDOM.createRoot(...).render(<LanguageProvider><App/>...).
+// Mounts the React tree into #root. Wrap order matters:
+//   ErrorBoundary  → catches any uncaught render error and shows
+//                    a fallback instead of a blank white screen
+//   LanguageProvider → makes useT() + useLang() work everywhere
+//   App             → the real SPA
 //
-// Until the data + component extractions happen (see
-// CLAUDE.md § Vite migration phases), this is a stub that just
-// proves the build pipeline works — render a one-line message
-// into a #vite-root div if it exists, otherwise do nothing.
-// Production traffic never hits this code path: the running
-// site still serves the hand-edited index.html from the repo
-// root and netlify.toml hasn't been flipped to publish dist/.
+// ToastProvider is NOT wrapped at the top here — it lives inside
+// <App> so it can be co-located with the cart-state surface that
+// uses it.
+//
+// Wired up at Phase 9 of the migration. Goes live when Phase 10
+// flips netlify.toml's publish dir to dist/ and rewrites
+// index.html as the minimal entry HTML.
 // ============================================================
 
+import React from "react";
+import { createRoot } from "react-dom/client";
 import "./styles/index.css";
+import { LanguageProvider } from "./i18n/LangContext.jsx";
+import { App } from "./App.jsx";
 
-// Defer the import so the stub doesn't pull React into the
-// bundle if there's no mount point on the page. Once the
-// migration is far enough along to actually mount the SPA,
-// this will become the real createRoot call.
-const mount = document.getElementById("vite-root");
-if (mount) {
-  import("react-dom/client").then(({ createRoot }) => {
-    createRoot(mount).render(
-      "Vite build pipeline is live. Real app extraction comes next."
+// ============================================================
+// ErrorBoundary — last-resort catch for uncaught render errors
+// ============================================================
+// React error boundaries require a class component (Hooks don't
+// yet support getDerivedStateFromError / componentDidCatch). We
+// render a friendly fallback with reload + return-home + email-
+// us actions so a customer hitting a crash isn't dead-ended.
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, info) {
+    console.error("[ErrorBoundary]", error, info?.componentStack);
+  }
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2rem 1.5rem",
+        background: "#F5EFE3",
+        color: "#1A1612",
+        fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
+        lineHeight: 1.5,
+        textAlign: "center",
+      }}>
+        <div style={{ maxWidth: 480 }}>
+          <p style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 500, fontSize: "0.85rem", letterSpacing: "0.05em", opacity: 0.55, marginBottom: "2rem" }}>
+            Lusik <span style={{ color: "#B08842" }}>&amp;</span> Sons
+          </p>
+          <p style={{ fontSize: "0.7rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#B08842", margin: "0 0 1rem", fontWeight: 600 }}>
+            Something went wrong
+          </p>
+          <p style={{ fontSize: "1rem", margin: "0 0 1.5rem" }}>
+            Sorry about that. Please reload the page — if the issue continues, email us at <a href="mailto:hello@lusikandsons.com" style={{ color: "#B08842" }}>hello@lusikandsons.com</a> and we'll take a look.
+          </p>
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={() => window.location.reload()} style={{ padding: "0.6rem 1.25rem", background: "#1A1612", color: "#F5EFE3", fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, border: "none", cursor: "pointer" }}>
+              Reload
+            </button>
+            <button onClick={() => { window.location.href = "/"; }} style={{ padding: "0.6rem 1.25rem", background: "transparent", color: "#1A1612", fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, border: "1px solid #1A1612", cursor: "pointer" }}>
+              Home
+            </button>
+          </div>
+        </div>
+      </div>
     );
-  });
+  }
+}
+
+const mount = document.getElementById("root");
+if (mount) {
+  createRoot(mount).render(
+    <ErrorBoundary>
+      <LanguageProvider>
+        <App />
+      </LanguageProvider>
+    </ErrorBoundary>
+  );
 }
