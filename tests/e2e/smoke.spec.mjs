@@ -120,8 +120,12 @@ test.describe("blanket purchase flow", () => {
     await addToCart.click();
 
     // Cart drawer auto-opens; the item should be visible with the
-    // product name.
-    await expect(page.getByText(/armenian alphabet blanket/i).first()).toBeVisible({ timeout: 5_000 });
+    // product name. Target the drawer's <p> directly — the shop
+    // mega-menu also renders the product name in a hidden <button>
+    // and we don't want to match that.
+    await expect(
+      page.locator("p", { hasText: /armenian alphabet blanket/i }).first()
+    ).toBeVisible({ timeout: 5_000 });
   });
 });
 
