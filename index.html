@@ -9999,7 +9999,35 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
     : `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12' fill='%23FFFFFF'/><rect x='1' y='1' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='2' y='2' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='7' y='1' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='8' y='2' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='1' y='7' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='2' y='8' width='2' height='2' fill='rgba(0,0,0,0.025)'/><rect x='7' y='7' width='4' height='4' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='0.4'/><rect x='8' y='8' width='2' height='2' fill='rgba(0,0,0,0.025)'/></svg>`;
   const waffleBackground = `url("data:image/svg+xml;utf8,${waffleSvg}")`;
 
-  return (
+  // ============================================================
+  // FRINGE EDGES — yarn strands on the top + bottom of the blanket
+  // ============================================================
+  // The real waffle-acrylic blanket Lusik sells has fringe along
+  // its top and bottom edges — short yarn strands hanging off the
+  // woven body. The preview hints at this with an SVG-tiled strip
+  // above and below the canvas, drawn as short vertical lines of
+  // slightly varying length for an organic feel.
+  //
+  // Only shown when the preview is large enough (size >= 80) for
+  // the fringe to read as fringe rather than visual noise. Catalog
+  // thumbnails skip it so they stay clean and square.
+  const showFringe = size >= 80;
+  const fringeHeight = Math.max(8, Math.round(size * 0.07));
+  const fringeColor = darkMode ? "rgba(245,239,227,0.45)" : "rgba(176,136,66,0.55)";
+  // 8px-wide tile with 3 strands of slightly varying length —
+  // strands attach to the TOP edge of the tile and extend downward
+  // (used directly for the bottom fringe; top fringe applies a
+  // vertical flip via transform: scaleY(-1) so the strands point up).
+  const fringeStrandSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='8' height='12'><line x1='1.5' y1='0' x2='1.5' y2='11' stroke='${fringeColor}' stroke-width='0.6' stroke-linecap='round'/><line x1='4' y1='0' x2='4' y2='9' stroke='${fringeColor}' stroke-width='0.6' stroke-linecap='round'/><line x1='6.5' y1='0' x2='6.5' y2='10' stroke='${fringeColor}' stroke-width='0.6' stroke-linecap='round'/></svg>`;
+  const fringeBackground = `url("data:image/svg+xml;utf8,${encodeURIComponent(fringeStrandSvg)}")`;
+
+  // The canvas itself stays aspect-square; when fringe is enabled we
+  // wrap it in an outer container that stacks: top fringe strip,
+  // canvas, bottom fringe strip. That keeps the cell grid uniform and
+  // avoids polluting the existing layout math; the only downside is the
+  // wrapper's total height becomes (size + 2*fringeHeight), so callers
+  // shouldn't constrain it to a square box if they want fringe to show.
+  const canvas = (
     <div
       className="aspect-square w-full"
       style={{
@@ -10152,6 +10180,29 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
           </div>
         );
       })}
+    </div>
+  );
+
+  if (!showFringe) return canvas;
+
+  // Wrap the canvas in a vertical stack: top fringe + canvas + bottom
+  // fringe. The fringe strips are full-width, fringeHeight tall, with
+  // strands repeated horizontally. The top fringe is flipped on the Y
+  // axis so its strands point upward (away from the canvas); the bottom
+  // strip uses the SVG as-is so its strands point downward.
+  const fringeStripStyle = {
+    width: "100%",
+    height: `${fringeHeight}px`,
+    backgroundImage: fringeBackground,
+    backgroundRepeat: "repeat-x",
+    backgroundPosition: "top center",
+    pointerEvents: "none",
+  };
+  return (
+    <div style={{ width: "100%", maxWidth: `${size}px` }}>
+      <div style={{ ...fringeStripStyle, transform: "scaleY(-1)" }} aria-hidden="true" />
+      {canvas}
+      <div style={fringeStripStyle} aria-hidden="true" />
     </div>
   );
 }
