@@ -1345,12 +1345,15 @@ const PRODUCT = {
       description: "Six letter squares placed in two parallel diagonals, both slanting top-left to bottom-right. The first letter sits at the top-left of each diagonal, with the alphabet running down toward the bottom-right. Alphabet stitched twice, once on each diagonal.",
       letterCount: 6,
       priceCents: 6500,
-      // 5x5 grid positions for two parallel ↘↘ diagonals, centered.
-      // Upper diagonal: row 0 col 1, row 1 col 2, row 2 col 3 = positions 1, 7, 13
-      // Lower diagonal: row 2 col 1, row 3 col 2, row 4 col 3 = positions 11, 17, 23
-      // Row 2 contains cells from both diagonals (one at col 1, one at col 3) —
-      // this is the only way to fit two parallel 3-cell diagonals in a 5x5 grid.
-      preview: [1, 7, 13, 11, 17, 23],
+      // 7x7 grid positions for two parallel ↘↘ diagonals, vertically
+      // separated so the blanket's body (where Lusik stitches the
+      // optional name/year) shows clearly between them.
+      // Upper diagonal: row 0 col 1, row 1 col 2, row 2 col 3 = positions 1, 9, 17
+      // Lower diagonal: row 4 col 3, row 5 col 4, row 6 col 5 = positions 31, 39, 47
+      // Both diagonals share the same slope (col − row = +1 for upper,
+      // −1 for lower); the midline col − row = 0 runs between them
+      // and carries the optional name/year text.
+      preview: [1, 9, 17, 31, 39, 47],
       enabled: true,
     },
   ],
@@ -9787,19 +9790,29 @@ function ProductTemplate({ customName, nameColor, nameColors }) {
 // ============================================================
 // BLANKET LAYOUT PREVIEW
 // ============================================================
-// Renders a 5x5 grid representing the blanket. Some cells contain letters,
+// Renders a 7x7 grid representing the blanket. Some cells contain letters,
 // in the positions specified by the layout's `preview` array. The other
-// cells are empty with dashed borders, suggesting blanket area around them.
+// cells are empty (no border), reading as plain blanket fabric around them.
 //
 // For 6-letter layouts (double diagonal), the alphabet is stitched twice —
 // so positions 0,1,2 get letters[0..2] and positions 3,4,5 also get
 // letters[0..2] (the alphabet repeats).
 function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColor, letterColor, letterColors, customLine1, customLine2, showCustomTextHints = false }) {
-  // Build the 5x5 cells array. For each filled position in layout.preview,
-  // record both the LETTER glyph and the LETTER-INDEX (0, 1, 2, …). The
-  // letter-index lets us apply per-letter coloring when `letterColors` is
-  // provided (e.g. Armenian Flag preset: index 0 = red, 1 = blue, 2 = orange).
-  const cells = Array(25).fill(null);
+  // Build the 7x7 cells array (49 positions). For each filled position
+  // in layout.preview, record both the LETTER glyph and the LETTER-INDEX
+  // (0, 1, 2, …). The letter-index lets us apply per-letter coloring
+  // when `letterColors` is provided (e.g. Armenian Flag preset:
+  // index 0 = red, 1 = blue, 2 = orange).
+  //
+  // Why 7x7 instead of 5x5: at 5x5 the diagonals crowded the canvas
+  // edges and the cubes felt cramped. The 7x7 grid gives the parallel
+  // ↘↘ diagonals room to extend toward (but not into) the corners,
+  // matching how the real hand-stitched blanket reads — cubes occupy
+  // a central band, with breathing room of plain fabric on both
+  // sides. Cells are 1/7 of the canvas instead of 1/5, so cubes are
+  // automatically smaller and don't crowd.
+  const GRID = 7;
+  const cells = Array(GRID * GRID).fill(null);
   layout.preview.forEach((pos, i) => {
     cells[pos] = {
       kind: "alphabet",   // alphabet cube (the existing 3D outline+letter)
@@ -9810,30 +9823,23 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
   });
 
   // Optional customer text — placed on the MIDDLE PARALLEL DIAGONAL
-  // that runs equidistant between the two alphabet diagonals. This
-  // matches the real "OLEN / 2026" blanket photo:
+  // (col − row = 0) that runs equidistant between the two alphabet
+  // diagonals. The canonical product (`double_diag_br`) puts the
+  // upper diagonal on col − row = +1 and the lower on col − row = −1,
+  // so the cells (2,2), (3,3), (4,4) all lie exactly between them —
+  // a natural three-cell zone for the optional personalization text.
   //
-  //   Alphabet diagonal positions (current `double_diag_br` layout):
-  //     Row 0: . A . . .
-  //     Row 1: . . B . .
-  //     Row 2: . A . C .   ← lower-A at col 1, upper-C at col 3
-  //     Row 3: . . B . .
-  //     Row 4: . . . C .
+  // Cell positions used (7×7, pos = row*7 + col):
+  //   Name anchor: (2,2) → position 16   ← name sits ABOVE the year
+  //   Year anchor: (3,3) → position 24   ← year is at the geometric
+  //                                         center of the blanket
+  //   Reserve:     (4,4) → position 32   ← fallback if a future
+  //                                         layout occupies one of the
+  //                                         above
   //
-  //   The cells (1,1), (2,2), (3,3) all lie on a third diagonal that
-  //   bisects the two alphabet diagonals — every cell on it is
-  //   exactly one cell away from both diagonals. That's where Lusik
-  //   actually stitches the optional name + year, with the name in
-  //   the geometric center (2,2) and the year on the cell above
-  //   (1,1). The result: personalization parallels the alphabet
-  //   rhythm rather than running down a stiff central column.
-  //
-  // Cell positions used (5×5, pos = row*5 + col):
-  //   Year anchor: (1,1) → position 6
-  //   Name anchor: (2,2) → position 12         ← true center of the blanket
-  //   Reserve:     (3,3) → position 18         ← fallback if a future
-  //                                              layout occupies one of the
-  //                                              above
+  // The year is the prominent piece — centered, single line of context
+  // about WHEN the blanket was made. The name (if provided) reads
+  // ABOVE the year like a label naming who the blanket is for.
   //
   // Text is rendered WITHOUT a cube outline since the real product
   // stitches the name/year directly onto the waffle weave, not
@@ -9843,18 +9849,18 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
 
   // The middle diagonal in order from top-left to bottom-right.
   // Filtering by empty-cell makes this layout-agnostic: if a future
-  // layout uses (1,1) for a letter, we'd skip to (2,2) etc.
-  const middleDiagonalPositions = [6, 12, 18];
+  // layout uses (3,3) for a letter, we'd skip to (2,2) or (4,4).
+  const middleDiagonalPositions = [16, 24, 32];
   const availableMidline = middleDiagonalPositions.filter(pos => cells[pos] === null);
 
-  // Anchor the year to the TOP available midline cell and the name to
-  // the cell directly BELOW it — matches the OLEN/2026 photo (year
-  // above, name below). Doing it by anchor rather than by "first two
-  // available" keeps the placeholder hints in the same slot whether
-  // the customer has typed one, both, or neither line, so the
-  // preview doesn't shuffle as they type.
-  const yearAnchor = availableMidline[0] ?? null;
-  const nameAnchor = availableMidline.find(pos => pos > (yearAnchor ?? -1)) ?? null;
+  // Anchor the YEAR to the middle of the available midline (geometric
+  // center of the blanket) and the NAME to the cell directly ABOVE it.
+  // This is the inverse of the older OLEN/2026-style layout — the year
+  // is the bigger, more prominent piece centered on the blanket; the
+  // name reads as a quieter label on the row above it.
+  const midIdx     = Math.floor(availableMidline.length / 2);
+  const yearAnchor = availableMidline[midIdx] ?? null;
+  const nameAnchor = midIdx > 0 ? availableMidline[midIdx - 1] : null;
 
   if (yearAnchor !== null) {
     if (line2Trim.length > 0) {
@@ -9902,12 +9908,15 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
   // their back-top corner UP-AND-RIGHT; the lower diagonal's
   // show it UP-AND-LEFT.
   //
-  // Step count scales with `size`: tiny thumbnails get a 2-step
-  // wedge, the live preview at ~140px gets a 4-step wedge,
-  // hero shots get 5. Shadow color is the cube's outline color
-  // at ~73% opacity so the depth lines read as paler siblings
-  // of the front-face outline — same hue, less weight.
-  const depthSteps = size < 70 ? 2 : (size < 110 ? 3 : (size < 160 ? 4 : 5));
+  // Step count scales with the per-cell pixel size rather than
+  // raw canvas size so the wedge stays proportional when the
+  // grid resolution changes. A 17px cube (7x7 at size=120) gets
+  // 3 steps; a 6px cube (7x7 at size=44, catalog thumbnail) gets
+  // a single step. Shadow color is the cube's outline color at
+  // ~73% opacity so the depth lines read as paler siblings of
+  // the front-face outline — same hue, less weight.
+  const cellPx     = size / GRID;
+  const depthSteps = cellPx < 10 ? 1 : (cellPx < 14 ? 2 : (cellPx < 22 ? 3 : 4));
   const depthColor = blockColor ? `${blockColor}BB` : "rgba(176,136,66,0.7)";
   const buildDepth = (xSign) => Array.from({ length: depthSteps }, (_, i) =>
     `${(i + 1) * xSign}px ${-(i + 1)}px 0 0 ${depthColor}`
@@ -9925,9 +9934,11 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
       className="aspect-square w-full"
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(5, 1fr)",
-        gridTemplateRows: "repeat(5, 1fr)",
-        gap: size < 80 ? "2px" : "3px",
+        gridTemplateColumns: `repeat(${GRID}, 1fr)`,
+        gridTemplateRows: `repeat(${GRID}, 1fr)`,
+        // Tighter gap at 7x7 since each cell is smaller; just enough
+        // to keep adjacent cube outlines from touching.
+        gap: size < 80 ? "1px" : "2px",
         border: `1px solid ${borderColor}`,
         // Generous padding on top + both sides (every cube's depth
         // extends up; upper-diagonal extends right, lower extends
@@ -9963,16 +9974,21 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
         // (optional name/year), the glyph may be multiple characters (up to 6),
         // so font size has to scale down as text length grows so it fits in
         // the cell. Estimate: each character takes ~0.55 × fontSize horizontally.
-        const cellInnerPx = (size - 10) / 5;
+        // The /GRID divisor keeps cube proportions correct when the grid size
+        // changes (was hardcoded /5 when the grid was 5x5).
+        const cellInnerPx = (size - 10) / GRID;
         let letterPx;
         if (isTextCell) {
           const len = Math.max(1, cell.glyph.length);
           // Available width = cell minus 2px each side
           const safeW = cellInnerPx - 4;
           const ideal = safeW / (len * 0.55);
-          letterPx = Math.max(5, Math.min(cellInnerPx * 0.4, ideal));
+          // Text cells are allowed to grow a touch larger than alphabet
+          // cubes since they're the customer's personalization — they
+          // should be readable. Cap at half the cell so they still fit.
+          letterPx = Math.max(5, Math.min(cellInnerPx * 0.5, ideal));
         } else {
-          letterPx = Math.max(7, Math.round(cellInnerPx * 0.55));
+          letterPx = Math.max(7, Math.round(cellInnerPx * 0.6));
         }
 
         const isPlaceholderText = isTextCell && cell.placeholder === true;
@@ -10000,8 +10016,12 @@ function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColo
                 : "transparent",
               // Cube outline + depth only on alphabet cubes. Text cells get
               // no border so they read as "embroidered onto the blanket"
-              // rather than another framed letter.
-              border: isAlphabetCube ? `2px solid ${outlineColor}` : "none",
+              // rather than another framed letter. Border width scales
+              // with cell size so a tiny catalog-card thumbnail (cellPx < 10)
+              // doesn't end up with a 2px border drowning a 6px cube.
+              border: isAlphabetCube
+                ? `${cellPx < 10 ? 1 : 2}px solid ${outlineColor}`
+                : "none",
               boxShadow: cellDepthShadow,
               fontFamily: "Fraunces, serif",
               fontSize: `${letterPx}px`,
