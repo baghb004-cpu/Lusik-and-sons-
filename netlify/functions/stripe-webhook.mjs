@@ -265,13 +265,25 @@ export default async (req) => {
   // UNIQUE-violation crash. Empty result is the "duplicate" path —
   // skip everything (item inserts, emails, blob delete) and return
   // 200 so Stripe stops retrying.
+  // Belt-and-suspenders sanitization for the customer note before
+  // it lands in the DB. create-checkout-session already strips
+  // control chars + caps length; we re-apply the same shape here so
+  // any future code path that bypasses the function (e.g. a manual
+  // pending-blob write during a backfill) can't smuggle bad data in.
+  const customerNotes = (() => {
+    const raw = pending.customer_notes;
+    if (typeof raw !== "string") return null;
+    const cleaned = raw.replace(/[\r\n\x00-\x1f\x7f]+/g, " ").trim().slice(0, 280);
+    return cleaned.length > 0 ? cleaned : null;
+  })();
+
   const inserted = await sql`
     INSERT INTO orders (
       order_number, stripe_session_id, stripe_payment_intent, user_id,
       customer_email, status, fulfillment_status,
       subtotal_cents, shipping_cents, tax_cents, total_cents,
       shipping_address, social_consent, gift, admin_notes,
-      gift_reminder_opt_in
+      gift_reminder_opt_in, customer_notes
     ) VALUES (
       ${orderNumber}, ${session.id}, ${paymentIntent}, ${pending.userId},
       ${customerEmail}, 'paid', 'in_progress',
@@ -280,7 +292,7 @@ export default async (req) => {
       ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
       ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb,
       ${reconstructedNote},
-      ${giftReminderOptIn}
+      ${giftReminderOptIn}, ${customerNotes}
     )
     ON CONFLICT (stripe_session_id) DO NOTHING
     RETURNING *

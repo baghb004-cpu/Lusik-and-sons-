@@ -210,7 +210,7 @@ export function AdminOrderRow({ order, onSaved }) {
             <div className="flex items-start gap-4 flex-wrap">
               {photoUrl ? (
                 <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="block flex-shrink-0">
-                  <img src={photoUrl} alt="Current finished-piece photo" className="w-24 h-24 object-cover" style={{ border: "1px solid rgba(26,22,18,0.15)" }} />
+                  <img src={photoUrl} alt="Current finished-piece photo" className="w-24 h-24 object-cover" style={{ border: "1px solid rgba(26,22,18,0.15)" }} loading="lazy" decoding="async" />
                 </a>
               ) : (
                 <div className="w-24 h-24 flex items-center justify-center text-[0.6rem] tracking-[0.15em] uppercase opacity-50" style={{ border: "1px dashed rgba(26,22,18,0.25)" }}>

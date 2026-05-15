@@ -14,7 +14,7 @@ import { useT } from "../i18n/LangContext.jsx";
 import { ProductShowcase } from "./ProductShowcase.jsx";
 import { CustomProductCard } from "./CustomProductCard.jsx";
 import { TrackingForm } from "./TrackingForm.jsx";
-import { NewsletterForm } from "./NewsletterForm.jsx";
+import { NewsletterSignup } from "./NewsletterSignup.jsx";
 import { TestimonialsSection } from "./TestimonialsSection.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
 import { ArrowRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
@@ -52,7 +52,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
           <div className="lg:col-span-7 slide-up stagger-2">
             <div className="relative">
               <div className="aspect-[4/3] overflow-hidden">
-                <img src={product.gallery[0]} alt={product.name} className="w-full h-full object-cover" />
+                <img src={product.gallery[0]} alt={product.name} className="w-full h-full object-cover" fetchPriority="high" decoding="async" />
               </div>
               <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
                 <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "#B08842" }}>{t("hero.callout1")}</p>
@@ -101,22 +101,22 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4">
           <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_DATE_DETAIL} alt="Close-up of 07/05/24 birth date cross-stitched on blanket" className="w-full h-full object-cover" />
+            <img src={PHOTO_DATE_DETAIL} alt="Close-up of 07/05/24 birth date cross-stitched on blanket" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
           <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_PURPLE_SIDE} alt="Purple Armenian alphabet detail" className="w-full h-full object-cover" />
+            <img src={PHOTO_PURPLE_SIDE} alt="Purple Armenian alphabet detail" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
           <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_YELLOWGREEN_2} alt="Yellow and green Armenian alphabet variation" className="w-full h-full object-cover" />
+            <img src={PHOTO_YELLOWGREEN_2} alt="Yellow and green Armenian alphabet variation" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
           <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_BIB_STACK} alt="Stack of machine-embroidered bibs in different colors" className="w-full h-full object-cover" />
+            <img src={PHOTO_BIB_STACK} alt="Stack of machine-embroidered bibs in different colors" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
           <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_BIB_PILE} alt="Pile of bibs and blanket showing yellow and green work" className="w-full h-full object-cover" />
+            <img src={PHOTO_BIB_PILE} alt="Pile of bibs and blanket showing yellow and green work" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
           <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_BIB_ROMEO} alt="Romeo bib with matching blue alphabet blanket" className="w-full h-full object-cover" />
+            <img src={PHOTO_BIB_ROMEO} alt="Romeo bib with matching blue alphabet blanket" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
         </div>
       </section>
@@ -151,7 +151,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
             <div className="aspect-[4/5] overflow-hidden">
               {/* Fall back to gallery[0] if Lusik hasn't uploaded a 9th photo yet —
                   prevents a broken <img> if PRODUCT.gallery has fewer than 8 entries. */}
-              <img src={product.gallery[7] ?? product.gallery[0]} alt="Detail of cross-stitched alphabet block" className="w-full h-full object-cover" style={galleryRotationStyle(7)} />
+              <img src={product.gallery[7] ?? product.gallery[0]} alt="Detail of cross-stitched alphabet block" className="w-full h-full object-cover" style={galleryRotationStyle(7)} loading="lazy" decoding="async" />
             </div>
           </div>
           <div className="lg:col-span-6 lg:order-1 min-w-0">
@@ -358,7 +358,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
           <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-10 max-w-xl mx-auto">
             New letter colors, special edition pieces, and seasonal collections. About one email a month — never more, never spam.
           </p>
-          <NewsletterForm />
+          <NewsletterSignup variant="hero" />
         </div>
       </section>
     </div>

@@ -199,7 +199,17 @@
      .com or fonts.gstatic.com allowlisting), removes a privacy concern
      (Google can no longer fingerprint visitors via font CDN requests),
      and removes a runtime dependency (a Google Fonts outage would
-     otherwise break our typography). -->
+     otherwise break our typography).
+
+     The two preload hints below tell the browser to fetch the most-likely-
+     needed font files (DM Sans regular for body copy, Fraunces upright
+     latin for headings) BEFORE it has parsed fonts.css. Without these,
+     fonts download serially: HTML → CSS → @font-face → woff2. With them,
+     HTML → woff2 starts immediately in parallel with everything else.
+     `crossorigin="anonymous"` is required for font preloads to actually
+     be reused by the rendering engine. -->
+<link rel="preload" href="/fonts/dmsans-rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K6z9mXg.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+<link rel="preload" href="/fonts/fraunces-6NU78FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk_WBq8U_9v0c2Wa0KxC9TeP2Xz5c.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
 <link rel="stylesheet" href="/fonts/fonts.css" />
 <!-- Netlify Identity widget. Replaces @supabase/supabase-js. Provides
      email/password signup, login, password reset, and JWT issuance.
