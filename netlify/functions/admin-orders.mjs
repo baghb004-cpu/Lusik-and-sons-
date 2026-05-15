@@ -45,7 +45,7 @@ const ALLOWED_CARRIERS = [
 ];
 
 export default async (req, context) => {
-  const auth = requireAdmin(context);
+  const auth = requireAdmin(req, context);
   if (auth.response) return auth.response;
 
   const url = new URL(req.url);
