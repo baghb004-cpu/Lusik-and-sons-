@@ -1,4 +1,57 @@
 // ============================================================
+// HASH-TOKEN HANDLER (Netlify Identity invite / recovery / confirmation links)
+// ============================================================
+// When the user clicks an invitation, password-reset, or email-confirmation
+// link from Netlify Identity, they land here with a fragment like
+//   #invite_token=...
+//   #recovery_token=...
+//   #confirmation_token=...
+//
+// The SPA uses URL-hash routing internally (e.g. #checkout, #admin), so
+// without this handler:
+//   - The router treats the token fragment as a route name and gets stuck,
+//   - The leftover # in the address bar freezes the UI.
+//
+// This handler:
+//   1. Detects identity-token hashes BEFORE the SPA router can react.
+//   2. Triggers the Netlify Identity widget so it can process the token.
+//   3. Clears the hash from the URL once the widget has had a chance to
+//      read it.
+//
+// Runs once per page load, side-effecting only the global Identity widget
+// and history state. No application state touched.
+(function handleIdentityHashOnce() {
+  if (typeof window === 'undefined') return;
+  if (window.__netlifyIdentityHashHandled__) return;
+  window.__netlifyIdentityHashHandled__ = true;
+  const hash = window.location.hash || '';
+  if (!hash) return;
+  const TOKEN_PATTERNS = /(invite_token|recovery_token|confirmation_token|email_change_token|error_description|access_token)/;
+  if (!TOKEN_PATTERNS.test(hash)) return;
+  // Open the Identity widget so it can read the hash and act on the token.
+  // Retry briefly because the widget script may load slightly after this module.
+  const tryOpen = (attempts) => {
+    try {
+      if (window.netlifyIdentity && typeof window.netlifyIdentity.open === 'function') {
+        window.netlifyIdentity.open();
+        return;
+      }
+    } catch {}
+    if (attempts < 20) setTimeout(() => tryOpen(attempts + 1), 250);
+  };
+  tryOpen(0);
+  // Clear the hash from the URL after the widget has had time to read it.
+  // Without this, the SPA hash router would treat the leftover # as a route.
+  setTimeout(() => {
+    try {
+      history.replaceState(null, '', location.pathname + location.search);
+      // Notify any hashchange listeners that the hash is now empty.
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    } catch {}
+  }, 1500);
+})();
+
+// ============================================================
 // auth — Netlify Identity wrapper
 // ============================================================
 // Runs entirely in the browser. Handles signup / signin /
