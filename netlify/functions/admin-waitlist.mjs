@@ -18,7 +18,7 @@ import { requireAdmin }  from "./_lib/auth.mjs";
 import { json }          from "./_lib/json.mjs";
 
 export default async (req, context) => {
-  const auth = requireAdmin(context);
+  const auth = requireAdmin(req, context);
   if (auth.response) return auth.response;
 
   if (req.method !== "GET") {
