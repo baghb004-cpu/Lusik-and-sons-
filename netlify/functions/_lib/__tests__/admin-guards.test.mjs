@@ -9,7 +9,7 @@
 //
 // Strategy:
 //   - Dynamic-import each handler with NETLIFY_DATABASE_URL set
-//     to a dummy (avoids the @netlify/neon load-time crash).
+//     to a dummy (avoids the @netlify/database load-time crash).
 //   - Call each handler with three context shapes:
 //       (a) no clientContext.user            → expect 401
 //       (b) clientContext.user without admin → expect 403

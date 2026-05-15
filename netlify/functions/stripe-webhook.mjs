@@ -244,7 +244,7 @@ export default async (req) => {
     : null;
 
   // Insert order. We don't use a transaction with separate inserts
-  // because @netlify/neon's tagged template doesn't auto-batch;
+  // because @netlify/database's tagged template doesn't auto-batch;
   // we use a CTE so it's atomic.
   const orderNumber = generateOrderNumber();
   // Stripe's session has a payment_intent reference. Capture it

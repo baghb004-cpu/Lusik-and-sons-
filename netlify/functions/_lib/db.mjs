@@ -1,10 +1,8 @@
 // ============================================================
 // Shared Netlify Database client
 // ============================================================
-// Every function imports `sql` from here. The @netlify/neon package
-// reads the connection string from NETLIFY_DATABASE_URL (auto-injected
-// by Netlify when the database is provisioned), so there is nothing
-// to configure in code.
+// Every function imports `sql` from here. The @netlify/database
+// package connects automatically — no connection string needed.
 //
 // Usage:
 //   import { sql } from "./_lib/db.mjs";
@@ -15,6 +13,7 @@
 // concatenation. Don't use `sql(string)` with user-controlled input.
 // ============================================================
 
-import { neon } from "@netlify/neon";
+import { getDatabase } from "@netlify/database";
 
-export const sql = neon();
+const db = getDatabase();
+export const sql = db.sql;

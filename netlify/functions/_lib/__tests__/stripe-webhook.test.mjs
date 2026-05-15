@@ -13,7 +13,7 @@
 // exercise constructEvent without touching the DB).
 //
 // Env vars set in the `before` block:
-//   NETLIFY_DATABASE_URL  — dummy. Required for @netlify/neon to
+//   NETLIFY_DATABASE_URL  — dummy. Required for @netlify/database to
 //                           instantiate at module load; never used
 //                           because we never hit a query path.
 //   STRIPE_SECRET_KEY     — dummy. Required for the Stripe client

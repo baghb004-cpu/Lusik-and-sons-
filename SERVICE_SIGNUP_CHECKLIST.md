@@ -14,7 +14,7 @@ Top-to-bottom list of every outside service the site uses, recommends, or has sc
 | | |
 |---|---|
 | **Website** | https://netlify.com |
-| **What for** | Static hosting (Vite build → `dist/`), serverless functions (`netlify/functions/`), Postgres via `@netlify/neon` (`NETLIFY_DATABASE_URL`), file uploads via `@netlify/blobs`, customer auth via Netlify Identity |
+| **What for** | Static hosting (Vite build → `dist/`), serverless functions (`netlify/functions/`), Postgres via `@netlify/database`, file uploads via `@netlify/blobs`, customer auth via Netlify Identity |
 | **Required?** | Required (the site is built around it) |
 | **Cost** | Free tier covers small e-commerce volume. Estimated ~$0 / month at the volumes Lusik would see. |
 | **You already have** | An account + the site (`lusikandsons.netlify.app`). |

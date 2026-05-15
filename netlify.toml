@@ -26,7 +26,7 @@
 
 [functions]
   directory = "netlify/functions"
-  # Functions use Node 20+. `@netlify/neon` and `@netlify/blobs` need it.
+  # Functions use Node 20+. `@netlify/database` and `@netlify/blobs` need it.
   node_bundler = "esbuild"
   # The Stripe SDK uses dynamic requires that esbuild can't statically
   # analyze. Without this line, esbuild marks `stripe` as external and

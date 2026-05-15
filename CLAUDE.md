@@ -83,7 +83,7 @@ netlify/
 └── functions/
     ├── package.json                 # function-only deps; Netlify CI runs `npm install`
     ├── _lib/
-    │   ├── db.mjs                   # @netlify/neon sql tagged-template export
+    │   ├── db.mjs                   # @netlify/database sql tagged-template export
     │   ├── auth.mjs                 # requireUser + requireAdmin (Identity role check)
     │   ├── json.mjs                 # JSON response helper
     │   ├── email.mjs                # Resend wrapper + admin-order email composer
@@ -105,8 +105,8 @@ netlify/
 
 ### Database — Netlify Database (Neon-backed Postgres)
 
-- One database per Netlify site, provisioned by `netlify database init`. Connection string is injected as `NETLIFY_DATABASE_URL`; `@netlify/neon`'s `neon()` reads it implicitly.
-- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items` — defined in `netlify/schema.sql`.
+- One database per Netlify site, provisioned by `netlify database init`. Connection string is auto-injected; `@netlify/database`'s `getDatabase()` reads it implicitly.
+- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items`, `product_waitlist` — defined in `netlify/database/migrations/` (applied automatically on deploy). Legacy `netlify/schema.sql` is kept for reference.
 - **No Row-Level Security.** Supabase used RLS as the authorization layer because the browser hit the DB directly. On the Netlify stack, every query runs inside a Function; the Function checks the Identity JWT and filters by `user_id` itself. Postgres just trusts the Function.
 
 ### File storage — Netlify Blobs
