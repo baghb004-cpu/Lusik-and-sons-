@@ -19,7 +19,7 @@
     "test:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
-    "@netlify/blobs": "^8.0.0",
+    "@netlify/blobs": "^10.7.6",
     "@netlify/functions": "^2.8.0",
     "@netlify/neon": "^0.1.0",
     "@sentry/react": "^10.53.1",
