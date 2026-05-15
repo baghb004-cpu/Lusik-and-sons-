@@ -1,0 +1,69 @@
+# Dependabot config for Lusik-and-sons-
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+#
+# Free for private repos. Dependabot will OPEN PRs for new versions and security patches
+# but never merges them. Owner reviews + merges manually after Netlify deploy preview is green.
+#
+# Schedule is weekly to keep noise low. Group security updates so a CVE wave lands as one PR.
+
+version: 2
+updates:
+  # Root SPA (Vite + React + Tailwind + Stripe SDK as runtime dep)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    groups:
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      patch-and-minor:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+          - "minor"
+
+  # Netlify Functions (server-side; Stripe SDK is here)
+  # Major Stripe SDK upgrades should NEVER auto-PR — they often have breaking changes.
+  - package-ecosystem: "npm"
+    directory: "/netlify/functions"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "functions"
+    ignore:
+      # Pin Stripe SDK to current major; manual upgrade only after testing.
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+    groups:
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      patch-and-minor:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+          - "minor"
+
+  # GitHub Actions workflow versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"

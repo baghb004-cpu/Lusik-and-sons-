@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS orders (
   finished_photo_key          TEXT,                    -- Netlify Blobs key for "Lusik's finished piece" photo
   finished_photo_emailed_at   TIMESTAMPTZ,             -- set when the customer was first emailed about the photo (dedupe gate)
   admin_notes                 TEXT,                    -- internal-only notes Lusik writes from the admin view
+  customer_notes              TEXT,                    -- optional notes the customer typed at checkout ("rush this", "no fragrance", etc.)
   shipped_at                  TIMESTAMPTZ,             -- set when fulfillment_status first transitions to "shipped"
   gift_reminder_opt_in        BOOLEAN NOT NULL DEFAULT false,  -- customer opted in at checkout to a 1-year-later reminder
   gift_reminder_sent_at       TIMESTAMPTZ,             -- set when the gift-reminder scheduled job emailed this customer (dedupe gate, one-shot)
@@ -125,6 +126,7 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS social_consent             JSONB;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS finished_photo_key         TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS finished_photo_emailed_at  TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes                TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_notes             TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at                 TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent      TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_cents             INTEGER NOT NULL DEFAULT 0;

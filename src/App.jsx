@@ -906,6 +906,18 @@ export function App() {
 
   return (
     <div className="min-h-screen pb-20 lg:pb-0">
+      {/* Skip-to-content link for keyboard + screen-reader users.
+          Visually hidden until focused; the first Tab on any page
+          surfaces it as the first interactive element so users
+          who can't see the page can jump past the nav directly to
+          the main content. Standard WCAG 2.1 § 2.4.1 pattern. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:text-sm focus:rounded"
+        style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
+      >
+        Skip to main content
+      </a>
       {/* `pb-20 lg:pb-0` reserves space for the mobile bottom-nav
           on phones so footer content + bottom of long pages aren't
           hidden behind it. On desktop the nav doesn't exist, so
@@ -1072,11 +1084,13 @@ export function App() {
         )}
       </nav>
 
+      <main id="main-content" tabIndex={-1}>
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
       {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
+      </main>
 
       {/* Waitlist modal for placeholder catalog items */}
       <WaitlistModal product={waitlistProduct} onClose={() => setWaitlistProduct(null)} />

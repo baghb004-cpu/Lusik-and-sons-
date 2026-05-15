@@ -471,7 +471,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
                   aria-label={`Zoom photo ${activeImg + 1} of ${product.gallery.length}`}
                   style={{ cursor: "zoom-in", padding: 0, border: 0, background: "transparent" }}
                 >
-                  <img src={product.gallery[activeImg]} alt={product.name} className="w-full h-full object-cover pointer-events-none" style={galleryRotationStyle(activeImg)} />
+                  <img src={product.gallery[activeImg]} alt={product.name} className="w-full h-full object-cover pointer-events-none" style={galleryRotationStyle(activeImg)} fetchPriority="high" decoding="async" />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label="Previous photo">
                   <ChevronLeft size={18} />
@@ -489,7 +489,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
               <div className="grid grid-cols-6 gap-2">
                 {product.gallery.map((src, i) => (
                   <button key={i} onClick={() => setActiveImg(i)} className={`aspect-square overflow-hidden ${activeImg === i ? "" : "opacity-50 hover:opacity-100"}`} style={{ outline: activeImg === i ? "1.5px solid #1A1612" : "none", outlineOffset: "1px" }}>
-                    <img src={src} alt="" className="w-full h-full object-cover" style={galleryRotationStyle(i, "square")} />
+                    <img src={src} alt="" className="w-full h-full object-cover" style={galleryRotationStyle(i, "square")} loading="lazy" decoding="async" />
                   </button>
                 ))}
               </div>
@@ -964,6 +964,8 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
                   src={PHOTO_DATE_DETAIL}
                   alt="Real example — OLEN stitched at the center of the blanket with 2026 on the empty waffle square diagonally above, on the middle line between the two alphabet diagonals"
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <div className="flex-1 min-w-0">

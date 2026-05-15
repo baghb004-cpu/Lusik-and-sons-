@@ -154,7 +154,7 @@ async function handle(req, context) {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  const { cart, social_consent: rawSocial, gift: rawGift, gift_reminder_opt_in } = body ?? {};
+  const { cart, social_consent: rawSocial, gift: rawGift, gift_reminder_opt_in, customer_notes: rawCustomerNotes } = body ?? {};
   if (!Array.isArray(cart) || cart.length === 0) {
     return json(400, { error: "Cart is empty" });
   }
@@ -215,6 +215,20 @@ async function handle(req, context) {
                       ? rawSocial.consented_at.slice(0, 40)
                       : null,
     };
+  })();
+
+  // Optional customer note for Lusik — distinct from gift.message
+  // (which goes on the recipient's card). Strips control chars
+  // (CRLF, etc.) so the value can't smuggle SMTP headers if it
+  // ever flows into the admin email subject, and caps at 280 chars
+  // — matches the browser-side cap and bounds storage costs.
+  const customer_notes = (() => {
+    if (typeof rawCustomerNotes !== "string") return null;
+    const cleaned = rawCustomerNotes
+      .replace(/[\r\n\x00-\x1f\x7f]+/g, " ")
+      .trim()
+      .slice(0, 280);
+    return cleaned.length > 0 ? cleaned : null;
   })();
 
   // userId and customerEmail are derived from the Identity JWT when
@@ -399,6 +413,7 @@ async function handle(req, context) {
         social_consent: social_consent ?? null,
         gift: gift ?? null,
         gift_reminder_opt_in: gift_reminder_opt_in === true,
+        customer_notes: customer_notes ?? null,
         createdAt: new Date().toISOString(),
       });
     })();
