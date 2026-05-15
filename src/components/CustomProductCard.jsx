@@ -162,6 +162,8 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
                 src={PHOTO_BIB_ROMEO}
                 alt="Real example — a blue cursive 'Romeo' bib stitched by Lusik"
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
             </div>
             <div className="text-center">
@@ -238,6 +240,8 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
                   src={PHOTO_BIB_STACK}
                   alt="A stack of Lusik's bibs showing the full range of thread colors"
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <p className="text-[0.65rem] opacity-65 leading-snug italic">

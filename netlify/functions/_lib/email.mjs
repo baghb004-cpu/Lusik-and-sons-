@@ -178,6 +178,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
   const giftHidePrices = pending?.gift?.hide_prices === true;
   const giftWrap     = pending?.gift?.wrap === true;
   const social       = pending?.social_consent ?? null;
+  const customerNotes = typeof pending?.customer_notes === "string" ? pending.customer_notes : "";
 
   // Compact subject line — order number, total, brief item count.
   const itemSummary = items.length === 1
@@ -215,6 +216,13 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     </div>
   ` : "";
 
+  const customerNotesBlock = customerNotes ? `
+    <div style="margin:20px 0;padding:14px 16px;background:#F0F1F3;border-left:3px solid ${ink};">
+      <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:${ink};font-weight:600;margin-bottom:8px;">Note from the customer</div>
+      <div style="font-size:13px;color:${ink};line-height:1.6;">${esc(customerNotes)}</div>
+    </div>
+  ` : "";
+
   const socialBlock = social?.allowed ? `
     <div style="margin:20px 0;padding:14px 16px;background:#F4F7F2;border-left:3px solid #5B7A4E;">
       <div style="font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:#5B7A4E;font-weight:600;margin-bottom:8px;">Social-share consent</div>
@@ -249,6 +257,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     <div style="color:${muted};font-size:14px;">${dollars(order.total_cents)} · ${new Date(order.created_at ?? Date.now()).toLocaleString("en-US", { dateStyle: "long", timeStyle: "short" })}</div>
 
     ${giftBlock}
+    ${customerNotesBlock}
 
     <h2 style="font-size:14px;letter-spacing:0.2em;text-transform:uppercase;color:${muted};font-weight:600;margin:28px 0 12px 0;">Items</h2>
     <table style="width:100%;border-collapse:collapse;">
@@ -296,6 +305,7 @@ export async function sendAdminOrderEmail({ order, items, pending }) {
     `${dollars(order.total_cents)} · ${new Date(order.created_at ?? Date.now()).toLocaleString()}`,
     "",
     isGift ? `★ THIS IS A GIFT${giftMessage ? `\n  Message: "${giftMessage}"` : ""}${giftWrap ? "\n  ★ Gift wrap requested" : ""}${giftHidePrices ? "\n  ⚠ Hide prices from packing slip" : ""}\n` : "",
+    customerNotes ? `NOTE FROM THE CUSTOMER\n  ${customerNotes}\n` : "",
     `ITEMS`,
     itemLines,
     `  Total: ${dollars(order.total_cents)}`,

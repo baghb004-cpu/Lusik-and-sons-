@@ -99,6 +99,18 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   // re-sent. Unsubscribe link in every email turns it off without sign-in.
   const [giftReminderOptIn, setGiftReminderOptIn] = useState(false);
 
+  // --- CUSTOMER NOTES FOR LUSIK (optional) ---
+  // Free-form text the customer can leave for Lusik that ISN'T a gift
+  // message ("please rush — birthday on the 14th", "no perfume in the
+  // package, baby has sensitive skin", "can you include a card that
+  // says 'welcome'"). Distinct from giftMessage, which goes ON the
+  // gift card. customerNotes is for Lusik herself. Capped at 280
+  // chars — tweet-length, enough to be useful, short enough to avoid
+  // abusive payloads. Server re-validates length + strips control
+  // chars before persisting.
+  const [customerNotes, setCustomerNotes] = useState("");
+  const CUSTOMER_NOTES_MAX = 280;
+
   // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
   // Default everything OFF — affirmative opt-in is the only thing
   // that grants Lusik permission to share photos of the customer's
@@ -222,6 +234,10 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               : {},
             consented_at: socialAllow ? new Date().toISOString() : null,
           },
+          // Optional free-form customer note. Server caps + strips
+          // control chars; sending an empty string is fine, the
+          // server stores NULL in that case.
+          customer_notes: customerNotes.trim().slice(0, CUSTOMER_NOTES_MAX),
           // Idempotency key — forwarded to Stripe so a retried POST
           // (or a tap that the customer thinks didn't register)
           // returns the original Checkout Session URL instead of
@@ -380,6 +396,40 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </fieldset>
 
           {/* ============================================================
+              OPTIONAL: A SHORT NOTE FOR LUSIK
+              ============================================================
+              Separate from the gift card message above — this is a
+              note for Lusik herself, not the recipient. Things like
+              "please rush — birthday on the 14th", "no perfume in
+              the package, baby has sensitive skin", "the name is
+              pronounced O-len, not OH-len, in case that matters."
+              Capped at 280 chars (server enforces too). Optional —
+              empty string is fine, customers who don't need to say
+              anything just skip this box.
+              ============================================================ */}
+          <fieldset className="p-5 lg:p-6" style={{ border: "1px solid var(--border-default)", background: "var(--bg-surface)" }}>
+            <label className="block">
+              <legend className="font-display text-lg mb-1" style={{ fontWeight: 500 }}>
+                A short note for Lusik <span className="text-sm opacity-65" style={{ fontWeight: 400 }}>(optional)</span>
+              </legend>
+              <p className="text-xs opacity-65 mb-3 leading-snug">
+                Anything she should know? Pronunciations, rush requests, sensitivities, special timing. She reads every one.
+              </p>
+              <textarea
+                value={customerNotes}
+                onChange={(e) => setCustomerNotes(e.target.value.slice(0, CUSTOMER_NOTES_MAX))}
+                maxLength={CUSTOMER_NOTES_MAX}
+                rows={3}
+                placeholder="e.g. Please ship before the 14th — baby shower is the 16th. Thank you!"
+                className="w-full px-3 py-2.5 text-sm resize-none"
+                style={{ border: "1px solid var(--border-strong)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
+                aria-label="Optional note for Lusik"
+              />
+              <span className="text-[0.6rem] opacity-55 mt-1 block tabular-nums">{customerNotes.length}/{CUSTOMER_NOTES_MAX}</span>
+            </label>
+          </fieldset>
+
+          {/* ============================================================
               OPTIONAL: ONE-YEAR REMINDER
               ============================================================
               Single checkbox, default off. Almost-no-friction add. Useful
@@ -526,7 +576,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {cart.map((item) => (
               <div key={item.id} className="flex gap-3 py-4 items-start" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="relative shrink-0">
-                  <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                  <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} loading="lazy" decoding="async" />
                   {item.isCustom && (
                     <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                   )}

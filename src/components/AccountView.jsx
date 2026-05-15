@@ -248,7 +248,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
               style={{ background: "rgba(176,136,66,0.1)", border: "1px solid rgba(26,22,18,0.15)", borderRadius: "50%" }}
             >
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <User size={32} strokeWidth={1.25} style={{ color: "#B08842" }} />
               )}

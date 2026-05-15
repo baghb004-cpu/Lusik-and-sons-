@@ -1,11 +1,29 @@
-// NewsletterSignup — MIRRORED FROM index.html (~line 3977).
-import React from "react";
-import { useState } from "react";
+// ============================================================
+// NewsletterSignup — email-list signup form
+// ============================================================
+// Posts to Netlify Forms (`data-netlify="true"`), which Netlify
+// detects at build time from the hidden <form> at the top of
+// index.html. Submissions show up in Site → Forms in the Netlify
+// dashboard; Netlify also runs server-side honeypot + reCAPTCHA
+// scoring before storing.
+//
+// `variant`:
+//   "footer"   — default. Renders an inline "Newsletter" heading +
+//                short pitch above the form (used in the site
+//                footer where the surrounding context is dense).
+//   "hero"     — header/pitch suppressed; just the input + button.
+//                Used inside the HomeView "Stay Connected" section
+//                which already provides its own heading + paragraph.
+//
+// Replaces the prior duplicate NewsletterForm component, which
+// rendered a similar form but never actually POSTed anywhere.
+// ============================================================
+
+import React, { useState } from "react";
 import { track } from "../lib/analytics.js";
-import { Send } from "./icons.jsx";
 import { useToast } from "./ToastProvider.jsx";
 
-export function NewsletterSignup() {
+export function NewsletterSignup({ variant = "footer" }) {
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [bot, setBot]     = useState("");   // honeypot — must stay empty
@@ -47,19 +65,25 @@ export function NewsletterSignup() {
     }
   };
 
+  const isHero = variant === "hero";
+
   return (
-    <div className="mb-8">
-      <p className="text-xs tracking-[0.3em] uppercase mb-3 opacity-70">Newsletter</p>
-      <p className="text-sm opacity-80 leading-relaxed mb-3 max-w-md">
-        Be the first to hear when Lusik adds a new alphabet or opens custom slots. No spam, no upsells — just the occasional note.
-      </p>
+    <div className={isHero ? "" : "mb-8"}>
+      {!isHero && (
+        <>
+          <p className="text-xs tracking-[0.3em] uppercase mb-3 opacity-70">Newsletter</p>
+          <p className="text-sm opacity-80 leading-relaxed mb-3 max-w-md">
+            Be the first to hear when Lusik adds a new alphabet or opens custom slots. No spam, no upsells — just the occasional note.
+          </p>
+        </>
+      )}
       <form
         name="newsletter"
         method="POST"
         data-netlify="true"
         netlify-honeypot="bot-field"
         onSubmit={handleSubmit}
-        className="flex items-stretch gap-2 max-w-md"
+        className={isHero ? "flex items-stretch gap-2 max-w-md mx-auto" : "flex items-stretch gap-2 max-w-md"}
       >
         <input type="hidden" name="form-name" value="newsletter" />
         {/* Honeypot — visually hidden but a bot will fill it. */}
