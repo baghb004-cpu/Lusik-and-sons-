@@ -1177,53 +1177,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
         </div>
       </div>
 
-      {/* ============================================================
-          MOBILE STICKY ADD-TO-CART
-          ============================================================
-          Slides up from the bottom of the viewport when the main
-          Add-to-cart button has scrolled off-screen. Mobile only
-          (lg:hidden). Reads the current variant's price live so it
-          matches whatever the customer's last selection was. Uses
-          the same `addItemToCart` helper as the main button so the
-          cart-feedback animation, the cart drawer auto-open, and
-          any future shared logic stay identical.
-          ============================================================ */}
-      {!isAddCtaVisible && (
-        <div
-          className="lg:hidden fixed bottom-0 inset-x-0 z-30 sticky-cta-in"
-          style={{
-            background: "rgba(245, 239, 227, 0.97)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            borderTop: "1px solid rgba(26,22,18,0.1)",
-            paddingBottom: "env(safe-area-inset-bottom, 0)",
-          }}
-        >
-          <div className="px-4 py-3 flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <p className="text-[0.55rem] tracking-[0.2em] uppercase opacity-60">Total</p>
-              <p className="text-base" style={{ fontWeight: 500 }}>
-                ${((layout.priceCents / 100) * qty).toFixed(0)}
-              </p>
-            </div>
-            <button
-              onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
-              disabled={adding}
-              aria-busy={adding}
-              className="flex-1 py-3 text-sm tracking-wide flex items-center justify-center gap-2 transition-opacity"
-              style={{
-                background: "var(--ink)",
-                color: "var(--text-on-ink)",
-                opacity: adding ? 0.6 : 1,
-                cursor: adding ? "wait" : "pointer",
-              }}
-              aria-label={`Add to cart for $${((layout.priceCents / 100) * qty).toFixed(0)}`}
-            >
-              Add to cart <ArrowRight size={14} strokeWidth={1.5} />
-            </button>
-          </div>
-        </div>
-      )}
+      /* Mobile sticky Add-to-Cart bar removed -- it followed users as they scrolled past the product and into other sections, which was confusing. Restored via git revert if needed. */
 
       {/* ============================================================
           GALLERY LIGHTBOX
