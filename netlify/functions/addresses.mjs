@@ -13,7 +13,7 @@ import { requireUser } from "./_lib/auth.mjs";
 import { json }        from "./_lib/json.mjs";
 
 export default async (req, context) => {
-  const auth = requireUser(context);
+  const auth = requireUser(req, context);
   if (auth.response) return auth.response;
   const { user } = auth;
 
