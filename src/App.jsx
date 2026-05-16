@@ -335,6 +335,34 @@ export function App() {
     window.addEventListener("popstate", applyFromUrl);
     return () => window.removeEventListener("popstate", applyFromUrl);
   }, []);
+  // ---------------------------------------------------------------
+  // Admin hash routing -- clicking the Admin nav button (injected by
+  // index.html for users with the admin role) sets window.location.hash =
+  // "#admin". Without a listener here, React stays put and the URL just
+  // bears a stray #admin with no effect. This effect bridges the gap:
+  // on mount AND on every hashchange, if hash is "#admin" AND the user
+  // is an admin per identity, switch to the admin view and clear the
+  // hash so the address bar stays clean. Cosmetic + correctness fix.
+  // ---------------------------------------------------------------
+  useEffect(() => {
+    const checkAdminHash = () => {
+      if (window.location.hash !== "#admin") return;
+      // Defer one tick so the Identity widget can hydrate currentUser()
+      // after a fresh page load before we read the role.
+      setTimeout(() => {
+        try {
+          if (typeof auth?.isAdmin === "function" && auth.isAdmin()) {
+            setView("admin");
+            try { history.replaceState(null, "", location.pathname + location.search); } catch {}
+          }
+        } catch {}
+      }, 0);
+    };
+    checkAdminHash();
+    window.addEventListener("hashchange", checkAdminHash);
+    return () => window.removeEventListener("hashchange", checkAdminHash);
+  }, []);
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
