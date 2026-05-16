@@ -1,81 +1,265 @@
 // ============================================================
-// MobileBottomNav — bottom tab bar for phones
+// MobileBottomNav — Apple-Store-style floating glass tab bar
 // ============================================================
-// Fixed-position bar that appears on mobile (`lg:hidden`).
-// Four tabs: Home, Shop, Cart, Account. Admin is shown via the
-// Account tab (which is highlighted for view === "admin" too).
+// A frosted-glass rounded pill that floats at the bottom of the
+// phone viewport. The active tab is highlighted with a brighter
+// "lens" panel that:
 //
-// Honors iOS safe-area-inset-bottom so it doesn't overlap the
-// home-bar gesture area on iPhone X+ devices.
+//   - Slides between tabs with a soft spring on activation
+//   - During a touch-and-drag, follows the finger across the bar
+//   - On release, snaps to the nearest tab AND triggers it if the
+//     user dragged onto a different tab (otherwise stays put)
+//   - Magnifies the icon directly under it by ~1.18x (and adjacent
+//     icons by ~1.06x) for a chromatic-aberration / lens feel
 //
-// MIRRORED FROM index.html (~line 8761).
+// Implementation notes:
+//   - The bar's position: fixed comes from .lg-bottom-island in
+//     styles/index.css (a Tailwind `fixed` class would work too —
+//     left as a CSS class so the styling and the position stay in
+//     one place).
+//   - Lens position is computed in pixels off the container's
+//     bounding rect so the touch math doesn't fight CSS percentages.
+//   - Touch handlers use { passive: true } where possible. The
+//     touchmove handler calls preventDefault() ONLY while we've
+//     claimed the gesture as a horizontal drag (move distance ≥ 6px)
+//     so vertical scrolling on the rest of the page still works.
+//   - Accessibility: every tab is still a real <button> with its own
+//     onClick. The lens is decorative — keyboard / screen-reader
+//     users get the existing nav behavior unchanged.
 // ============================================================
 
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Home, Store, ShoppingBag, User } from "./icons.jsx";
 
 export function MobileBottomNav({ view, cartCount, onHome, onShop, onCart, onAccount }) {
-  // Each tab's "active" highlight. Cart is a drawer (not a
-  // view), so it gets the active style when the count > 0 as a
-  // gentler signal that something's in there.
-  const isHome    = view === "home";
-  const isAccount = view === "account" || view === "admin";
-  const itemColor = (active) => ({
-    color: active ? "var(--text-primary)" : "var(--text-muted)",
-    fontWeight: active ? 600 : 500,
-  });
-  const labelCls = "text-[0.55rem] tracking-[0.12em] uppercase mt-1";
-  const btnCls   = "flex-1 flex flex-col items-center justify-center py-2 px-1 transition";
+  // Tab definitions, indexed left-to-right. `activeWhen` decides where
+  // the lens settles when no touch is active. Order is load-bearing:
+  // changing it would change where the lens snaps when there's no
+  // active tab (defaults to index 0, Home).
+  const tabs = useMemo(() => ([
+    { key: "home",    label: "Home",    Icon: Home,        action: onHome,    activeWhen: view === "home" },
+    { key: "shop",    label: "Shop",    Icon: Store,       action: onShop,    activeWhen: false },
+    { key: "cart",    label: "Cart",    Icon: ShoppingBag, action: onCart,    activeWhen: false, badge: cartCount },
+    { key: "account", label: "Account", Icon: User,        action: onAccount, activeWhen: view === "account" || view === "admin" || view === "admin-order" },
+  ]), [view, cartCount, onHome, onShop, onCart, onAccount]);
 
-  // Flush-to-bottom frosted bar (NOT a floating island) — keeps
-  // the layout math in src/styles/index.css for stacked floating
-  // widgets (back-to-top, text-us, active-order banner) unchanged.
-  // The .lg-panel-tall + lg-bottom-bar combo gives the iOS-26-style
-  // frosted bottom bar look without floating the surface.
+  // Index the lens should rest on. Falls back to 0 (Home) if no
+  // tab matches the current view.
+  const baseIndex = useMemo(() => {
+    const i = tabs.findIndex((t) => t.activeWhen);
+    return i < 0 ? 0 : i;
+  }, [tabs]);
+
+  const navRef = useRef(null);
+  // Track-x state: lensIndex is the slot (snapped position) and
+  // dragOffset is the px nudge during an active touch. When idle,
+  // dragOffset is 0 and lensIndex === baseIndex.
+  const [lensIndex,  setLensIndex]  = useState(baseIndex);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [pressed,    setPressed]    = useState(false);
+  // Stays true between touchmove > 6px and touchend; gates the
+  // preventDefault inside the move handler.
+  const draggingRef = useRef(false);
+  const startXRef   = useRef(0);
+  const startYRef   = useRef(0);
+  // The tab the touch finger is CURRENTLY over (regardless of where
+  // it started). Used to magnify the under-finger icon.
+  const [hoverIndex, setHoverIndex] = useState(null);
+
+  // Keep the lens in sync with the active view as long as the user
+  // isn't actively touching the bar. While touching, the view-change
+  // shouldn't yank the lens out from under their finger.
+  useEffect(() => {
+    if (!pressed) setLensIndex(baseIndex);
+  }, [baseIndex, pressed]);
+
+  // Honor "Reduce Motion". When enabled we skip the spring transition
+  // on the lens (CSS does the rest via the @media query).
+  const reducedMotion = useMemo(() => (
+    typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  ), []);
+
+  const tabCount = tabs.length;
+
+  // Given a clientX, return the tab index whose slot contains it.
+  // Clamps to [0, tabCount-1] so a slight overshoot at either end
+  // still selects the edge tab.
+  const xToIndex = useCallback((clientX) => {
+    const rect = navRef.current?.getBoundingClientRect();
+    if (!rect) return baseIndex;
+    const x = clientX - rect.left;
+    const slot = rect.width / tabCount;
+    const raw = Math.floor(x / slot);
+    return Math.max(0, Math.min(tabCount - 1, raw));
+  }, [baseIndex, tabCount]);
+
+  // Convert clientX to a continuous dragOffset (px from the active
+  // tab slot's center). Used by the lens transform so it tracks the
+  // finger smoothly between slots.
+  const xToOffset = useCallback((clientX, fromIndex) => {
+    const rect = navRef.current?.getBoundingClientRect();
+    if (!rect) return 0;
+    const slot = rect.width / tabCount;
+    const center = rect.left + slot * (fromIndex + 0.5);
+    return clientX - center;
+  }, [tabCount]);
+
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    if (!t) return;
+    startXRef.current = t.clientX;
+    startYRef.current = t.clientY;
+    draggingRef.current = false;
+    setPressed(true);
+    // Where did the finger LAND? Move the lens there immediately so
+    // the touch feels responsive even before any drag.
+    const idx = xToIndex(t.clientX);
+    setLensIndex(idx);
+    setHoverIndex(idx);
+    setDragOffset(0);
+  };
+
+  const onTouchMove = (e) => {
+    const t = e.touches[0];
+    if (!t) return;
+    const dx = t.clientX - startXRef.current;
+    const dy = t.clientY - startYRef.current;
+    if (!draggingRef.current) {
+      // Don't claim the gesture until movement is clearly horizontal.
+      // A vertical drag should fall through to the page scroller.
+      if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
+      draggingRef.current = true;
+    }
+    // We're horizontally dragging — prevent the browser from doing
+    // anything else with this touch (page pan, pull-to-refresh).
+    e.preventDefault?.();
+    const idx = xToIndex(t.clientX);
+    if (idx !== lensIndex) setLensIndex(idx);
+    setHoverIndex(idx);
+    setDragOffset(xToOffset(t.clientX, idx));
+  };
+
+  const fireTab = (idx) => {
+    const tab = tabs[idx];
+    if (tab && typeof tab.action === "function") {
+      try { tab.action(); } catch (err) { console.warn(err); }
+    }
+  };
+
+  const onTouchEnd = (e) => {
+    setPressed(false);
+    setHoverIndex(null);
+    setDragOffset(0);
+    if (!draggingRef.current) {
+      // No drag — just a tap. The <button>'s native onClick will fire
+      // on its own, so no action needed here. Make sure the lens
+      // stays on the tapped slot, though.
+      const tapX = e.changedTouches?.[0]?.clientX ?? null;
+      if (tapX != null) setLensIndex(xToIndex(tapX));
+      draggingRef.current = false;
+      return;
+    }
+    draggingRef.current = false;
+    // Snap the lens to the nearest slot and activate that tab — the
+    // user dragged the lens onto a target. This makes "drag the
+    // glass blob to navigate" feel real.
+    const endX = e.changedTouches?.[0]?.clientX ?? null;
+    if (endX == null) return;
+    const idx = xToIndex(endX);
+    setLensIndex(idx);
+    fireTab(idx);
+  };
+
+  const onTouchCancel = () => {
+    setPressed(false);
+    setDragOffset(0);
+    setHoverIndex(null);
+    draggingRef.current = false;
+    setLensIndex(baseIndex);
+  };
+
+  // Compute per-icon magnify scale. Tab directly under the lens gets
+  // 1.18, adjacent tabs get 1.06, others 1.0. During an active drag
+  // we key off hoverIndex so the icon "lifts" the moment the finger
+  // crosses into its slot. Otherwise we key off lensIndex (the
+  // settled active tab) for a softer at-rest look.
+  const scaleFor = (i) => {
+    const target = hoverIndex ?? lensIndex;
+    if (i === target) return 1.18;
+    if (Math.abs(i - target) === 1) return 1.06;
+    return 1;
+  };
+
+  // Lens slot width as a CSS percentage. The lens transform handles
+  // the finger-tracking nudge.
+  const slotPct = 100 / tabCount;
+
   return (
     <nav
-      className="lg-panel-tall lg-bottom-bar lg:hidden fixed bottom-0 inset-x-0 z-30 theme-surface"
-      style={{
-        paddingBottom: "env(safe-area-inset-bottom, 0)",
-      }}
+      ref={navRef}
+      className="lg-bottom-island lg:hidden"
       aria-label="Bottom navigation"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
     >
-      <div className="flex items-stretch">
-        <button onClick={onHome} className={btnCls} aria-label="Home" aria-current={isHome ? "page" : undefined}>
-          <Home size={20} strokeWidth={isHome ? 2 : 1.5} style={itemColor(isHome)} />
-          <span className={labelCls} style={itemColor(isHome)}>Home</span>
-        </button>
-        <button onClick={onShop} className={btnCls} aria-label="Shop">
-          <Store size={20} strokeWidth={1.5} style={itemColor(false)} />
-          <span className={labelCls} style={itemColor(false)}>Shop</span>
-        </button>
-        <button onClick={onCart} className={btnCls} aria-label={`Cart${cartCount > 0 ? ` (${cartCount} item${cartCount === 1 ? "" : "s"})` : ""}`}>
-          <span className="relative">
-            <ShoppingBag size={20} strokeWidth={cartCount > 0 ? 2 : 1.5} style={itemColor(cartCount > 0)} />
-            {cartCount > 0 && (
-              <span
-                className="absolute -top-1.5 -right-2 tabular-nums text-[0.6rem] leading-none flex items-center justify-center"
-                style={{
-                  background: "#B08842",
-                  color: "#F5EFE3",
-                  minWidth: 16,
-                  height: 16,
-                  padding: "0 4px",
-                  borderRadius: 9,
-                  fontWeight: 600,
-                }}
-              >
-                {cartCount}
-              </span>
-            )}
-          </span>
-          <span className={labelCls} style={itemColor(cartCount > 0)}>Cart</span>
-        </button>
-        <button onClick={onAccount} className={btnCls} aria-label="Account" aria-current={isAccount ? "page" : undefined}>
-          <User size={20} strokeWidth={isAccount ? 2 : 1.5} style={itemColor(isAccount)} />
-          <span className={labelCls} style={itemColor(isAccount)}>Account</span>
-        </button>
-      </div>
+      {/* LENS — visual highlight under the active tab. Decorative,
+          pointer-events: none so it never intercepts taps. */}
+      <span
+        className={"lg-lens" + (pressed ? " lg-lens-pressed" : "")}
+        aria-hidden="true"
+        style={{
+          width:     `${slotPct}%`,
+          left:      `${lensIndex * slotPct}%`,
+          transform: `translateX(${dragOffset}px)`,
+          transition: reducedMotion
+            ? "none"
+            : draggingRef.current
+              ? "transform 0ms, left 0ms"
+              : "left 0.32s cubic-bezier(0.4, 1.4, 0.6, 1), transform 0.32s cubic-bezier(0.4, 1.4, 0.6, 1)",
+        }}
+      />
+      {tabs.map((t, i) => {
+        const active = i === lensIndex;
+        return (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => { setLensIndex(i); fireTab(i); }}
+            className="lg-tab"
+            aria-current={active ? "page" : undefined}
+            aria-label={t.label + (t.badge ? ` (${t.badge} item${t.badge === 1 ? "" : "s"})` : "")}
+          >
+            <span
+              className="lg-tab-icon"
+              style={{
+                transform: `scale(${scaleFor(i)})`,
+                transition: reducedMotion ? "none" : "transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
+              <t.Icon
+                size={22}
+                strokeWidth={active ? 2 : 1.6}
+                style={{ color: active ? "var(--text-primary)" : "var(--text-muted)" }}
+              />
+              {t.badge > 0 && (
+                <span className="lg-tab-badge" aria-hidden="true">{t.badge}</span>
+              )}
+            </span>
+            <span
+              className="lg-tab-label"
+              style={{
+                color: active ? "var(--text-primary)" : "var(--text-muted)",
+                fontWeight: active ? 600 : 500,
+              }}
+            >
+              {t.label}
+            </span>
+          </button>
+        );
+      })}
     </nav>
   );
 }
