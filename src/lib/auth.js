@@ -247,7 +247,7 @@ function _initAuth() {
     try {
       const u = get().currentUser();
       const roles = u?.app_metadata?.roles;
-      return Array.isArray(roles) && roles.includes("admin");
+      return Array.isArray(roles) && roles.some(function(r){return String(r).toLowerCase()==="admin";});
     } catch { return false; }
   };
 
