@@ -62,7 +62,7 @@ jobs:
       # Surface the trace artifacts when a test fails so the PR
       # reviewer can see what the browser was doing at the moment
       # of failure.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-traces
