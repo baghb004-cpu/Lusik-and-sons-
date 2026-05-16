@@ -290,71 +290,9 @@
 </form>
 <div id="root"></div>
 
-<!-- Vite entry point — bundles src/App.jsx and the entire src/ tree -->
+<!-- Vite entry point — bundles src/App.jsx and the entire src/ tree.
+     The React app owns ALL navigation. Do not add DOM-mutating scripts
+     here that touch the SPA's chrome — they fight the reconciler. -->
 <script type="module" src="/src/main.jsx"></script>
-
-
-    <!-- Admin nav injector: when a Netlify Identity user with admin role is detected,
-         programmatically add a visible "Admin" button next to the existing Account button.
-         This avoids modifying every nav location in the React SPA. Safe to leave on for
-         non-admin users (no-op). -->
-    <script>
-      (function () {
-        var ADDED_ATTR = 'data-admin-nav-injected';
-        function isAdmin(user) {
-          if (!user) return false;
-          var roles = (user.app_metadata && user.app_metadata.roles) || [];
-          return roles.some(function (r) { return String(r).toLowerCase() === 'admin'; });
-        }
-        function addAdminButtonNearAccount() {
-          if (document.querySelector('[' + ADDED_ATTR + ']')) return true;
-          var accountBtns = Array.from(document.querySelectorAll('button')).filter(function (b) {
-            return /^account$/i.test((b.innerText || '').trim()) && b.offsetParent;
-          });
-          if (accountBtns.length === 0) return false;
-          accountBtns.forEach(function (accountBtn) {
-            if (accountBtn.previousElementSibling && accountBtn.previousElementSibling.getAttribute(ADDED_ATTR)) return;
-            var btn = document.createElement('button');
-            btn.setAttribute(ADDED_ATTR, 'true');
-            btn.type = 'button';
-            btn.textContent = 'Admin';
-            // Inherit the parent's font, padding, etc. visually.
-            btn.style.cssText = 'cursor:pointer;background:transparent;border:0;font:inherit;color:inherit;padding:0 12px;margin:0;text-transform:inherit;';
-            btn.addEventListener('click', function () {
-              // The SPA reads window.location.hash for routing. Setting to #admin
-              // navigates to the AdminView. The hash-token handler ignores anything
-              // without '=' so this won't be confused with an identity token.
-              window.location.hash = '#admin';
-            });
-            accountBtn.parentNode.insertBefore(btn, accountBtn);
-          });
-          return true;
-        }
-        function startWatch(user) {
-          if (!isAdmin(user)) return;
-          // Retry until the SPA has rendered the Account button.
-          var attempts = 0;
-          var iv = setInterval(function () {
-            attempts++;
-            if (addAdminButtonNearAccount() || attempts > 60) clearInterval(iv);
-          }, 250);
-          // Also observe nav re-renders to keep the button in place.
-          var mo = new MutationObserver(function () { addAdminButtonNearAccount(); });
-          mo.observe(document.body, { childList: true, subtree: true });
-        }
-        function tryHook(attempts) {
-          var ni = window.netlifyIdentity;
-          if (ni && typeof ni.on === 'function') {
-            ni.on('init', startWatch);
-            ni.on('login', startWatch);
-            // If already initialized, kick off immediately.
-            try { startWatch(ni.currentUser && ni.currentUser()); } catch (e) {}
-            return;
-          }
-          if ((attempts || 0) < 40) setTimeout(function () { tryHook((attempts || 0) + 1); }, 250);
-        }
-        tryHook(0);
-      })();
-    </script>
-  </body>
+</body>
 </html>

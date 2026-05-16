@@ -16,10 +16,15 @@
 import React from "react";
 import { getTrackingUrl } from "../lib/tracking";
 import { ArrowRight, Check } from "./icons.jsx";
+import { STAGES as ORDER_STAGES, statusToStageIndex } from "./adminStatusLabels.js";
 
 export function OrderProgressTimeline({ status }) {
   if (status === "refunded") return null;
-  const current = statusToStageIndex(status);
+  // statusToStageIndex returns -1 for unknown states; clamp to 0 so
+  // the timeline still renders a visible "first step" rather than
+  // marking everything complete.
+  const idx = statusToStageIndex(status);
+  const current = idx < 0 ? 0 : idx;
   return (
     <ol className="flex items-start justify-between mb-4 mt-2 gap-1 sm:gap-2" aria-label="Order progress">
       {ORDER_STAGES.map((stage, i) => {
@@ -81,7 +86,11 @@ export function OrderCard({ order, onReorder }) {
     if (order.status === "refunded")           return { text: "Refunded",          color: "#8B2C2C" };
     if (order.status === "partially_refunded") return { text: "Partially refunded", color: "#8B2C2C" };
     switch (order.fulfillment_status) {
-      case "awaiting_lusik":  return { text: "Awaiting Lusik",     color: "#B08842" };
+      // "New" means Lusik has paid but not yet confirmed. Once she
+      // clicks "Confirm order" in the admin panel, fulfillment_status
+      // moves to awaiting_lusik and the label here flips to "Confirmed".
+      case "in_progress":     return { text: "New",                color: "#B08842" };
+      case "awaiting_lusik":  return { text: "Confirmed",          color: "#B08842" };
       case "in_production":   return { text: "Lusik is stitching", color: "#B08842" };
       case "quality_check":   return { text: "Final review",       color: "#B08842" };
       case "ready_to_ship":   return { text: "Ready to ship",      color: "#3D5A3D" };
@@ -91,6 +100,23 @@ export function OrderCard({ order, onReorder }) {
       default:                return { text: order.fulfillment_status || "Pending", color: "#666" };
     }
   })();
+
+  // Relative time helper for the "From Lusik" callout. Falls back to a
+  // local date string for anything older than a week so we don't end up
+  // saying "47 days ago" which feels worse than just a date.
+  const relTime = (iso) => {
+    if (!iso) return "";
+    const ms = Date.now() - new Date(iso).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return "";
+    const mins = Math.round(ms / 60000);
+    if (mins < 1)       return "just now";
+    if (mins < 60)      return `${mins}m ago`;
+    const hrs  = Math.round(mins / 60);
+    if (hrs < 24)       return `${hrs}h ago`;
+    const days = Math.round(hrs / 24);
+    if (days < 7)       return `${days}d ago`;
+    return new Date(iso).toLocaleDateString();
+  };
 
   const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric",
@@ -142,6 +168,25 @@ export function OrderCard({ order, onReorder }) {
           </div>
         );
       })()}
+
+      {/* MESSAGE FROM LUSIK — public note she wrote from the
+          admin panel. Distinct from the brand callout under the
+          finished-piece photo: this one is order-specific status
+          context ("running 2 days late", "need to double-check
+          your address"). Empty/null means no message yet. */}
+      {order.admin_message && (
+        <div className="mb-4 p-3 leading-relaxed" style={{ background: "rgba(61,90,61,0.06)", border: "1px solid rgba(61,90,61,0.30)" }}>
+          <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1.5 flex items-baseline justify-between gap-2" style={{ color: "#3D5A3D", fontWeight: 600 }}>
+            <span>A note from Lusik</span>
+            {order.admin_message_updated_at && (
+              <span className="opacity-60 normal-case tracking-normal text-[0.6rem]" style={{ fontWeight: 400 }}>
+                {relTime(order.admin_message_updated_at)}
+              </span>
+            )}
+          </p>
+          <p className="text-sm whitespace-pre-wrap">{order.admin_message}</p>
+        </div>
+      )}
 
       {/* Stepped progress — only when the order is in a normal
           fulfillment state. Full refunds get the refund banner

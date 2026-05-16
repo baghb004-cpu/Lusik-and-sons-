@@ -7,10 +7,12 @@
 //   #recovery_token=...
 //   #confirmation_token=...
 //
-// The SPA uses URL-hash routing internally (e.g. #checkout, #admin), so
-// without this handler:
-//   - The router treats the token fragment as a route name and gets stuck,
-//   - The leftover # in the address bar freezes the UI.
+// The SPA uses state-based routing (no hashes for normal views), but legacy
+// shared `#journal/<slug>` links still get rewritten to clean pathnames by
+// App.jsx's journal effect. Without this token-aware handler, an Identity
+// fragment landing on the home page would:
+//   - confuse that journal-hash-rewrite path, and
+//   - leave a stray `#...` in the address bar that looks broken.
 //
 // This handler:
 //   1. Detects identity-token hashes BEFORE the SPA router can react.

@@ -13,6 +13,13 @@ import { db } from "../lib/db.js";
 import { Skeleton } from "./Skeleton.jsx";
 import { OrderCard } from "./OrderCard.jsx";
 
+// How often to refetch order history while the account page is open
+// AND the tab is visible. Lusik's status changes and admin messages
+// land on the customer's view through this poll. 45s strikes a
+// balance: feels live enough for a Domino's-tracker-style UX without
+// burning the Functions free-tier quota.
+const POLL_MS = 45000;
+
 export function OrderHistory({ userId, onReorder }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +36,8 @@ export function OrderHistory({ userId, onReorder }) {
     if (!userId) return;
     let mounted = true;
     let attempts = 0;
-    let pollTimer = null;
+    let pollTimer       = null; // post-checkout fast poll for the new order
+    let livePollTimer   = null; // slow "Domino's tracker" poll for status updates
     const maxAttempts = justCheckedOut ? 6 : 1;
     const pollDelay = 2500;
 
@@ -61,13 +69,45 @@ export function OrderHistory({ userId, onReorder }) {
       }
     };
 
+    // Light refetch — used by the visibility/focus listeners and the
+    // slow background poll. Does NOT touch loading state so the UI
+    // doesn't flicker back to skeletons mid-session.
+    const refetchLive = async () => {
+      if (!mounted) return;
+      try {
+        const { orders: rows } = await db.listOrders();
+        if (mounted && Array.isArray(rows)) setOrders(rows);
+      } catch {}
+    };
+
+    const onVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        refetchLive();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+      window.addEventListener("focus", refetchLive);
+    }
+
+    // Slow background poll. setInterval keeps a stable cadence; the
+    // visibility check inside short-circuits when the tab is hidden
+    // so a backgrounded tab doesn't burn requests.
+    livePollTimer = setInterval(() => {
+      if (typeof document === "undefined" || document.visibilityState === "visible") {
+        refetchLive();
+      }
+    }, POLL_MS);
+
     fetchOnce();
     return () => {
       mounted = false;
-      // Cancel any pending poll so the timer doesn't fire after
-      // unmount (would log a stale 401 on db.listOrders if the user
-      // signed out mid-poll).
-      if (pollTimer !== null) clearTimeout(pollTimer);
+      if (pollTimer     !== null) clearTimeout(pollTimer);
+      if (livePollTimer !== null) clearInterval(livePollTimer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+        window.removeEventListener("focus", refetchLive);
+      }
     };
   }, [userId]);
 
