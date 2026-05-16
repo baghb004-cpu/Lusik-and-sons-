@@ -954,8 +954,11 @@ export function App() {
           otherwise. See ActiveOrderTopBar for the status mapping. */}
       <ActiveOrderTopBar user={user} onOpenAccount={() => setView("account")} />
 
-      {/* NAV */}
-      <nav className="sticky top-0 z-40 backdrop-blur-md theme-surface" style={{ background: "var(--bg-page-90)", borderBottom: "1px solid var(--border-default)" }}>
+      {/* NAV — sticky frosted top bar. The .lg-top-bar tweak (in
+          styles/index.css) squares the top corners and lifts the
+          shadow to a downward gradient so the bar reads as a
+          horizon line over the page content, not a floating chip. */}
+      <nav className="lg-panel-tall lg-top-bar sticky top-0 z-40 theme-surface">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
           <button onClick={() => setView("home")}>
             <span className="font-display text-2xl lg:text-3xl tracking-tight" style={{ fontWeight: 500 }}>
@@ -1284,11 +1287,10 @@ export function App() {
       {/* CART DRAWER */}
       {cartOpen && (
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setCartOpen(false)}>
-          <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.4)" }} />
+          <div className="absolute inset-0 lg-scrim" />
           <div
-            className="relative w-full max-w-md drawer-in flex flex-col"
+            className="lg-panel-tall lg-drawer relative w-full max-w-md drawer-in flex flex-col"
             style={{
-              background: "var(--bg-page)",
               // While the user is dragging, follow the finger 1:1. The
               // transition kicks in only on release (spring-back to 0
               // or dismiss-off-screen). Mid-drag we want crisp tracking
