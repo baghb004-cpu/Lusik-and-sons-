@@ -63,6 +63,18 @@
   to     = "/index.html"
   status = 200
 
+# Product page rewrites -- mirror /journal so /blanket and /bib serve
+# index.html and the SPA picks up the path via App.jsx pathname mapping.
+[[redirects]]
+from = "/blanket"
+to = "/index.html"
+status = 200
+
+[[redirects]]
+from = "/bib"
+to = "/index.html"
+status = 200
+
 # Don't redirect /index.html or static files — the default behavior already
 # serves them correctly from `publish`.
 
