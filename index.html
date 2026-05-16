@@ -294,5 +294,102 @@
      The React app owns ALL navigation. Do not add DOM-mutating scripts
      here that touch the SPA's chrome — they fight the reconciler. -->
 <script type="module" src="/src/main.jsx"></script>
-</body>
+
+    <!-- ADMIN + HASH GUARD: combined script that (a) keeps the URL hash clean (no bare "#" or identity tokens that freeze the SPA router) and (b) injects a visible Admin button when a Netlify Identity admin user is logged in. Re-added after earlier merges removed it. -->
+    <script>
+      (function () {
+        // ============================================================
+        // PART A: hash safety guard
+        // ============================================================
+        var IDENTITY_TOKEN_RE = /(invite_token|recovery_token|confirmation_token|email_change_token|access_token|error_description)/;
+        var KNOWN_VIEWS = ['admin','account','checkout','home','journal',''];
+        function cleanBareHash() {
+          var raw = window.location.hash || '';
+          if (raw === '' || raw === '#') return;
+          var stripped = raw.replace(/^#/, '');
+          if (IDENTITY_TOKEN_RE.test(stripped)) return; // identity widget handles these
+          // If the hash isn't a known SPA view and isn't a token, drop it.
+          if (KNOWN_VIEWS.indexOf(stripped.toLowerCase()) === -1) {
+            try {
+              history.replaceState(null, '', location.pathname + location.search);
+            } catch (e) {}
+          }
+        }
+        function handleIdentityTokens() {
+          var hash = window.location.hash || '';
+          if (!IDENTITY_TOKEN_RE.test(hash)) return;
+          var tryOpen = function (attempts) {
+            try { if (window.netlifyIdentity && window.netlifyIdentity.open) { window.netlifyIdentity.open(); return; } } catch (e) {}
+            if ((attempts || 0) < 20) setTimeout(function () { tryOpen((attempts || 0) + 1); }, 250);
+          };
+          tryOpen(0);
+          setTimeout(function () {
+            try {
+              history.replaceState(null, '', location.pathname + location.search);
+              window.dispatchEvent(new HashChangeEvent('hashchange'));
+            } catch (e) {}
+          }, 1500);
+        }
+        handleIdentityTokens();
+        cleanBareHash();
+        window.addEventListener('hashchange', function () {
+          if (window.location.hash === '#') {
+            try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+          }
+        });
+
+        // ============================================================
+        // PART B: Admin nav button injector
+        // ============================================================
+        var ADDED_ATTR = 'data-admin-nav-injected';
+        function isAdmin(user) {
+          if (!user) return false;
+          var roles = (user.app_metadata && user.app_metadata.roles) || [];
+          return roles.some(function (r) { return String(r).toLowerCase() === 'admin'; });
+        }
+        function addAdminButtonNearAccount() {
+          if (document.querySelector('[' + ADDED_ATTR + ']')) return true;
+          var accountBtns = Array.from(document.querySelectorAll('button')).filter(function (b) {
+            var t = (b.innerText || '').trim();
+            return (/^account$/i.test(t) || /^my account$/i.test(t)) && b.offsetParent;
+          });
+          if (accountBtns.length === 0) return false;
+          accountBtns.forEach(function (accountBtn) {
+            if (accountBtn.parentNode && accountBtn.parentNode.querySelector('[' + ADDED_ATTR + ']')) return;
+            var btn = document.createElement('button');
+            btn.setAttribute(ADDED_ATTR, 'true');
+            btn.type = 'button';
+            btn.textContent = 'Admin';
+            btn.style.cssText = 'cursor:pointer;background:transparent;border:0;font:inherit;color:inherit;padding:0 12px;margin:0;text-transform:inherit;text-decoration:underline;';
+            btn.addEventListener('click', function () {
+              window.location.hash = '#admin';
+            });
+            accountBtn.parentNode.insertBefore(btn, accountBtn);
+          });
+          return true;
+        }
+        function startWatch(user) {
+          if (!isAdmin(user)) return;
+          var attempts = 0;
+          var iv = setInterval(function () {
+            attempts++;
+            if (addAdminButtonNearAccount() || attempts > 80) clearInterval(iv);
+          }, 250);
+          var mo = new MutationObserver(function () { addAdminButtonNearAccount(); });
+          mo.observe(document.body, { childList: true, subtree: true });
+        }
+        function tryHook(attempts) {
+          var ni = window.netlifyIdentity;
+          if (ni && typeof ni.on === 'function') {
+            ni.on('init', startWatch);
+            ni.on('login', startWatch);
+            try { startWatch(ni.currentUser && ni.currentUser()); } catch (e) {}
+            return;
+          }
+          if ((attempts || 0) < 40) setTimeout(function () { tryHook((attempts || 0) + 1); }, 250);
+        }
+        tryHook(0);
+      })();
+    </script>
+  </body>
 </html>
