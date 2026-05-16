@@ -60,6 +60,7 @@ import { HomeView } from "./components/HomeView.jsx";
 import { JournalView } from "./components/JournalView.jsx";
 import { AccountView } from "./components/AccountView.jsx";
 import { AdminView } from "./components/AdminView.jsx";
+import { AdminOrderDetail } from "./components/AdminOrderDetail.jsx";
 import { CheckoutView } from "./components/CheckoutView.jsx";
 
 // Icons used directly inside App
@@ -97,6 +98,10 @@ export function App() {
   // Synced to the URL hash (#journal/<slug>) so individual posts
   // get shareable, copy-pasteable URLs even though we're a SPA.
   const [journalSlug, setJournalSlug] = useState(null);
+  // When viewing a single order in admin mode (view === "admin-order"),
+  // this holds the order id passed to AdminOrderDetail. The list view
+  // sets it and flips view; the detail's "Back to orders" clears it.
+  const [adminOrderId, setAdminOrderId] = useState(null);
   // Whether the PDP's mobile sticky add-to-cart bar is currently
   // showing. Lifted up from ProductShowcase so the global mobile
   // bottom-nav can step out of the way — they share the same
@@ -274,6 +279,25 @@ export function App() {
     }
   }, [user]);
 
+  // --- LEFTOVER #admin CLEANUP ---
+  // The previous deploy injected an "Admin" button in index.html that
+  // set `window.location.hash = '#admin'`. Nothing in the SPA listened
+  // for that hash, so the URL got stuck with `#admin` and the UI froze
+  // from the customer's perspective. We removed the injector, but
+  // anyone who has the broken URL bookmarked or open in a tab still
+  // sees the stale fragment. Strip it on mount so reloads come out
+  // clean. The Identity-token handler in lib/auth.js runs FIRST and
+  // already consumes any `#*_token=...` fragment, so we know by this
+  // point there's nothing valuable in `#admin`.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash === "#admin") {
+      try {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      } catch {}
+    }
+  }, []);
+
   // --- JOURNAL ROUTING (history API) ---
   // Real URLs, not hash fragments: the list lives at `/journal`,
   // each post at `/journal/<slug>`. Netlify's SPA fallback in
@@ -365,6 +389,8 @@ export function App() {
       title = `Your account · ${BRAND}`;
     } else if (view === "admin") {
       title = `Admin · ${BRAND}`;
+    } else if (view === "admin-order") {
+      title = `Order · Admin · ${BRAND}`;
     } else if (view === "checkout") {
       title = `Checkout · ${BRAND}`;
     }
@@ -951,6 +977,17 @@ export function App() {
               <AtSign size={16} strokeWidth={1.5} />
               <span>{t("nav.connect")}</span>
             </button>
+            {isAdmin && (
+              <button
+                onClick={() => setView("admin")}
+                className="hover:opacity-60 flex items-center gap-2"
+                style={{ color: "#B08842", fontWeight: 500 }}
+                aria-label="Open admin dashboard"
+                data-testid="nav-admin"
+              >
+                <span>Admin</span>
+              </button>
+            )}
             <button
               onClick={() => (user ? goAccount() : setAuthOpen(true))}
               className="hover:opacity-60 flex items-center gap-2"
@@ -1079,6 +1116,15 @@ export function App() {
               <button onClick={() => scrollTo("faq")} className="text-left">{t("nav.faq")}</button>
               <button onClick={() => scrollTo("shipping")} className="text-left">{t("nav.shipping")}</button>
               <button onClick={() => scrollTo("contact")} className="text-left">{t("nav.contact")}</button>
+              {isAdmin && (
+                <button
+                  onClick={() => { setView("admin"); setMobileNavOpen(false); }}
+                  className="text-left"
+                  style={{ color: "#B08842", fontWeight: 500 }}
+                >
+                  Admin dashboard
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1088,7 +1134,22 @@ export function App() {
       {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
-      {view === "admin" && isAdmin && <AdminView user={user} onBack={() => setView("home")} />}
+      {view === "admin" && isAdmin && (
+        <AdminView
+          user={user}
+          onBack={() => setView("home")}
+          onOpenOrder={(id) => { setAdminOrderId(id); setView("admin-order"); }}
+          onSignOut={handleSignOut}
+        />
+      )}
+      {view === "admin-order" && isAdmin && adminOrderId && (
+        <AdminOrderDetail
+          orderId={adminOrderId}
+          onBack={() => { setAdminOrderId(null); setView("admin"); }}
+          onViewSite={() => { setAdminOrderId(null); setView("home"); }}
+          onSignOut={handleSignOut}
+        />
+      )}
       {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
       </main>
 
@@ -1100,7 +1161,7 @@ export function App() {
           showing, the customer is in checkout, or Lusik is in
           the admin view (any of those is a focused context that
           shouldn't compete with shop-level nav). */}
-      {view !== "checkout" && view !== "admin" && !pdpStickyCtaShown && (
+      {view !== "checkout" && view !== "admin" && view !== "admin-order" && !pdpStickyCtaShown && (
         <MobileBottomNav
           view={view}
           cartCount={cart.reduce((n, i) => n + (i.qty || 0), 0)}

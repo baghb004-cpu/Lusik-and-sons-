@@ -95,6 +95,7 @@ export default async (req, context) => {
         o.subtotal_cents,
         o.total_cents,
         o.shipping_cents,
+        o.refunded_cents,
         o.carrier,
         o.tracking_number,
         o.estimated_ship_date,
@@ -103,8 +104,22 @@ export default async (req, context) => {
         o.social_consent,
         o.finished_photo_key,
         o.admin_notes,
+        o.admin_message,
+        o.admin_message_updated_at,
+        o.confirmed_at,
+        o.shipped_at,
         o.created_at,
-        COALESCE((SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id), 0)::int AS item_count
+        COALESCE((SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id), 0)::int AS item_count,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+              'product_key',  oi.product_key,
+              'product_name', oi.product_name,
+              'variant_label', oi.variant_label,
+              'custom_metadata', oi.custom_metadata
+           ) ORDER BY oi.created_at)
+           FROM order_items oi WHERE oi.order_id = o.id),
+          '[]'::json
+        ) AS item_summary
       FROM orders o
       ORDER BY o.created_at DESC
       LIMIT 200
@@ -166,6 +181,16 @@ export default async (req, context) => {
         : String(body.admin_notes).slice(0, 4000);
       updates.admin_notes = n || null;
     }
+    if ("admin_message" in body) {
+      // Public-facing note Lusik writes for the customer's order
+      // card. Capped tighter than admin_notes (1000 chars) because
+      // it's a short customer message, not a scratchpad. Distinct
+      // column so the internal/external trust boundary stays clear.
+      const m = body.admin_message === null
+        ? null
+        : String(body.admin_message).slice(0, 1000);
+      updates.admin_message = m || null;
+    }
 
     if (Object.keys(updates).length === 0) {
       return json(400, { error: "No updatable fields in body" });
@@ -180,22 +205,38 @@ export default async (req, context) => {
     // second time (e.g. after toggling back to "ready_to_ship"
     // and back) won't re-fire the email.
     const willBeShipped = updates.fulfillment_status === "shipped";
-    let stampShippedAt = false;
-    if (willBeShipped) {
-      const existing = await sql`SELECT shipped_at FROM orders WHERE id = ${id} LIMIT 1`;
+    // confirmed_at: first time fulfillment_status moves OFF the
+    // webhook default 'in_progress'. Stamped once, never reset.
+    let stampShippedAt   = false;
+    let stampConfirmedAt = false;
+    let stampMessageAt   = false;
+    if (willBeShipped || ("fulfillment_status" in updates) || ("admin_message" in updates)) {
+      const existing = await sql`SELECT shipped_at, confirmed_at, fulfillment_status, admin_message FROM orders WHERE id = ${id} LIMIT 1`;
       if (existing.length === 0) return json(404, { error: "Order not found" });
-      if (!existing[0].shipped_at) stampShippedAt = true;
+      if (willBeShipped && !existing[0].shipped_at) stampShippedAt = true;
+      if ("fulfillment_status" in updates
+          && !existing[0].confirmed_at
+          && existing[0].fulfillment_status === "in_progress"
+          && updates.fulfillment_status !== "in_progress") {
+        stampConfirmedAt = true;
+      }
+      if ("admin_message" in updates && (existing[0].admin_message ?? null) !== (updates.admin_message ?? null)) {
+        stampMessageAt = true;
+      }
     }
 
     // Use COALESCE so missing keys preserve existing values.
     const rows = await sql`
       UPDATE orders SET
-        fulfillment_status  = COALESCE(${updates.fulfillment_status  ?? null}, fulfillment_status),
-        carrier             = CASE WHEN ${'carrier' in updates} THEN ${updates.carrier ?? null} ELSE carrier END,
-        tracking_number     = CASE WHEN ${'tracking_number' in updates} THEN ${updates.tracking_number ?? null} ELSE tracking_number END,
-        estimated_ship_date = CASE WHEN ${'estimated_ship_date' in updates} THEN ${updates.estimated_ship_date ?? null}::date ELSE estimated_ship_date END,
-        admin_notes         = CASE WHEN ${'admin_notes' in updates} THEN ${updates.admin_notes ?? null} ELSE admin_notes END,
-        shipped_at          = CASE WHEN ${stampShippedAt} THEN now() ELSE shipped_at END
+        fulfillment_status       = COALESCE(${updates.fulfillment_status  ?? null}, fulfillment_status),
+        carrier                  = CASE WHEN ${'carrier' in updates} THEN ${updates.carrier ?? null} ELSE carrier END,
+        tracking_number          = CASE WHEN ${'tracking_number' in updates} THEN ${updates.tracking_number ?? null} ELSE tracking_number END,
+        estimated_ship_date      = CASE WHEN ${'estimated_ship_date' in updates} THEN ${updates.estimated_ship_date ?? null}::date ELSE estimated_ship_date END,
+        admin_notes              = CASE WHEN ${'admin_notes' in updates} THEN ${updates.admin_notes ?? null} ELSE admin_notes END,
+        admin_message            = CASE WHEN ${'admin_message' in updates} THEN ${updates.admin_message ?? null} ELSE admin_message END,
+        admin_message_updated_at = CASE WHEN ${stampMessageAt} THEN now() ELSE admin_message_updated_at END,
+        confirmed_at             = CASE WHEN ${stampConfirmedAt} THEN now() ELSE confirmed_at END,
+        shipped_at               = CASE WHEN ${stampShippedAt} THEN now() ELSE shipped_at END
       WHERE id = ${id}
       RETURNING *
     `;

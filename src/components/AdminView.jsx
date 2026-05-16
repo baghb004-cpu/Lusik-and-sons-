@@ -1,24 +1,29 @@
 // ============================================================
 // AdminView — Lusik's order dashboard + waitlists panel
 // ============================================================
-// Lists orders (with filtering by fulfillment_status), renders
-// one AdminOrderRow per. Also includes WaitlistsPanel inline
-// (per-product pending/notified counts + Notify buttons) and
-// a CSV-export of the orders table.
+// Searchable, filterable list of orders. Click a row to open
+// AdminOrderDetail. Top bar exposes View site / Sign out so
+// Lusik can leave the admin area cleanly without back-button
+// archaeology.
 //
-// MIRRORED FROM index.html (~line 8465).
+// Editing (status step buttons, tracking, admin message,
+// finished-photo upload, internal notes) lives in
+// AdminOrderDetail. Keeping the list lightweight lets a long
+// list scroll smoothly on Lusik's phone.
 // ============================================================
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { db } from "../lib/db.js";
 import { Skeleton } from "./Skeleton.jsx";
 import { AdminOrderRow } from "./AdminOrderRow.jsx";
 import { useToast } from "./ToastProvider.jsx";
+import { ADMIN_FILTERS } from "./adminStatusLabels.js";
 
-export function AdminView({ user, onBack }) {
+export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
   const toast = useToast();
   const [orders, setOrders] = useState(null); // null = loading
   const [filter, setFilter] = useState("all");
+  const [query, setQuery]   = useState("");
   // Waitlists summary — null while loading, [] when there are no signups
   // yet. Loaded once on mount; refreshed locally after each Notify click.
   const [waitlists, setWaitlists] = useState(null);
@@ -44,6 +49,7 @@ export function AdminView({ user, onBack }) {
     setWaitlists(items);
   }, []);
 
+  useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => { refreshWaitlists(); }, [refreshWaitlists]);
 
   const handleNotifyWaitlist = async (entry) => {
@@ -77,29 +83,66 @@ export function AdminView({ user, onBack }) {
     refreshWaitlists();
   };
 
-  useEffect(() => { refresh(); }, [refresh]);
+  // Pre-compute the lowercased search target for each order so the
+  // search predicate doesn't rebuild the string on every keystroke.
+  // Includes: order number, customer email, recipient name, ship-to
+  // city/state, every item's product name + variant + selected
+  // alphabet / layout / color refs / custom lines from custom_metadata.
+  const haystackByOrder = useMemo(() => {
+    const out = new Map();
+    for (const o of orders ?? []) {
+      const parts = [];
+      parts.push(o.order_number || "");
+      parts.push(o.customer_email || "");
+      if (o.shipping_address) {
+        parts.push(o.shipping_address.name || "");
+        parts.push(o.shipping_address.city || "");
+        parts.push(o.shipping_address.state ?? o.shipping_address.region ?? "");
+      }
+      if (o.tracking_number) parts.push(o.tracking_number);
+      const items = o.item_summary ?? o.order_items ?? [];
+      for (const it of items) {
+        parts.push(it.product_name || "");
+        parts.push(it.variant_label || "");
+        const m = it.custom_metadata || {};
+        parts.push(m.alphabet_key || "");
+        parts.push(m.layout_key || "");
+        parts.push(m.block_color_ref || "");
+        parts.push(m.letter_color_ref || "");
+        parts.push(m.custom_line_1 || "");
+        parts.push(m.custom_line_2 || "");
+        parts.push(m.color_preset_key || "");
+      }
+      out.set(o.id, parts.join(" ").toLowerCase());
+    }
+    return out;
+  }, [orders]);
 
-  // Tiny filter buttons — "all" plus the two most-actionable
-  // states for Lusik: in-progress (anything she still needs to
-  // touch) and shipped (where she might need to look up a
-  // tracking issue).
-  const filtered = (orders ?? []).filter((o) => {
-    if (filter === "all")        return true;
-    if (filter === "in_progress") return ["awaiting_lusik", "in_production", "quality_check", "ready_to_ship"].includes(o.fulfillment_status);
-    if (filter === "shipped")    return ["shipped", "delivered"].includes(o.fulfillment_status);
-    return true;
-  });
+  // Per-chip counts. Computed every render — cheap since the array
+  // is capped at 200 server-side and the filter predicates are
+  // O(1) per row.
+  const counts = useMemo(() => {
+    const out = {};
+    for (const f of ADMIN_FILTERS) {
+      out[f.key] = (orders ?? []).filter(f.match).length;
+    }
+    return out;
+  }, [orders]);
+
+  const activeFilter = ADMIN_FILTERS.find((f) => f.key === filter) ?? ADMIN_FILTERS[0];
+  const trimmedQuery = query.trim().toLowerCase();
+  const filtered = (orders ?? [])
+    .filter(activeFilter.match)
+    .filter((o) => {
+      if (!trimmedQuery) return true;
+      const hay = haystackByOrder.get(o.id) ?? "";
+      return hay.includes(trimmedQuery);
+    });
 
   // CSV export — built client-side from the already-loaded
   // orders so we don't add a new endpoint. Downloaded as
   // lusik-orders-YYYY-MM-DD.csv. Useful for bookkeeping or
-  // handing off to an accountant.
-  //
-  // Each cell is escaped per RFC 4180: wrap in double quotes
-  // and double up internal quotes. This handles commas, line
-  // breaks, and quote chars in customer-supplied fields like
-  // gift messages or admin notes without producing malformed
-  // rows.
+  // handing off to an accountant. Each cell is RFC-4180 escaped.
   const csvCell = (v) => {
     if (v === null || v === undefined) return "";
     const s = String(v);
@@ -125,7 +168,6 @@ export function AdminView({ user, onBack }) {
       }],
       ["Subtotal",   (o) => ((o.subtotal_cents ?? 0) / 100).toFixed(2)],
       ["Shipping",   (o) => ((o.shipping_cents ?? 0) / 100).toFixed(2)],
-      ["Tax",        (o) => ((o.tax_cents ?? 0) / 100).toFixed(2)],
       ["Total",      (o) => ((o.total_cents ?? 0) / 100).toFixed(2)],
       ["Carrier",    (o) => o.carrier ?? ""],
       ["Tracking",   (o) => o.tracking_number ?? ""],
@@ -152,40 +194,84 @@ export function AdminView({ user, onBack }) {
 
   return (
     <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
-      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-6">
-        ← Back to site
-      </button>
-      <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
+      {/* CROSS-NAV — clear way back to the customer site + sign-out.
+          Sits above the page title so Lusik never feels stuck in the
+          admin area. The old design hid this in a single "← Back"
+          link; the bar treatment matches how operational dashboards
+          typically expose their context switches. */}
+      <div className="flex items-center justify-between gap-3 mb-8 flex-wrap text-[0.65rem] tracking-[0.2em] uppercase">
+        <button
+          onClick={onBack}
+          className="opacity-70 hover:opacity-100 flex items-center gap-1.5"
+          aria-label="View customer site"
+        >
+          ← View site
+        </button>
+        <div className="flex items-center gap-4 opacity-80">
+          <span className="hidden sm:inline opacity-60">{user?.email}</span>
+          {onSignOut && (
+            <button onClick={onSignOut} className="opacity-70 hover:opacity-100" aria-label="Sign out">
+              Sign out
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between mb-6 flex-wrap gap-4">
         <div>
           <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Admin</p>
           <h1 className="font-display text-4xl lg:text-5xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Orders.</h1>
-          <p className="text-sm opacity-70 mt-1">{user?.email}</p>
         </div>
         <div className="flex gap-1.5 items-center flex-wrap">
-          {[
-            { key: "all",          label: "All" },
-            { key: "in_progress",  label: "In progress" },
-            { key: "shipped",      label: "Shipped" },
-          ].map((f) => (
-            <button key={f.key} onClick={() => setFilter(f.key)}
-              className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition"
-              style={{
-                background: filter === f.key ? "#1A1612" : "transparent",
-                color:      filter === f.key ? "#F5EFE3" : "rgba(26,22,18,0.7)",
-                border:     filter === f.key ? "1px solid #1A1612" : "1px solid rgba(26,22,18,0.2)",
-                fontWeight: 500,
-              }}>
-              {f.label}
-            </button>
-          ))}
-          <span className="opacity-30 mx-1 hidden sm:inline">|</span>
           <button onClick={exportCsv} disabled={!orders || orders.length === 0}
             className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:opacity-80 disabled:opacity-30"
             style={{ border: "1px solid rgba(26,22,18,0.2)", color: "#1A1612", fontWeight: 500 }}
             title="Download all orders as CSV (for bookkeeping / hand-off to an accountant)">
             ↓ CSV
           </button>
+          <button onClick={refresh} className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:opacity-80"
+            style={{ border: "1px solid rgba(26,22,18,0.2)", color: "#1A1612", fontWeight: 500 }}>
+            ↻ Refresh
+          </button>
         </div>
+      </div>
+
+      {/* SEARCH */}
+      <label className="block mb-4">
+        <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 block mb-1.5">Search</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Order #, customer name, email, alphabet, color, child name…"
+          className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+          style={{ border: "1px solid rgba(26,22,18,0.2)" }}
+        />
+      </label>
+
+      {/* FILTER CHIPS — full pipeline with per-chip counts. */}
+      <div className="flex gap-1.5 items-center flex-wrap mb-6">
+        {ADMIN_FILTERS.map((f) => {
+          const active = filter === f.key;
+          const count  = counts[f.key] ?? 0;
+          return (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition"
+              style={{
+                background: active ? "#1A1612" : "transparent",
+                color:      active ? "#F5EFE3" : "rgba(26,22,18,0.7)",
+                border:     active ? "1px solid #1A1612" : "1px solid rgba(26,22,18,0.2)",
+                fontWeight: 500,
+                opacity: count === 0 && !active ? 0.45 : 1,
+              }}
+            >
+              {f.label}
+              <span className="ml-1.5 opacity-70">({count})</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Waitlists panel — one row per product with at least one signup.
@@ -242,12 +328,14 @@ export function AdminView({ user, onBack }) {
         <p className="text-sm opacity-60 italic">
           {orders.length === 0
             ? "No orders yet. When the first paid checkout lands, it'll appear here."
-            : `No orders match the "${filter.replace(/_/g, " ")}" filter.`}
+            : trimmedQuery
+              ? `No orders match "${query}" in the "${activeFilter.label}" filter.`
+              : `No orders in the "${activeFilter.label}" filter.`}
         </p>
       ) : (
         <div className="space-y-3">
           {filtered.map((o) => (
-            <AdminOrderRow key={o.id} order={o} onSaved={refresh} />
+            <AdminOrderRow key={o.id} order={o} onOpen={onOpenOrder} />
           ))}
         </div>
       )}

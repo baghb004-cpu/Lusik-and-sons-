@@ -132,6 +132,18 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent      TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_cents             INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_reminder_opt_in       BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_reminder_sent_at      TIMESTAMPTZ;
+-- Public note Lusik writes from the admin panel that the customer
+-- sees on their order card. Distinct from admin_notes (internal-only).
+-- admin_message_updated_at gets stamped automatically whenever the
+-- message text changes, so the customer's UI can render "Updated 2h ago".
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_message              TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_message_updated_at   TIMESTAMPTZ;
+-- Stamped on the first transition from the webhook's default
+-- 'in_progress' to any other fulfillment_status (typically
+-- 'awaiting_lusik' via the admin "Confirm order" button). Lets us
+-- distinguish "just paid, Lusik hasn't seen it yet" from "Lusik has
+-- confirmed and started working" without a separate flag.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS confirmed_at               TIMESTAMPTZ;
 
 -- Partial index so the daily reminder job can scan only the small set
 -- of pending reminders rather than the whole orders table.

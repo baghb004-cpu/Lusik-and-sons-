@@ -46,7 +46,10 @@ export default async (req, context) => {
       o.tracking_number,
       o.estimated_ship_date,
       o.shipped_at,
+      o.confirmed_at,
       o.finished_photo_key,
+      o.admin_message,
+      o.admin_message_updated_at,
       o.gift,
       o.created_at,
       COALESCE(
