@@ -352,16 +352,25 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: #1A1612;
-    color: #F5EFE3;
+    /* Glass pill treatment — see .lg-island for the same tokens.
+       This rule predates the system, so apply tokens inline rather
+       than swapping the class. */
+    background: var(--lg-tint-island, rgba(255,251,243,0.72));
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 18px rgba(26,22,18,0.22), 0 2px 4px rgba(26,22,18,0.12);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+            backdrop-filter: blur(18px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight, rgba(255,255,255,0.6)),
+      inset 0 -1px 0 0 var(--lg-edge-dark, rgba(26,22,18,0.08)),
+      0 14px 32px -10px rgba(26,22,18,0.22),
+      0 4px 8px -2px rgba(26,22,18,0.10);
     z-index: 39;  /* one below text-us widget (40), since text-us is more important */
     transition: opacity 240ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
     cursor: pointer;
-    border: 1px solid rgba(245,239,227,0.12);
+    border: 1px solid var(--lg-border-strong, rgba(255,255,255,0.55));
     font-family: inherit;
     /* Hidden state — both opacity AND pointer-events so it can't be clicked
        while invisible (some screen-reader users would otherwise reach it). */
@@ -376,7 +385,11 @@
   }
   .back-to-top:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(26,22,18,0.28), 0 2px 6px rgba(26,22,18,0.15);
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight, rgba(255,255,255,0.6)),
+      inset 0 -1px 0 0 var(--lg-edge-dark, rgba(26,22,18,0.08)),
+      0 18px 38px -12px rgba(26,22,18,0.28),
+      0 6px 12px -3px rgba(26,22,18,0.15);
   }
   .back-to-top:focus-visible {
     outline: 2px solid #B08842;
@@ -757,4 +770,502 @@
        structural ones thin and gray. */
     [style*="background"] { background: transparent !important; }
     [style*="border"] { border-color: #CCC !important; }
+  }
+
+  /* ============================================================
+     LIQUID GLASS — translucent surface system (Apple-style 2026)
+     ============================================================
+     Goal: warm, premium, hand-made-brand-appropriate frosted
+     glass. NOT iOS-Settings-blue, NOT crypto-dashboard-cold.
+
+     Layer model (every glass surface has these layers stacked
+     from back to front):
+
+       0. The page behind the glass        ← what gets blurred
+       1. backdrop-filter: blur+saturate    ← the frost
+       2. semi-translucent cream tint       ← the "glass"
+       3. soft top-edge highlight (::before)← the "shine"
+       4. content                           ← what the user reads
+       5. inner 1px white border            ← the "edge bevel"
+       6. soft drop shadow                  ← the "depth"
+
+     Fallback chain:
+       - @supports not (backdrop-filter): bumps tint to ~95%
+         opacity so legibility holds without blur. Looks like a
+         frosted card, not a clear pane.
+       - prefers-reduced-transparency: opaque surface in brand
+         cream. Same shadow + border, no shine animation.
+       - prefers-reduced-motion: removes the shine-sweep animation
+         that fires on hover/tap. Static highlight remains.
+       - prefers-contrast: more, .lg-* surfaces upgrade to opaque
+         + stronger border so OS high-contrast users aren't asked
+         to read through translucency.
+
+     Class taxonomy:
+       .lg-panel       — flat frosted surface (cards, drawers, modals)
+       .lg-panel-tall  — same, with stronger blur for big surfaces
+       .lg-pill        — small radius pill (chips, badges, toasts)
+       .lg-island      — fully floating element with bigger shadow
+                          (mobile bottom nav, back-to-top, text-us)
+       .lg-button      — interactive surface with hover/press
+       .lg-button-ink  — same, dark-ink primary action
+       .lg-input       — frosted input field
+       .lg-shine       — adds the animated specular sweep on hover/focus
+                          (applied additively to any .lg-* surface)
+
+     Tokens — tweak these to retune the whole system at once.
+     ============================================================ */
+
+  :root {
+    /* Light-theme glass tokens. Cream tint at low alpha so the
+       page color bleeds through. Border is a soft white inset
+       so the surface reads as physical glass with a bevel edge,
+       not a flat card. */
+    --lg-tint:          rgba(255, 251, 243, 0.55);
+    --lg-tint-strong:   rgba(255, 251, 243, 0.78);
+    --lg-tint-island:   rgba(255, 251, 243, 0.72);
+    --lg-border:        rgba(255, 255, 255, 0.55);
+    --lg-border-strong: rgba(255, 255, 255, 0.85);
+    --lg-edge-dark:     rgba(26, 22, 18, 0.06);
+    --lg-highlight:     rgba(255, 255, 255, 0.6);
+    --lg-shine:         linear-gradient(
+                          180deg,
+                          rgba(255, 255, 255, 0.35) 0%,
+                          rgba(255, 255, 255, 0.10) 32%,
+                          rgba(255, 255, 255, 0) 60%
+                        );
+    --lg-shadow:        0 14px 40px -12px rgba(26, 22, 18, 0.18),
+                        0 4px 12px -2px rgba(26, 22, 18, 0.08);
+    --lg-shadow-tight:  0 6px 18px -6px rgba(26, 22, 18, 0.16),
+                        0 2px 4px -1px rgba(26, 22, 18, 0.06);
+    --lg-shadow-island: 0 22px 56px -16px rgba(26, 22, 18, 0.28),
+                        0 6px 16px -4px rgba(26, 22, 18, 0.12);
+    --lg-blur:          18px;
+    --lg-blur-strong:   28px;
+    --lg-radius-sm:     12px;
+    --lg-radius:        18px;
+    --lg-radius-lg:     22px;
+    --lg-radius-island: 28px;
+  }
+
+  :root[data-theme="dark"] {
+    /* Dark-theme glass: warm dark tint, soft pale inset highlight
+       so the bevel still reads. Crushed shadows because the page
+       behind is already dark. */
+    --lg-tint:          rgba(31, 24, 19, 0.55);
+    --lg-tint-strong:   rgba(31, 24, 19, 0.78);
+    --lg-tint-island:   rgba(31, 24, 19, 0.72);
+    --lg-border:        rgba(245, 239, 227, 0.16);
+    --lg-border-strong: rgba(245, 239, 227, 0.32);
+    --lg-edge-dark:     rgba(0, 0, 0, 0.50);
+    --lg-highlight:     rgba(245, 239, 227, 0.18);
+    --lg-shine:         linear-gradient(
+                          180deg,
+                          rgba(245, 239, 227, 0.10) 0%,
+                          rgba(245, 239, 227, 0.04) 32%,
+                          rgba(245, 239, 227, 0) 60%
+                        );
+    --lg-shadow:        0 18px 48px -12px rgba(0, 0, 0, 0.55),
+                        0 6px 14px -2px rgba(0, 0, 0, 0.35);
+    --lg-shadow-tight:  0 8px 22px -8px rgba(0, 0, 0, 0.55),
+                        0 2px 6px -1px rgba(0, 0, 0, 0.35);
+    --lg-shadow-island: 0 28px 64px -16px rgba(0, 0, 0, 0.6),
+                        0 10px 22px -4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ---------- BASE PANEL ---------- */
+  .lg-panel,
+  .lg-panel-tall,
+  .lg-pill,
+  .lg-island,
+  .lg-button,
+  .lg-button-ink,
+  .lg-input {
+    position: relative;
+    isolation: isolate;  /* contain the ::before highlight inside the border-radius */
+    background: var(--lg-tint);
+    border: 1px solid var(--lg-border);
+    border-radius: var(--lg-radius);
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      inset 0 -1px 0 0 var(--lg-edge-dark),
+      var(--lg-shadow);
+    -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(160%);
+            backdrop-filter: blur(var(--lg-blur)) saturate(160%);
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  }
+
+  /* The top-edge specular highlight. Pseudo-element so the
+     element's own children sit above it and the tint reads
+     evenly underneath. Pointer-events off so it never steals
+     touches from the button it's painted on. */
+  .lg-panel::before,
+  .lg-panel-tall::before,
+  .lg-pill::before,
+  .lg-island::before,
+  .lg-button::before,
+  .lg-button-ink::before,
+  .lg-input::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--lg-shine);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Make sure direct children stack ABOVE the ::before shine. */
+  .lg-panel > *,
+  .lg-panel-tall > *,
+  .lg-pill > *,
+  .lg-island > *,
+  .lg-button > *,
+  .lg-button-ink > *,
+  .lg-input > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---------- VARIANTS ---------- */
+  .lg-panel-tall {
+    -webkit-backdrop-filter: blur(var(--lg-blur-strong)) saturate(180%);
+            backdrop-filter: blur(var(--lg-blur-strong)) saturate(180%);
+    border-radius: var(--lg-radius-lg);
+  }
+
+  .lg-pill {
+    border-radius: 999px;
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      inset 0 -1px 0 0 var(--lg-edge-dark),
+      var(--lg-shadow-tight);
+  }
+
+  .lg-island {
+    background: var(--lg-tint-island);
+    border-radius: var(--lg-radius-island);
+    border-color: var(--lg-border-strong);
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      inset 0 -1px 0 0 var(--lg-edge-dark),
+      var(--lg-shadow-island);
+  }
+
+  /* ---------- INTERACTIVE ---------- */
+  .lg-button {
+    cursor: pointer;
+    border-radius: var(--lg-radius-sm);
+  }
+  .lg-button:hover {
+    background: var(--lg-tint-strong);
+    border-color: var(--lg-border-strong);
+    transform: translateY(-1px);
+  }
+  .lg-button:active {
+    transform: translateY(0);
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-edge-dark),
+      inset 0 -1px 0 0 var(--lg-highlight),
+      var(--lg-shadow-tight);
+  }
+  .lg-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Primary "ink" action — dark base under the glass so it
+     reads as the call-to-action while staying part of the
+     glass language. The shine on the dark version is keyed
+     warm so it doesn't go cold-blue. */
+  .lg-button-ink {
+    cursor: pointer;
+    border-radius: var(--lg-radius-sm);
+    background: rgba(26, 22, 18, 0.88);
+    color: var(--text-on-ink);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4),
+      var(--lg-shadow);
+  }
+  :root[data-theme="dark"] .lg-button-ink {
+    background: rgba(245, 239, 227, 0.92);
+    color: #1A1612;
+    border-color: rgba(0, 0, 0, 0.18);
+  }
+  .lg-button-ink::before {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.04) 35%,
+      rgba(255, 255, 255, 0) 65%
+    );
+  }
+  :root[data-theme="dark"] .lg-button-ink::before {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.20) 0%,
+      rgba(255, 255, 255, 0.06) 35%,
+      rgba(255, 255, 255, 0) 65%
+    );
+  }
+  .lg-button-ink:hover {
+    background: rgba(26, 22, 18, 0.94);
+    transform: translateY(-1px);
+  }
+  :root[data-theme="dark"] .lg-button-ink:hover {
+    background: rgba(245, 239, 227, 0.98);
+  }
+  .lg-button-ink:active {
+    transform: translateY(0);
+  }
+  .lg-button-ink:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .lg-button-ink:disabled,
+  .lg-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ---------- INPUT ---------- */
+  .lg-input {
+    border-radius: var(--lg-radius-sm);
+    background: var(--lg-tint-strong);  /* inputs need higher legibility */
+  }
+  .lg-input:focus-within,
+  .lg-input:focus {
+    border-color: var(--accent);
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      inset 0 -1px 0 0 var(--lg-edge-dark),
+      var(--lg-shadow),
+      0 0 0 3px var(--accent-soft);
+  }
+
+  /* ---------- SHINE ANIMATION (additive) ---------- */
+  /* Sweep a soft white band diagonally across the surface on
+     hover/focus. Lasts 900ms, then resets off-screen. Uses a
+     second pseudo-element so the static ::before highlight stays
+     intact underneath. Animation kept gentle so it reads as a
+     premium-product cue, not a "fake-AI-glow" cliché. */
+  .lg-shine {
+    overflow: hidden;
+  }
+  .lg-shine::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -75%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 70%
+    );
+    transform: translateX(0);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 0;
+  }
+  .lg-shine:hover::after,
+  .lg-shine:focus-visible::after {
+    opacity: 1;
+    animation: lg-shine-sweep 0.9s ease-out;
+  }
+  @keyframes lg-shine-sweep {
+    0%   { transform: translateX(0%); }
+    100% { transform: translateX(350%); }
+  }
+
+  /* ---------- ACCENTED VARIANTS ---------- */
+  /* Sage callout (e.g. "A note from Lusik" on the customer
+     order card). Same shape, sage tint underneath. */
+  .lg-panel-sage {
+    background: rgba(61, 90, 61, 0.10);
+    border-color: rgba(61, 90, 61, 0.30);
+  }
+  :root[data-theme="dark"] .lg-panel-sage {
+    background: rgba(111, 168, 111, 0.14);
+    border-color: rgba(111, 168, 111, 0.40);
+  }
+
+  /* Gold callout (e.g. waitlists panel, admin pipeline card). */
+  .lg-panel-gold {
+    background: rgba(176, 136, 66, 0.10);
+    border-color: rgba(176, 136, 66, 0.30);
+  }
+  :root[data-theme="dark"] .lg-panel-gold {
+    background: rgba(201, 166, 120, 0.14);
+    border-color: rgba(201, 166, 120, 0.40);
+  }
+
+  /* Red callout (refund banner). Used very rarely. */
+  .lg-panel-warn {
+    background: rgba(139, 44, 44, 0.08);
+    border-color: rgba(139, 44, 44, 0.28);
+  }
+  :root[data-theme="dark"] .lg-panel-warn {
+    background: rgba(209, 116, 116, 0.10);
+    border-color: rgba(209, 116, 116, 0.34);
+  }
+
+  /* ---------- FALLBACKS ---------- */
+  /* No backdrop-filter support → bump the tint to nearly opaque
+     so legibility doesn't depend on the blur. Keeps the bevel +
+     shadow so the surface still reads as glass-ish, just
+     without the see-through. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .lg-panel, .lg-panel-tall, .lg-pill, .lg-island, .lg-button, .lg-input {
+      background: rgba(255, 251, 243, 0.96);
+    }
+    :root[data-theme="dark"] .lg-panel,
+    :root[data-theme="dark"] .lg-panel-tall,
+    :root[data-theme="dark"] .lg-pill,
+    :root[data-theme="dark"] .lg-island,
+    :root[data-theme="dark"] .lg-button,
+    :root[data-theme="dark"] .lg-input {
+      background: rgba(31, 24, 19, 0.96);
+    }
+  }
+
+  /* User asked the OS to reduce translucency (iOS / macOS
+     accessibility setting). Honor it: opaque surfaces, no blur,
+     keep shadow + border so the layout still reads. */
+  @media (prefers-reduced-transparency: reduce) {
+    .lg-panel, .lg-panel-tall, .lg-pill, .lg-island, .lg-button, .lg-input {
+      background: var(--bg-surface);
+      -webkit-backdrop-filter: none;
+              backdrop-filter: none;
+    }
+    .lg-panel::before, .lg-panel-tall::before, .lg-pill::before,
+    .lg-island::before, .lg-button::before, .lg-input::before {
+      display: none;
+    }
+  }
+
+  /* User asked the OS to reduce motion. Disable the shine sweep
+     and the lift-on-hover. Hovers still color-shift so the
+     button reads as interactive. */
+  @media (prefers-reduced-motion: reduce) {
+    .lg-button:hover, .lg-button-ink:hover { transform: none; }
+    .lg-shine::after { display: none; }
+  }
+
+  /* User asked the OS for more contrast. Opaque surfaces +
+     stronger borders so the boundary between the panel and the
+     page is unmistakable. */
+  @media (prefers-contrast: more) {
+    .lg-panel, .lg-panel-tall, .lg-pill, .lg-island, .lg-button, .lg-input {
+      background: var(--bg-surface);
+      border-color: var(--border-strong);
+      -webkit-backdrop-filter: none;
+              backdrop-filter: none;
+    }
+    .lg-panel::before, .lg-panel-tall::before, .lg-pill::before,
+    .lg-island::before, .lg-button::before, .lg-input::before {
+      display: none;
+    }
+  }
+
+  /* ---------- PRINT ---------- */
+  /* No glass in print — strip down to a thin border so toner
+     isn't wasted on shadows the printer can't render anyway. */
+  @media print {
+    .lg-panel, .lg-panel-tall, .lg-pill, .lg-island, .lg-button, .lg-input {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: 1px solid #CCC !important;
+      -webkit-backdrop-filter: none !important;
+              backdrop-filter: none !important;
+    }
+    .lg-panel::before, .lg-panel-tall::before, .lg-pill::before,
+    .lg-island::before, .lg-button::before, .lg-input::before {
+      display: none !important;
+    }
+  }
+
+  /* Bottom nav edge case — when .lg-panel-tall is pinned flush
+     to the viewport bottom, the rounded corners would look
+     wrong against the screen edge. Square the bottom corners +
+     drop the bottom border + suppress the bottom shadow so the
+     bar reads as a horizon line, not a floating chip. */
+  .lg-bottom-bar {
+    border-radius: 16px 16px 0 0;
+    border-bottom-width: 0;
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      0 -8px 24px -10px rgba(26, 22, 18, 0.18);
+  }
+  :root[data-theme="dark"] .lg-bottom-bar {
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      0 -10px 28px -10px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Top nav edge case — mirror of .lg-bottom-bar but pinned to
+     the top. Squares the top corners + drops the top border +
+     replaces the shadow with a soft downward bleed. */
+  .lg-top-bar {
+    border-radius: 0 0 16px 16px;
+    border-top-width: 0;
+    box-shadow:
+      inset 0 -1px 0 0 var(--lg-edge-dark),
+      0 10px 28px -10px rgba(26, 22, 18, 0.16);
+  }
+  :root[data-theme="dark"] .lg-top-bar {
+    box-shadow:
+      inset 0 -1px 0 0 var(--lg-edge-dark),
+      0 12px 30px -10px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Scrim that sits BEHIND every glass drawer / modal. Slightly
+     blurred so the page behind feels pushed back, plus a soft
+     warm tint instead of pure black so the brand doesn't go cold
+     when a modal opens. */
+  .lg-scrim {
+    background: rgba(26, 22, 18, 0.32);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+            backdrop-filter: blur(8px) saturate(120%);
+  }
+  :root[data-theme="dark"] .lg-scrim {
+    background: rgba(0, 0, 0, 0.58);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .lg-scrim { background: rgba(26, 22, 18, 0.55); }
+    :root[data-theme="dark"] .lg-scrim { background: rgba(0, 0, 0, 0.75); }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .lg-scrim {
+      background: rgba(26, 22, 18, 0.75);
+      -webkit-backdrop-filter: none;
+              backdrop-filter: none;
+    }
+  }
+
+  /* Drawer edge — the cart slides in from the right edge. The
+     panel hugs the right viewport edge so the left edge is what
+     reads as "the surface coming in". Square the right side,
+     keep rounded left side, drop the right border. */
+  .lg-drawer {
+    border-radius: var(--lg-radius-lg) 0 0 var(--lg-radius-lg);
+    border-right-width: 0;
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      inset 1px 0 0 0 var(--lg-highlight),
+      -16px 0 48px -16px rgba(26, 22, 18, 0.28),
+      -4px 0 12px -4px rgba(26, 22, 18, 0.12);
+  }
+  :root[data-theme="dark"] .lg-drawer {
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      inset 1px 0 0 0 var(--lg-highlight),
+      -20px 0 56px -16px rgba(0, 0, 0, 0.6),
+      -6px 0 14px -4px rgba(0, 0, 0, 0.4);
   }

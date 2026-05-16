@@ -224,13 +224,14 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
         </div>
         <div className="flex gap-1.5 items-center flex-wrap">
           <button onClick={exportCsv} disabled={!orders || orders.length === 0}
-            className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:opacity-80 disabled:opacity-30"
-            style={{ border: "1px solid rgba(26,22,18,0.2)", color: "#1A1612", fontWeight: 500 }}
+            className="lg-button lg-pill px-3 py-1.5 text-[0.6rem] tracking-[0.2em] uppercase"
+            style={{ color: "var(--text-primary)", fontWeight: 500 }}
             title="Download all orders as CSV (for bookkeeping / hand-off to an accountant)">
             ↓ CSV
           </button>
-          <button onClick={refresh} className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition hover:opacity-80"
-            style={{ border: "1px solid rgba(26,22,18,0.2)", color: "#1A1612", fontWeight: 500 }}>
+          <button onClick={refresh}
+            className="lg-button lg-pill px-3 py-1.5 text-[0.6rem] tracking-[0.2em] uppercase"
+            style={{ color: "var(--text-primary)", fontWeight: 500 }}>
             ↻ Refresh
           </button>
         </div>
@@ -239,14 +240,15 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
       {/* SEARCH */}
       <label className="block mb-4">
         <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 block mb-1.5">Search</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Order #, customer name, email, alphabet, color, child name…"
-          className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
-          style={{ border: "1px solid rgba(26,22,18,0.2)" }}
-        />
+        <div className="lg-input">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Order #, customer name, email, alphabet, color, child name…"
+            className="w-full bg-transparent outline-none px-3 py-2.5 text-sm"
+          />
+        </div>
       </label>
 
       {/* FILTER CHIPS — full pipeline with per-chip counts. */}
@@ -258,13 +260,10 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className="px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase transition"
+              className={(active ? "lg-button-ink" : "lg-pill lg-button") + " px-3 py-1.5 text-[0.6rem] tracking-[0.2em] uppercase"}
               style={{
-                background: active ? "#1A1612" : "transparent",
-                color:      active ? "#F5EFE3" : "rgba(26,22,18,0.7)",
-                border:     active ? "1px solid #1A1612" : "1px solid rgba(26,22,18,0.2)",
                 fontWeight: 500,
-                opacity: count === 0 && !active ? 0.45 : 1,
+                opacity: count === 0 && !active ? 0.55 : 1,
               }}
             >
               {f.label}
@@ -278,7 +277,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
           Only renders when there's something to show; stays out of the
           way otherwise so Lusik's main view is still orders. */}
       {Array.isArray(waitlists) && waitlists.length > 0 && (
-        <div className="mb-8 p-5" style={{ border: "1px solid rgba(176,136,66,0.3)", background: "rgba(176,136,66,0.05)" }}>
+        <div className="lg-panel lg-panel-gold mb-8 p-5">
           <div className="flex items-baseline justify-between mb-3">
             <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#B08842", fontWeight: 600 }}>Waitlists</p>
             <p className="text-[0.65rem] opacity-60 italic">Click Notify when a product goes live.</p>

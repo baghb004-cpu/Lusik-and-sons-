@@ -159,16 +159,14 @@ export function PolicyModal({ policyKey, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-8"
-      style={{ background: "rgba(26,22,18,0.55)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-8 lg-scrim"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby={`policy-${policyKey}-title`}
     >
       <div
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col"
-        style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}
+        className="lg-panel-tall w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

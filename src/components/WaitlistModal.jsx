@@ -67,8 +67,8 @@ export function WaitlistModal({ product, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Waitlist for ${product.name}`}>
-      <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.55)" }} />
-      <div className="relative w-full max-w-md fade-in p-6 lg:p-8" style={{ background: "var(--bg-page)", border: "1px solid var(--border-strong)" }} onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-0 lg-scrim" />
+      <div className="lg-panel-tall relative w-full max-w-md fade-in p-6 lg:p-8" onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} aria-label="Close" className="absolute top-3 right-3 opacity-50 hover:opacity-100 transition">
           <X size={18} />
         </button>

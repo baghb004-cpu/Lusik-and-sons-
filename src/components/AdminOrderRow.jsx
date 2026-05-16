@@ -43,8 +43,7 @@ export function AdminOrderRow({ order, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen?.(order.id)}
-      className="w-full p-5 lg:p-6 text-left transition hover:bg-[rgba(176,136,66,0.04)] focus:outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
-      style={{ border: "1px solid rgba(26,22,18,0.12)" }}
+      className="lg-button lg-shine w-full p-5 lg:p-6 text-left"
       aria-label={`Open order ${order.order_number}`}
     >
       <div className="flex items-start justify-between gap-4">

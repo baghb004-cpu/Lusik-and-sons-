@@ -123,7 +123,7 @@ export function OrderCard({ order, onReorder }) {
   }) : "";
 
   return (
-    <div className="p-5 lg:p-6" style={{ border: "1px solid rgba(26,22,18,0.12)" }}>
+    <div className="lg-panel p-5 lg:p-6">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <p className="font-display text-lg" style={{ fontWeight: 500 }}>{order.order_number}</p>
@@ -147,7 +147,7 @@ export function OrderCard({ order, onReorder }) {
         const refundedFmt  = (order.refunded_cents / 100).toFixed(2);
         const remainingFmt = ((order.total_cents - order.refunded_cents) / 100).toFixed(2);
         return (
-          <div className="mb-4 p-3" style={{ background: "rgba(139,44,44,0.06)", border: "1px solid rgba(139,44,44,0.25)" }}>
+          <div className="lg-panel lg-panel-warn mb-4 p-3">
             <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1.5" style={{ color: "#8B2C2C", fontWeight: 600 }}>
               {isFull ? "Refunded" : "Partial refund"}
             </p>
@@ -175,7 +175,7 @@ export function OrderCard({ order, onReorder }) {
           context ("running 2 days late", "need to double-check
           your address"). Empty/null means no message yet. */}
       {order.admin_message && (
-        <div className="mb-4 p-3 leading-relaxed" style={{ background: "rgba(61,90,61,0.06)", border: "1px solid rgba(61,90,61,0.30)" }}>
+        <div className="lg-panel lg-panel-sage mb-4 p-3 leading-relaxed">
           <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1.5 flex items-baseline justify-between gap-2" style={{ color: "#3D5A3D", fontWeight: 600 }}>
             <span>A note from Lusik</span>
             {order.admin_message_updated_at && (

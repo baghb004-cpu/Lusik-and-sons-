@@ -200,7 +200,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
       </div>
 
       {/* PIPELINE STEPS — the Domino's-tracker control surface */}
-      <section className="mt-8 mb-10 p-5" style={{ border: "1px solid rgba(176,136,66,0.3)", background: "rgba(176,136,66,0.04)" }}>
+      <section className="lg-panel lg-panel-gold mt-8 mb-10 p-5">
         <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>Status</p>
         <ol className="flex items-center gap-1 sm:gap-2 mb-4 overflow-x-auto pb-1">
           {STAGES.map((s, i) => {
@@ -226,8 +226,8 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
             <button
               onClick={() => advanceTo(stepNext, STATUS_LABEL[stepNext])}
               disabled={savingStep}
-              className="px-4 py-2.5 text-[0.65rem] tracking-[0.2em] uppercase transition disabled:opacity-50"
-              style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500 }}
+              className="lg-button-ink lg-shine px-4 py-2.5 text-[0.65rem] tracking-[0.2em] uppercase"
+              style={{ fontWeight: 500 }}
               data-testid="admin-step-next"
             >
               {savingStep ? "Updating…" : (
@@ -245,7 +245,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
           {!stepNext && stageIndex >= 0 && (
             <p className="text-xs opacity-60 italic self-center">This order is at the end of the pipeline.</p>
           )}
-          <label className="inline-flex items-center gap-2 px-3 py-2 text-[0.6rem] tracking-[0.2em] uppercase" style={{ border: "1px solid rgba(26,22,18,0.2)" }}>
+          <label className="lg-pill inline-flex items-center gap-2 px-3 py-1.5 text-[0.6rem] tracking-[0.2em] uppercase">
             <span className="opacity-70">Or jump to:</span>
             <select
               value={status}
@@ -315,7 +315,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
 
       {/* GIFT OPTIONS — show prominently because they affect packing */}
       {order.gift?.is_gift && (
-        <section className="mb-8 p-4" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
+        <section className="lg-panel lg-panel-gold mb-8 p-4">
           <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-2" style={{ color: "#B08842" }}>This is a gift</p>
           {order.gift.message && (
             <p className="text-sm leading-relaxed italic mb-2" style={{ background: "var(--bg-surface)", padding: "0.5rem 0.75rem", border: "1px solid var(--border-default)" }}>
@@ -368,7 +368,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
       )}
 
       {/* SHIPPING + INTERNAL FORM */}
-      <section className="mb-10 p-5" style={{ border: "1px solid rgba(26,22,18,0.10)" }}>
+      <section className="lg-panel mb-10 p-5">
         <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60 mb-4">Shipping & internal</p>
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="block">
@@ -401,8 +401,8 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
 
         <div className="mt-5 pt-4 flex items-center justify-end" style={{ borderTop: "1px solid rgba(26,22,18,0.06)" }}>
           <button onClick={handleFormSave} disabled={savingForm}
-            className="px-5 py-2.5 text-[0.65rem] tracking-[0.2em] uppercase transition disabled:opacity-50"
-            style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500 }}>
+            className="lg-button-ink lg-shine px-5 py-2.5 text-[0.65rem] tracking-[0.2em] uppercase"
+            style={{ fontWeight: 500 }}>
             {savingForm ? "Saving…" : "Save changes"}
           </button>
         </div>
@@ -427,8 +427,8 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
           <div className="flex-1 min-w-[200px]">
             <input ref={photoInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePhoto} className="hidden" />
             <button onClick={() => photoInputRef.current?.click()} disabled={photoBusy}
-              className="px-4 py-2 text-[0.65rem] tracking-[0.2em] uppercase"
-              style={{ background: "#1A1612", color: "#F5EFE3", fontWeight: 500, opacity: photoBusy ? 0.5 : 1 }}>
+              className="lg-button-ink lg-shine px-4 py-2 text-[0.65rem] tracking-[0.2em] uppercase"
+              style={{ fontWeight: 500 }}>
               {photoBusy ? "Uploading…" : (photoUrl ? "Replace photo" : "Upload photo")}
             </button>
           </div>

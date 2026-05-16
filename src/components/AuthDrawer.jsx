@@ -104,10 +104,9 @@ export function AuthDrawer({ onClose, onAuthed }) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
-      <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.4)" }} />
+      <div className="absolute inset-0 lg-scrim" />
       <div
-        className="relative w-full max-w-md drawer-in flex flex-col overflow-y-auto"
-        style={{ background: "var(--bg-page)" }}
+        className="lg-panel-tall lg-drawer relative w-full max-w-md drawer-in flex flex-col overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

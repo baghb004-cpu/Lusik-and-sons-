@@ -27,14 +27,15 @@ export function MobileBottomNav({ view, cartCount, onHome, onShop, onCart, onAcc
   const labelCls = "text-[0.55rem] tracking-[0.12em] uppercase mt-1";
   const btnCls   = "flex-1 flex flex-col items-center justify-center py-2 px-1 transition";
 
+  // Flush-to-bottom frosted bar (NOT a floating island) — keeps
+  // the layout math in src/styles/index.css for stacked floating
+  // widgets (back-to-top, text-us, active-order banner) unchanged.
+  // The .lg-panel-tall + lg-bottom-bar combo gives the iOS-26-style
+  // frosted bottom bar look without floating the surface.
   return (
     <nav
-      className="lg:hidden fixed bottom-0 inset-x-0 z-30 theme-surface"
+      className="lg-panel-tall lg-bottom-bar lg:hidden fixed bottom-0 inset-x-0 z-30 theme-surface"
       style={{
-        background: "var(--bg-page-90)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-        borderTop: "1px solid var(--border-default)",
         paddingBottom: "env(safe-area-inset-bottom, 0)",
       }}
       aria-label="Bottom navigation"
