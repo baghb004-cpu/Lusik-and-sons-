@@ -259,8 +259,8 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
       className="aspect-square w-full"
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${GRID}, 1fr)`,
-        gridTemplateRows: `repeat(${GRID}, 1fr)`,
+        gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${GRID}, minmax(0, 1fr))`,
         // Gap doubles as the visible grid line between cells: the
         // container's grid-line color shows through the 1px gap, so
         // every cell has a clean grey separator on its right and
