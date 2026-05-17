@@ -69,7 +69,7 @@ export async function sendEmail({ to, subject, html, text }) {
     console.warn("[email] RESEND_API_KEY not set; skipping send to", to);
     return false;
   }
-  const from = process.env.RESEND_FROM_EMAIL || "Lusik & Sons <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM_EMAIL || "Lusik & Sons <hello@lusikandsons.com>";
   try {
     const res = await fetch(RESEND_API_URL, {
       method: "POST",
