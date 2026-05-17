@@ -15,7 +15,7 @@ import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { json }        from "./_lib/json.mjs";
 
 export default async (req, context) => {
-  const auth = requireUser(context);
+  const auth = requireUser(req, context);
   if (auth.response) return auth.response;
   const { user } = auth;
 
