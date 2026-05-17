@@ -1177,7 +1177,6 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
         </div>
       </div>
 
-      /* Mobile sticky Add-to-Cart bar removed -- it followed users as they scrolled past the product and into other sections, which was confusing. Restored via git revert if needed. */
 
       {/* ============================================================
           GALLERY LIGHTBOX
