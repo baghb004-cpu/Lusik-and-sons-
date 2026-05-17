@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.7",
-    "@netlify/functions": "^2.8.0",
+    "@netlify/functions": "^5.2.1",
     "@netlify/neon": "^0.1.0",
     "@sentry/react": "^10.53.1",
     "react": "^18.3.1",
