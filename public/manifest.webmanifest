@@ -1,0 +1,21 @@
+{
+  "name": "Lusik & Sons",
+  "short_name": "Lusik & Sons",
+  "description": "Hand cross-stitched Armenian alphabet baby blankets, made one at a time by Lusik in Cypress, California.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5EFE3",
+  "theme_color": "#1A1612",
+  "lang": "en-US",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}
