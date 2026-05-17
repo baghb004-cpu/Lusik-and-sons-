@@ -28,7 +28,7 @@ import {
   PHOTO_YELLOWGREEN_2,
 } from "../images/photos.js";
 
-export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo, user, onRequireSignIn, onStickyCtaShown }) {
+export function HomeView({ focus, product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo, user, onRequireSignIn, onStickyCtaShown }) {
   const t = useT();
   return (
     <div className="fade-in">
@@ -82,7 +82,9 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
         </div>
       </section>
 
-      <ProductShowcase product={product} onAdd={onAdd} onCartFeedback={onCartFeedback} user={user} onRequireSignIn={onRequireSignIn} onStickyCtaShown={onStickyCtaShown} />
+      {focus !== "bib" && (
+        <ProductShowcase product={product} onAdd={onAdd} onCartFeedback={onCartFeedback} user={user} onRequireSignIn={onRequireSignIn} onStickyCtaShown={onStickyCtaShown} />
+      )}
 
       {/* FROM LUSIK'S WORKSHOP — additional real product photos that aren't
           in the main gallery, showing the range of Lusik's work: different
@@ -122,6 +124,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
       </section>
 
       {/* CUSTOM EMBROIDERY ORDERS */}
+      {focus !== "blanket" && (
       <section id="custom" className="py-20 lg:py-28" style={{ background: "var(--bg-elevated)", borderTop: "1px solid var(--border-default)", borderBottom: "1px solid var(--border-default)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="text-center mb-14 lg:mb-20 max-w-2xl mx-auto">
@@ -144,6 +147,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
           </div>
         </div>
       </section>
+      )}
 
       <section id="story" className="py-20 lg:py-32" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-12 gap-10 lg:gap-20 items-center">
