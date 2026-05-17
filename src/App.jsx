@@ -335,6 +335,27 @@ export function App() {
     window.addEventListener("popstate", applyFromUrl);
     return () => window.removeEventListener("popstate", applyFromUrl);
   }, []);
+
+  // Product page URL routing -- /blanket and /bib hydrate as their own views.
+  // Mirrors the journal-pathname pattern. On mount and popstate, pathname is the source of truth.
+  useEffect(() => {
+    const applyProductPath = () => {
+      const p = window.location.pathname;
+      if (p === "/blanket") setView("blanket");
+      else if (p === "/bib") setView("bib");
+    };
+    applyProductPath();
+    window.addEventListener("popstate", applyProductPath);
+    return () => window.removeEventListener("popstate", applyProductPath);
+  }, []);
+
+  useEffect(() => {
+    if (view !== "blanket" && view !== "bib") return;
+    const target = view === "blanket" ? "/blanket" : "/bib";
+    if (window.location.pathname !== target) {
+      try { window.history.replaceState({}, "", target); } catch {}
+    }
+  }, [view]);
   // ---------------------------------------------------------------
   // Admin hash routing -- clicking the Admin nav button (injected by
   // index.html for users with the admin role) sets window.location.hash =
@@ -1162,7 +1183,7 @@ export function App() {
       </nav>
 
       <main id="main-content" tabIndex={-1}>
-      {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
+      {(view === "home" || view === "blanket" || view === "bib") && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown}  focus={view === "home" ? undefined : view} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && (
