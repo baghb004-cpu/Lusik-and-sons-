@@ -29,6 +29,7 @@ import {
   sendCustomerOrderConfirmation,
   sendRefundNotification,
   sendCartAbandonmentRecovery,
+  sendEmail,
 } from "./_lib/email.mjs";
 
 // Lazy-init the Stripe client so a missing STRIPE_SECRET_KEY env var
@@ -110,6 +111,15 @@ export default async (req) => {
   }
   if (event.type === "checkout.session.expired") {
     return await handleSessionExpired(event.data.object);
+  }
+  if (event.type === "payment_intent.payment_failed") {
+    return await handlePaymentFailed(event.data.object);
+  }
+  if (event.type === "charge.dispute.created") {
+    return await handleDisputeCreated(event.data.object);
+  }
+  if (event.type === "radar.early_fraud_warning.created") {
+    return await handleFraudWarning(event.data.object);
   }
   if (event.type !== "checkout.session.completed") {
     return new Response("ok (ignored)", { status: 200 });
@@ -522,5 +532,57 @@ async function handleSessionExpired(session) {
   // Stripe retries the event for some reason.
   await pendingStore.delete(session.id).catch(() => {});
 
+  return new Response("ok", { status: 200 });
+}
+
+
+// ----------------------------------------------------------------
+// New webhook event handlers added 2026-05-17
+// Each emails admin via Resend. No DB writes -- those can be
+// added in a follow-up PR once the schema has a webhook_events table.
+// ----------------------------------------------------------------
+
+async function handlePaymentFailed(intent) {
+  console.log("[webhook] payment_intent.payment_failed", intent.id);
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!adminEmail) return new Response("ok", { status: 200 });
+  const amount = ((intent.amount || 0) / 100).toFixed(2);
+  const currency = (intent.currency || "usd").toUpperCase();
+  const reason = (intent.last_payment_error && intent.last_payment_error.message) || "no error message";
+  const email = intent.receipt_email || "(unknown)";
+  await sendEmail({
+    to: adminEmail,
+    subject: "Stripe payment failed (" + currency + " " + amount + ")",
+    html: "<h2>Stripe payment failed</h2><p><b>Amount:</b> " + currency + " " + amount + "</p><p><b>Customer:</b> " + email + "</p><p><b>Reason:</b> " + reason + "</p><p><b>PaymentIntent:</b> " + intent.id + "</p><p>No order created -- this was a failed attempt.</p><p>See Stripe dashboard: https://dashboard.stripe.com/payments/" + intent.id + "</p>",
+  });
+  return new Response("ok", { status: 200 });
+}
+
+async function handleDisputeCreated(dispute) {
+  console.log("[webhook] charge.dispute.created", dispute.id);
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!adminEmail) return new Response("ok", { status: 200 });
+  const amount = ((dispute.amount || 0) / 100).toFixed(2);
+  const currency = (dispute.currency || "usd").toUpperCase();
+  const reason = dispute.reason || "unknown";
+  const dueBy = (dispute.evidence_details && dispute.evidence_details.due_by) ? new Date(dispute.evidence_details.due_by * 1000).toISOString() : "see Stripe dashboard";
+  await sendEmail({
+    to: adminEmail,
+    subject: "URGENT: Stripe dispute opened (" + currency + " " + amount + ") -- respond within 7 days",
+    html: "<h2>New Stripe dispute / chargeback</h2><p><b>Amount:</b> " + currency + " " + amount + "</p><p><b>Reason:</b> " + reason + "</p><p><b>Dispute ID:</b> " + dispute.id + "</p><p><b>Deadline:</b> " + dueBy + "</p><p>You typically have ~7 days to submit evidence.</p><p>See dispute: https://dashboard.stripe.com/disputes/" + dispute.id + "</p>",
+  });
+  return new Response("ok", { status: 200 });
+}
+
+async function handleFraudWarning(warning) {
+  console.log("[webhook] radar.early_fraud_warning.created", warning.id);
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!adminEmail) return new Response("ok", { status: 200 });
+  const fraudType = warning.fraud_type || "unknown";
+  await sendEmail({
+    to: adminEmail,
+    subject: "Stripe Radar fraud warning -- review or refund",
+    html: "<h2>Early fraud warning from Stripe Radar</h2><p>Refund within ~48h typically avoids the chargeback.</p><p><b>Fraud type:</b> " + fraudType + "</p><p><b>Charge:</b> " + warning.charge + "</p><p><b>Warning ID:</b> " + warning.id + "</p><p>See: https://dashboard.stripe.com/payments/" + warning.charge + "</p>",
+  });
   return new Response("ok", { status: 200 });
 }
