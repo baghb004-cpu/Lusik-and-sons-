@@ -366,28 +366,13 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
   const prev = () => setActiveImg((i) => (i - 1 + product.gallery.length) % product.gallery.length);
 
   return (
-    <section id="blanket" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
-      {/* Breadcrumbs — matches the BreadcrumbList JSON-LD in <head>.
-          "Home" scrolls back to the top. The middle and final crumbs
-          aren't separate pages in this SPA, so they're plain text. */}
-      <nav aria-label="Breadcrumb" className="mb-6 lg:mb-8">
-        <ol className="flex items-center gap-2 flex-wrap text-[0.65rem] tracking-[0.25em] uppercase">
-          <li>
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="opacity-60 hover:opacity-100 transition"
-            >
-              Home
-            </button>
-          </li>
-          <li aria-hidden="true" className="opacity-30">/</li>
-          <li className="opacity-60">Blankets</li>
-          <li aria-hidden="true" className="opacity-30">/</li>
-          <li aria-current="page" style={{ color: "#B08842", fontWeight: 500 }}>
-            The Armenian Alphabet Blanket
-          </li>
-        </ol>
-      </nav>
+    // The outer #blanket id was the legacy home-page-anchor target.
+    // With the /shop/blankets/armenian-alphabet-blanket route in
+    // place, breadcrumbs are rendered by <ProductView> above and
+    // the anchor is no longer used for navigation. Kept as an id
+    // so any external link with #blanket on the product URL still
+    // lands at the configurator section.
+    <section id="blanket" className="max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         {/* Left column — either the live SVG preview (default) OR the photo
             gallery, toggleable via a small button at the top. The live preview

@@ -1,37 +1,53 @@
 // ============================================================
-// CATALOG — full product catalog with status flags
+// CATALOG — full product catalog with status flags + routing slugs
 // ============================================================
-// Drives the shop mega-menu and the catalog page. Each entry's
-// `status` is either:
+// Drives the shop mega-menu and the entire /shop/* route hierarchy:
+//   /shop                                 → ShopIndexView (4 category cards)
+//   /shop/<categorySlug>                  → CategoryView
+//   /shop/<categorySlug>/<productSlug>    → ProductView
+//
+// Each entry's `status` is either:
 //   - "live"        : fully buyable; the customer can configure
 //                     and pay for it today
-//   - "placeholder" : renders a coming-soon card with a "Notify
-//                     me" link to the waitlist function
+//   - "placeholder" : renders a ProductPlaceholderView with the
+//                     "image goes here / text goes here" template
+//                     and a "Notify me" hook into WaitlistModal
+//
+// `slug` is the URL fragment and is LOAD-BEARING:
+//   - It's saved in inbound shared links + search engine indexes
+//   - It must remain stable once a product has been on a public URL
+//   - Lowercase, hyphen-separated, ASCII only (no Armenian glyphs)
+//
+// To add a new product:
+//   1. Pick a category (existing or new)
+//   2. Give it a `key` (cart-id-shape unchanged from before),
+//      a `slug` (URL fragment), `name`, `status`, `tagline`
+//   3. For status: "live" — also add the matching entry in
+//      PRODUCT (blanket) or CUSTOM_PRODUCTS (bib) AND in
+//      netlify/functions/_lib/trusted-products.mjs
+//   4. For status: "placeholder" — just the catalog entry is
+//      enough. The placeholder page renders automatically.
 //
 // Most items are currently `placeholder` pending Lusik's photos
 // and pricing. DO NOT promote one to `live` without:
 //   1. Real photos (uploaded to /img/, removed from
 //      CONFIG.ROTATED_GALLERY_INDEXES if it had been there)
 //   2. A real `priceFrom`
-//   3. A real `description` (the placeholder copy mentions
-//      TODO_LUSIK items that need her sign-off)
-//   4. For configurable products: the matching entry in
-//      PRODUCT (blanket) or CUSTOM_PRODUCTS (bib)
-//
-// The category structure (blankets / bibs / towels / baby)
-// drives the mega-menu's column layout. Adding a category
-// requires also updating the header nav component.
-//
-// MIRRORED FROM index.html (~line 1499).
+//   3. A real `description`
+//   4. For configurable products: the matching PRODUCT or
+//      CUSTOM_PRODUCTS data + trusted-products.mjs entry
 // ============================================================
 
 export const CATALOG = {
   blankets: {
+    slug: "blankets",
     label: "Blankets",
     description: "Hand cross-stitched baby blankets",
+    eyebrow: "Lusik's signature work",
     products: [
       {
         key: "blanket-alphabet",
+        slug: "armenian-alphabet-blanket",
         name: "The Armenian Alphabet Blanket",
         status: "live",                // points to PRODUCT — fully buyable
         priceFrom: 89,
@@ -40,21 +56,24 @@ export const CATALOG = {
       },
       {
         key: "blanket-cotton-bernat",
+        slug: "cotton-yarn-blanket",
         name: "Cotton Yarn Blanket",
         status: "placeholder",         // ⚠️ TODO_LUSIK: need photos, specs, price
         priceFrom: null,               // ⚠️ TODO_LUSIK
         tagline: "Made entirely from Bernat cotton yarn.",
-        description: "Lusik's blanket made from 100% Bernat-brand cotton yarn. Softer hand than the acrylic blanket, breathable, ideal for warmer climates and warmer months. ⚠️ TODO_LUSIK: confirm dimensions, color options, and price before enabling.",
-        // ⚠️ TODO_LUSIK: photograph this blanket and add gallery images
+        description: "Lusik's blanket made from 100% Bernat-brand cotton yarn. Softer hand than the acrylic blanket, breathable, ideal for warmer climates and warmer months.",
       },
     ],
   },
   bibs: {
+    slug: "bibs",
     label: "Bibs",
     description: "Machine-embroidered personalized bibs",
+    eyebrow: "Small piece, big heart",
     products: [
       {
         key: "bib-single",
+        slug: "baby-bib",
         name: "Baby Bib",
         status: "live",                // points to CUSTOM_PRODUCTS.bib
         priceFrom: 22,
@@ -62,65 +81,117 @@ export const CATALOG = {
       },
       {
         key: "bib-days-of-week",
+        slug: "days-of-the-week-bib-set",
         name: "Days of the Week Bib Set",
         status: "placeholder",         // ⚠️ TODO_LUSIK
-        priceFrom: null,               // ⚠️ TODO_LUSIK: 7-bib set, likely $80-120 range
+        priceFrom: null,
         tagline: "Seven bibs, one for each day of the week.",
-        description: "A set of seven bibs, each embroidered with a different day of the week (Monday through Sunday). ⚠️ TODO_LUSIK: confirm whether the days are spelled in Armenian (Երկուշաբթի, Երեքշաբթի, etc.) or English, photograph the full set together, set price.",
+        description: "A set of seven bibs, each embroidered with a different day of the week — Monday through Sunday.",
       },
       {
         key: "bib-hy-em",
+        slug: "hy-em-armenian-bib",
         name: "Hy Em — I Am Armenian Bib",
         status: "placeholder",         // ⚠️ TODO_LUSIK
-        priceFrom: null,               // ⚠️ TODO_LUSIK
+        priceFrom: null,
         tagline: "\"Հայ եմ\" — I am Armenian, with Mount Ararat.",
-        description: "Bib embroidered with \"Հայ եմ\" (Hy em — 'I am Armenian') and the outline of Mount Ararat in the background. A statement of heritage from the smallest age. ⚠️ TODO_LUSIK: photograph, confirm exact text, set price.",
+        description: "Bib embroidered with \"Հայ եմ\" (Hy em — \"I am Armenian\") and the outline of Mount Ararat in the background. A statement of heritage from the smallest age.",
       },
     ],
   },
   towels: {
+    slug: "towels",
     label: "Towels",
     description: "Embroidered hand and ceremonial towels",
+    eyebrow: "For the milestone moments",
     products: [
       {
         key: "towel-hand",
+        slug: "embroidered-hand-towel",
         name: "Embroidered Hand Towel",
-        status: "placeholder",         // ⚠️ TODO_LUSIK
-        priceFrom: null,               // ⚠️ TODO_LUSIK
+        status: "placeholder",
+        priceFrom: null,
         tagline: "Hand-towel size with Armenian embroidery.",
-        description: "Hand-sized cotton towel (~16\" × 28\") with Lusik's hand or machine embroidery. ⚠️ TODO_LUSIK: confirm which designs/letters/text she offers, set price and customization options.",
+        description: "Hand-sized cotton towel with Lusik's hand or machine embroidery. A small, lasting gift for a guest room, a powder bath, or a christening.",
       },
       {
         key: "towel-baptism",
+        slug: "armenian-baptism-towel",
         name: "Armenian Baptism Towel",
-        status: "placeholder",         // ⚠️ TODO_LUSIK
-        priceFrom: null,               // ⚠️ TODO_LUSIK
+        status: "placeholder",
+        priceFrom: null,
         tagline: "Large white ceremonial towel for Armenian Apostolic baptisms.",
-        // Real research notes below — kept in code for when we build the product page
-        description: "Traditional ceremonial towel for the Armenian Apostolic baptism rite. Per Armenian Church canon, godparents bring one large new white towel — single-use, kept afterward as a keepsake. Typical size in industry: 30\"×60\" plush, or 90×50cm / 140×90cm (made-in-Armenia sizes). Embroidered with the child's name in Armenian, baptism date, and an Armenian-style cross (not crucifix style — the Armenian Church specifies Armenian crosses only). ⚠️ TODO_LUSIK: confirm which sizes she offers, which cross styles she stitches, whether she uses gold/silver/champagne thread for the embroidery (industry standard), set price.",
+        description: "Traditional ceremonial towel for the Armenian Apostolic baptism rite. Per Armenian Church canon, godparents bring one large new white towel — single-use, kept afterward as a keepsake. Embroidered with the child's name in Armenian, baptism date, and an Armenian-style cross.",
       },
     ],
   },
   baby: {
+    slug: "baby",
     label: "For Baby",
     description: "Swaddles, bathrobes, and other early-infant items",
+    eyebrow: "From the very first day",
     products: [
       {
         key: "baby-swaddle",
+        slug: "baby-swaddle",
         name: "Baby Swaddle",
-        status: "placeholder",         // ⚠️ TODO_LUSIK
-        priceFrom: null,               // ⚠️ TODO_LUSIK
+        status: "placeholder",
+        priceFrom: null,
         tagline: "Soft swaddle blanket for newborns.",
-        description: "⚠️ TODO_LUSIK: confirm material (muslin? cotton? bamboo?), dimensions (typical swaddles are 47\"×47\"), embroidery options (initial? name? alphabet?), photograph and set price.",
+        description: "A soft swaddle blanket for the early weeks. Made to wrap, hold, and grow with the baby.",
       },
       {
         key: "baby-bathrobe",
+        slug: "baby-bathrobe",
         name: "Baby Bathrobe",
-        status: "placeholder",         // ⚠️ TODO_LUSIK
-        priceFrom: null,               // ⚠️ TODO_LUSIK
+        status: "placeholder",
+        priceFrom: null,
         tagline: "Hooded bathrobe for after the bath.",
-        description: "⚠️ TODO_LUSIK: confirm sizes (0-6mo, 6-12mo, 1-2yr typically), material (terry cloth? cotton waffle weave?), embroidery options, photograph and set price.",
+        description: "Hooded bathrobe for the after-bath ritual. Personalize with name embroidery — a keepsake gift that gets used every night for years.",
       },
     ],
   },
 };
+
+// ============================================================
+// CATALOG LOOKUP HELPERS
+// ============================================================
+// Used by the router in App.jsx (to resolve /shop/<cat>/<slug>
+// into a category + product pair) and by ShopMegaMenu / footer
+// nav (to render category labels without re-iterating the
+// CATALOG object). Centralized here so the slug format only
+// has to be agreed on in one place.
+// ============================================================
+
+/** Returns an array of [categorySlug, category] pairs. */
+export function listCategories() {
+  return Object.entries(CATALOG).map(([_, category]) => category);
+}
+
+/** Resolve a category by its URL slug, or null if not found. */
+export function getCategoryBySlug(slug) {
+  if (!slug) return null;
+  for (const [_, category] of Object.entries(CATALOG)) {
+    if (category.slug === slug) return category;
+  }
+  return null;
+}
+
+/** Resolve a product by category slug + product slug, or null. */
+export function getProductBySlugs(categorySlug, productSlug) {
+  const category = getCategoryBySlug(categorySlug);
+  if (!category) return null;
+  const product = category.products.find((p) => p.slug === productSlug);
+  if (!product) return null;
+  return { category, product };
+}
+
+/** Build the canonical pathname for a product. */
+export function productPath(category, product) {
+  return `/shop/${category.slug}/${product.slug}`;
+}
+
+/** Build the canonical pathname for a category. */
+export function categoryPath(category) {
+  return `/shop/${category.slug}`;
+}

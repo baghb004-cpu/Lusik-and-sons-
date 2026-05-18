@@ -1,18 +1,34 @@
 // ============================================================
-// HomeView — the home page
+// HomeView — the home page (brand experience, not a catalog)
 // ============================================================
-// Composes the entire landing experience: hero, ProductShowcase
-// (configurator + buy), CustomProductCard (bib), tracking form,
-// testimonials, customer photos, journal teasers, newsletter
-// signup, FAQ.
+// Post-/shop-routing refactor: HomeView is now a brand-story
+// surface. The full product configurators (blanket showcase,
+// bib customizer) have moved to their own routes:
 //
-// MIRRORED FROM index.html (~line 9059).
+//   /shop/blankets/armenian-alphabet-blanket   ← ProductShowcase
+//   /shop/bibs/baby-bib                        ← CustomProductCard
+//
+// The home page still teases what Lusik makes via the Featured
+// Categories strip near the top + the bib commission teaser
+// further down, but every buy surface lives a click deeper.
+//
+// What's still on the home page:
+//   - Hero
+//   - Trust strip (4 icons)
+//   - Featured Categories strip (NEW — replaces the inline PDP)
+//   - From Lusik's Workshop (photo grid)
+//   - Pieces by commission (NEW teaser — replaces inline bib card)
+//   - Our Story
+//   - Testimonials + Customer Photos
+//   - FAQ
+//   - Get in Touch / Four Ways to Order
+//   - By Post / Send a Letter (mailing address)
+//   - Shipping & Tracking
+//   - Stay Connected (newsletter)
 // ============================================================
 
 import React, { useEffect } from "react";
 import { useT } from "../i18n/LangContext.jsx";
-import { ProductShowcase } from "./ProductShowcase.jsx";
-import { CustomProductCard } from "./CustomProductCard.jsx";
 import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
 import { TestimonialsSection } from "./TestimonialsSection.jsx";
@@ -28,7 +44,16 @@ import {
   PHOTO_YELLOWGREEN_2,
 } from "../images/photos.js";
 
-export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFeedback, scrollTo, user, onRequireSignIn, onStickyCtaShown }) {
+export function HomeView({
+  product,
+  scrollTo,
+  // Shop navigation — passed down from App so every CTA on the
+  // home page can deep-link into the new /shop hierarchy
+  // without HomeView itself owning routing state.
+  onNavigateShop,
+  onNavigateCategory,
+  onNavigateProduct,
+}) {
   const t = useT();
   return (
     <div className="fade-in">
@@ -43,7 +68,11 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
               {t("hero.body")}<a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline" style={{ color: "#1A1612" }}>{t("hero.bodyEmailLink")}</a>{t("hero.bodyAfter")}
             </p>
             <div className="flex items-center gap-6">
-              <button onClick={() => scrollTo("blanket")} className="px-8 py-4 text-sm tracking-wide flex items-center gap-3" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
+              <button
+                onClick={() => onNavigateProduct?.("blankets", "armenian-alphabet-blanket")}
+                className="lg-button-ink lg-shine px-8 py-4 text-sm tracking-wide flex items-center gap-3"
+                style={{ fontWeight: 500 }}
+              >
                 {t("hero.shopCta")} <ArrowRight size={16} />
               </button>
               <button onClick={() => scrollTo("story")} className="text-sm tracking-wide underline underline-offset-4 hover:opacity-60">{t("hero.storyCta")}</button>
@@ -82,7 +111,86 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
         </div>
       </section>
 
-      <ProductShowcase product={product} onAdd={onAdd} onCartFeedback={onCartFeedback} user={user} onRequireSignIn={onRequireSignIn} onStickyCtaShown={onStickyCtaShown} />
+      {/* ============================================================
+          FEATURED CATEGORIES — a discovery strip, not a product list
+          ============================================================
+          Three category cards that link into the /shop hierarchy.
+          We deliberately do NOT render the full ProductShowcase /
+          bib configurator on the home page anymore — those live at
+          their own /shop/<cat>/<slug> URLs. This strip is a "where
+          to look next" cue, not a buying surface.
+
+          Cards: Blankets (live), Bibs (live), Everything else (all
+          remaining categories rolled into a single "Browse the shop"
+          card). The customer chooses a path and goes deeper. */}
+      <section className="border-y py-14 lg:py-20" style={{ borderColor: "var(--border-default)" }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-12">
+          <div className="max-w-2xl mx-auto text-center mb-10 lg:mb-14">
+            <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>What Lusik makes</p>
+            <h2 className="font-display text-3xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+              Hand work, <em style={{ fontWeight: 400 }}>by category</em>.
+            </h2>
+            <p className="text-base opacity-75 leading-relaxed">
+              Cross-stitched blankets, embroidered bibs, ceremonial towels, and small items for the very first days. Pick a path to explore.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-5 lg:gap-6">
+            {[
+              {
+                slug: "blankets",
+                eyebrow: "Lusik's signature work",
+                label: "Blankets",
+                blurb: "Hand cross-stitched baby blankets — Armenian Ա Բ Գ or English A B C.",
+                image: product.gallery[0],
+              },
+              {
+                slug: "bibs",
+                eyebrow: "Small piece, big heart",
+                label: "Bibs",
+                blurb: "Machine-embroidered with a personalized name — up to six letters.",
+                image: PHOTO_BIB_ROMEO,
+              },
+              {
+                slug: "towels",
+                eyebrow: "For the milestone moments",
+                label: "Towels & more",
+                blurb: "Embroidered hand and ceremonial towels. Coming soon.",
+                image: PHOTO_DATE_DETAIL,
+              },
+            ].map((cat) => (
+              <button
+                key={cat.slug}
+                onClick={() => onNavigateCategory?.(cat.slug)}
+                className="lg-button lg-shine text-left flex flex-col"
+                aria-label={`Browse ${cat.label}`}
+              >
+                <div className="aspect-[4/5] overflow-hidden" style={{ borderBottom: "1px solid rgba(26,22,18,0.10)" }}>
+                  <img src={cat.image} alt={cat.label} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                </div>
+                <div className="p-5">
+                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "#B08842" }}>{cat.eyebrow}</p>
+                  <h3 className="font-display text-xl lg:text-2xl mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{cat.label}</h3>
+                  <p className="text-sm opacity-75 leading-relaxed mb-4">{cat.blurb}</p>
+                  <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
+                    Explore <ArrowRight size={12} strokeWidth={1.75} />
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <button
+              onClick={() => onNavigateShop?.()}
+              className="text-[0.65rem] tracking-[0.25em] uppercase underline underline-offset-4 hover:opacity-70"
+              style={{ color: "#1A1612", fontWeight: 500 }}
+            >
+              See everything Lusik makes →
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* FROM LUSIK'S WORKSHOP — additional real product photos that aren't
           in the main gallery, showing the range of Lusik's work: different
@@ -121,26 +229,49 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
         </div>
       </section>
 
-      {/* CUSTOM EMBROIDERY ORDERS */}
-      <section id="custom" className="py-20 lg:py-28" style={{ background: "var(--bg-elevated)", borderTop: "1px solid var(--border-default)", borderBottom: "1px solid var(--border-default)" }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="text-center mb-14 lg:mb-20 max-w-2xl mx-auto">
-            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Custom Orders</p>
-            <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-              Send us <em style={{ fontWeight: 400 }}>a name</em>.
-            </h2>
-            <p className="text-base lg:text-lg opacity-80 leading-relaxed">
-              Lusik machine-embroiders a short name onto a soft white baby bib — up to 5 or 6 letters, since the bib's surface is small. One size, fits most babies.
-            </p>
-            <div className="gold-line mt-10 max-w-xs mx-auto" />
-          </div>
-
-          {/* Single-product layout — only the bib is offered as a custom order.
-              Mobile: a narrow centered card (preview above, form below). Desktop:
-              wider container so the card can split into two columns with the
-              preview stuck to the left, matching the blanket showcase pattern. */}
-          <div className="max-w-md lg:max-w-5xl mx-auto">
-            <CustomProductCard config={customProducts.bib} onAddCustom={onAddCustom} onCartFeedback={onCartFeedback} />
+      {/* COMMISSION / CUSTOM ORDERS TEASER
+          ============================================================
+          Previously embedded the full <CustomProductCard> bib
+          configurator. With the /shop hierarchy in place, the bib
+          lives at /shop/bibs/baby-bib. This section now teases that
+          flow without the inline buy surface. */}
+      <section id="commission" className="py-20 lg:py-28" style={{ background: "var(--bg-elevated)", borderTop: "1px solid var(--border-default)", borderBottom: "1px solid var(--border-default)" }}>
+        <div className="max-w-5xl mx-auto px-6 lg:px-12">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div>
+              <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Pieces by commission</p>
+              <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+                Send us <em style={{ fontWeight: 400 }}>a name</em>.
+              </h2>
+              <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-8">
+                Lusik machine-embroiders a short name onto a soft white baby bib — up to five or six letters, since the bib's surface is small. One size, fits most babies. Made to order.
+              </p>
+              <button
+                onClick={() => onNavigateProduct?.("bibs", "baby-bib")}
+                className="lg-button-ink lg-shine inline-flex items-center gap-3 px-6 py-3 text-sm tracking-wide"
+                style={{ fontWeight: 500 }}
+              >
+                Personalize a bib <ArrowRight size={16} strokeWidth={1.5} />
+              </button>
+              <p className="mt-4">
+                <button
+                  onClick={() => onNavigateCategory?.("bibs")}
+                  className="text-[0.65rem] tracking-[0.25em] uppercase underline underline-offset-4 hover:opacity-70"
+                  style={{ color: "#1A1612", fontWeight: 500 }}
+                >
+                  Or see all bibs →
+                </button>
+              </p>
+            </div>
+            <div className="aspect-square overflow-hidden">
+              <img
+                src={PHOTO_BIB_STACK}
+                alt="A stack of personalized bibs in different colors"
+                className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -244,7 +375,7 @@ export function HomeView({ product, customProducts, onAdd, onAddCustom, onCartFe
           </div>
           <div className="space-y-1">
             {[
-              { Icon: ShoppingBag, label: "Shop online", detail: "Browse and check out", action: () => scrollTo("blanket") },
+              { Icon: ShoppingBag, label: "Shop online", detail: "Browse and check out", action: () => onNavigateShop?.() },
               { Icon: Phone, label: "Call us", detail: "(760) 874-2333", action: () => window.open("tel:+17608742333") },
               { Icon: Instagram, label: "DM on Instagram", detail: "@lusikandsons", action: () => window.open("https://instagram.com", "_blank", "noopener,noreferrer") },
               { Icon: Mail, label: "Email inquiry", detail: "hello@lusikandsons.com", action: () => window.open("mailto:hello@lusikandsons.com") },

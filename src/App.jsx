@@ -16,7 +16,13 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { CONFIG } from "./data/config.js";
 import { PRODUCT } from "./data/product.js";
 import { CUSTOM_PRODUCTS } from "./data/customProducts.js";
-import { CATALOG } from "./data/catalog.js";
+import {
+  CATALOG,
+  getCategoryBySlug,
+  getProductBySlugs,
+  categoryPath,
+  productPath,
+} from "./data/catalog.js";
 import { SOCIAL_PLATFORMS } from "./data/socialPlatforms.js";
 import { JOURNAL_POSTS } from "./data/journalPosts.js";
 
@@ -62,6 +68,9 @@ import { AccountView } from "./components/AccountView.jsx";
 import { AdminView } from "./components/AdminView.jsx";
 import { AdminOrderDetail } from "./components/AdminOrderDetail.jsx";
 import { CheckoutView } from "./components/CheckoutView.jsx";
+import { ShopIndexView } from "./components/shop/ShopIndexView.jsx";
+import { CategoryView } from "./components/shop/CategoryView.jsx";
+import { ProductView } from "./components/shop/ProductView.jsx";
 
 // Icons used directly inside App
 import {
@@ -102,6 +111,13 @@ export function App() {
   // this holds the order id passed to AdminOrderDetail. The list view
   // sets it and flips view; the detail's "Back to orders" clears it.
   const [adminOrderId, setAdminOrderId] = useState(null);
+  // Shop routing state. The pathname is the source of truth (synced
+  // both ways with shopCategorySlug + shopProductSlug below). When
+  // view === "shop", both are null. When view === "shop-category",
+  // shopCategorySlug is set. When view === "shop-product", both are
+  // set. Mirrors the journalSlug pattern.
+  const [shopCategorySlug, setShopCategorySlug] = useState(null);
+  const [shopProductSlug,  setShopProductSlug]  = useState(null);
   // Whether the PDP's mobile sticky add-to-cart bar is currently
   // showing. Lifted up from ProductShowcase so the global mobile
   // bottom-nav can step out of the way — they share the same
@@ -279,6 +295,25 @@ export function App() {
     }
   }, [user]);
 
+  // --- LEGACY ?d= DESIGN LINK REDIRECT ---
+  // Saved-design URLs previously landed on the home page (where
+  // <ProductShowcase> was inlined) and hydrated from ?d=<base64>.
+  // After the /shop hierarchy refactor, ProductShowcase only mounts
+  // at /shop/blankets/armenian-alphabet-blanket. Anyone with an old
+  // shared link gets redirected there so the hydration still fires.
+  // Uses replaceState so the old URL doesn't pollute history.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const pathname = window.location.pathname;
+    const search   = window.location.search;
+    if (pathname === "/" && /[?&]d=/.test(search)) {
+      const target = "/shop/blankets/armenian-alphabet-blanket" + search + window.location.hash;
+      try { window.history.replaceState({}, "", target); } catch {}
+      // Force the route effect to re-read the new pathname.
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  }, []);
+
   // --- LEFTOVER #admin CLEANUP ---
   // The previous deploy injected an "Admin" button in index.html that
   // set `window.location.hash = '#admin'`. Nothing in the SPA listened
@@ -298,30 +333,77 @@ export function App() {
     }
   }, []);
 
-  // --- JOURNAL ROUTING (history API) ---
-  // Real URLs, not hash fragments: the list lives at `/journal`,
-  // each post at `/journal/<slug>`. Netlify's SPA fallback in
-  // netlify.toml rewrites both paths to index.html so the React
-  // app handles them in the browser. Two-way sync: (1) on mount
-  // and on popstate (back/forward), parse the pathname into view
-  // + slug; (2) on every internal navigation inside the journal,
-  // push a new history entry so back works the way customers
-  // expect.
+  // --- JOURNAL + SHOP ROUTING (history API) ---
+  // Real URLs, not hash fragments. Two route hierarchies use this:
   //
-  // Backward compatibility: any shared `#journal/<slug>` URL
-  // hash from before this commit gets silently rewritten to the
-  // clean pathname on first load.
+  //   /journal                          → JournalView (list)
+  //   /journal/<slug>                   → JournalView (post)
+  //   /shop                             → ShopIndexView
+  //   /shop/<categorySlug>              → CategoryView
+  //   /shop/<categorySlug>/<prodSlug>   → ProductView
+  //
+  // Netlify's SPA fallback in netlify.toml rewrites both /journal*
+  // and /shop* to index.html so the React app handles them in the
+  // browser. Two-way sync:
+  //   (1) on mount and on popstate (back/forward), parse the
+  //       pathname into view + slugs;
+  //   (2) on every internal navigation, push a new history entry
+  //       so the browser back button walks the user through their
+  //       own navigation history.
+  //
+  // Backward compatibility: any shared `#journal/<slug>` URL hash
+  // from before the journal-routes commit gets silently rewritten
+  // to the clean pathname on first load.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const applyFromUrl = () => {
-      // Pathname first — the real source of truth post-deploy.
-      const m = window.location.pathname.match(/^\/journal(?:\/([\w-]+))?\/?$/);
+      const path = window.location.pathname;
+
+      // ----- /shop hierarchy -----
+      const shopMatch = path.match(/^\/shop(?:\/([\w-]+)(?:\/([\w-]+))?)?\/?$/);
+      if (shopMatch) {
+        const [, catSlug, prodSlug] = shopMatch;
+        if (catSlug && prodSlug) {
+          // /shop/<cat>/<slug> — verify the pair exists; bad URLs
+          // bounce to /shop index rather than crashing.
+          if (getProductBySlugs(catSlug, prodSlug)) {
+            setView("shop-product");
+            setShopCategorySlug(catSlug);
+            setShopProductSlug(prodSlug);
+          } else {
+            setView("shop");
+            setShopCategorySlug(null);
+            setShopProductSlug(null);
+            window.history.replaceState({}, "", "/shop");
+          }
+          return;
+        }
+        if (catSlug) {
+          if (getCategoryBySlug(catSlug)) {
+            setView("shop-category");
+            setShopCategorySlug(catSlug);
+            setShopProductSlug(null);
+          } else {
+            setView("shop");
+            setShopCategorySlug(null);
+            setShopProductSlug(null);
+            window.history.replaceState({}, "", "/shop");
+          }
+          return;
+        }
+        setView("shop");
+        setShopCategorySlug(null);
+        setShopProductSlug(null);
+        return;
+      }
+
+      // ----- /journal hierarchy -----
+      const m = path.match(/^\/journal(?:\/([\w-]+))?\/?$/);
       if (m) {
         setView("journal");
         setJournalSlug(m[1] ?? null);
         return;
       }
-      // Hash fallback for legacy shared links.
       const h = window.location.hash.match(/^#journal(?:\/([\w-]+))?/);
       if (h) {
         const slug = h[1] ?? null;
@@ -336,6 +418,34 @@ export function App() {
     return () => window.removeEventListener("popstate", applyFromUrl);
   }, []);
 
+  // Push history state on internal shop navigation, mirroring the
+  // journal effect below. We push (not replace) so the back button
+  // walks the customer through their own navigation history:
+  //   product → category → /shop → home.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let next = null;
+    if (view === "shop")                next = "/shop";
+    else if (view === "shop-category" && shopCategorySlug)
+                                        next = `/shop/${shopCategorySlug}`;
+    else if (view === "shop-product"  && shopCategorySlug && shopProductSlug)
+                                        next = `/shop/${shopCategorySlug}/${shopProductSlug}`;
+    if (next && window.location.pathname !== next) {
+      window.history.pushState({}, "", next);
+    }
+  }, [view, shopCategorySlug, shopProductSlug]);
+
+  // When the customer leaves the shop entirely (clicks a non-shop
+  // link), restore the root path so the URL bar doesn't lie about
+  // where they are. Mirrors the journal-exit effect below.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (view === "shop" || view === "shop-category" || view === "shop-product") return;
+    if (window.location.pathname.startsWith("/shop")) {
+      window.history.pushState({}, "", "/");
+    }
+  }, [view]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (view !== "journal") return;
@@ -348,7 +458,7 @@ export function App() {
       // replaceState above (so the bookmark URL isn't doubled).
       window.history.pushState({}, "", next);
     }
-  }, [view, journalSlug]);
+  }, [view, journalSlug, shopCategorySlug, shopProductSlug]);
 
   // When the customer leaves the journal entirely (e.g. clicks
   // "Back to the shop"), restore the root path so the URL bar
@@ -385,6 +495,21 @@ export function App() {
         title     = `The Journal · ${BRAND}`;
         canonical = "https://lusikandsons.com/journal";
       }
+    } else if (view === "shop") {
+      title     = `Shop · ${BRAND}`;
+      canonical = "https://lusikandsons.com/shop";
+    } else if (view === "shop-category" && shopCategorySlug) {
+      const cat = getCategoryBySlug(shopCategorySlug);
+      if (cat) {
+        title     = `${cat.label} · ${BRAND}`;
+        canonical = `https://lusikandsons.com/shop/${cat.slug}`;
+      }
+    } else if (view === "shop-product" && shopCategorySlug && shopProductSlug) {
+      const pair = getProductBySlugs(shopCategorySlug, shopProductSlug);
+      if (pair) {
+        title     = `${pair.product.name} · ${BRAND}`;
+        canonical = `https://lusikandsons.com/shop/${pair.category.slug}/${pair.product.slug}`;
+      }
     } else if (view === "account") {
       title = `Your account · ${BRAND}`;
     } else if (view === "admin") {
@@ -402,7 +527,7 @@ export function App() {
       document.head.appendChild(link);
     }
     link.setAttribute("href", canonical);
-  }, [view, journalSlug]);
+  }, [view, journalSlug, shopCategorySlug, shopProductSlug]);
 
   // --- PRIVACY-FIRST ANALYTICS (opt-in via CONFIG.ANALYTICS) ---
   // On mount, if the customer set CONFIG.ANALYTICS.UMAMI_WEBSITE_ID,
@@ -437,7 +562,7 @@ export function App() {
     // runs after the title/canonical updates above — Umami picks
     // up the new title/URL automatically that way.
     queueMicrotask(() => { try { window.umami?.track(); } catch {} });
-  }, [view, journalSlug]);
+  }, [view, journalSlug, shopCategorySlug, shopProductSlug]);
 
   // Mobile-only: reset scroll to the top on every view change. Without
   // this, switching from a deep-scrolled position (e.g. the bib at the
@@ -456,7 +581,7 @@ export function App() {
     if (typeof window === "undefined") return;
     if (!window.matchMedia?.("(max-width: 1023px)").matches) return;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [view, journalSlug]);
+  }, [view, journalSlug, shopCategorySlug, shopProductSlug]);
 
   // --- PAID-FEATURE STUBS (off by default; see CONFIG.PAID_FEATURES) ---
   // Each block below mounts the third-party script ONLY if its
@@ -841,6 +966,44 @@ export function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ----- Shop navigation helpers -----
+  // Centralized here so every entry point (nav bar, mobile menu,
+  // footer, mega-menu, hero CTA, mobile bottom-nav, breadcrumbs)
+  // uses the same call. They keep the view + slug state in sync,
+  // close any open mobile menus, and reset scroll to the top so
+  // the customer doesn't land mid-page.
+  const goShopIndex = () => {
+    setShopCategorySlug(null);
+    setShopProductSlug(null);
+    setView("shop");
+    setMobileNavOpen(false);
+    setCartOpen(false);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+  const goShopCategory = (categorySlug) => {
+    if (!getCategoryBySlug(categorySlug)) return goShopIndex();
+    setShopCategorySlug(categorySlug);
+    setShopProductSlug(null);
+    setView("shop-category");
+    setMobileNavOpen(false);
+    setCartOpen(false);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+  const goShopProduct = (categorySlug, productSlug) => {
+    if (!getProductBySlugs(categorySlug, productSlug)) return goShopIndex();
+    setShopCategorySlug(categorySlug);
+    setShopProductSlug(productSlug);
+    setView("shop-product");
+    setMobileNavOpen(false);
+    setCartOpen(false);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+  // Convenience for shop-mega-menu placeholder clicks — opens the
+  // waitlist modal anywhere, without leaving the current page.
+  const openWaitlist = (product) => {
+    setWaitlistProduct(product);
+  };
+
   // Sign out: clears the Identity session, which fires onAuthStateChange and resets
   // user/profile state. We deliberately do NOT clear the local cart on logout —
   // the user might want to keep shopping anonymously.
@@ -967,9 +1130,9 @@ export function App() {
           </button>
           <div className="hidden md:flex items-center gap-10 text-sm tracking-wide">
             <ShopMegaMenu
-              onShopBlanket={() => scrollTo("blanket")}
-              onShopCustom={() => scrollTo("custom")}
-              onPlaceholderClick={(p) => setWaitlistProduct(p)}
+              onNavigateShop={goShopIndex}
+              onNavigateCategory={goShopCategory}
+              onNavigateProduct={goShopProduct}
             />
             <button onClick={() => scrollTo("story")} className="hover:opacity-60">{t("nav.story")}</button>
             <button onClick={() => { setJournalSlug(null); setView("journal"); }} className="hover:opacity-60">Journal</button>
@@ -1095,12 +1258,11 @@ export function App() {
                           <button
                             key={p.key}
                             onClick={() => {
-                              if (p.status === "live") {
-                                if (p.key === "blanket-alphabet") scrollTo("blanket");
-                                else if (p.key === "bib-single") scrollTo("custom");
-                              } else {
-                                setWaitlistProduct(p);
-                              }
+                              // Mobile menu: every product link goes to its
+                              // own product page (live or placeholder). The
+                              // placeholder page renders its own "Notify me"
+                              // CTA — no waitlist modal needed here.
+                              goShopProduct(category.slug, p.slug);
                               setMobileNavOpen(false);
                             }}
                             className={`text-left text-[0.85rem] ${p.status === "placeholder" ? "opacity-55" : ""}`}
@@ -1134,7 +1296,15 @@ export function App() {
       </nav>
 
       <main id="main-content" tabIndex={-1}>
-      {view === "home" && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown} />}
+      {view === "home" && (
+        <HomeView
+          product={PRODUCT}
+          scrollTo={scrollTo}
+          onNavigateShop={goShopIndex}
+          onNavigateCategory={goShopCategory}
+          onNavigateProduct={goShopProduct}
+        />
+      )}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "admin" && isAdmin && (
@@ -1154,6 +1324,47 @@ export function App() {
         />
       )}
       {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
+
+      {view === "shop" && (
+        <ShopIndexView
+          onNavigateHome={() => setView("home")}
+          onNavigateCategory={goShopCategory}
+        />
+      )}
+      {view === "shop-category" && shopCategorySlug && (() => {
+        const cat = getCategoryBySlug(shopCategorySlug);
+        if (!cat) return null;
+        return (
+          <CategoryView
+            category={cat}
+            onNavigateHome={() => setView("home")}
+            onNavigateShop={goShopIndex}
+            onNavigateProduct={goShopProduct}
+          />
+        );
+      })()}
+      {view === "shop-product" && shopCategorySlug && shopProductSlug && (() => {
+        const pair = getProductBySlugs(shopCategorySlug, shopProductSlug);
+        if (!pair) return null;
+        return (
+          <ProductView
+            category={pair.category}
+            product={pair.product}
+            productData={PRODUCT}
+            customProductData={CUSTOM_PRODUCTS?.bib}
+            onAdd={addToCart}
+            onAddCustom={addCustomToCart}
+            onCartFeedback={triggerCartFeedback}
+            user={user}
+            onRequireSignIn={() => setAuthOpen(true)}
+            onStickyCtaShown={setPdpStickyCtaShown}
+            onOpenWaitlist={openWaitlist}
+            onNavigateHome={() => setView("home")}
+            onNavigateShop={goShopIndex}
+            onNavigateCategory={goShopCategory}
+          />
+        );
+      })()}
       </main>
 
       {/* Waitlist modal for placeholder catalog items */}
@@ -1169,7 +1380,7 @@ export function App() {
           view={view}
           cartCount={cart.reduce((n, i) => n + (i.qty || 0), 0)}
           onHome={() => { setView("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-          onShop={() => scrollTo("blanket")}
+          onShop={goShopIndex}
           onCart={() => setCartOpen(true)}
           onAccount={() => {
             if (user) setView("account");
@@ -1200,8 +1411,8 @@ export function App() {
             <div className="md:col-span-2">
               <p className="text-xs tracking-[0.3em] uppercase mb-4 opacity-70">{t("footer.shop")}</p>
               <div className="flex flex-col gap-2 text-sm">
-                <button onClick={() => scrollTo("blanket")} className="text-left hover:opacity-60">{t("nav.blanket")}</button>
-                <button onClick={() => scrollTo("custom")} className="text-left hover:opacity-60">{t("nav.custom")}</button>
+                <button onClick={() => goShopCategory("blankets")} className="text-left hover:opacity-60">{t("nav.blanket")}</button>
+                <button onClick={() => goShopCategory("bibs")} className="text-left hover:opacity-60">{t("nav.custom")}</button>
                 <button onClick={() => scrollTo("story")} className="text-left hover:opacity-60">{t("nav.story")}</button>
                 <button onClick={() => { setJournalSlug(null); setView("journal"); }} className="text-left hover:opacity-60">Journal</button>
                 <button onClick={() => scrollTo("faq")} className="text-left hover:opacity-60">{t("nav.faq")}</button>
@@ -1322,7 +1533,7 @@ export function App() {
                   Lusik stitches each blanket to order. Start with the alphabet picker below.
                 </p>
                 <button
-                  onClick={() => { setCartOpen(false); scrollTo("blanket"); }}
+                  onClick={() => { setCartOpen(false); goShopCategory("blankets"); }}
                   className="px-6 py-3 text-xs tracking-[0.2em] uppercase mb-4"
                   style={{ background: "var(--ink)", color: "var(--text-on-ink)", fontWeight: 500 }}
                 >

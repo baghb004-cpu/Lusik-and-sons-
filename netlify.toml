@@ -63,6 +63,22 @@
   to     = "/index.html"
   status = 200
 
+# SPA fallback for /shop/* — same pattern as the journal rules.
+# Without this, Netlify would 404 on direct visits to a category
+# or product URL (someone clicking a shared link). The 200 status
+# is the "rewrite" form — the browser keeps the original URL in
+# the bar while index.html is served, which is what we want for
+# SEO + the React app's history-API router.
+[[redirects]]
+  from   = "/shop"
+  to     = "/index.html"
+  status = 200
+
+[[redirects]]
+  from   = "/shop/*"
+  to     = "/index.html"
+  status = 200
+
 # Don't redirect /index.html or static files — the default behavior already
 # serves them correctly from `publish`.
 

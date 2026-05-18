@@ -199,6 +199,45 @@ test.describe("checkout view", () => {
   });
 });
 
+test.describe("shop hierarchy navigation", () => {
+  test("home → /shop → category → product → URL is the canonical product path", async ({ page }) => {
+    await page.goto("/");
+
+    // Open the mobile-friendly Shop entry. The home page has a
+    // "See everything Lusik makes" link AND the desktop mega-menu's
+    // "Shop" trigger; either works. We use the home-page link
+    // because it's stable in the rendered DOM regardless of viewport.
+    await page.getByRole("button", { name: /see everything lusik makes/i }).click();
+    await expect(page).toHaveURL(/\/shop\/?$/, { timeout: 5_000 });
+
+    // Click into Blankets category.
+    await page.getByRole("button", { name: /browse blankets/i }).click();
+    await expect(page).toHaveURL(/\/shop\/blankets\/?$/, { timeout: 5_000 });
+
+    // Click into the live Armenian Alphabet Blanket product.
+    await page.getByRole("button", { name: /view the armenian alphabet blanket/i }).click();
+    await expect(page).toHaveURL(/\/shop\/blankets\/armenian-alphabet-blanket\/?$/, { timeout: 5_000 });
+
+    // The product page should render the configurator — verify by
+    // looking for the "Armenian" alphabet picker button which is
+    // unique to the live blanket PDP.
+    await expect(page.getByRole("button", { name: /^Armenian\b/ }).first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("placeholder product page shows Notify me CTA", async ({ page }) => {
+    // Direct navigation to a placeholder URL — confirms the SPA
+    // fallback rewrite + the router pair-resolution + the
+    // placeholder template all work end-to-end.
+    await page.goto("/shop/blankets/cotton-yarn-blanket");
+
+    // "Coming soon" badge or copy should appear somewhere.
+    await expect(page.getByText(/coming soon/i).first()).toBeVisible({ timeout: 5_000 });
+
+    // "Notify me" CTA should be present.
+    await expect(page.getByRole("button", { name: /notify me/i }).first()).toBeVisible({ timeout: 5_000 });
+  });
+});
+
 test.describe("journal navigation", () => {
   test("can navigate to a journal post and back", async ({ page }) => {
     await page.goto("/");
