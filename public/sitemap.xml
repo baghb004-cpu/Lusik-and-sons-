@@ -22,6 +22,48 @@
     <loc>https://lusikandsons.com/journal</loc>
     <lastmod>2026-05-17</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/journal/armenian-alphabet-gift</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/journal/pomegranate-in-textiles</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/journal/why-cross-stitch</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/journal/tatiks-hands</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/journal/why-glendale</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/journal/a-name-is-a-promise</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/journal/the-two-crafts</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 </urlset>
