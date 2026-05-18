@@ -235,14 +235,21 @@ test.describe("shop hierarchy navigation", () => {
     // Click the placeholder card — accessible name is
     // "Cotton Yarn Blanket — coming soon".
     await page.getByRole("button", { name: /cotton yarn blanket.*coming soon/i }).click();
-    await expect(page).toHaveURL(/\/shop\/blankets\/cotton-yarn-blanket\/?$/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/\/shop\/blankets\/cotton-yarn-blanket\/?$/, { timeout: 10_000 });
 
-    // "Coming soon" copy should appear (the badge + the page eyebrow
-    // both contain it; either match is fine).
-    await expect(page.getByText(/coming soon/i).first()).toBeVisible({ timeout: 5_000 });
+    // The placeholder template's primary CTA — full unique label so
+    // we don't match buttons elsewhere on the page that happen to
+    // contain "Notify me". 10s timeout absorbs the SPA route
+    // transition + fade-in animation on the new view.
+    await expect(
+      page.getByRole("button", { name: /notify me when it's ready/i })
+    ).toBeVisible({ timeout: 10_000 });
 
-    // "Notify me" CTA should be present.
-    await expect(page.getByRole("button", { name: /notify me/i }).first()).toBeVisible({ timeout: 5_000 });
+    // Product name in the page heading — confirms the placeholder
+    // page rendered with the right product, not just any page.
+    await expect(
+      page.getByRole("heading", { name: /cotton yarn blanket/i })
+    ).toBeVisible({ timeout: 5_000 });
   });
 });
 
