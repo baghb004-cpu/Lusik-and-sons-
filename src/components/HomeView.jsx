@@ -17,6 +17,7 @@ import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
 import { TestimonialsSection } from "./TestimonialsSection.jsx";
 import { HeroSlideshow } from "./HeroSlideshow.jsx";
+import { MoreFromWorkshop } from "./MoreFromWorkshop.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
 import { ArrowRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
@@ -123,6 +124,8 @@ export function HomeView({ focus, product, customProducts, onAdd, onAddCustom, o
           </div>
         </div>
       </section>
+
+      <MoreFromWorkshop />
 
       {/* CUSTOM EMBROIDERY ORDERS */}
       {focus !== "blanket" && (
