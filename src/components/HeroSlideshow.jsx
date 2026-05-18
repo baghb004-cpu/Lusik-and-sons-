@@ -26,10 +26,16 @@ const HERO_PHOTOS = [
   {
     src: "/img/hero/01-full-alphabet-blanket.jpg",
     alt: "Full Armenian alphabet hand cross-stitched on a baby blanket by Lusik",
+    // Source JPEG is sideways — letters read left-to-right when
+    // the frame is rotated 90° counter-clockwise. Re-rotate on
+    // display until the file itself is re-uploaded correctly.
+    rotate: -90,
   },
   {
     src: "/img/hero/02-blanket-with-matching-bibs.jpg",
     alt: "Matching cross-stitched blanket and bib set by Lusik",
+    // Source JPEG is sideways the OTHER way — needs 90° clockwise.
+    rotate: 90,
   },
   {
     src: "/img/hero/03-bib-set-fan.jpg",
@@ -48,6 +54,14 @@ const HERO_PHOTOS = [
     alt: "Hand cross-stitched blue baby hat with Armenian alphabet trim",
   },
 ];
+
+// Hero container is aspect-[4/3] (landscape). When an img is
+// rotated 90° in either direction, the image's 4:3 rendered box
+// becomes a 3:4 rectangle inside that container, leaving black
+// gutters on the sides. Scaling by 4/3 ≈ 1.333 grows the rotated
+// rectangle back out to fill the container — `object-cover` then
+// crops the now-oversized image as needed.
+const ROTATION_FILL_SCALE = 4 / 3;
 
 const SLIDE_DURATION_MS = 7000;
 const FADE_DURATION_MS = 1500;
@@ -100,22 +114,29 @@ export function HeroSlideshow({ className = "", style = {} }) {
       aria-roledescription="carousel"
       aria-label="Lusik's recent work"
     >
-      {HERO_PHOTOS.map((photo, i) => (
-        <img
-          key={photo.src}
-          src={photo.src}
-          alt={photo.alt}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{
-            opacity: i === activeIdx ? 1 : 0,
-            transition: prefersReduced ? "none" : `opacity ${FADE_DURATION_MS}ms ease-in-out`,
-          }}
-          loading={i === 0 ? "eager" : "lazy"}
-          fetchPriority={i === 0 ? "high" : "low"}
-          decoding="async"
-          aria-hidden={i !== activeIdx}
-        />
-      ))}
+      {HERO_PHOTOS.map((photo, i) => {
+        const needsRotation = photo.rotate === 90 || photo.rotate === -90;
+        const transform = needsRotation
+          ? `rotate(${photo.rotate}deg) scale(${ROTATION_FILL_SCALE})`
+          : undefined;
+        return (
+          <img
+            key={photo.src}
+            src={photo.src}
+            alt={photo.alt}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              opacity: i === activeIdx ? 1 : 0,
+              transition: prefersReduced ? "none" : `opacity ${FADE_DURATION_MS}ms ease-in-out`,
+              ...(transform ? { transform, transformOrigin: "center center" } : {}),
+            }}
+            loading={i === 0 ? "eager" : "lazy"}
+            fetchPriority={i === 0 ? "high" : "low"}
+            decoding="async"
+            aria-hidden={i !== activeIdx}
+          />
+        );
+      })}
       {/* Soft Liquid-Glass bottom gradient — keeps the floating
           callout chip readable against any photo behind it. */}
       <div
