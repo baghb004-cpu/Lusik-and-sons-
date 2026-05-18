@@ -59,6 +59,7 @@ import { ThemeToggle } from "./components/ThemeToggle.jsx";
 import { HomeView } from "./components/HomeView.jsx";
 import { JournalView } from "./components/JournalView.jsx";
 import { AccountView } from "./components/AccountView.jsx";
+import { GalleryView } from "./components/GalleryView.jsx";
 import { AdminView } from "./components/AdminView.jsx";
 import { AdminOrderDetail } from "./components/AdminOrderDetail.jsx";
 import { CheckoutView } from "./components/CheckoutView.jsx";
@@ -343,6 +344,7 @@ export function App() {
       const p = window.location.pathname;
       if (p === "/blanket") setView("blanket");
       else if (p === "/bib") setView("bib");
+      else if (p === "/gallery") setView("gallery");
     };
     applyProductPath();
     window.addEventListener("popstate", applyProductPath);
@@ -350,8 +352,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (view !== "blanket" && view !== "bib") return;
-    const target = view === "blanket" ? "/blanket" : "/bib";
+    if (view !== "blanket" && view !== "bib" && view !== "gallery") return;
+    const target = view === "blanket" ? "/blanket" : view === "bib" ? "/bib" : "/gallery";
     if (window.location.pathname !== target) {
       try { window.history.replaceState({}, "", target); } catch {}
     }
@@ -1185,7 +1187,8 @@ export function App() {
       <main id="main-content" tabIndex={-1}>
       {(view === "home" || view === "blanket" || view === "bib") && <HomeView product={PRODUCT} customProducts={CUSTOM_PRODUCTS} onAdd={addToCart} onAddCustom={addCustomToCart} onCartFeedback={triggerCartFeedback} scrollTo={scrollTo} user={user} onRequireSignIn={() => setAuthOpen(true)} onStickyCtaShown={setPdpStickyCtaShown}  focus={view === "home" ? undefined : view} />}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
-      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
+      {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}      {view === "gallery" && <GalleryView />}
+
       {view === "admin" && isAdmin && (
         <AdminView
           user={user}

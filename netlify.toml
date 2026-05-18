@@ -85,6 +85,11 @@ from = "/account"
 to = "/index.html"
 status = 200
 
+[[redirects]]
+from = "/gallery"
+to = "/index.html"
+status = 200
+
 # Don't redirect /index.html or static files — the default behavior already
 # serves them correctly from `publish`.
 
