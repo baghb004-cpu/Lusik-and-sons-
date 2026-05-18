@@ -27,7 +27,7 @@
 //   - Stay Connected (newsletter)
 // ============================================================
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useT } from "../i18n/LangContext.jsx";
 import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
@@ -35,6 +35,7 @@ import { TestimonialsSection } from "./TestimonialsSection.jsx";
 import { HeroSlideshow } from "./HeroSlideshow.jsx";
 import { MoreFromWorkshop } from "./MoreFromWorkshop.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
+import { ContactQuickMenu } from "./ContactQuickMenu.jsx";
 import { ArrowRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import {
@@ -57,6 +58,7 @@ export function HomeView({
   onNavigateProduct,
 }) {
   const t = useT();
+  const [contactMenuOpen, setContactMenuOpen] = useState(false);
   return (
     <div className="fade-in">
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24">
@@ -100,18 +102,57 @@ export function HomeView({
             { Icon: Heart, label: "Hand cross-stitched", sub: "By Lusik herself" },
             { Icon: Shield, label: "Made to order", sub: "Your letter, your color" },
             { Icon: Truck, label: "Free US shipping", sub: "On orders over $150" },
-            { Icon: Mail, label: "Custom requests", sub: "Welcome by message" },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <item.Icon size={20} strokeWidth={1.25} style={{ color: "#B08842" }} />
-              <div>
-                <p className="text-sm" style={{ fontWeight: 500 }}>{item.label}</p>
-                <p className="text-xs opacity-70">{item.sub}</p>
-              </div>
-            </div>
-          ))}
+            // The 4th badge is the only interactive one — tapping it
+            // opens the ContactQuickMenu (Email / Text). The others
+            // stay as static info badges.
+            { Icon: Mail, label: "Custom requests", sub: "Tap to message Lusik", action: "contact" },
+          ].map((item, i) => {
+            const isActionable = item.action === "contact";
+            const Wrapper = isActionable ? "button" : "div";
+            const wrapperProps = isActionable
+              ? {
+                  type: "button",
+                  onClick: () => setContactMenuOpen(true),
+                  "aria-haspopup": "dialog",
+                  "aria-expanded": contactMenuOpen,
+                  "aria-label": "Open contact options to email or text Lusik",
+                  className:
+                    "flex items-center gap-3 text-left transition-opacity hover:opacity-80 focus-visible:opacity-100 cursor-pointer",
+                  style: { background: "transparent", border: 0, padding: 0 },
+                }
+              : { className: "flex items-center gap-3" };
+            return (
+              <Wrapper key={i} {...wrapperProps}>
+                <item.Icon size={20} strokeWidth={1.25} style={{ color: "#B08842" }} />
+                <div>
+                  <p
+                    className="text-sm flex items-center gap-1.5"
+                    style={{ fontWeight: 500 }}
+                  >
+                    {item.label}
+                    {isActionable && (
+                      <ArrowRight
+                        size={12}
+                        strokeWidth={1.75}
+                        style={{ color: "#B08842" }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </p>
+                  <p className="text-xs opacity-70">{item.sub}</p>
+                </div>
+              </Wrapper>
+            );
+          })}
         </div>
       </section>
+
+      {/* Contact quick-menu — controlled by the "Custom requests"
+          trust badge above. Renders nothing when closed. */}
+      <ContactQuickMenu
+        isOpen={contactMenuOpen}
+        onClose={() => setContactMenuOpen(false)}
+      />
 
       {/* ============================================================
           FEATURED CATEGORIES — a discovery strip, not a product list
