@@ -16,6 +16,7 @@ import { CustomProductCard } from "./CustomProductCard.jsx";
 import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
 import { TestimonialsSection } from "./TestimonialsSection.jsx";
+import { HeroSlideshow } from "./HeroSlideshow.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
 import { ArrowRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
@@ -52,7 +53,7 @@ export function HomeView({ focus, product, customProducts, onAdd, onAddCustom, o
           <div className="lg:col-span-7 slide-up stagger-2">
             <div className="relative">
               <div className="aspect-[4/3] overflow-hidden">
-                <img src={product.gallery[0]} alt={product.name} className="w-full h-full object-cover" fetchPriority="high" decoding="async" />
+                <HeroSlideshow className="w-full h-full" />
               </div>
               <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
                 <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "#B08842" }}>{t("hero.callout1")}</p>
