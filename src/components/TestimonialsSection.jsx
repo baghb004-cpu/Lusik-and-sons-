@@ -42,6 +42,66 @@ const _LUSIK_TESTIMONIALS = [
     name:  "Lily",
     place: "Burbank, CA",
   },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "Got it as a baby shower gift for my best friend. She opened it and just stopped talking. That doesn't happen often.",
+    name:  "Diana",
+    place: "Glendale, CA",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "I grew up in California but my family is from Yerevan. I wanted my son to grow up with the Armenian alphabet around him. Lusik did the letter exactly the way my mother described it.",
+    name:  "Karine",
+    place: "La Crescenta, CA",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "My husband is Armenian, I am not. I wanted something for our daughter that would speak to her father's side. Lusik was patient over email and the blanket arrived two days before her christening.",
+    name:  "Rachel",
+    place: "Brooklyn, NY",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "Found Lusik through a friend's Instagram. I am not Armenian but the craft spoke for itself. The cross-stitch is on a level you do not see from machine-made baby blankets.",
+    name:  "Marie",
+    place: "Boston, MA",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "Ordered the bib with our son's name. After a year of daily use the embroidery is still perfect. Bought a second one because the first never gets a break.",
+    name:  "Vahan",
+    place: "Encino, CA",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "My parents in Yerevan saw the blanket when we visited and asked who made it. They cried. I told them: someone in California, like us, who still remembers how.",
+    name:  "Sona",
+    place: "San Diego, CA",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "We had twins. I asked if she could do two blankets with mirrored borders so they would feel like a set. She said yes without hesitating. They are beautiful side by side in the crib.",
+    name:  "Jessica",
+    place: "Austin, TX",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "Took a little longer than I expected but Lusik sent me a photo halfway through so I could see the work. The wait was the right kind of wait. My godson has it now.",
+    name:  "Hovsep",
+    place: "San Francisco, CA",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "Our family speaks Armenian, Arabic, and English. I asked for the first letter of his name in Armenian because that is the alphabet I want him to learn first. Lusik understood immediately.",
+    name:  "Maral",
+    place: "Tarzana, CA",
+  },
+  {
+    // TODO_LUSIK: replace with real customer quote once collected (seed content).
+    quote: "I bought it as a gift for a coworker's first baby. She is Armenian, I am not. When she opened it at the office she actually cried. Worth every dollar.",
+    name:  "Pam",
+    place: "Costa Mesa, CA",
+  },
 ];
 
 export function TestimonialsSection() {
@@ -54,7 +114,7 @@ export function TestimonialsSection() {
         </h2>
       </div>
       <div className="grid md:grid-cols-3 gap-10 lg:gap-12">
-        {_LUSIK_TESTIMONIALS.map((t, i) => (
+        {_LUSIK_TESTIMONIALS.slice(0, 3).map((t, i) => (
           <figure key={i} className="text-center md:text-left">
             <blockquote className="font-display italic text-lg lg:text-xl leading-relaxed mb-5" style={{ fontWeight: 400, color: "#3D332A" }}>
               {"“"}{t.quote}{"”"}
