@@ -65,6 +65,7 @@ import { ThemeToggle } from "./components/ThemeToggle.jsx";
 import { HomeView } from "./components/HomeView.jsx";
 import { JournalView } from "./components/JournalView.jsx";
 import { AccountView } from "./components/AccountView.jsx";
+import { GalleryView } from "./components/GalleryView.jsx";
 import { AdminView } from "./components/AdminView.jsx";
 import { AdminOrderDetail } from "./components/AdminOrderDetail.jsx";
 import { CheckoutView } from "./components/CheckoutView.jsx";
@@ -314,24 +315,11 @@ export function App() {
     }
   }, []);
 
-  // --- LEFTOVER #admin CLEANUP ---
-  // The previous deploy injected an "Admin" button in index.html that
-  // set `window.location.hash = '#admin'`. Nothing in the SPA listened
-  // for that hash, so the URL got stuck with `#admin` and the UI froze
-  // from the customer's perspective. We removed the injector, but
-  // anyone who has the broken URL bookmarked or open in a tab still
-  // sees the stale fragment. Strip it on mount so reloads come out
-  // clean. The Identity-token handler in lib/auth.js runs FIRST and
-  // already consumes any `#*_token=...` fragment, so we know by this
-  // point there's nothing valuable in `#admin`.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.location.hash === "#admin") {
-      try {
-        history.replaceState(null, "", window.location.pathname + window.location.search);
-      } catch {}
-    }
-  }, []);
+  // (The legacy "strip stale #admin" cleanup that lived here was
+  // removed during the merge with main — main brought back an
+  // active #admin hash router that NEEDS the fragment to remain
+  // long enough to read it. See the checkAdminHash effect below
+  // which now owns this fragment.)
 
   // --- JOURNAL + SHOP ROUTING (history API) ---
   // Real URLs, not hash fragments. Two route hierarchies use this:
@@ -445,6 +433,74 @@ export function App() {
       window.history.pushState({}, "", "/");
     }
   }, [view]);
+
+  // Legacy short URLs that predate the /shop hierarchy. /blanket
+  // and /bib redirect to the canonical product pages so old shared
+  // links continue to land in the right spot. /gallery is a real
+  // standalone view added on main (no /shop equivalent).
+  useEffect(() => {
+    const applyProductPath = () => {
+      if (typeof window === "undefined") return;
+      const p = window.location.pathname;
+      if (p === "/blanket") {
+        try { window.history.replaceState({}, "", "/shop/blankets/armenian-alphabet-blanket"); } catch {}
+        setShopCategorySlug("blankets");
+        setShopProductSlug("armenian-alphabet-blanket");
+        setView("shop-product");
+        return;
+      }
+      if (p === "/bib") {
+        try { window.history.replaceState({}, "", "/shop/bibs/baby-bib"); } catch {}
+        setShopCategorySlug("bibs");
+        setShopProductSlug("baby-bib");
+        setView("shop-product");
+        return;
+      }
+      if (p === "/gallery") {
+        setView("gallery");
+      }
+    };
+    applyProductPath();
+    window.addEventListener("popstate", applyProductPath);
+    return () => window.removeEventListener("popstate", applyProductPath);
+  }, []);
+
+  // Push state when the customer is on /gallery so the URL bar
+  // reflects the view. /blanket and /bib don't reach here because
+  // applyProductPath above redirects them on mount.
+  useEffect(() => {
+    if (view !== "gallery") return;
+    if (window.location.pathname !== "/gallery") {
+      try { window.history.replaceState({}, "", "/gallery"); } catch {}
+    }
+  }, [view]);
+
+  // ---------------------------------------------------------------
+  // Admin hash routing — clicking the Admin nav button (injected by
+  // index.html for users with the admin role) sets
+  // window.location.hash = "#admin". This effect listens for that
+  // hash and switches the SPA to the admin view if the user is
+  // confirmed-admin by identity, then clears the hash so the
+  // address bar stays clean.
+  // ---------------------------------------------------------------
+  useEffect(() => {
+    const checkAdminHash = () => {
+      if (window.location.hash !== "#admin") return;
+      // Defer one tick so the Identity widget can hydrate currentUser()
+      // after a fresh page load before we read the role.
+      setTimeout(() => {
+        try {
+          if (typeof auth?.isAdmin === "function" && auth.isAdmin()) {
+            setView("admin");
+            try { history.replaceState(null, "", location.pathname + location.search); } catch {}
+          }
+        } catch {}
+      }, 0);
+    };
+    checkAdminHash();
+    window.addEventListener("hashchange", checkAdminHash);
+    return () => window.removeEventListener("hashchange", checkAdminHash);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1296,6 +1352,11 @@ export function App() {
       </nav>
 
       <main id="main-content" tabIndex={-1}>
+      {/* HomeView is brand-only now — the inline ProductShowcase
+          and CustomProductCard moved to /shop/blankets/... and
+          /shop/bibs/baby-bib. Legacy /blanket and /bib URLs get
+          redirected to those new product pages by the
+          applyProductPath effect above. */}
       {view === "home" && (
         <HomeView
           product={PRODUCT}
@@ -1307,6 +1368,8 @@ export function App() {
       )}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
+      {view === "gallery" && <GalleryView />}
+
       {view === "admin" && isAdmin && (
         <AdminView
           user={user}

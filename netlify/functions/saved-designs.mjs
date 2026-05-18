@@ -29,7 +29,7 @@ function makeId() {
 }
 
 export default async (req, context) => {
-  const auth = requireUser(context);
+  const auth = requireUser(req, context);
   if (auth.response) return auth.response;
   const { user } = auth;
 
