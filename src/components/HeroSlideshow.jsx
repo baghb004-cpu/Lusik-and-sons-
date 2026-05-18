@@ -21,6 +21,7 @@
 // ============================================================
 
 import React, { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "./icons.jsx";
 
 const HERO_PHOTOS = [
   {
@@ -34,12 +35,15 @@ const HERO_PHOTOS = [
   {
     src: "/img/hero/02-blanket-with-matching-bibs.jpg",
     alt: "Matching cross-stitched blanket and bib set by Lusik",
-    // Source JPEG is sideways the OTHER way — needs 90° clockwise.
-    rotate: 90,
+    // Source JPEG is already oriented correctly — no rotation.
   },
   {
     src: "/img/hero/03-bib-set-fan.jpg",
     alt: "Set of cross-stitched baby bibs arranged in a fan",
+    // Bibs lie sideways in the source JPEG — rotate 90° clockwise
+    // so the neck openings face up and the embroidered names read
+    // left-to-right.
+    rotate: 90,
   },
   {
     src: "/img/hero/04-bib-cascade-pink-white.jpg",
@@ -68,7 +72,12 @@ const FADE_DURATION_MS = 1500;
 
 export function HeroSlideshow({ className = "", style = {} }) {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
+  // `hoverPaused` = transient hover-to-pause on desktop. `userPaused`
+  // = explicit click on the Pause button, sticky across hover. The
+  // slideshow only auto-advances when BOTH are false (plus the
+  // reduced-motion check).
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
   const [prefersReduced, setPrefersReduced] = useState(false);
   const timerRef = useRef(null);
 
@@ -86,16 +95,19 @@ export function HeroSlideshow({ className = "", style = {} }) {
     };
   }, []);
 
-  // Auto-advance timer. Skip entirely when paused or reduced-motion.
+  // Auto-advance timer. Skip when paused (either way) or reduced-motion.
+  // `activeIdx` is in deps so a manual prev/next click resets the
+  // 7-second countdown — feels less janky than the next auto-advance
+  // firing 200ms after a manual click.
   useEffect(() => {
-    if (prefersReduced || paused) return undefined;
+    if (prefersReduced || hoverPaused || userPaused) return undefined;
     timerRef.current = setInterval(() => {
       setActiveIdx((prev) => (prev + 1) % HERO_PHOTOS.length);
     }, SLIDE_DURATION_MS);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [paused, prefersReduced]);
+  }, [hoverPaused, userPaused, prefersReduced, activeIdx]);
 
   // Preload the NEXT photo so the crossfade doesn't stutter.
   useEffect(() => {
@@ -105,12 +117,16 @@ export function HeroSlideshow({ className = "", style = {} }) {
     img.src = HERO_PHOTOS[nextIdx].src;
   }, [activeIdx]);
 
+  const goPrev = () => setActiveIdx((prev) => (prev - 1 + HERO_PHOTOS.length) % HERO_PHOTOS.length);
+  const goNext = () => setActiveIdx((prev) => (prev + 1) % HERO_PHOTOS.length);
+  const togglePause = () => setUserPaused((p) => !p);
+
   return (
     <div
       className={`relative overflow-hidden ${className}`}
       style={style}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseEnter={() => setHoverPaused(true)}
+      onMouseLeave={() => setHoverPaused(false)}
       aria-roledescription="carousel"
       aria-label="Lusik's recent work"
     >
@@ -147,6 +163,80 @@ export function HeroSlideshow({ className = "", style = {} }) {
         }}
         aria-hidden="true"
       />
+
+      {/* ============================================================
+          Slideshow controls — Prev / Next arrows + Pause toggle.
+          ============================================================
+          Layout choices:
+            * Prev/Next: centered vertically on the LEFT and RIGHT
+              edges of the photo. Standard carousel pattern; works
+              identically on mobile + desktop, no media-query needed.
+              On mobile they sit a bit inset from the edge so a thumb
+              landing at the very edge of the screen doesn't catch
+              them by accident.
+            * Pause: bottom-right corner. Sits clear of the bottom-
+              left "BY LUSIK / Made to order" callout chip (which
+              floats outside the image on desktop and is hidden on
+              mobile, so no collision either way).
+            * Buttons are 44px square — Apple's minimum touch target.
+              Background is a soft cream wash with a subtle border
+              so they read against any photo without obscuring the
+              image.
+          Keyboard:
+            * Each button is a real <button>, so Tab + Enter / Space
+              work out of the box. Focus rings come from globals. */}
+      <button
+        type="button"
+        onClick={goPrev}
+        aria-label="Previous slide"
+        className="absolute top-1/2 -translate-y-1/2 left-3 lg:left-4 w-11 h-11 flex items-center justify-center transition-opacity hover:opacity-100 focus-visible:opacity-100"
+        style={{
+          background: "rgba(245, 239, 227, 0.85)",
+          border: "1px solid rgba(26, 22, 18, 0.15)",
+          color: "#1A1612",
+          opacity: 0.85,
+          borderRadius: "999px",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+        }}
+      >
+        <ChevronLeft size={20} strokeWidth={1.75} />
+      </button>
+      <button
+        type="button"
+        onClick={goNext}
+        aria-label="Next slide"
+        className="absolute top-1/2 -translate-y-1/2 right-3 lg:right-4 w-11 h-11 flex items-center justify-center transition-opacity hover:opacity-100 focus-visible:opacity-100"
+        style={{
+          background: "rgba(245, 239, 227, 0.85)",
+          border: "1px solid rgba(26, 22, 18, 0.15)",
+          color: "#1A1612",
+          opacity: 0.85,
+          borderRadius: "999px",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+        }}
+      >
+        <ChevronRight size={20} strokeWidth={1.75} />
+      </button>
+      <button
+        type="button"
+        onClick={togglePause}
+        aria-label={userPaused ? "Resume slideshow" : "Pause slideshow"}
+        aria-pressed={userPaused}
+        className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 w-11 h-11 flex items-center justify-center transition-opacity hover:opacity-100 focus-visible:opacity-100"
+        style={{
+          background: "rgba(245, 239, 227, 0.85)",
+          border: "1px solid rgba(26, 22, 18, 0.15)",
+          color: "#1A1612",
+          opacity: 0.85,
+          borderRadius: "999px",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+        }}
+      >
+        {userPaused ? <Play size={18} strokeWidth={1.75} /> : <Pause size={18} strokeWidth={1.75} />}
+      </button>
     </div>
   );
 }
