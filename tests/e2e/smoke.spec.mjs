@@ -199,6 +199,60 @@ test.describe("checkout view", () => {
   });
 });
 
+test.describe("shop hierarchy navigation", () => {
+  test("home → /shop → category → product → URL is the canonical product path", async ({ page }) => {
+    await page.goto("/");
+
+    // Open the shop via the home-page "See everything Lusik makes"
+    // link. We deliberately don't use the desktop mega-menu trigger
+    // because mobile-chromium viewport hides it.
+    await page.getByRole("button", { name: /see everything lusik makes/i }).click();
+    await expect(page).toHaveURL(/\/shop\/?$/, { timeout: 5_000 });
+
+    // Click into Blankets category. Card uses aria-label="Browse Blankets".
+    await page.getByRole("button", { name: /browse blankets/i }).click();
+    await expect(page).toHaveURL(/\/shop\/blankets\/?$/, { timeout: 5_000 });
+
+    // Click into the live Armenian Alphabet Blanket product.
+    await page.getByRole("button", { name: /view the armenian alphabet blanket/i }).click();
+    await expect(page).toHaveURL(/\/shop\/blankets\/armenian-alphabet-blanket\/?$/, { timeout: 5_000 });
+
+    // The product page should render the configurator — verify by
+    // looking for the "Armenian" alphabet picker button which is
+    // unique to the live blanket PDP.
+    await expect(page.getByRole("button", { name: /^Armenian\b/ }).first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("placeholder product page shows Notify me CTA", async ({ page }) => {
+    // We navigate via the SPA (clicks) rather than `page.goto` so
+    // the test passes against the static `vite preview` server which
+    // doesn't have Netlify's SPA fallback for /shop/* URLs. The
+    // SPA's pushState routing handles the hierarchy fine; only the
+    // initial server response would 404 on a deep URL.
+    await page.goto("/");
+    await page.getByRole("button", { name: /see everything lusik makes/i }).click();
+    await page.getByRole("button", { name: /browse blankets/i }).click();
+    // Click the placeholder card — accessible name is
+    // "Cotton Yarn Blanket — coming soon".
+    await page.getByRole("button", { name: /cotton yarn blanket.*coming soon/i }).click();
+    await expect(page).toHaveURL(/\/shop\/blankets\/cotton-yarn-blanket\/?$/, { timeout: 10_000 });
+
+    // The placeholder template's primary CTA — full unique label so
+    // we don't match buttons elsewhere on the page that happen to
+    // contain "Notify me". 10s timeout absorbs the SPA route
+    // transition + fade-in animation on the new view.
+    await expect(
+      page.getByRole("button", { name: /notify me when it's ready/i })
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Product name in the page heading — confirms the placeholder
+    // page rendered with the right product, not just any page.
+    await expect(
+      page.getByRole("heading", { name: /cotton yarn blanket/i })
+    ).toBeVisible({ timeout: 5_000 });
+  });
+});
+
 test.describe("journal navigation", () => {
   test("can navigate to a journal post and back", async ({ page }) => {
     await page.goto("/");

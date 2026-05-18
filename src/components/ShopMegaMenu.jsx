@@ -1,31 +1,31 @@
-// ShopMegaMenu — MIRRORED FROM index.html (~line 2942).
+// ============================================================
+// ShopMegaMenu — desktop "Shop" dropdown
+// ============================================================
+// Four columns matching CATALOG categories. Each column header
+// is a link to the category landing page. Each product row
+// is a link to its product page (live or placeholder).
+//
+// Placeholder products still get a real link — the product
+// page itself surfaces the "Coming soon / Notify me" UX.
+// (Previously placeholder clicks opened the WaitlistModal
+// directly from this menu; that's been replaced by the
+// placeholder product page for a more consistent experience.)
+// ============================================================
+
 import React from "react";
 import { CATALOG } from "../data/catalog.js";
 import { ChevronDown } from "./icons.jsx";
 import { useT } from "../i18n/LangContext.jsx";
 
-export function ShopMegaMenu({ onShopBlanket, onShopCustom, onPlaceholderClick }) {
+export function ShopMegaMenu({ onNavigateShop, onNavigateCategory, onNavigateProduct }) {
   const t = useT();
-
-  // Click handler for a catalog item — figure out where to send the customer
-  // based on the item's status and the canonical product it represents.
-  const handleClick = (product) => {
-    if (product.status === "live") {
-      // Live products link to the existing on-page sections.
-      if (product.key === "blanket-alphabet")     onShopBlanket?.();
-      else if (product.key === "bib-single")      onShopCustom?.();
-    } else {
-      // Placeholder products — open the waitlist modal so we can
-      // capture interest. A "Or email Lusik" fallback link inside
-      // the modal preserves the old direct-email path for
-      // customers who want a personal conversation.
-      onPlaceholderClick?.(product);
-    }
-  };
 
   return (
     <div className="shop-menu-wrap">
-      <button className="shop-menu-trigger hover:opacity-60 flex items-center gap-1">
+      <button
+        className="shop-menu-trigger hover:opacity-60 flex items-center gap-1"
+        onClick={() => onNavigateShop?.()}
+      >
         Shop
         <ChevronDown size={14} strokeWidth={1.5} className="opacity-60" />
       </button>
@@ -33,17 +33,23 @@ export function ShopMegaMenu({ onShopBlanket, onShopCustom, onPlaceholderClick }
         <div className="grid grid-cols-4 gap-8">
           {Object.entries(CATALOG).map(([catKey, category]) => (
             <div key={catKey} className="shop-menu-col">
-              <p className="shop-menu-col-label">{category.label}</p>
+              <button
+                onClick={() => onNavigateCategory?.(category.slug)}
+                className="shop-menu-col-label text-left w-full hover:opacity-100"
+                role="menuitem"
+              >
+                {category.label} →
+              </button>
               {category.products.map((p) => (
                 <button
                   key={p.key}
-                  onClick={() => handleClick(p)}
+                  onClick={() => onNavigateProduct?.(category.slug, p.slug)}
                   className={`shop-menu-item text-left w-full ${p.status === "placeholder" ? "placeholder" : ""}`}
                   role="menuitem"
                 >
                   {p.name}
                   {p.status === "placeholder" && (
-                    <span className="shop-menu-item-meta">· Notify me</span>
+                    <span className="shop-menu-item-meta">· Coming soon</span>
                   )}
                 </button>
               ))}
@@ -51,7 +57,7 @@ export function ShopMegaMenu({ onShopBlanket, onShopCustom, onPlaceholderClick }
           ))}
         </div>
         <p className="text-[0.65rem] opacity-40 italic mt-6 pt-4" style={{ borderTop: "1px solid rgba(26,22,18,0.06)" }}>
-          Items marked "Notify me" aren't yet listed for online purchase — Lusik makes them but is finalizing pricing. Tap one to leave your email; we'll write the moment it launches.
+          Items marked "Coming soon" aren't yet listed for online purchase — open the page to leave your email and we'll write the moment it launches.
         </p>
       </div>
     </div>

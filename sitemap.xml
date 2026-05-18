@@ -9,10 +9,12 @@
     2. Set <lastmod> to today's date in YYYY-MM-DD.
     3. Commit + push; the next deploy makes the new URL crawlable.
 
-  The product page lives at the root (/) — anchor sections like
-  #blanket, #faq are NOT listed separately because they're not
-  distinct documents and Google handles in-page anchors via
-  the structured-data BreadcrumbList in the HTML head.
+  When you add a new product or category to src/data/catalog.js:
+    1. Add a <url> block under the matching /shop section below.
+    2. The slug must match the entry's `slug` field in catalog.js.
+    3. Live products get priority 0.8, placeholders 0.5 — they're
+       not buyable yet so we don't want them ranking ahead of the
+       real ones.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
@@ -22,26 +24,104 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- Shop hierarchy -->
+  <url>
+    <loc>https://lusikandsons.com/shop</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Blankets -->
+  <url>
+    <loc>https://lusikandsons.com/shop/blankets</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/blankets/armenian-alphabet-blanket</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/blankets/cotton-yarn-blanket</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Bibs -->
+  <url>
+    <loc>https://lusikandsons.com/shop/bibs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/bibs/baby-bib</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/bibs/days-of-the-week-bib-set</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/bibs/hy-em-armenian-bib</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Towels -->
+  <url>
+    <loc>https://lusikandsons.com/shop/towels</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/towels/embroidered-hand-towel</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/towels/armenian-baptism-towel</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- For Baby -->
+  <url>
+    <loc>https://lusikandsons.com/shop/baby</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/baby/baby-swaddle</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lusikandsons.com/shop/baby/baby-bathrobe</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Journal -->
   <url>
     <loc>https://lusikandsons.com/journal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
   <url>
     <loc>https://lusikandsons.com/journal/armenian-alphabet-gift</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
-
   <url>
     <loc>https://lusikandsons.com/journal/why-cross-stitch</loc>
     <lastmod>2026-05-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
-
   <url>
     <loc>https://lusikandsons.com/journal/pomegranate-in-textiles</loc>
     <lastmod>2026-04-29</lastmod>
