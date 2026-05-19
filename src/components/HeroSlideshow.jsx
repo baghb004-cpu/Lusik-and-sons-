@@ -70,7 +70,7 @@ const ROTATION_FILL_SCALE = 4 / 3;
 const SLIDE_DURATION_MS = 7000;
 const FADE_DURATION_MS = 1500;
 
-export function HeroSlideshow({ className = "", style = {} }) {
+export function HeroSlideshow({ className = "", style = {}, onIndexChange }) {
   const [activeIdx, setActiveIdx] = useState(0);
   // `hoverPaused` = transient hover-to-pause on desktop. `userPaused`
   // = explicit click on the Pause button, sticky across hover. The
@@ -116,6 +116,14 @@ export function HeroSlideshow({ className = "", style = {} }) {
     const img = new window.Image();
     img.src = HERO_PHOTOS[nextIdx].src;
   }, [activeIdx]);
+
+  // Notify the parent on slide change so it can sync a rotating
+  // caption (or any other per-slide content) without duplicating
+  // the timer state. Fires on mount with index 0, then on each
+  // auto-advance or manual prev/next.
+  useEffect(() => {
+    onIndexChange?.(activeIdx);
+  }, [activeIdx, onIndexChange]);
 
   const goPrev = () => setActiveIdx((prev) => (prev - 1 + HERO_PHOTOS.length) % HERO_PHOTOS.length);
   const goNext = () => setActiveIdx((prev) => (prev + 1) % HERO_PHOTOS.length);
