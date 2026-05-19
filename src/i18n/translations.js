@@ -156,9 +156,9 @@ export const TRANSLATIONS = {
       q3: { q: "Which way do the letters run?",
             a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
       q4: { q: "What is the blanket made of?",
-            a: "A soft acrylic baby blanket with a woven pomegranate pattern, finished with fringe edges. The fabric is gentle enough for newborns. Lusik picks each blanket personally before stitching." },
-      q5: { q: "How do I wash it?",
-            a: "Gentle machine wash on cold, lay flat to dry. Don't tumble dry — heat can shrink the stitching." },
+            a: "A soft acrylic baby blanket with a woven pomegranate pattern, finished with fringe edges and a satin backing matched to the body color. The fabric is gentle enough for newborns. Lusik picks each blanket personally before stitching." },
+      q5: { q: "How do I clean it?",
+            a: "We recommend professional dry cleaning for every piece. The dry cleaner gives consistent gentle treatment that preserves the cross-stitching, satin backing, and crochet edging — washing machines wear handmade textiles down quickly, and cycle / temperature mistakes are easy to make. If you'd rather launder at home, follow the yarn's label exactly (cool wash, no bleach, no iron, tumble dry low on delicate). We can't guarantee against wear from washing-machine cycles." },
       q6: { q: "Do you ship internationally?",
             a: "Not yet. Right now we ship only within the United States. We'll add more countries as the business grows." },
       q7: { q: "Is this a final sale?",
@@ -537,9 +537,11 @@ export const TRANSLATIONS = {
             // ⚠️ TODO_LUSIK_REVIEW — auto-translated; please confirm with Lusik.
             a: "Վերին ձախից ներքին աջ։ Լուսիկը կարկատում է այբուբենը այդ մեկ անկյունագծի վրա — հակառակ ուղղությունը նա չի առաջարկում։ Միջին տառը միշտ կենտրոնում է։" },
       q4: { q: "Ինչից է պատրաստված ծածկոցը։",
-            a: "Փափուկ ակրիլային մանկական ծածկոցից՝ նռան նախշով գործվածքով, ծոպավոր եզրերով։ Գործվածքը բավականաչափ նուրբ է նորածինների համար։ Լուսիկը անձամբ ընտրում է յուրաքանչյուր ծածկոց՝ կարկատելուց առաջ։" },
-      q5: { q: "Ինչպե՞ս լվանալ։",
-            a: "Մեքենայով նուրբ լվացում սառը ջրով, հարթ դրած չորացրեք։ Չորանոցով մի՛ չորացրեք — ջերմությունը կարող է փոքրացնել կարկատանը։" },
+            // TODO_LUSIK_REVIEW — added satin backing mention
+            a: "Փափուկ ակրիլային մանկական ծածկոցից՝ նռան նախշով գործվածքով, ծոպավոր եզրերով և գույնին համապատասխան ատլասե աստառով։ Գործվածքը բավականաչափ նուրբ է նորածինների համար։ Լուսիկը անձամբ ընտրում է յուրաքանչյուր ծածկոց՝ կարկատելուց առաջ։" },
+      q5: { q: "Ինչպե՞ս մաքրել։",
+            // TODO_LUSIK_REVIEW — rewritten to recommend dry cleaning
+            a: "Խորհուրդ ենք տալիս չոր մաքրում յուրաքանչյուր կտորի համար։ Չոր մաքրողը հետևողականորեն մեղմ մշակում է խաչաձև կարկատանը, ատլասե աստառը և կեռիկ եզրերը — լվացքի մեքենաները արագ մաշում են ձեռագործ կտորները։ Եթե նախընտրում եք տանը լվանալ, հետևեք թելի պիտակին (սառը ջուր, ոչ սպիտակեցուցիչ, ոչ արդուկ, չորանոցով ցածր ջերմությամբ՝ նուրբ ռեժիմով)։ Մեքենայի լվացման մաշվածության դեմ երաշխիք չենք տալիս։" },
       q6: { q: "Միջազգային առաքում կատարու՞մ եք։",
             a: "Դեռ ոչ։ Այս պահին միայն ԱՄՆ-ի սահմաններում ենք առաքում։ Բիզնեսի աճի հետ կավելացնենք այլ երկրներ։" },
       q7: { q: "Կարո՞ղ եմ վերադարձնել։",

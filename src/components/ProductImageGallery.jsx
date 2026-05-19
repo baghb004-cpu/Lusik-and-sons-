@@ -38,6 +38,7 @@ export function ProductImageGallery({
   const [activeIdx, setActiveIdx] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
   const containerRef = useRef(null);
+  const thumbStripRef = useRef(null);
 
   const visibleIndices = activeColorway == null || !colorways
     ? images.map((_, i) => i)
@@ -47,6 +48,23 @@ export function ProductImageGallery({
   const safeIdx = activeIdx >= count ? 0 : activeIdx;
   const rawIdx = visibleIndices[safeIdx];
   const currentSrc = images[rawIdx];
+
+  // When the active slide changes, keep the matching thumbnail
+  // scrolled into view inside the thumbnail strip — without
+  // scrolling the page itself. We compute the offset manually
+  // (rather than using element.scrollIntoView) because the latter
+  // can scroll ancestor containers including the document body.
+  useEffect(() => {
+    const strip = thumbStripRef.current;
+    if (!strip) return;
+    const thumb = strip.querySelector(`[data-thumb-idx="${safeIdx}"]`);
+    if (!(thumb instanceof HTMLElement)) return;
+    const stripRect = strip.getBoundingClientRect();
+    const thumbRect = thumb.getBoundingClientRect();
+    // Center the thumb in the strip's visible window.
+    const target = thumb.offsetLeft - (stripRect.width - thumbRect.width) / 2;
+    strip.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [safeIdx, count]);
 
   // Preload the neighbours so prev / next clicks feel instant.
   // The current src is rendered as an <img> already, so the
@@ -165,21 +183,38 @@ export function ProductImageGallery({
         </div>
       </div>
 
-      {/* THUMBNAIL GRID — every visible photo. 6 cols on every
-          breakpoint. Active = ink outline, inactive = 50% opacity. */}
-      <div className="grid grid-cols-6 gap-2">
+      {/* THUMBNAIL STRIP — single horizontal row, scrolls
+          horizontally for long galleries. Was a wrapping 6-col
+          grid; with 61 photos that pushed the color picker far
+          below the fold. A single scrollable row keeps the
+          picker visible no matter how many photos are in the
+          set. The active thumb scrolls into view automatically
+          when the customer paginates with the chevron buttons. */}
+      <div
+        ref={thumbStripRef}
+        className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
+        style={{ scrollSnapType: "x mandatory", scrollbarWidth: "thin" }}
+        role="tablist"
+        aria-label="Photo thumbnails"
+      >
         {visibleIndices.map((rawI, vi) => (
           <button
             key={rawI}
             type="button"
+            role="tab"
+            data-thumb-idx={vi}
             onClick={() => setActiveIdx(vi)}
-            className={`aspect-square overflow-hidden ${vi === safeIdx ? "" : "opacity-50 hover:opacity-100"}`}
+            className={`shrink-0 aspect-square overflow-hidden ${vi === safeIdx ? "" : "opacity-50 hover:opacity-100"}`}
             style={{
+              width: "16%",
+              minWidth: "64px",
+              maxWidth: "92px",
               outline: vi === safeIdx ? "1.5px solid #1A1612" : "none",
               outlineOffset: "1px",
+              scrollSnapAlign: "start",
             }}
             aria-label={`View photo ${vi + 1}`}
-            aria-current={vi === safeIdx ? "true" : undefined}
+            aria-selected={vi === safeIdx}
           >
             <img
               src={images[rawI]}
