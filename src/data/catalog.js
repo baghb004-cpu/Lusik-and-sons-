@@ -211,13 +211,65 @@ export const CATALOG = {
         tagline: "Machine-embroidered with a personalized name.",
       },
       {
+        // Catalog key kept stable across the pricing flip so the
+        // cart-id / Stripe trusted-products map don't get broken
+        // when the product goes live. Slug ALSO kept stable for
+        // SEO continuity (URL is already in sitemap.xml).
         key: "bib-days-of-week",
         slug: "days-of-the-week-bib-set",
-        name: "Days of the Week Bib Set",
-        status: "placeholder",         // ⚠️ TODO_LUSIK
-        priceFrom: null,
-        tagline: "Seven bibs, one for each day of the week.",
-        description: "A set of seven bibs, each embroidered with a different day of the week — Monday through Sunday.",
+        // Renamed to lead with "Armenian" -- mirrors the rename
+        // pattern used on "The Cotton Alphabet Crib Blanket".
+        // Heritage hook + clear product identity in the title.
+        name: "The Armenian Days-of-the-Week Bib Set",
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the same checklist pattern used on the cotton blanket
+        priceFrom: null,               // ⚠️ TODO_LUSIK: set when going live
+        // Tagline leads with the count (seven) + the heritage angle.
+        tagline: "Seven baby bibs, one for each weekday — Armenian day names, embroidered by hand.",
+        // Description in the same maker + heirloom voice as the
+        // homepage. Names the buying contexts (baby shower,
+        // christening) where these sets sell best.
+        description: "Seven baby bibs, one for each day of the week — the Armenian day name (Երկուշաբթի through Կիրակի, Monday through Sunday) embroidered on each. A heritage gift set for a baby shower, a christening, or simply for the early-bib-change years. Lusik embroiders each one from her home in Cypress, California. Made to order, made to last.",
+        coverImage: "/img/days-bib/cover.jpg",
+        // 22-photo gallery. Curatorial arc:
+        //   01-04  hero bundle shots + cross-sell with alphabet blanket
+        //   05-06  rainbow / pink cascade hero colorways
+        //   07-10  Pink family (girl)
+        //   11-12  Blue family (boy)
+        //   13     Gold (premium, neutral)
+        //   14-16  Boy pastel multi-color (blue + yellow + white)
+        //   17-20  Rainbow (multi-color thread on white / pastel)
+        //   21     Green
+        //   22     bibs on alphabet blanket alt angle
+        images: Array.from({ length: 22 }, (_, i) =>
+          `/img/days-bib/${String(i + 1).padStart(2, "0")}.jpg`,
+        ),
+        // Color picker -- the actual sellable variants Lusik makes.
+        // Bundle shots (indices 0-3) and the rainbow pastel hero
+        // (index 4) aren't tied to one variant -- they live in the
+        // gallery default view but get no dedicated swatch. Same
+        // pattern as the cotton blanket: only sellable colorways
+        // become swatches.
+        colorways: [
+          { label: "Pink",         indices: [5, 6, 7, 9],          swatch: { color: "#E8B5C7" } },
+          { label: "Lavender",     indices: [8],                   swatch: { color: "#BBA8D6" } },
+          { label: "Blue",         indices: [10, 11],              swatch: { color: "#93B7D5" } },
+          { label: "Gold",         indices: [12],                  swatch: { color: "#E8D89B" } },
+          { label: "Boy pastel",   indices: [13, 14, 15],          swatch: { dual: ["#93B7D5", "#E8D89B"] } },
+          { label: "Rainbow",      indices: [4, 16, 17, 18, 19],   swatch: { gradient: ["#E8B5C7", "#BBA8D6", "#93B7D5", "#B5D9BC", "#E8D89B"] } },
+          { label: "Green",        indices: [20],                  swatch: { color: "#B5D9BC" } },
+        ],
+        details: [
+          { label: "Set size",  value: "Seven bibs — Monday through Sunday in Armenian (Երկուշաբթի, Երեքշաբթի, Չորեքշաբթի, Հինգշաբթի, Ուրբաթ, Շաբաթ, Կիրակի)." },
+          { label: "Materials", value: "100% cotton terry bib body with satin trim. Commercial-grade machine-embroidery thread on the day name." },
+          { label: "Sizing",    value: "One size, fits most babies. ⚠️ TODO_LUSIK: confirm." },
+          // Care language acknowledges both Lusik & Sons' dry-clean
+          // recommendation AND the reality that bibs are designed
+          // to be washed daily. Same hybrid stance as the cotton
+          // blanket but with an extra line confirming the
+          // commercial-grade thread can survive the wash.
+          { label: "Care",      value: "We recommend professional dry cleaning to preserve the embroidery for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread that survives a baby's daily bib changes. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles." },
+          { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
+        ],
       },
       {
         key: "bib-hy-em",
