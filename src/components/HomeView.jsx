@@ -15,9 +15,8 @@
 // What's still on the home page:
 //   - Hero
 //   - Trust strip (4 icons)
-//   - Featured Categories strip (NEW — replaces the inline PDP)
+//   - Featured Categories strip
 //   - From Lusik's Workshop (photo grid)
-//   - Pieces by commission (NEW teaser — replaces inline bib card)
 //   - Our Story
 //   - Testimonials + Customer Photos
 //   - FAQ
@@ -312,52 +311,13 @@ export function HomeView({
       {/* MoreFromWorkshop — coming-soon product cards strip from main. */}
       <MoreFromWorkshop />
 
-      {/* COMMISSION / CUSTOM ORDERS TEASER
+      {/* COMMISSION / CUSTOM ORDERS TEASER — REMOVED
           ============================================================
-          Previously embedded the full <CustomProductCard> bib
-          configurator. With the /shop hierarchy in place, the bib
-          lives at /shop/bibs/baby-bib. This section now teases that
-          flow without the inline buy surface. */}
-      <section id="commission" className="py-20 lg:py-28" style={{ background: "var(--bg-elevated)", borderTop: "1px solid var(--border-default)", borderBottom: "1px solid var(--border-default)" }}>
-        <div className="max-w-5xl mx-auto px-6 lg:px-12">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <div>
-              <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Pieces by commission</p>
-              <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-                Send us <em style={{ fontWeight: 400 }}>a name</em>.
-              </h2>
-              <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-8">
-                Lusik machine-embroiders a short name onto a soft white baby bib — up to five or six letters, since the bib's surface is small. One size, fits most babies. Made to order.
-              </p>
-              <button
-                onClick={() => onNavigateProduct?.("bibs", "baby-bib")}
-                className="lg-button-ink lg-shine inline-flex items-center gap-3 px-6 py-3 text-sm tracking-wide"
-                style={{ fontWeight: 500 }}
-              >
-                Personalize a bib <ArrowRight size={16} strokeWidth={1.5} />
-              </button>
-              <p className="mt-4">
-                <button
-                  onClick={() => onNavigateCategory?.("bibs")}
-                  className="text-[0.65rem] tracking-[0.25em] uppercase underline underline-offset-4 hover:opacity-70"
-                  style={{ color: "#1A1612", fontWeight: 500 }}
-                >
-                  Or see all bibs →
-                </button>
-              </p>
-            </div>
-            <div className="aspect-square overflow-hidden">
-              <img
-                src={PHOTO_BIB_STACK}
-                alt="A stack of personalized bibs in different colors"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+          Removed at user request once the shop catalog filled out --
+          the bib has its own /shop/bibs/baby-bib page now, and the
+          ContactQuickMenu trust badge directly above already gives
+          a clear "message Lusik for custom" path. A dedicated
+          full-width teaser duplicated those two surfaces. */}
 
       <section id="story" className="py-20 lg:py-32" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-12 gap-10 lg:gap-20 items-center">
