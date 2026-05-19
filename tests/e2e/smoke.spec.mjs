@@ -48,7 +48,10 @@ test.describe("home page", () => {
     await page.goto("/");
     await expect(page.getByText("Lusik & Sons").first()).toBeVisible();
     // The hero CTA — present on every home render, good liveness signal.
-    await expect(page.getByRole("button", { name: /shop the blanket/i })).toBeVisible({ timeout: 10_000 });
+    // Copy changed in the narrative-rewrite pass: was "Shop the blanket",
+    // now "See what Lusik makes" (and the button now navigates to /shop
+    // instead of directly into the blanket PDP).
+    await expect(page.getByRole("button", { name: /see what lusik makes/i })).toBeVisible({ timeout: 10_000 });
 
     // Tailwind CDN logs a console warning ("cdn.tailwindcss.com should
     // not be used in production") that we'd see on every page. Filter
@@ -103,10 +106,10 @@ test.describe("cart drawer", () => {
 
 test.describe("blanket purchase flow", () => {
   test("can configure and add a blanket to the cart", async ({ page }) => {
-    await page.goto("/");
-
-    // Scroll to the blanket section.
-    await page.getByRole("button", { name: /shop the blanket/i }).first().click();
+    // Navigate directly to the blanket PDP. The hero CTA on home is
+    // now a generic "See what Lusik makes" that lands on /shop, not
+    // the product page — so we go straight to the configurator URL.
+    await page.goto("/shop/blankets/armenian-alphabet-blanket");
 
     // Pick the Armenian alphabet (first option in the picker).
     // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
@@ -131,9 +134,10 @@ test.describe("blanket purchase flow", () => {
 
 test.describe("checkout view", () => {
   test("opens from cart and shows order summary", async ({ page }) => {
-    // Add a blanket first.
-    await page.goto("/");
-    await page.getByRole("button", { name: /shop the blanket/i }).first().click();
+    // Add a blanket first. Navigate directly to the blanket PDP
+    // since the home hero CTA no longer lands there post narrative
+    // rewrite ("See what Lusik makes" -> /shop).
+    await page.goto("/shop/blankets/armenian-alphabet-blanket");
     // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
     // Match just the label so we don't depend on the exact glyph rendering.
     await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
@@ -165,8 +169,8 @@ test.describe("checkout view", () => {
       });
     });
 
-    await page.goto("/");
-    await page.getByRole("button", { name: /shop the blanket/i }).first().click();
+    // Direct-nav to the blanket PDP (same reason as the test above).
+    await page.goto("/shop/blankets/armenian-alphabet-blanket");
     // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
     // Match just the label so we don't depend on the exact glyph rendering.
     await page.getByRole("button", { name: /^Armenian\b/ }).first().click();

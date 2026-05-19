@@ -40,15 +40,38 @@ export const TRANSLATIONS = {
 
     // Hero / homepage
     hero: {
-      headline: "A blanket with your child's",
-      headlineEm: "first letter",
-      body: "Lusik hand cross-stitches baby blankets with the first three letters of the alphabet — Ա, Բ, Գ in Armenian, or A, B, C in English. For other letters or special requests, please ",
-      bodyEmailLink: "email her",
-      bodyAfter: ".",
-      shopCta: "Shop the blanket",
+      // Two-clause headline. The italic part is the "made to last"
+      // positioning — heirloom framing without using that word. The
+      // first clause names the maker, which is the most ownable
+      // brand asset (since Lusik makes blankets, bibs, blessings,
+      // hats, towels — the maker is the constant, the products vary).
+      headline: "Stitched by Lusik.",
+      headlineEm: "Made to last",
+      // Body intentionally avoids any one product category. Lists
+      // three of the categories Lusik actually makes (blankets,
+      // bibs, blessings) without claiming exclusivity, and surfaces
+      // the "& Sons" piece of the brand name. Custom-letter requests
+      // are handled by the dedicated Custom Requests trust badge
+      // popover below the hero, so we don't need an inline email
+      // link in the body anymore.
+      body: "From her home in Cypress, California, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made to order. Her sons help run the shop.",
+      shopCta: "See what Lusik makes",
       storyCta: "About Lusik",
       callout1: "By Lusik",
       callout2: "Made to order",
+      // Rotating caption — one short italic line per hero slide,
+      // appears between the H1 and the body copy. Sequenced to
+      // match HERO_PHOTOS in HeroSlideshow.jsx (index for index).
+      // 4–6 words each so the swap feels like a quiet caption, not
+      // a competing headline.
+      captions: [
+        "An alphabet, letter by letter.",
+        "Sets for the first day home.",
+        "A name on every bib.",
+        "Soft pieces, made small.",
+        "Blessings, framed in thread.",
+        "For the very first head.",
+      ],
     },
 
     // First-visit language banner
@@ -294,15 +317,22 @@ export const TRANSLATIONS = {
     },
     announce: "Ձեռագործ խաչաձեւ կարկատանով՝ Սայփրըսի մէջ, Քալիֆորնիա",
     hero: {
-      headline: "Ձեր զաւկին առաջին տառով",
-      headlineEm: "ծածկոց",
-      body: "Լուսիկը ձեռքով խաչաձեւ կարկատանով ծածկոցներ կը պատրաստէ՝ առաջին երեք տառերով — Ա, Բ, Գ հայերէնով, կամ A, B, C անգլերէնով։ Ուրիշ տառեր կամ յատուկ պատուէրներու համար՝ ",
-      bodyEmailLink: "գրեցէք իրեն",
-      bodyAfter: "։",
-      shopCta: "Տեսնել ծածկոցը",
+      // TODO_LUSIK_REVIEW — auto-translated, please refine
+      headline: "Կարուած Լուսիկին ձեռքով։",
+      headlineEm: "Կը մնայ սերունդէ սերունդ",
+      body: "Կիպրեսի (Քալիֆորնիա) իր տունէն, Լուսիկ ձեռքով խաչաձեւ կարկատանով կը պատրաստէ ծածկոցներ, թիկնոցներ եւ օրհնութիւններ — իւրաքանչիւր կտոր ձեռագործ, իւրաքանչիւր կտոր պատուէրով։ Իր տղաքը կ՚օգնեն խանութը վարելու։",
+      shopCta: "Տեսնել Լուսիկին գործերը",
       storyCta: "Լուսիկին մասին",
       callout1: "Լուսիկէն",
       callout2: "Պատուէրով կը պատրաստուի",
+      captions: [
+        "Այբուբենը՝ տառ առ տառ։",
+        "Ընտանիք մը՝ առաջին օրուան համար։",
+        "Իւրաքանչիւր թիկնոցի վրայ՝ անուն մը։",
+        "Մանր ու փափուկ կտորներ։",
+        "Օրհնութիւններ՝ թելով կարուած։",
+        "Ամէնէն փոքր գլուխներուն համար։",
+      ],
     },
     langBanner: {
       title: "Բարի եկաք",
@@ -411,15 +441,22 @@ export const TRANSLATIONS = {
     announce: "Ձեռագործ խաչաձև կարկատանով՝ Սայփրեսսում, Քալիֆորնիա",
 
     hero: {
-      headline: "Ձեր երեխայի առաջին տառով",
-      headlineEm: "ծածկոց",
-      body: "Լուսիկը ձեռքով խաչաձև կարկատանով մանկական ծածկոցներ է պատրաստում՝ այբուբենի առաջին երեք տառերով — Ա, Բ, Գ հայերեն, կամ A, B, C անգլերեն։ Այլ տառերի կամ հատուկ պատվերների համար՝ ",
-      bodyEmailLink: "գրեք իրեն",
-      bodyAfter: "։",
-      shopCta: "Տեսնել ծածկոցը",
+      // TODO_LUSIK_REVIEW — auto-translated, please refine
+      headline: "Կարված Լուսիկի ձեռքով։",
+      headlineEm: "Մնում է սերնդեսերունդ",
+      body: "Կիպրեսի (Կալիֆոռնիա) իր տնից, Լուսիկը ձեռքով խաչաձև կարկատանով պատրաստում է ծածկոցներ, թիկնոցներ և օրհնություններ — յուրաքանչյուր կտոր ձեռագործ, յուրաքանչյուր կտոր պատվերով։ Նրա տղաները օգնում են խանութը վարել։",
+      shopCta: "Տեսնել Լուսիկի գործերը",
       storyCta: "Լուսիկի մասին",
       callout1: "Լուսիկից",
       callout2: "Պատվերով է պատրաստվում",
+      captions: [
+        "Այբուբենը՝ տառ առ տառ։",
+        "Մի ընտանիք՝ առաջին օրվա համար։",
+        "Յուրաքանչյուր թիկնոցի վրա՝ անուն։",
+        "Մանր ու փափուկ կտորներ։",
+        "Օրհնություններ՝ թելով կարված։",
+        "Ամենափոքր գլուխների համար։",
+      ],
     },
 
     langBanner: {

@@ -59,21 +59,49 @@ export function HomeView({
 }) {
   const t = useT();
   const [contactMenuOpen, setContactMenuOpen] = useState(false);
+  // Mirrors HeroSlideshow's activeIdx so the rotating caption in
+  // the left-column text block stays in sync with the photo on
+  // the right. Updated via the onIndexChange callback.
+  const [heroIndex, setHeroIndex] = useState(0);
   return (
     <div className="fade-in">
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
           <div className="lg:col-span-5 slide-up min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#B08842" }}>Cypress, California</p>
-            <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-8" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
+            <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-6" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
               {t("hero.headline")} <em style={{ fontWeight: 400 }}>{t("hero.headlineEm")}</em>.
             </h1>
+            {/* Rotating caption — one short italic line per hero
+                slide. Keyed on heroIndex so React unmounts the old
+                <p> and mounts a fresh one on each slide change,
+                which re-fires the .fade-in animation and gives a
+                clean visual handoff between captions. The translation
+                array is fetched as an object via useT(); falls back
+                to an empty string if a translation file is missing
+                a caption at that index. */}
+            {(() => {
+              const captions = t("hero.captions");
+              const list = Array.isArray(captions) ? captions : [];
+              const caption = list[heroIndex % (list.length || 1)] ?? "";
+              if (!caption) return null;
+              return (
+                <p
+                  key={heroIndex}
+                  className="fade-in text-base lg:text-lg italic mb-8 max-w-md"
+                  style={{ color: "#B08842", fontWeight: 400, letterSpacing: "0.005em" }}
+                  aria-live="polite"
+                >
+                  — {caption} —
+                </p>
+              );
+            })()}
             <p className="text-base lg:text-lg leading-relaxed mb-10 max-w-md" style={{ color: "#3D332A" }}>
-              {t("hero.body")}<a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline" style={{ color: "#1A1612" }}>{t("hero.bodyEmailLink")}</a>{t("hero.bodyAfter")}
+              {t("hero.body")}
             </p>
             <div className="flex items-center gap-6">
               <button
-                onClick={() => onNavigateProduct?.("blankets", "armenian-alphabet-blanket")}
+                onClick={() => onNavigateShop?.()}
                 className="lg-button-ink lg-shine px-8 py-4 text-sm tracking-wide flex items-center gap-3"
                 style={{ fontWeight: 500 }}
               >
@@ -85,7 +113,7 @@ export function HomeView({
           <div className="lg:col-span-7 slide-up stagger-2">
             <div className="relative">
               <div className="aspect-[4/3] overflow-hidden">
-                <HeroSlideshow className="w-full h-full" />
+                <HeroSlideshow className="w-full h-full" onIndexChange={setHeroIndex} />
               </div>
               <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
                 <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "#B08842" }}>{t("hero.callout1")}</p>
