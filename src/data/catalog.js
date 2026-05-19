@@ -42,7 +42,12 @@ export const CATALOG = {
   blankets: {
     slug: "blankets",
     label: "Blankets",
-    description: "Hand cross-stitched baby blankets",
+    // Rewritten to recap WHAT'S inside the category (two distinct
+    // pieces, not one) and lead with the heritage angle. Same
+    // 2026-voice as the homepage rewrite -- maker + heirloom +
+    // search-friendly hooks ("Armenian alphabet", "heritage",
+    // "christening", "passed down").
+    description: "Hand cross-stitched alphabet blankets — Lusik's signature work. Two pieces, both Armenian by heritage: a personalized crib blanket with the first three letters of a child's name, and a full-alphabet crib blanket in cotton. Each one stitched by hand, made to order, made to last.",
     eyebrow: "Lusik's signature work",
     products: [
       {
@@ -57,7 +62,12 @@ export const CATALOG = {
         // three in sync when changing the price.
         priceFrom: 65,
         tagline: "Lusik's signature blanket. Three letters, stitched diagonally.",
-        // No placeholder image needed — uses PRODUCT.gallery
+        // Cover image for the category-grid card thumbnail AND for
+        // the second slot of the Blankets category-card hover
+        // slideshow. The actual product detail page (ProductShowcase)
+        // still uses PRODUCT.gallery[0] as its hero on render -- this
+        // is purely the category-level thumbnail.
+        coverImage: "/img/abc-blanket/cover.jpg",
       },
       {
         // ============================================================

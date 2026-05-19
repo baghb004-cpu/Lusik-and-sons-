@@ -18,16 +18,11 @@
 // pricing-drift test pattern.
 // ============================================================
 
-import {
-  PHOTO_HERO_OLEN,
-  PHOTO_OLEN_2026_BLANKET,
-  PHOTO_PURPLE_FLAT,
-  PHOTO_ARMENIAN_FLAG,
-  PHOTO_ARMENIAN_WITH_DATE,
-  PHOTO_YELLOWGREEN,
-  PHOTO_PURPLE_DETAIL,
-  PHOTO_LUCA_HEARTS,
-} from "../images/photos.js";
+// Legacy PHOTO_* constants are no longer used by PRODUCT.gallery
+// (May 2026 photo refresh — see the gallery comment below). They
+// remain exported from src/images/photos.js because the home page
+// "From Lusik's workshop" section still references some of them
+// (e.g. PHOTO_YELLOWGREEN_2). No import needed here anymore.
 
 export const PRODUCT = {
   name: "The Armenian Alphabet Blanket",
@@ -56,18 +51,44 @@ export const PRODUCT = {
     caption: "Lusik's hands at work — a single Ա stitched live.",
   },
   gallery: [
-    PHOTO_HERO_OLEN,           // Olen bib + Olen/2026 blanket together — the killer "real order" photo
-    PHOTO_OLEN_2026_BLANKET,   // Same OLEN/2026 blanket, solo (no bib) — quieter follow-up shot
-    PHOTO_PURPLE_FLAT,         // Purple ABC laid flat showing full pattern + fringe
-    PHOTO_ARMENIAN_FLAG,       // Red/blue/orange Armenian Flag preset in action
-    PHOTO_ARMENIAN_WITH_DATE,  // Armenian alphabet + stitched 07/05/24 date — proof of the personalization combo
-    PHOTO_YELLOWGREEN,         // Yellow+green color variation
-    PHOTO_PURPLE_DETAIL,       // Close-up showing cube outlines + stitch detail
-    PHOTO_LUCA_HEARTS,         // "Luca" with hearts — shows custom personalization extreme
+    // Photo refresh, May 2026 — replaced the legacy PHOTO_* constants
+    // with a curated 15-shot set of bib-free, alphabet-blanket-only
+    // photography. Files live at /public/img/abc-blanket/NN.jpg.
+    //
+    // Curatorial arc:
+    //   01-02  hero / colorway-range stacks (the "look how many
+    //          variants exist" reveal)
+    //   03-06  personalization showcase: OLEN/2026, Armenian Flag
+    //          preset, LUCA hearts, 07/05/24 date macro
+    //   07-08  craftsmanship close-ups: woven teddy/bunny
+    //          pomegranate texture, single Ա cube macro
+    //   09-12  solid Armenian colorways: pink+purple, green,
+    //          lavender, dark blue
+    //   13-15  English-alphabet variants + lifestyle context
+    //
+    // The OLD legacy PHOTO_* constants (PHOTO_HERO_OLEN etc.) are
+    // still exported from src/images/photos.js and are still used
+    // in the home page "From Lusik's workshop" section -- they
+    // weren't deleted, just deprioritized for the product gallery.
+    "/img/abc-blanket/01.jpg",   // lifestyle stack on grey couch — 5 colorways, fringe
+    "/img/abc-blanket/02.jpg",   // editorial stack on glass table — 6 colorways
+    "/img/abc-blanket/03.jpg",   // OLEN / 2026 — personalized name + year
+    "/img/abc-blanket/04.jpg",   // Armenian Flag preset (red Ա, blue Բ, orange Գ)
+    "/img/abc-blanket/05.jpg",   // LUCA + hearts — extreme personalization
+    "/img/abc-blanket/06.jpg",   // 07/05/24 date stitching close-up
+    "/img/abc-blanket/07.jpg",   // woven teddy bear + bunny + pomegranate texture
+    "/img/abc-blanket/08.jpg",   // single coral Ա cube macro
+    "/img/abc-blanket/09.jpg",   // pink + purple two-tone full layout
+    "/img/abc-blanket/10.jpg",   // green Armenian full
+    "/img/abc-blanket/11.jpg",   // lavender Armenian full
+    "/img/abc-blanket/12.jpg",   // dark blue Armenian full
+    "/img/abc-blanket/13.jpg",   // yellow + green Armenian full
+    "/img/abc-blanket/14.jpg",   // English ABC lavender on velvet (lifestyle)
+    "/img/abc-blanket/15.jpg",   // two English ABCs folded on grey couch
   ],
   description: "A soft acrylic baby blanket with a small woven pomegranate pattern. Lusik hand cross-stitches six letter squares — the alphabet (Ա Բ Գ in Armenian or ABC in English) stitched twice in two parallel diagonals running across the blanket. Each blanket is made to order. Lusik sources thread from various manufacturers, so slight color variation between blankets is part of what makes each one unique. For other letters or special requests, please email Lusik at hello@lusikandsons.com.",
   specs: [
-    'Size: 52" × 46"',
+    'Size: 52" × 52"',
     'Soft acrylic blanket with woven pomegranate pattern',
     'Six hand cross-stitched letter squares in two parallel diagonals',
     'Choose Armenian (ԱԲԳ) or English (ABC) alphabet',

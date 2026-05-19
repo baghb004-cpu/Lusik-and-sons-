@@ -36,6 +36,7 @@ import { HeroSlideshow } from "./HeroSlideshow.jsx";
 import { MoreFromWorkshop } from "./MoreFromWorkshop.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
 import { ContactQuickMenu } from "./ContactQuickMenu.jsx";
+import { CategoryCardImage } from "./CategoryCardImage.jsx";
 import { ArrowRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import {
@@ -212,22 +213,30 @@ export function HomeView({
                 slug: "blankets",
                 eyebrow: "Lusik's signature work",
                 label: "Blankets",
-                blurb: "Hand cross-stitched baby blankets — Armenian Ա Բ Գ or English A B C.",
-                image: product.gallery[0],
+                blurb: "Hand cross-stitched alphabet blankets — the personalized acrylic with three letters, and the full-alphabet cotton crib blanket.",
+                // Two-image cycle: alphabet blanket cover + cotton
+                // blanket cover. The CategoryCardImage component
+                // cycles between them on hover (desktop) or auto-
+                // cycles on touch. Customer gets a preview of both
+                // products in the category without clicking in.
+                images: [
+                  "/img/abc-blanket/cover.jpg",
+                  "/img/cotton-yarn/cover.jpg",
+                ],
               },
               {
                 slug: "bibs",
                 eyebrow: "Small piece, big heart",
                 label: "Bibs",
                 blurb: "Machine-embroidered with a personalized name — up to six letters.",
-                image: PHOTO_BIB_ROMEO,
+                images: [PHOTO_BIB_ROMEO],
               },
               {
                 slug: "towels",
                 eyebrow: "For the milestone moments",
                 label: "Towels & more",
                 blurb: "Embroidered hand and ceremonial towels. Coming soon.",
-                image: PHOTO_DATE_DETAIL,
+                images: [PHOTO_DATE_DETAIL],
               },
             ].map((cat) => (
               <button
@@ -237,7 +246,7 @@ export function HomeView({
                 aria-label={`Browse ${cat.label}`}
               >
                 <div className="aspect-[4/5] overflow-hidden" style={{ borderBottom: "1px solid rgba(26,22,18,0.10)" }}>
-                  <img src={cat.image} alt={cat.label} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                  <CategoryCardImage images={cat.images} alt={cat.label} />
                 </div>
                 <div className="p-5">
                   <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "#B08842" }}>{cat.eyebrow}</p>

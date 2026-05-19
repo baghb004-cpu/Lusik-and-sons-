@@ -253,13 +253,13 @@ export const CONFIG = {
   // these gallery items render. Once you re-upload an image rotated correctly,
   // remove its index here and the rotation vanishes everywhere.
   //
-  // After the May 2026 photo refresh, only PHOTO_PURPLE_DETAIL still uses an
-  // old inline data URI and may still need rotation; the other formerly-rotated
-  // photos (PHOTO_ARMENIAN_FLAG, PHOTO_LUCA_HEARTS) were re-shot correctly.
-  // Current gallery order: 0 HERO_OLEN, 1 OLEN_2026_BLANKET, 2 PURPLE_FLAT,
-  // 3 ARMENIAN_FLAG, 4 ARMENIAN_WITH_DATE, 5 YELLOWGREEN, 6 PURPLE_DETAIL,
-  // 7 LUCA_HEARTS.
-  ROTATED_GALLERY_INDEXES: new Set([6]),
+  // After the May 2026 photo refresh, PRODUCT.gallery was entirely replaced
+  // with 15 freshly-curated bib-free alphabet-blanket shots at
+  // /img/abc-blanket/01..15.jpg — all already EXIF-rotated during ingest.
+  // No display-time rotation is needed for any of them, so the set is empty.
+  // (Kept as an empty Set rather than removing the field so the
+  // galleryRotationStyle helper still has something to read.)
+  ROTATED_GALLERY_INDEXES: new Set(),
 
   // Heart-burst feedback timings.
   HEART_BURST_LIFETIME_MS: 1100,
