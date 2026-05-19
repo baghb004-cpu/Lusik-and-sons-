@@ -1,247 +1,309 @@
 // ============================================================
-// ProductImageGallery — carousel + optional color-picker filter
+// ProductImageGallery — showcase-style gallery + color filter
 // ============================================================
-// Replaces the previous ProductImageSlideshow. Two key changes:
+// Visual continuity with ProductShowcase's photo gallery (the
+// live Armenian Alphabet Blanket page). Same DOM shape:
 //
-//   1) Only ONE <img> is in the DOM at a time, keyed on src.
-//      The previous version stacked all 61 images on top of
-//      each other with opacity 0 on the inactive ones, which
-//      tripped Chromium's lazy-load heuristic ("this image is
-//      effectively invisible, don't bother fetching") and could
-//      leave the gallery showing only slide 1 forever. With a
-//      single rendered img, the browser just downloads the
-//      current src on demand. We JS-preload neighbors so prev/
-//      next feels instant.
+//   - Large main image (aspect-[4/5]) with:
+//       • Tap to open a fullscreen lightbox
+//       • Prev / Next chevron buttons on the sides
+//       • "TAP TO ZOOM" badge in the bottom-left corner
+//       • "n / total" counter in the bottom-right corner
+//   - Thumbnail grid (6 cols) directly below the main image
+//       • Active thumbnail outlined in ink, inactive ones at
+//         opacity 50% (hover to 100%)
+//   - Color swatch row below the thumbnails (optional)
 //
-//   2) Optional `colorways` prop renders a row of color swatch
-//      buttons below the carousel. Clicking a swatch filters
-//      the carousel to just that color's photos and jumps to
-//      the first one. The arrow buttons cycle within the
-//      filter; the counter shows "n of total in [color]".
-//
-// The hover-pause from the previous version is gone — it was
-// firing on mobile touches and getting stuck in the paused
-// state. The pause button alone is enough.
+// Behaviour:
+//   - Auto-advance is OFF here (different intent from the
+//     marketing slideshow on the home page — this is a product
+//     browser, the customer drives navigation themselves).
+//   - Color swatches act as filters. Clicking a swatch narrows
+//     the visible photos to just that color and jumps to the
+//     first one. Clicking the active swatch again clears the
+//     filter (returns to all photos).
 // ============================================================
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Pause, Play } from "./icons.jsx";
-
-const SLIDE_DURATION_MS = 6000;
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, ZoomIn, X } from "./icons.jsx";
 
 export function ProductImageGallery({
   images,
-  colorways,                 // optional
+  colorways,                  // optional
   alt = "Product photo",
-  aspectClass = "aspect-[4/5]",
-  className = "",
 }) {
-  // activeColorway: null = "All photos" mode; otherwise index into colorways[]
+  // null = no color filter active; otherwise an index into colorways[]
   const [activeColorway, setActiveColorway] = useState(null);
-  // activeIdx is into the FILTERED list, not the raw images array.
+  // Index into the FILTERED visible list, not the raw images array.
   const [activeIdx, setActiveIdx] = useState(0);
-  const [userPaused, setUserPaused] = useState(false);
-  const [prefersReduced, setPrefersReduced] = useState(false);
-  const timerRef = useRef(null);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const containerRef = useRef(null);
 
-  // Compute the indices visible in the current filter. Memoized
-  // because it's used to derive count and the current image src.
-  const visibleIndices = useMemo(() => {
-    if (activeColorway == null || !colorways) {
-      return images.map((_, i) => i);
-    }
-    return colorways[activeColorway].indices;
-  }, [activeColorway, colorways, images]);
+  const visibleIndices = activeColorway == null || !colorways
+    ? images.map((_, i) => i)
+    : colorways[activeColorway].indices;
 
   const count = visibleIndices.length;
   const safeIdx = activeIdx >= count ? 0 : activeIdx;
-  const currentSrc = images[visibleIndices[safeIdx]];
+  const rawIdx = visibleIndices[safeIdx];
+  const currentSrc = images[rawIdx];
 
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setPrefersReduced(mq.matches);
-    update();
-    if (mq.addEventListener) mq.addEventListener("change", update);
-    else if (mq.addListener) mq.addListener(update);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", update);
-      else if (mq.removeListener) mq.removeListener(update);
-    };
-  }, []);
-
-  // Auto-advance. Resets the 6s timer on every slide change so
-  // a manual click gives the user a fresh window before the next
-  // auto-flip.
-  useEffect(() => {
-    if (count < 2 || prefersReduced || userPaused) return undefined;
-    timerRef.current = setInterval(() => {
-      setActiveIdx((prev) => (prev + 1) % count);
-    }, SLIDE_DURATION_MS);
-    return () => clearInterval(timerRef.current);
-  }, [count, prefersReduced, userPaused, safeIdx]);
-
-  // Preload the NEXT and PREVIOUS images in the current filter
-  // so prev/next clicks are instant. We do this in JS rather
-  // than via <img loading="eager"> tags so we don't have to
-  // keep 61 invisible imgs in the DOM.
+  // Preload the neighbours so prev / next clicks feel instant.
+  // The current src is rendered as an <img> already, so the
+  // browser will cache it after first load; we only need to
+  // hint the next ones.
   useEffect(() => {
     if (typeof window === "undefined" || count < 2) return;
-    const toPreload = new Set([
-      visibleIndices[(safeIdx + 1) % count],
-      visibleIndices[(safeIdx - 1 + count) % count],
-      visibleIndices[(safeIdx + 2) % count],
-    ]);
-    toPreload.forEach((i) => {
+    const next = visibleIndices[(safeIdx + 1) % count];
+    const prev = visibleIndices[(safeIdx - 1 + count) % count];
+    [next, prev].forEach((i) => {
       const img = new window.Image();
       img.src = images[i];
     });
   }, [safeIdx, count, visibleIndices, images]);
 
-  // Keyboard navigation when the carousel has focus.
+  // Keyboard navigation when the gallery container has focus.
   useEffect(() => {
     const node = containerRef.current;
     if (!node || count < 2) return undefined;
     const onKey = (e) => {
       if (e.key === "ArrowLeft")  { e.preventDefault(); goPrev(); }
       if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+      if (e.key === "Escape" && zoomOpen) { e.preventDefault(); setZoomOpen(false); }
     };
     node.addEventListener("keydown", onKey);
     return () => node.removeEventListener("keydown", onKey);
-  }, [count]);
+  }, [count, zoomOpen]);
+
+  // Escape closes the lightbox even when focus isn't on the gallery.
+  useEffect(() => {
+    if (!zoomOpen) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setZoomOpen(false); };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [zoomOpen]);
 
   const goPrev = () => setActiveIdx((p) => (p - 1 + count) % count);
   const goNext = () => setActiveIdx((p) => (p + 1) % count);
-  const togglePause = () => setUserPaused((p) => !p);
-  const selectColorway = (idx) => {
-    setActiveColorway(idx);
+
+  // Toggle a colorway. Clicking the active one again clears the
+  // filter and returns to all photos.
+  const toggleColorway = (idx) => {
+    if (activeColorway === idx) {
+      setActiveColorway(null);
+    } else {
+      setActiveColorway(idx);
+    }
     setActiveIdx(0);
-    // Resume playing when the user picks a filter — they're
-    // engaged, they want the carousel moving again.
-    setUserPaused(false);
   };
 
   if (!images || images.length === 0) return null;
 
-  const buttonStyle = {
-    background: "rgba(245, 239, 227, 0.92)",
-    border: "1px solid rgba(26, 22, 18, 0.18)",
-    color: "#1A1612",
-    borderRadius: "999px",
-    boxShadow: "0 2px 8px rgba(26, 22, 18, 0.18)",
-    backdropFilter: "blur(8px)",
-    WebkitBackdropFilter: "blur(8px)",
-  };
-
-  const activeLabel = activeColorway != null && colorways
-    ? colorways[activeColorway].label
-    : null;
-
   return (
-    <div className={className}>
-      {/* ============ Carousel ============ */}
+    <div ref={containerRef} tabIndex={0} className="focus:outline-none">
+      {/* MAIN IMAGE — tap to zoom, chevron buttons on the sides,
+          TAP TO ZOOM badge bottom-left, counter bottom-right.
+          Mirrors ProductShowcase line-for-line so the customer
+          gets the same handle whether they're looking at the
+          Armenian Alphabet Blanket or this Cotton Yarn Blanket. */}
       <div
-        ref={containerRef}
-        tabIndex={0}
-        role="region"
-        aria-roledescription="carousel"
-        aria-label={`${alt} — ${count} photo${count === 1 ? "" : "s"}${activeLabel ? ` in ${activeLabel}` : ""}`}
-        className={`relative ${aspectClass} overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 lg-panel`}
-        style={{
-          background: "var(--bg-elevated, rgba(176,136,66,0.04))",
-          outlineColor: "#B08842",
-        }}
+        className="relative aspect-[4/5] overflow-hidden mb-4"
+        style={{ background: "rgba(26,22,18,0.04)" }}
       >
-        {/* The single visible image. `key` forces React to
-            unmount the previous img and mount a new one on src
-            change — the fade-in CSS class then animates the new
-            one in from opacity 0. Honors reduced-motion by
-            skipping the animation. */}
-        <img
-          key={currentSrc}
-          src={currentSrc}
-          alt={`${alt} (${safeIdx + 1} of ${count}${activeLabel ? `, ${activeLabel}` : ""})`}
-          className={`absolute inset-0 w-full h-full object-cover ${prefersReduced ? "" : "fade-in"}`}
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-          draggable={false}
-        />
-
+        <button
+          type="button"
+          onClick={() => setZoomOpen(true)}
+          className="absolute inset-0 w-full h-full block"
+          aria-label={`Zoom photo ${safeIdx + 1} of ${count}`}
+          style={{ cursor: "zoom-in", padding: 0, border: 0, background: "transparent" }}
+        >
+          <img
+            key={currentSrc}
+            src={currentSrc}
+            alt={alt}
+            className="w-full h-full object-cover pointer-events-none fade-in"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
+        </button>
         {count > 1 && (
           <>
             <button
-              type="button"
-              onClick={goPrev}
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10"
+              style={{ background: "rgba(245,239,227,0.6)" }}
               aria-label="Previous photo"
-              className="absolute top-1/2 -translate-y-1/2 left-3 lg:left-4 w-11 h-11 flex items-center justify-center"
-              style={buttonStyle}
             >
-              <ChevronLeft size={20} strokeWidth={1.75} />
+              <ChevronLeft size={18} />
             </button>
             <button
-              type="button"
-              onClick={goNext}
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10"
+              style={{ background: "rgba(245,239,227,0.6)" }}
               aria-label="Next photo"
-              className="absolute top-1/2 -translate-y-1/2 right-3 lg:right-4 w-11 h-11 flex items-center justify-center"
-              style={buttonStyle}
             >
-              <ChevronRight size={20} strokeWidth={1.75} />
+              <ChevronRight size={18} />
             </button>
-            <button
-              type="button"
-              onClick={togglePause}
-              aria-label={userPaused ? "Resume slideshow" : "Pause slideshow"}
-              aria-pressed={userPaused}
-              className="absolute bottom-3 right-3 lg:bottom-4 lg:right-4 w-11 h-11 flex items-center justify-center"
-              style={buttonStyle}
-            >
-              {userPaused
-                ? <Play size={18} strokeWidth={1.75} />
-                : <Pause size={18} strokeWidth={1.75} />}
-            </button>
-            <div
-              className="absolute bottom-3 left-3 lg:bottom-4 lg:left-4 px-3 py-1.5 text-[0.65rem] tracking-[0.15em] uppercase pointer-events-none"
-              style={{ ...buttonStyle, fontWeight: 500 }}
-              aria-live="polite"
-            >
-              {safeIdx + 1} / {count}{activeLabel && <span className="ml-1.5 opacity-60">· {activeLabel}</span>}
-            </div>
           </>
         )}
+        <div
+          className="absolute bottom-3 right-3 px-3 py-1 text-xs tracking-wide pointer-events-none"
+          style={{ background: "rgba(26,22,18,0.7)", color: "#F5EFE3" }}
+        >
+          {safeIdx + 1} / {count}
+        </div>
+        <div
+          className="absolute bottom-3 left-3 px-2.5 py-1 text-[0.6rem] tracking-[0.15em] uppercase pointer-events-none flex items-center gap-1.5"
+          style={{ background: "rgba(26,22,18,0.6)", color: "#F5EFE3" }}
+        >
+          <ZoomIn size={11} strokeWidth={2} /> Tap to zoom
+        </div>
       </div>
 
-      {/* ============ Color picker ============ */}
+      {/* THUMBNAIL GRID — every visible photo. 6 cols on every
+          breakpoint. Active = ink outline, inactive = 50% opacity. */}
+      <div className="grid grid-cols-6 gap-2">
+        {visibleIndices.map((rawI, vi) => (
+          <button
+            key={rawI}
+            type="button"
+            onClick={() => setActiveIdx(vi)}
+            className={`aspect-square overflow-hidden ${vi === safeIdx ? "" : "opacity-50 hover:opacity-100"}`}
+            style={{
+              outline: vi === safeIdx ? "1.5px solid #1A1612" : "none",
+              outlineOffset: "1px",
+            }}
+            aria-label={`View photo ${vi + 1}`}
+            aria-current={vi === safeIdx ? "true" : undefined}
+          >
+            <img
+              src={images[rawI]}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        ))}
+      </div>
+
+      {/* COLOR SWATCHES — actual sellable colorways only. The
+          previous "All / The family / In the studio" entries were
+          dropped per product feedback: the customer is buying a
+          color, not a "family" or "studio shot". To clear a filter,
+          tap the active swatch again. */}
       {colorways && colorways.length > 0 && (
-        <div className="mt-5 lg:mt-6">
-          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>
-            Choose a colorway
-          </p>
+        <div className="mt-6">
+          <div className="flex items-baseline justify-between mb-3">
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#B08842", fontWeight: 600 }}>
+              Available colorways
+            </p>
+            {activeColorway != null && (
+              <button
+                type="button"
+                onClick={() => { setActiveColorway(null); setActiveIdx(0); }}
+                className="text-[0.65rem] tracking-[0.05em] underline underline-offset-2 hover:opacity-70"
+                style={{ color: "#3D332A" }}
+              >
+                Show all photos
+              </button>
+            )}
+          </div>
           <div
             className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1"
             role="radiogroup"
             aria-label="Filter by color"
             style={{ scrollSnapType: "x mandatory" }}
           >
-            <ColorSwatch
-              label="All"
-              swatch={{ gradient: ["#E8B5C7", "#BBA8D6", "#93B7D5", "#B5D9BC", "#E8D89B"] }}
-              active={activeColorway == null}
-              onClick={() => selectColorway(null)}
-              count={images.length}
-            />
             {colorways.map((cw, i) => (
               <ColorSwatch
                 key={cw.label}
                 label={cw.label}
                 swatch={cw.swatch}
                 active={activeColorway === i}
-                onClick={() => selectColorway(i)}
+                onClick={() => toggleColorway(i)}
                 count={cw.indices.length}
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN ZOOM LIGHTBOX — opens when the main image is
+          tapped. Click anywhere (or X / Escape) to close. Arrow
+          buttons paginate within the same filtered set. */}
+      {zoomOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Zoomed photo"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(26, 22, 18, 0.92)" }}
+          onClick={() => setZoomOpen(false)}
+        >
+          <img
+            src={currentSrc}
+            alt={alt}
+            className="max-w-full max-h-full object-contain"
+            style={{ padding: "3rem 1rem" }}
+          />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
+            className="absolute top-4 right-4 w-11 h-11 flex items-center justify-center"
+            style={{
+              background: "rgba(245, 239, 227, 0.15)",
+              border: "1px solid rgba(245, 239, 227, 0.3)",
+              color: "#F5EFE3",
+              borderRadius: "999px",
+            }}
+            aria-label="Close zoom"
+          >
+            <X size={20} strokeWidth={1.75} />
+          </button>
+          {count > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center"
+                style={{
+                  background: "rgba(245, 239, 227, 0.15)",
+                  border: "1px solid rgba(245, 239, 227, 0.3)",
+                  color: "#F5EFE3",
+                  borderRadius: "999px",
+                }}
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={24} strokeWidth={1.75} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center"
+                style={{
+                  background: "rgba(245, 239, 227, 0.15)",
+                  border: "1px solid rgba(245, 239, 227, 0.3)",
+                  color: "#F5EFE3",
+                  borderRadius: "999px",
+                }}
+                aria-label="Next photo"
+              >
+                <ChevronRight size={24} strokeWidth={1.75} />
+              </button>
+              <div
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 text-xs tracking-wide pointer-events-none"
+                style={{ background: "rgba(245, 239, 227, 0.15)", color: "#F5EFE3" }}
+              >
+                {safeIdx + 1} / {count}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -250,21 +312,16 @@ export function ProductImageGallery({
 
 // ============================================================
 // ColorSwatch — one button in the color-picker row.
-// Renders either a solid circle, a half-and-half dual, a conic
-// gradient, or a neutral ring depending on the `swatch` shape.
 // ============================================================
 function ColorSwatch({ label, swatch, active, onClick, count }) {
-  const baseClasses = "shrink-0 flex flex-col items-center gap-1.5 px-1 pt-1 transition-opacity";
-  const opacity = active ? "opacity-100" : "opacity-70 hover:opacity-100";
-
   return (
     <button
       type="button"
       role="radio"
       aria-checked={active}
-      aria-label={`${label}, ${count} photo${count === 1 ? "" : "s"}`}
+      aria-label={`${label}, ${count} photo${count === 1 ? "" : "s"}${active ? " — currently selected, tap again to clear" : ""}`}
       onClick={onClick}
-      className={`${baseClasses} ${opacity}`}
+      className={`shrink-0 flex flex-col items-center gap-1.5 px-1 pt-1 transition-opacity ${active ? "opacity-100" : "opacity-75 hover:opacity-100"}`}
       style={{ scrollSnapAlign: "start" }}
     >
       <span
@@ -294,7 +351,6 @@ function ColorSwatch({ label, swatch, active, onClick, count }) {
   );
 }
 
-// Translates the swatch descriptor object into a CSS background.
 function swatchBackground(swatch) {
   if (!swatch) return "#F5EFE3";
   if (swatch.color)    return swatch.color;
