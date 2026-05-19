@@ -71,35 +71,40 @@ export const CATALOG = {
         images: Array.from({ length: 61 }, (_, i) =>
           `/img/cotton-yarn/${String(i + 1).padStart(2, "0")}.jpg`,
         ),
-        // Color picker — every entry is a button under the gallery.
-        // Clicking it filters the carousel to just the photos
-        // identified as that color, and jumps to the first photo
-        // of that color. Indices are 0-based into `images` above.
+        // Color picker — every entry is a button under the gallery
+        // thumbnail strip. Clicking it filters the gallery to just
+        // the photos identified as that color, and jumps to the
+        // first photo of that color. Clicking the active swatch
+        // again deselects (returns to all photos).
         //
-        // Swatch rendering choices:
-        //   { color: "#hex" }                — solid circle
-        //   { dual: ["#a", "#b"] }            — half-and-half split
-        //   { gradient: ["#a", "#b", "#c"] }  — conic gradient (for
-        //                                       "All" + multi-color
-        //                                       group swatches)
-        //   { neutral: true }                 — workshop / context
-        //                                       group; renders as a
-        //                                       muted gold-ringed ring
+        // Only ACTUAL COLORWAYS appear here. The previous "All",
+        // "The family", and "In the studio" entries were removed
+        // because the customer isn't buying "the family" — they're
+        // buying one specific color. Those photos still live in
+        // the gallery (browseable via thumbnails) but no longer
+        // get a dedicated swatch button.
+        //
+        // Indices are 0-based into `images` above.
         colorways: [
-          {
-            label: "The family",
-            indices: [0, 1, 2, 3, 4],
-            swatch: { gradient: ["#B5D9BC", "#E8D89B", "#E8B5C7", "#93B7D5", "#BBA8D6"] },
-          },
-          { label: "Blue",       indices: [5, 6, 7, 8, 9, 10, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 56], swatch: { color: "#93B7D5" } },
-          { label: "Pink",       indices: [11, 12, 13, 14, 32, 47, 48, 49],                                swatch: { color: "#E8B5C7" } },
-          { label: "Lavender",   indices: [15, 16, 17, 18, 30, 53, 54, 55],                                swatch: { color: "#BBA8D6" } },
-          { label: "Mint",       indices: [19, 20, 21, 31, 45, 46],                                        swatch: { color: "#B5D9BC" } },
-          { label: "Yellow",     indices: [22, 44],                                                        swatch: { color: "#E8D89B" } },
-          { label: "Dusty rose", indices: [23, 33, 50, 51, 52],                                            swatch: { color: "#D8AFA3" } },
-          { label: "Pink + espresso", indices: [24, 25],                                                   swatch: { dual: ["#E8B5C7", "#3A2418"] } },
-          { label: "Two-color",  indices: [26, 27, 28, 29],                                                swatch: { dual: ["#BBA8D6", "#E8B5C7"] } },
-          { label: "In the studio", indices: [57, 58, 59, 60],                                             swatch: { neutral: true } },
+          { label: "Blue",            indices: [5, 6, 7, 8, 9, 10, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 56], swatch: { color: "#93B7D5" } },
+          { label: "Pink",            indices: [11, 12, 13, 14, 32, 47, 48, 49],                                swatch: { color: "#E8B5C7" } },
+          { label: "Lavender",        indices: [15, 16, 17, 18, 30, 53, 54, 55],                                swatch: { color: "#BBA8D6" } },
+          { label: "Mint",            indices: [19, 20, 21, 31, 45, 46],                                        swatch: { color: "#B5D9BC" } },
+          { label: "Yellow",          indices: [22, 44],                                                        swatch: { color: "#E8D89B" } },
+          { label: "Dusty rose",      indices: [23, 33, 50, 51, 52],                                            swatch: { color: "#D8AFA3" } },
+          { label: "Pink + espresso", indices: [24, 25],                                                        swatch: { dual: ["#E8B5C7", "#3A2418"] } },
+          { label: "Two-color name",  indices: [26, 27, 28, 29],                                                swatch: { dual: ["#BBA8D6", "#E8B5C7"] } },
+        ],
+        // Details panel content for the right column. Surfaces
+        // materials / size / care up front so the customer doesn't
+        // have to ask. TODO_LUSIK markers flag values that still
+        // need her confirmation before flipping the product live.
+        details: [
+          { label: "Materials", value: "100% Bernat cotton yarn. Cotton crochet edging." },
+          { label: "Size",      value: "Approx. 30 × 36 in (76 × 91 cm). ⚠️ TODO_LUSIK: confirm." },
+          { label: "Lining",    value: "Optional satin backing — white, lavender, pink, or mint, matched to the body color." },
+          { label: "Care",      value: "Machine wash cold on a delicate cycle. Tumble dry low or lay flat. ⚠️ TODO_LUSIK: confirm." },
+          { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
         ],
       },
     ],
