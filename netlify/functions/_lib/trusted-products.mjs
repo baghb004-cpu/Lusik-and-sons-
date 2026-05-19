@@ -34,15 +34,17 @@ export const TRUSTED_PRODUCTS = {
   },
 
   // ============================================================
-  // COTTON YARN BLANKET — staged, NOT live
+  // THE COTTON ALPHABET CRIB BLANKET — staged, NOT live
   // ============================================================
-  // The cotton yarn blanket is currently `status: "placeholder"`
-  // in src/data/catalog.js. When it's flipped to "live", uncomment
-  // the entry below and set priceCents to match the agreed price
-  // (catalog priceFrom × 100). The cart-id shape produced by the
-  // browser will be "blanket-cotton-cotton" (a single product key
-  // across all colorways — the chosen color is metadata in the
-  // line item, not a separate trusted-products entry).
+  // Currently `status: "placeholder"` in src/data/catalog.js
+  // (catalog key "blanket-cotton-bernat" — that suffix is a
+  // legacy artifact, the customer-facing name is "The Cotton
+  // Alphabet Crib Blanket"). When it's flipped to "live",
+  // uncomment the entry below and set priceCents to match the
+  // agreed price (catalog priceFrom × 100). The cart-id shape
+  // produced by the browser will be "blanket-cotton-cotton" — a
+  // single product key across all colorways; the chosen color
+  // is metadata in the line item, not a separate entry here.
   //
   // If pricing ends up diverging per colorway (e.g. the two-color
   // name variant costs more), split into one entry per cart-id:
@@ -53,8 +55,8 @@ export const TRUSTED_PRODUCTS = {
   // and have the browser cart-id encode the colorway suffix.
   // ============================================================
   // "blanket-cotton-cotton": {
-  //   name:        "Cotton Yarn Blanket",
-  //   variant:     "Cotton yarn, satin-backed",
+  //   name:        "The Cotton Alphabet Crib Blanket",
+  //   variant:     "Full Armenian alphabet, cotton yarn, satin-backed",
   //   priceCents:  6500,   // ⚠️ TODO_LUSIK: confirm before uncommenting
   // },
 

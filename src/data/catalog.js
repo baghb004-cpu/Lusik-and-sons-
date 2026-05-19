@@ -98,18 +98,38 @@ export const CATALOG = {
         // when the product goes live. The "bernat" suffix is a
         // legacy artifact -- the customer-facing copy below no
         // longer mentions any yarn brand.
+        //
+        // Slug ALSO kept stable ("cotton-yarn-blanket") even though
+        // the display name has changed -- the URL is in sitemap.xml
+        // and may already be indexed by search engines. Changing the
+        // slug would orphan inbound links and reset SEO progress.
         key: "blanket-cotton-bernat",
         slug: "cotton-yarn-blanket",
-        name: "Cotton Yarn Blanket",
+        // Renamed for SEO + conversion: the cotton blanket shows the
+        // FULL Armenian alphabet (every letter, all 36) rather than
+        // the 3-letter personalized layout of the live Armenian
+        // Alphabet Blanket. Positioning it as "The Cotton Alphabet
+        // Crib Blanket" puts both products in the same "Armenian
+        // alphabet blanket" search bucket while making the
+        // differentiation explicit:
+        //   - The Armenian Alphabet Blanket: 3-letter personalized,
+        //     acrylic, fringed.
+        //   - The Cotton Alphabet Crib Blanket: full alphabet,
+        //     cotton, satin-backed.
+        name: "The Cotton Alphabet Crib Blanket",
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the checklist above
         priceFrom: null,               // ⚠️ TODO_LUSIK: set when going live (catalog card "From $NN")
-        tagline: "A breathable cotton crib blanket, stitched by hand.",
-        // Voice echoes the homepage body copy ("From her home in
-        // Cypress, California, Lusik cross-stitches...") and the
-        // H1 ("Made to last") so the cotton blanket reads as
-        // another piece in the same Lusik & Sons line rather than
-        // a separate product with its own pitch.
-        description: "Lusik cross-stitches each cotton crib blanket by hand from her home in Cypress, California. Lighter and more breathable than the acrylic alphabet blanket — meant for warmer months and warmer climates. Every piece is finished with a satin backing matched to the body color. Made to order, made to last.",
+        // Tagline leads with "Armenian alphabet" -- a high-value
+        // search term -- and immediately answers "how much of the
+        // alphabet?" (every letter) and "how is it made?" (hand
+        // cross-stitched).
+        tagline: "Every letter of the Armenian alphabet, hand cross-stitched in cotton yarn.",
+        // Description sells the heritage angle, the gifting use cases
+        // (christening, baby shower, hospital photo), and the
+        // longevity. Echoes the homepage voice ("from her home in
+        // Cypress, California, Lusik cross-stitches...") and closes
+        // with the same "Made to last" beat as the homepage H1.
+        description: "The full Armenian alphabet — every letter, every one stitched by Lusik herself. A heritage crib blanket meant for a christening, a baby shower, or the going-home-from-the-hospital photograph — and for the generations after. Cross-stitched by hand from her home in Cypress, California, in soft cotton yarn for breathability, and finished with a satin backing matched to the body color. Made to order, made to last.",
         // Cover image — used by the category-grid card as a static
         // thumbnail. Center-cropped to 4:5 at 1200×1500.
         coverImage: "/img/cotton-yarn/cover.jpg",
