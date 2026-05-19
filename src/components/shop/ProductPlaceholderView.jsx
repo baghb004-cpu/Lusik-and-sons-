@@ -23,6 +23,7 @@
 import React from "react";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Mail } from "../icons.jsx";
+import { ProductImageSlideshow } from "../ProductImageSlideshow.jsx";
 
 // Strip the "⚠️ TODO_LUSIK: ..." sentence (and any trailing whitespace)
 // from a description before showing it to a customer. The marker is
@@ -37,24 +38,40 @@ function cleanDescription(text) {
 
 export function ProductPlaceholderView({ category, product, trail, onOpenWaitlist }) {
   const description = cleanDescription(product.description);
+  const hasGallery = Array.isArray(product.images) && product.images.length > 0;
 
   return (
     <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
       <Breadcrumbs trail={trail} />
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-        {/* IMAGE-GOES-HERE FRAME */}
-        <div className="aspect-[4/5] lg-panel flex items-center justify-center text-center px-6">
-          <div>
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>
-              Coming soon
-            </p>
-            <p className="text-sm opacity-65 italic mb-2">Image goes here</p>
-            <p className="text-[0.65rem] opacity-45 leading-relaxed max-w-[14em] mx-auto">
-              Lusik is finishing the first piece of this item. Photographs will be posted here once it's ready.
-            </p>
+        {/* GALLERY — slideshow when the placeholder product has
+            photos staged (e.g. cotton-yarn-blanket is "placeholder"
+            for pricing reasons but already has 60+ photos). Falls
+            back to the "Image goes here" frame for products with no
+            photos yet. The Coming Soon / Not For Sale Yet copy on
+            the right column stays either way — photos don't mean
+            it's purchasable. */}
+        {hasGallery ? (
+          <ProductImageSlideshow
+            images={product.images}
+            alt={product.name}
+            aspectClass="aspect-[4/5]"
+            className="lg-panel"
+          />
+        ) : (
+          <div className="aspect-[4/5] lg-panel flex items-center justify-center text-center px-6">
+            <div>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>
+                Coming soon
+              </p>
+              <p className="text-sm opacity-65 italic mb-2">Image goes here</p>
+              <p className="text-[0.65rem] opacity-45 leading-relaxed max-w-[14em] mx-auto">
+                Lusik is finishing the first piece of this item. Photographs will be posted here once it's ready.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* INFO PANEL */}
         <div>
@@ -73,7 +90,9 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
               Not for sale yet
             </p>
             <p className="text-sm leading-relaxed">
-              Lusik is putting the first piece together. Drop your email and we'll write you the moment it's ready — no spam, no other lists.
+              {hasGallery
+                ? "Lusik has made this one many times — these photos are from her past work. We're working out final pricing before opening it for orders. Drop your email and we'll write you the moment it's listed — no spam, no other lists."
+                : "Lusik is putting the first piece together. Drop your email and we'll write you the moment it's ready — no spam, no other lists."}
             </p>
           </div>
 
