@@ -20,7 +20,7 @@ export const SOCIAL_PLATFORMS = {
   tier1: [
     { Icon: Instagram, label: "Instagram", handle: "@lusikandsons",     href: "https://www.instagram.com/lusikandsons/" },
     { Icon: Facebook,  label: "Facebook",  handle: "Lusik & Sons",      href: "https://www.facebook.com/profile.php?id=61590162116561" },
-    { Icon: TikTok,    label: "TikTok",    handle: "@lusikandsons",     href: "https://tiktok.com" },
+    { Icon: TikTok,    label: "TikTok",    handle: "@lusikandsons",     href: "https://www.tiktok.com/@lusikandsons" },
     { Icon: Youtube,   label: "YouTube",   handle: "Lusik & Sons",      href: "https://youtube.com" },
     { Icon: Pinterest, label: "Pinterest", handle: "@lusikandsons",     href: "https://pinterest.com" },
     { Icon: Threads,   label: "Threads",   handle: "@lusikandsons",     href: "https://threads.net" },
