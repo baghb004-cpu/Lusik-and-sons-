@@ -23,24 +23,22 @@ import { ArrowRight } from "../icons.jsx";
 import { PRODUCT } from "../../data/product.js";
 import { PHOTO_BIB_ROMEO } from "../../images/photos.js";
 
-// First gallery image for a product, keyed off the cart-id
-// shape. Live products use their gallery. Placeholders fall back
-// to `coverImage` from the catalog entry if one exists (e.g.
-// cotton-yarn-blanket has photos but stays placeholder until
-// Lusik supplies final pricing); otherwise null and the card
-// renders the "Image goes here" frame.
+// Thumbnail image for the category-grid card. Preference order:
+//   1. product.coverImage   — explicit portrait crop if set
+//      (alphabet blanket sets this; cotton blanket sets this)
+//   2. PRODUCT.gallery[0]   — first gallery image for the
+//      alphabet blanket if no coverImage is configured
+//   3. PHOTO_BIB_ROMEO      — fallback for the bib (no dedicated
+//      catalog photo, reuses a workshop shot)
+//   4. null                 — placeholder card renders the
+//      empty "Image goes here" frame
 function productHeroImage(product) {
+  if (product.coverImage) return product.coverImage;
   if (product.status === "live") {
     if (product.key === "blanket-alphabet") return PRODUCT.gallery?.[0] ?? null;
-    // Bib has no dedicated catalog photo; reuse one of the workshop
-    // shots (a bib with name embroidery) as the card hero.
     if (product.key === "bib-single")       return PHOTO_BIB_ROMEO;
-    return null;
   }
-  // Placeholder products can still ship a cover photo (the
-  // product page then renders a full slideshow). When set, use
-  // it; otherwise the empty placeholder frame.
-  return product.coverImage ?? null;
+  return null;
 }
 
 export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct }) {
