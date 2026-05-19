@@ -65,23 +65,42 @@ export const CATALOG = {
         // Cover image — used by the category-grid card as a static
         // thumbnail. Center-cropped to 4:5 at 1200×1500.
         coverImage: "/img/cotton-yarn/cover.jpg",
-        // Full slideshow gallery — 61 photos, ordered by a deliberate
-        // curatorial arc:
-        //   1     — hero/cover (editorial stack of 5 colorways)
-        //   2–5   — multi-color shots (the family of colorways)
-        //   6–11  — blues, full views
-        //   12–15 — pinks, full views
-        //   16–19 — lavenders, full views
-        //   20–24 — mint, yellow, dusty rose
-        //   25–26 — pink + espresso brown (the bold modern colorway)
-        //   27–30 — two-color personalized name showcase
-        //   31–37 — folded shots showing the satin lining
-        //   38–54 — crochet + cell + letter detail close-ups
-        //   55–57 — older / alternate angles
-        //   58–61 — staged / market context
+        // Full gallery — 61 photos, ordered by curatorial arc.
+        // The /img/cotton-yarn/NN.jpg files are flat-numbered;
+        // the colorways array below indexes into this list.
         images: Array.from({ length: 61 }, (_, i) =>
           `/img/cotton-yarn/${String(i + 1).padStart(2, "0")}.jpg`,
         ),
+        // Color picker — every entry is a button under the gallery.
+        // Clicking it filters the carousel to just the photos
+        // identified as that color, and jumps to the first photo
+        // of that color. Indices are 0-based into `images` above.
+        //
+        // Swatch rendering choices:
+        //   { color: "#hex" }                — solid circle
+        //   { dual: ["#a", "#b"] }            — half-and-half split
+        //   { gradient: ["#a", "#b", "#c"] }  — conic gradient (for
+        //                                       "All" + multi-color
+        //                                       group swatches)
+        //   { neutral: true }                 — workshop / context
+        //                                       group; renders as a
+        //                                       muted gold-ringed ring
+        colorways: [
+          {
+            label: "The family",
+            indices: [0, 1, 2, 3, 4],
+            swatch: { gradient: ["#B5D9BC", "#E8D89B", "#E8B5C7", "#93B7D5", "#BBA8D6"] },
+          },
+          { label: "Blue",       indices: [5, 6, 7, 8, 9, 10, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 56], swatch: { color: "#93B7D5" } },
+          { label: "Pink",       indices: [11, 12, 13, 14, 32, 47, 48, 49],                                swatch: { color: "#E8B5C7" } },
+          { label: "Lavender",   indices: [15, 16, 17, 18, 30, 53, 54, 55],                                swatch: { color: "#BBA8D6" } },
+          { label: "Mint",       indices: [19, 20, 21, 31, 45, 46],                                        swatch: { color: "#B5D9BC" } },
+          { label: "Yellow",     indices: [22, 44],                                                        swatch: { color: "#E8D89B" } },
+          { label: "Dusty rose", indices: [23, 33, 50, 51, 52],                                            swatch: { color: "#D8AFA3" } },
+          { label: "Pink + espresso", indices: [24, 25],                                                   swatch: { dual: ["#E8B5C7", "#3A2418"] } },
+          { label: "Two-color",  indices: [26, 27, 28, 29],                                                swatch: { dual: ["#BBA8D6", "#E8B5C7"] } },
+          { label: "In the studio", indices: [57, 58, 59, 60],                                             swatch: { neutral: true } },
+        ],
       },
     ],
   },
