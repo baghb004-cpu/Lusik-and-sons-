@@ -55,13 +55,23 @@ export const CATALOG = {
         // No placeholder image needed — uses PRODUCT.gallery
       },
       {
+        // Catalog key kept stable across the pricing flip so the
+        // cart-id / Stripe trusted-products map don't get broken
+        // when the product goes live. The "bernat" suffix is a
+        // legacy artifact -- the customer-facing copy below no
+        // longer mentions any yarn brand.
         key: "blanket-cotton-bernat",
         slug: "cotton-yarn-blanket",
         name: "Cotton Yarn Blanket",
         status: "placeholder",         // ⚠️ TODO_LUSIK: need final pricing before flipping to "live"
         priceFrom: null,               // ⚠️ TODO_LUSIK
-        tagline: "Made entirely from Bernat cotton yarn.",
-        description: "Lusik's blanket made from 100% Bernat-brand cotton yarn. Softer hand than the acrylic blanket, breathable, ideal for warmer climates and warmer months.",
+        tagline: "A breathable cotton crib blanket, stitched by hand.",
+        // Voice echoes the homepage body copy ("From her home in
+        // Cypress, California, Lusik cross-stitches...") and the
+        // H1 ("Made to last") so the cotton blanket reads as
+        // another piece in the same Lusik & Sons line rather than
+        // a separate product with its own pitch.
+        description: "Lusik cross-stitches each cotton crib blanket by hand from her home in Cypress, California. Lighter and more breathable than the acrylic alphabet blanket — meant for warmer months and warmer climates. Every piece is finished with a satin backing matched to the body color. Made to order, made to last.",
         // Cover image — used by the category-grid card as a static
         // thumbnail. Center-cropped to 4:5 at 1200×1500.
         coverImage: "/img/cotton-yarn/cover.jpg",
@@ -100,10 +110,19 @@ export const CATALOG = {
         // have to ask. TODO_LUSIK markers flag values that still
         // need her confirmation before flipping the product live.
         details: [
-          { label: "Materials", value: "100% Bernat cotton yarn. Cotton crochet edging." },
+          { label: "Materials", value: "100% cotton yarn body, cotton crochet edging, satin backing." },
           { label: "Size",      value: "Approx. 30 × 36 in (76 × 91 cm). ⚠️ TODO_LUSIK: confirm." },
-          { label: "Lining",    value: "Optional satin backing — white, lavender, pink, or mint, matched to the body color." },
-          { label: "Care",      value: "Machine wash cold on a delicate cycle. Tumble dry low or lay flat. ⚠️ TODO_LUSIK: confirm." },
+          { label: "Backing",   value: "Every blanket is finished with a satin backing, matched to the body color (white, lavender, pink, blue, or mint). Not optional — included on every piece." },
+          // Care field carries both Lusik & Sons' recommendation
+          // AND the yarn manufacturer's literal label so the
+          // customer has full information. The two technically
+          // conflict (the yarn says "do not dry clean", we say
+          // "dry clean") because the finished piece -- with
+          // crochet edging and satin backing -- is more delicate
+          // than the raw yarn alone. The "we can't guarantee
+          // against machine-wash wear" line below puts the
+          // responsibility on the customer's chosen method.
+          { label: "Care",      value: "Professional dry cleaning recommended to preserve the hand cross-stitch, satin backing, and crochet edging — the dry cleaner gives consistent gentle treatment that a washing machine can't. If you'd rather launder at home, the cotton yarn label reads: machine wash in cool water, do not bleach, do not iron, tumble dry on low / delicate. We can't guarantee against wear from washing-machine cycles." },
           { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
         ],
       },

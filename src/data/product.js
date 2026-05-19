@@ -72,9 +72,10 @@ export const PRODUCT = {
     'Six hand cross-stitched letter squares in two parallel diagonals',
     'Choose Armenian (ԱԲԳ) or English (ABC) alphabet',
     'Thread varies per blanket — sourced from various manufacturers',
+    'Satin backing matched to the body color',
     'Fringed edges',
     'Made to order',
-    'Gentle machine wash cold, lay flat to dry, light iron if needed',
+    'Professional dry cleaning recommended — protects the hand-stitched detail and satin backing',
   ],
   // Default color used for the cross-stitched letter on every blanket.
   // Customers don't choose; if they want something different they email.

@@ -97,6 +97,10 @@ export function PolicyModal({ policyKey, onClose }) {
           body: "You're responsible for entering accurate shipping information. If a package is returned because of a bad address, you'll be responsible for re-shipping costs. Please make sure your shipping address is correct before completing checkout."
         },
         {
+          heading: "Care and longevity",
+          body: "Every blanket and bib is hand-made with cross-stitching, crochet edging, and a satin backing matched to the body color. To preserve the piece for years, we strongly recommend professional dry cleaning. The dry cleaner gives consistent, gentle treatment that's difficult to match at home — washing machines, dryers, ironing, and bleach all wear handmade textiles down quickly, and a single wrong setting (a hot cycle, the wrong detergent, mixed colors) can damage the piece in a way that can't be reversed. If you choose to launder a piece at home, follow the yarn manufacturer's label exactly. Lusik & Sons is not responsible for damage that results from any care method, professional or at-home — once an item leaves our hands, how it's looked after is your call. The damaged-in-transit and clear-defect coverage in the Final Sale Policy below stands as written and is not affected by this clause."
+        },
+        {
           heading: "Custom orders",
           body: "If a future custom order includes an image you upload, you confirm you have the right to use that image. Lusik reserves the right to decline custom orders that are offensive, illegal, or use copyrighted material she doesn't have permission to reproduce. (Today's bib only accepts a typed name, not an uploaded image, but this clause applies if image-upload products are reactivated.)"
         },
