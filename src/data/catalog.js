@@ -58,10 +58,30 @@ export const CATALOG = {
         key: "blanket-cotton-bernat",
         slug: "cotton-yarn-blanket",
         name: "Cotton Yarn Blanket",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: need photos, specs, price
+        status: "placeholder",         // ⚠️ TODO_LUSIK: need final pricing before flipping to "live"
         priceFrom: null,               // ⚠️ TODO_LUSIK
         tagline: "Made entirely from Bernat cotton yarn.",
         description: "Lusik's blanket made from 100% Bernat-brand cotton yarn. Softer hand than the acrylic blanket, breathable, ideal for warmer climates and warmer months.",
+        // Cover image — used by the category-grid card as a static
+        // thumbnail. Center-cropped to 4:5 at 1200×1500.
+        coverImage: "/img/cotton-yarn/cover.jpg",
+        // Full slideshow gallery — 61 photos, ordered by a deliberate
+        // curatorial arc:
+        //   1     — hero/cover (editorial stack of 5 colorways)
+        //   2–5   — multi-color shots (the family of colorways)
+        //   6–11  — blues, full views
+        //   12–15 — pinks, full views
+        //   16–19 — lavenders, full views
+        //   20–24 — mint, yellow, dusty rose
+        //   25–26 — pink + espresso brown (the bold modern colorway)
+        //   27–30 — two-color personalized name showcase
+        //   31–37 — folded shots showing the satin lining
+        //   38–54 — crochet + cell + letter detail close-ups
+        //   55–57 — older / alternate angles
+        //   58–61 — staged / market context
+        images: Array.from({ length: 61 }, (_, i) =>
+          `/img/cotton-yarn/${String(i + 1).padStart(2, "0")}.jpg`,
+        ),
       },
     ],
   },
