@@ -50,11 +50,49 @@ export const CATALOG = {
         slug: "armenian-alphabet-blanket",
         name: "The Armenian Alphabet Blanket",
         status: "live",                // points to PRODUCT — fully buyable
-        priceFrom: 89,
+        // The category-card "From $NN" price. Source of truth for
+        // the actual checkout amount is `PRODUCT.layouts[].priceCents`
+        // (currently 6500 cents = $65 for the only enabled layout)
+        // mirrored on the server in trusted-products.mjs. Keep all
+        // three in sync when changing the price.
+        priceFrom: 65,
         tagline: "Lusik's signature blanket. Three letters, stitched diagonally.",
         // No placeholder image needed — uses PRODUCT.gallery
       },
       {
+        // ============================================================
+        // FLIP-TO-LIVE CHECKLIST  (cotton-yarn-blanket)
+        // ============================================================
+        // When pricing is finalized and Lusik is ready to sell this,
+        // here's everything you have to change. It's a ~5 minute job.
+        //
+        //   1. Below: change `status: "placeholder"` → `status: "live"`
+        //   2. Below: change `priceFrom: null` → `priceFrom: 65`
+        //      (or whatever the agreed price is)
+        //   3. In netlify/functions/_lib/trusted-products.mjs:
+        //      Uncomment the "blanket-cotton-cotton" entry and set
+        //      priceCents to match (e.g. priceFrom 65 → priceCents
+        //      6500). The server rejects any cart line item whose
+        //      productKey isn't in TRUSTED_PRODUCTS, so this step
+        //      is what makes the checkout actually work.
+        //   4. In src/components/shop/ProductView.jsx:
+        //      Add a third branch alongside the existing
+        //      blanket-alphabet / bib-single cases:
+        //          if (product.key === "blanket-cotton-bernat") {
+        //            return <LiveCottonYarnView ... />;
+        //          }
+        //      That component needs to render the same gallery
+        //      (already built) + a color radio (one swatch must be
+        //      selected before Add-to-Cart enables) + an Add-to-Cart
+        //      button that calls onAdd with cart-id "blanket-cotton-
+        //      cotton" (or per-color if pricing diverges).
+        //
+        // No DB change, no schema migration, no Stripe dashboard
+        // work needed — Stripe Checkout sessions are created on the
+        // fly per cart, the trusted-products map is the entire
+        // server-side price contract.
+        // ============================================================
+        //
         // Catalog key kept stable across the pricing flip so the
         // cart-id / Stripe trusted-products map don't get broken
         // when the product goes live. The "bernat" suffix is a
@@ -63,8 +101,8 @@ export const CATALOG = {
         key: "blanket-cotton-bernat",
         slug: "cotton-yarn-blanket",
         name: "Cotton Yarn Blanket",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: need final pricing before flipping to "live"
-        priceFrom: null,               // ⚠️ TODO_LUSIK
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the checklist above
+        priceFrom: null,               // ⚠️ TODO_LUSIK: set when going live (catalog card "From $NN")
         tagline: "A breathable cotton crib blanket, stitched by hand.",
         // Voice echoes the homepage body copy ("From her home in
         // Cypress, California, Lusik cross-stitches...") and the
