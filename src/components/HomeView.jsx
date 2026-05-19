@@ -32,7 +32,6 @@ import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
 import { TestimonialsSection } from "./TestimonialsSection.jsx";
 import { HeroSlideshow } from "./HeroSlideshow.jsx";
-import { MoreFromWorkshop } from "./MoreFromWorkshop.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
 import { ContactQuickMenu } from "./ContactQuickMenu.jsx";
 import { CategoryCardImage } from "./CategoryCardImage.jsx";
@@ -308,8 +307,11 @@ export function HomeView({
         </div>
       </section>
 
-      {/* MoreFromWorkshop — coming-soon product cards strip from main. */}
-      <MoreFromWorkshop />
+      {/* MoreFromWorkshop / "Pieces by commission" coming-soon
+          product grid — REMOVED. As products move from coming-soon
+          to live in /shop/<category>, the dedicated "everything
+          else" teaser became redundant. The Featured Categories
+          strip above already routes customers to the full catalog. */}
 
       {/* COMMISSION / CUSTOM ORDERS TEASER — REMOVED
           ============================================================
