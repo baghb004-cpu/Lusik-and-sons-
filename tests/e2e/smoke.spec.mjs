@@ -243,10 +243,11 @@ test.describe("shop hierarchy navigation", () => {
 
     // The placeholder template's primary CTA — full unique label so
     // we don't match buttons elsewhere on the page that happen to
-    // contain "Notify me". 10s timeout absorbs the SPA route
-    // transition + fade-in animation on the new view.
+    // contain "Notify me". Copy changed in the showcase-layout pass:
+    // "Notify me when it's ready" -> "Notify me when it's available".
+    // 10s timeout absorbs the SPA route transition + fade-in.
     await expect(
-      page.getByRole("button", { name: /notify me when it's ready/i })
+      page.getByRole("button", { name: /notify me when it's available/i })
     ).toBeVisible({ timeout: 10_000 });
 
     // Product name in the page heading — confirms the placeholder
