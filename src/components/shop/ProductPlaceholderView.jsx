@@ -23,7 +23,7 @@
 import React from "react";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Mail } from "../icons.jsx";
-import { ProductImageSlideshow } from "../ProductImageSlideshow.jsx";
+import { ProductImageGallery } from "../ProductImageGallery.jsx";
 
 // Strip the "⚠️ TODO_LUSIK: ..." sentence (and any trailing whitespace)
 // from a description before showing it to a customer. The marker is
@@ -53,11 +53,11 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             the right column stays either way — photos don't mean
             it's purchasable. */}
         {hasGallery ? (
-          <ProductImageSlideshow
+          <ProductImageGallery
             images={product.images}
+            colorways={product.colorways}
             alt={product.name}
             aspectClass="aspect-[4/5]"
-            className="lg-panel"
           />
         ) : (
           <div className="aspect-[4/5] lg-panel flex items-center justify-center text-center px-6">
