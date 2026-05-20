@@ -21,11 +21,11 @@ const ACTIVE_ORDER_STATUSES = ["awaiting_lusik", "in_production", "quality_check
 
 function statusToActiveBarMessage(status) {
   switch (status) {
-    case "awaiting_lusik": return "Lusik has your order — she'll start in a day or two.";
-    case "in_production":  return "Lusik is stitching your blanket.";
-    case "quality_check":  return "Final touches on your blanket.";
-    case "ready_to_ship":  return "Your blanket is ready to ship.";
-    case "shipped":        return "Your order is on its way.";
+    case "awaiting_lusik": return "Lusik has your order — she'll begin in a day or two.";
+    case "in_production":  return "Lusik's hands are on your piece.";
+    case "quality_check":  return "Final stitches — Lusik is checking it over.";
+    case "ready_to_ship":  return "Your piece is folded, boxed, and ready to ship.";
+    case "shipped":        return "On its way to you — track when you're ready.";
     default:               return null;
   }
 }

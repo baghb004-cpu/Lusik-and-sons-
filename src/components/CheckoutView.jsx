@@ -298,9 +298,9 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           enough to satisfy the unwrapped intrinsic width. */}
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
         <div className="min-w-0">
-          <h1 className="font-display text-4xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Almost there.</h1>
+          <h1 className="font-display text-4xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Almost in Lusik's hands.</h1>
           <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-8">
-            You'll be sent to our secure checkout, powered by Stripe. Apple Pay, Google Pay, and all major credit cards accepted. Shipping and tax calculated on the next page.
+            We'll send you to our secure checkout, powered by Stripe — Apple Pay, Google Pay, and every major card. Shipping and tax are calculated on the next page. Lusik begins on your piece the same week the order comes through.
           </p>
           {user ? (
             <p className="text-sm opacity-70 mb-6 italic">Signing in as <span style={{ fontWeight: 500 }}>{user.email}</span> — your order will appear in your account.</p>
@@ -566,7 +566,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           <PaymentMethodsRow className="mt-4" />
 
           <p className="text-xs opacity-60 mt-4 leading-relaxed">
-            Or order the slow way: <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">DM us on Instagram</button>, <button onClick={() => window.open("mailto:hello@lusikandsons.com")} className="underline">email</button>, or call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>.
+            Or order the old-fashioned way: <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">message us on Instagram</button>, <button onClick={() => window.open("mailto:hello@lusikandsons.com")} className="underline">write an email</button>, or call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>.
           </p>
         </div>
 

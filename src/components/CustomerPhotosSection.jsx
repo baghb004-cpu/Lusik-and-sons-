@@ -73,7 +73,7 @@ export function CustomerPhotosSection() {
         ))}
       </div>
       <p className="text-center text-xs opacity-65 mt-8 leading-relaxed">
-        Tag <span style={{ fontWeight: 500, color: "#B08842" }}>#lusikandsons</span> or DM us on Instagram and we may share your photo here.
+        Tag <span style={{ fontWeight: 500, color: "#B08842" }}>#lusikandsons</span> or send us a photo on Instagram — with your permission, we'd love to share it here.
       </p>
     </section>
   );

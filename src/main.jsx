@@ -89,10 +89,10 @@ class ErrorBoundary extends React.Component {
             Lusik <span style={{ color: "#B08842" }}>&amp;</span> Sons
           </p>
           <p style={{ fontSize: "0.7rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#B08842", margin: "0 0 1rem", fontWeight: 600 }}>
-            Something went wrong
+            A stitch slipped
           </p>
           <p style={{ fontSize: "1rem", margin: "0 0 1.5rem" }}>
-            Sorry about that. Please reload the page — if the issue continues, email us at <a href="mailto:hello@lusikandsons.com" style={{ color: "#B08842" }}>hello@lusikandsons.com</a> and we'll take a look.
+            Apologies — something on our end didn't load right. Please reload the page. If it happens again, write to us at <a href="mailto:hello@lusikandsons.com" style={{ color: "#B08842" }}>hello@lusikandsons.com</a> and one of Lusik's sons will look into it.
           </p>
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
             <button onClick={() => window.location.reload()} style={{ padding: "0.6rem 1.25rem", background: "#1A1612", color: "#F5EFE3", fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 500, border: "none", cursor: "pointer" }}>

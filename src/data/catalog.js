@@ -47,7 +47,7 @@ export const CATALOG = {
     // 2026-voice as the homepage rewrite -- maker + heirloom +
     // search-friendly hooks ("Armenian alphabet", "heritage",
     // "christening", "passed down").
-    description: "Hand cross-stitched alphabet blankets — Lusik's signature work. Two pieces, both Armenian by heritage: a personalized crib blanket with the first three letters of a child's name, and a full-alphabet crib blanket in cotton. Each one stitched by hand, made to order, made to last.",
+    description: "Lusik's signature work — the pieces she sits with on her kitchen table for thirty hours at a time. Two crib blankets, both Armenian by heritage: a personalized one cross-stitched with the first three letters a child will ever learn, and a full-alphabet one in cotton that carries every letter from Ա to Ք. Each one stitched by hand, picked up and checked by Lusik before it ships. Made to order. Made to last for the next baby in the family, and the one after that.",
     eyebrow: "Lusik's signature work",
     products: [
       {
@@ -61,7 +61,7 @@ export const CATALOG = {
         // mirrored on the server in trusted-products.mjs. Keep all
         // three in sync when changing the price.
         priceFrom: 65,
-        tagline: "Lusik's signature blanket. Three letters, stitched diagonally.",
+        tagline: "Lusik's signature blanket — Ա Բ Գ, the first three letters a child will learn, stitched corner to corner.",
         // Cover image for the category-grid card thumbnail AND for
         // the second slot of the Blankets category-card hover
         // slideshow. The actual product detail page (ProductShowcase)
@@ -133,13 +133,13 @@ export const CATALOG = {
         // search term -- and immediately answers "how much of the
         // alphabet?" (every letter) and "how is it made?" (hand
         // cross-stitched).
-        tagline: "Every letter of the Armenian alphabet, hand cross-stitched in cotton yarn.",
+        tagline: "Every letter of the Armenian alphabet — all thirty-six, hand cross-stitched in cotton yarn.",
         // Description sells the heritage angle, the gifting use cases
         // (christening, baby shower, hospital photo), and the
         // longevity. Echoes the homepage voice ("from her home in
         // Cypress, California, Lusik cross-stitches...") and closes
         // with the same "Made to last" beat as the homepage H1.
-        description: "The full Armenian alphabet — every letter, every one stitched by Lusik herself. A heritage crib blanket meant for a christening, a baby shower, or the going-home-from-the-hospital photograph — and for the generations after. Cross-stitched by hand from her home in Cypress, California, in soft cotton yarn for breathability, and finished with a satin backing matched to the body color. Made to order, made to last.",
+        description: "The full Armenian alphabet — every letter from Ա to Ք, every one set down by Lusik's own hand. The heritage crib blanket for the christening, the baby shower, the photograph at the front door coming home from the hospital — and then folded into a chest for the next baby in the family, and the one after that. Cross-stitched on soft cotton yarn so the blanket breathes through a California summer, and finished with a satin backing matched to the body color so it lays right in the crib. From Lusik's home in Cypress, California. Made to order, made to last.",
         // Cover image — used by the category-grid card as a static
         // thumbnail. Center-cropped to 4:5 at 1200×1500.
         coverImage: "/img/cotton-yarn/cover.jpg",
@@ -203,8 +203,8 @@ export const CATALOG = {
     // moments. Names them all in one line so customers landing here
     // from a search ("Armenian baby bib", "personalized name bib",
     // "Hye em yes bib") see all three options.
-    description: "Machine-embroidered baby bibs by Lusik — a custom-name bib for everyday, a seven-day Armenian set for showers, the Հայ եմ ես (\"I am Armenian\") heritage bib, a Mama-and-Papa pair, and the Bari Akhorzhak meal-time set with matching burp cloth.",
-    eyebrow: "Small piece, big heart",
+    description: "The small pieces that hold the biggest hours of a baby's day — first food, first words, first photographs. Five bibs in Lusik's hand: a custom-name bib for the everyday, a seven-day Armenian set for the baby shower, the Հայ եմ ես (\"I am Armenian\") heritage bib stitched in the colors of the flag, a Mama-and-Papa pair that says sweetheart twice in Armenian, and the Bari Akhorzhak meal-time set that carries a grandmother's table blessing on the bib and answers it on the matching burp cloth.",
+    eyebrow: "Small pieces, biggest hours",
     products: [
       {
         // Catalog key + slug + trusted-products cart-id all kept stable.
@@ -219,7 +219,7 @@ export const CATALOG = {
         // Tagline = the value prop in one line. Names both languages
         // ("Armenian or English") since both are real options and the
         // existing live preview supports each one.
-        tagline: "Any name, embroidered by Lusik — Armenian or English, up to six letters.",
+        tagline: "Your child's name, embroidered by Lusik — in Armenian or English, the way it'll be said for the rest of their life.",
       },
       {
         // Catalog key kept stable across the pricing flip so the
@@ -235,11 +235,11 @@ export const CATALOG = {
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the same checklist pattern used on the cotton blanket
         priceFrom: null,               // ⚠️ TODO_LUSIK: set when going live
         // Tagline leads with the count (seven) + the heritage angle.
-        tagline: "Seven baby bibs, one for each weekday — Armenian day names, embroidered by hand.",
+        tagline: "Seven bibs for seven days — Monday through Sunday in Armenian, embroidered by Lusik.",
         // Description in the same maker + heirloom voice as the
         // homepage. Names the buying contexts (baby shower,
         // christening) where these sets sell best.
-        description: "Seven baby bibs, one for each day of the week — the Armenian day name (Երկուշաբթի through Կիրակի, Monday through Sunday) embroidered on each. A heritage gift set for a baby shower, a christening, or simply for the early-bib-change years. Lusik embroiders each one from her home in Cypress, California. Made to order, made to last.",
+        description: "A bib for every day of the week, the way Armenian families have always counted them: Երկուշաբթի, Երեքշաբթի, Չորեքշաբթի, Հինգշաբթի, Ուրբաթ, Շաբաթ, Կիրակի — Monday through Sunday in Armenian, one word per bib. A baby-shower set that opens like a calendar, a christening gift the family will pull out of the drawer for years, a quiet way to teach an American-born child the names of the days the way their great-grandmother said them. Each bib hand-embroidered by Lusik from her home in Cypress, California. Made to order, made to last.",
         coverImage: "/img/days-bib/cover.jpg",
         // 22-photo gallery. Curatorial arc:
         //   01-04  hero bundle shots + cross-sell with alphabet blanket
@@ -297,13 +297,13 @@ export const CATALOG = {
         priceFrom: null,               // ⚠️ TODO_LUSIK
         // Tagline = the cultural payload + a hook to the flag colors,
         // which is THE differentiating visual cue on this bib.
-        tagline: "\"Հայ եմ ես\" — I am Armenian, stitched in the colors of the flag.",
+        tagline: "Հայ եմ ես — \"I am Armenian,\" stitched in the colors of the flag.",
         // Description in the maker + heirloom voice. Names the
         // specific buying contexts (christening, baby shower, family
         // gathering) where Armenian-American parents reach for this
         // kind of piece. Mentions the optional matching cap because
         // the gallery shows both bib-only and bib+cap configurations.
-        description: "Three Armenian words — Հայ եմ ես (Hye em yes, \"I am Armenian\") — embroidered on a soft white bib, each word in one of the three colors of the Armenian flag: red, blue, and orange. A heritage statement piece for a christening, a baby shower, the first Easter, or a Sunday at the Armenian church. Sold as a bib alone or paired with a matching baby cap that carries the same flag motif. Lusik embroiders each one from her home in Cypress, California. Made to order, made to last.",
+        description: "Three Armenian words said by a baby who can't yet speak any: Հայ եմ ես — Hye em yes, \"I am Armenian.\" Each word embroidered on a soft white bib in one of the three colors of the Armenian flag — red for Հայ, blue for Եմ, orange for Ես — so the sentence itself wears the flag while the baby wears the sentence. A heritage statement piece for a christening, a baby shower, the first Easter at the Armenian Apostolic church, or any Sunday a grandmother is going to see her grandchild for the first time. Sold as the bib alone, or paired with a matching baby cap that carries the same tricolor motif. Lusik embroiders each one from her home in Cypress, California. Made to order, made to last.",
         coverImage: "/img/hye-em-bib/cover.jpg",
         // 4-photo gallery. Curatorial arc:
         //   01 HERO   bib + cap together, Armenian flag tricolor
@@ -360,8 +360,8 @@ export const CATALOG = {
         name: "The Mama & Papa's Anushig Bib Set",
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
-        tagline: "One bib for Mom, one for Dad — Armenian for \"sweetheart,\" hand-embroidered as a pair.",
-        description: "A matched pair of baby bibs — one says Մայրիկիս Անոյշիկը (\"Mama's sweetheart\"), the other Պապայիս Անոյշիկը (\"Papa's sweetheart\"). Anushig is the Armenian word for darling. Embroidered together, gifted together: the bib for the morning Dad gets up first, the bib for the night Mom takes over. A small heritage anchor for the first months, when the question \"whose baby is this?\" needs the right answer from both sides. Lusik embroiders each pair by hand from her home in Cypress, California. Made to order, made to last.",
+        tagline: "One bib says Mama's sweetheart, the other Papa's — Armenian for \"darling,\" stitched as a pair.",
+        description: "A matched pair of baby bibs that take turns. One reads Մայրիկիս Անոյշիկը — \"Mama's sweetheart.\" The other reads Պապայիս Անոյշիկը — \"Papa's sweetheart.\" Anushig is the Armenian word for darling, the kind of name a grandmother says when she means it. Embroidered together, gifted together: the bib for the morning Dad gets up first, the bib for the night Mom takes over, both of them small daily reassurances that the baby is loved on both sides of the crib. A small heritage anchor for the first months — when the answer to \"whose baby is this?\" deserves to be said in two voices. Lusik embroiders each pair by hand from her home in Cypress, California. Made to order, made to last.",
         coverImage: "/img/anushig-bib/cover.jpg",
         images: Array.from({ length: 9 }, (_, i) =>
           `/img/anushig-bib/${String(i + 1).padStart(2, "0")}.jpg`,
@@ -489,8 +489,8 @@ export const CATALOG = {
   towels: {
     slug: "towels",
     label: "Towels",
-    description: "Hand-embroidered Armenian ceremonial towels — a baptism keepsake and a personalized hand towel for the home.",
-    eyebrow: "For the milestone moments",
+    description: "The Armenian textiles a family pulls out for the days that count. A hand towel for the guest bath, a powder room, the table set for a holiday meal. And the white baptism towel — the one canon asks the godparents to bring, the one the priest lifts the child onto, the one the family keeps folded in a chest for the rest of their lives.",
+    eyebrow: "For the days that count",
     products: [
       {
         key: "towel-hand",
@@ -498,8 +498,8 @@ export const CATALOG = {
         name: "The Embroidered Hand Towel",
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
-        tagline: "Hand-towel size, hand-embroidered by Lusik — for a guest bath, a powder room, a christening gift.",
-        description: "A hand-sized cotton towel with Lusik's hand-embroidered Armenian motif. Small enough to fit in a gift bag, lasting enough to outlive the wedding it was given at. Made to order from her home in Cypress, California. Made to order, made to last.",
+        tagline: "Small enough to fit in a gift bag, made to outlive the wedding it was given at.",
+        description: "A hand-sized cotton towel with one of Lusik's hand-embroidered Armenian motifs — the pomegranate, the cross-hatch border, the small bird-and-tree pattern that has lived on Armenian linens for centuries. Folds into a gift bag for a housewarming, a hostess thank-you, a wedding. Sits in a guest bath the way an Armenian grandmother's linens always did — the small good thing on the shelf, waiting for the day someone notices it. Hand-embroidered by Lusik from her home in Cypress, California. Made to order, made to last.",
       },
       {
         key: "towel-baptism",
@@ -511,8 +511,8 @@ export const CATALOG = {
         // canonically-required towel for the Armenian Apostolic
         // baptism. Godparents Google for this; the tagline should
         // land directly.
-        tagline: "The towel godparents bring to an Armenian Apostolic baptism, embroidered with your child's name and date.",
-        description: "Per Armenian Church canon, the godparents bring one large new white towel to the baptism — used once at the font, then kept by the family as a keepsake of the day. Lusik embroiders the child's name in Armenian script, the baptism date, and an Armenian-style cross. Hand-embroidered, made to order from her home in Cypress, California. Made to order, made to last.",
+        tagline: "The white towel godparents bring to the font — embroidered with your child's name, in Armenian, and the date of their baptism.",
+        description: "By Armenian Apostolic Church canon, the godparents bring one large new white towel to the baptism. The priest uses it once — to lift the child out of the font — and from that day forward it belongs to the family. It goes into the chest with the christening dress, the cross from the priest, the photograph from the church steps. It comes out again at the next baptism, the wedding, sometimes the funeral, sometimes simply when the grandchildren ask to see it. Lusik embroiders the child's name in Armenian script, the baptism date, and an Armenian-style cross — by hand, the same way the towel her own godmother brought to her christening was made. From her home in Cypress, California. Made to order, made to last.",
       },
     ],
   },
@@ -523,7 +523,7 @@ export const CATALOG = {
     // is descriptive but doesn't sell. The new line names the
     // emotional buying context (the first weeks home from the
     // hospital, the bath ritual that becomes the day's anchor).
-    description: "Soft pieces for the earliest days — a swaddle for the going-home photograph, a hooded bathrobe for the post-bath ritual.",
+    description: "Soft pieces for the days before the rest of the world meets a new baby. A swaddle for the going-home photograph from the hospital. A hooded bathrobe for the bath ritual that becomes the day's anchor. Small fabric objects that are around for the first weeks of a life, and that — if they're made the right way, by the right hands — get folded into a drawer to wait for the next one.",
     eyebrow: "From the very first day",
     products: [
       {
@@ -532,8 +532,8 @@ export const CATALOG = {
         name: "The Baby Swaddle",
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
-        tagline: "Soft cotton swaddle for the first weeks home.",
-        description: "A soft cotton swaddle for the early weeks. Lusik personalizes each one with the baby's name embroidered in Armenian or English. The swaddle for the going-home-from-the-hospital photograph; the swaddle for the first night in the crib. Made to order from her home in Cypress, California. Made to order, made to last.",
+        tagline: "The cloth a new baby is wrapped in for the going-home photograph — embroidered with their name.",
+        description: "A soft cotton swaddle for the earliest weeks — the cloth around the baby in the hospital photograph, the cloth on the first night in the crib, the cloth in the carrier walking through the front door of a house that just got fuller by one. Lusik embroiders the baby's name on it, in Armenian or English, the parents pick. A first object with a first name on it. Made to order by Lusik from her home in Cypress, California. Made to order, made to last.",
       },
       {
         key: "baby-bathrobe",
@@ -541,8 +541,8 @@ export const CATALOG = {
         name: "The Baby Bathrobe",
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
-        tagline: "Hooded cotton bathrobe — personalized with your child's name.",
-        description: "Hooded cotton-terry bathrobe for the after-bath ritual — the towel-wrap that becomes the every-night anchor of the day. Lusik embroiders the child's name in Armenian or English on the hood. Made to order from her home in Cypress, California. Made to order, made to last.",
+        tagline: "The hooded towel that becomes every evening's anchor — with your child's name on the hood.",
+        description: "A hooded cotton-terry bathrobe for the after-bath ritual — the wrap that comes out of the warm towel pile every evening for the first three years of a child's life, the wrap a parent's hands learn before the child can hold their own arms out. Lusik embroiders the child's name on the hood in Armenian or English. By the second year the child will be the one pointing at the letters, asking for them by sound. From Lusik's home in Cypress, California. Made to order, made to last.",
       },
     ],
   },

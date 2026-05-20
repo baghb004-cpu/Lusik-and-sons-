@@ -126,13 +126,13 @@ export function HomeView({
       <section className="border-y py-8" style={{ borderColor: "rgba(26,22,18,0.08)", background: "rgba(176,136,66,0.04)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-12">
           {[
-            { Icon: Heart, label: "Hand cross-stitched", sub: "By Lusik herself" },
-            { Icon: Shield, label: "Made to order", sub: "Your letter, your color" },
-            { Icon: Truck, label: "Free US shipping", sub: "On orders over $150" },
+            { Icon: Heart, label: "Hand cross-stitched", sub: "Every stitch placed by Lusik" },
+            { Icon: Shield, label: "Made to order", sub: "Your letter, your colors, your child" },
+            { Icon: Truck, label: "Free U.S. shipping", sub: "On orders over $150" },
             // The 4th badge is the only interactive one — tapping it
             // opens the ContactQuickMenu (Email / Text). The others
             // stay as static info badges.
-            { Icon: Mail, label: "Custom requests", sub: "Tap to message Lusik", action: "contact" },
+            { Icon: Mail, label: "Write to Lusik", sub: "She answers herself, usually within a day", action: "contact" },
           ].map((item, i) => {
             const isActionable = item.action === "contact";
             const Wrapper = isActionable ? "button" : "div";
@@ -201,7 +201,7 @@ export function HomeView({
               Hand work, <em style={{ fontWeight: 400 }}>by category</em>.
             </h2>
             <p className="text-base opacity-75 leading-relaxed">
-              Cross-stitched blankets, embroidered bibs, ceremonial towels, and small items for the very first days. Pick a path to explore.
+              Cross-stitched blankets for the crib, embroidered bibs for the kitchen table, ceremonial towels for the days that count. Each piece picked up, finished, and folded by Lusik in her kitchen before it goes to your family.
             </p>
           </div>
 
@@ -211,7 +211,7 @@ export function HomeView({
                 slug: "blankets",
                 eyebrow: "Lusik's signature work",
                 label: "Blankets",
-                blurb: "Hand cross-stitched alphabet blankets — the personalized acrylic with three letters, and the full-alphabet cotton crib blanket.",
+                blurb: "Two crib blankets, both Armenian by heritage — the personalized one with three letters, and the full-alphabet cotton one with all thirty-six.",
                 // Two-image cycle: alphabet blanket cover + cotton
                 // blanket cover. The CategoryCardImage component
                 // cycles between them on hover (desktop) or auto-
@@ -224,9 +224,9 @@ export function HomeView({
               },
               {
                 slug: "bibs",
-                eyebrow: "Small piece, big heart",
+                eyebrow: "Small pieces, biggest hours",
                 label: "Bibs",
-                blurb: "Custom-name bibs, the Armenian days-of-the-week set, and the Հայ եմ ես heritage bib.",
+                blurb: "Names on cloth, heritage on cloth, blessings on cloth — the small pieces that hold the busiest hours of a baby's day.",
                 // Brisk slideshow on hover (desktop) or auto-cycle
                 // (touch), cycling through 4 real past-customer bib
                 // photos. Replaces the Romeo + blanket workshop shot
@@ -240,9 +240,9 @@ export function HomeView({
               },
               {
                 slug: "towels",
-                eyebrow: "For the milestone moments",
+                eyebrow: "For the days that count",
                 label: "Towels & more",
-                blurb: "Embroidered hand and ceremonial towels. Coming soon.",
+                blurb: "The white baptism towel godparents bring to the font. The hand towel for the guest bath. The small fabric objects a family pulls out for the days they want to remember.",
                 images: [PHOTO_DATE_DETAIL],
               },
             ].map((cat) => (
@@ -273,7 +273,7 @@ export function HomeView({
               className="text-[0.65rem] tracking-[0.25em] uppercase underline underline-offset-4 hover:opacity-70"
               style={{ color: "#1A1612", fontWeight: 500 }}
             >
-              See everything Lusik makes →
+              Walk through Lusik's whole shop →
             </button>
           </div>
         </div>
@@ -288,10 +288,10 @@ export function HomeView({
         <div className="text-center mb-10 max-w-2xl mx-auto">
           <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>From Lusik's workshop</p>
           <h2 className="font-display text-3xl lg:text-4xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-            Past blankets, <em style={{ fontWeight: 400 }}>real orders</em>.
+            Past blankets, <em style={{ fontWeight: 400 }}>real families</em>.
           </h2>
           <p className="text-sm opacity-70 mt-3 leading-relaxed">
-            A few examples of work Lusik has stitched recently — color variations, custom names and dates, and details up close.
+            A few of the pieces Lusik has stitched lately — names and dates, colors a parent picked because of a grandmother, details close enough to see the path the needle took.
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4">
@@ -342,17 +342,17 @@ export function HomeView({
           <div className="lg:col-span-6 lg:order-1 min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#C9A678" }}>Our Story</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-8 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-              From Armenia, to Little Armenia, to a small home in Cypress.
+              From Armenia, to Little Armenia, to a quiet house in Cypress.
             </h2>
             <div className="space-y-5 text-base lg:text-lg leading-relaxed opacity-90">
               <p>
-                Lusik came to Los Angeles from Armenia in the late 1970s. She lived in East Hollywood — what people call Little Armenia — and later moved to Orange County, where she lives today.
+                Lusik came to Los Angeles from Armenia in the late 1970s, with a cross-stitch hoop and the way of working her own grandmother had taught her. She lived in East Hollywood — what people there call Little Armenia — and later moved south to Orange County, where she lives and stitches today.
               </p>
               <p>
-                Lusik buys the blankets and bibs from a maker she trusts. What she does is cross-stitch by hand. She does the first three letters of the alphabet — <span style={{ fontWeight: 500, color: "#B08842" }}>Ա, Բ, Գ</span> in Armenian, or <span style={{ fontWeight: 500, color: "#B08842" }}>A, B, C</span> in English. For other letters or special requests, please email her.
+                What she does is cross-stitch by hand. On every blanket, the first three letters of the alphabet — <span style={{ fontWeight: 500, color: "#B08842" }}>Ա, Բ, Գ</span> in Armenian, or <span style={{ fontWeight: 500, color: "#B08842" }}>A, B, C</span> in English — placed one tiny X at a time onto soft cloth woven through with the Armenian pomegranate. For other letters, or a name you'd like spelled out, please write her directly. She always says yes.
               </p>
               <p>
-                The bib is different. The bib is machine-embroidered with a personalized name — short, just five or six letters at most. Anything longer doesn't fit comfortably on the small bib surface. It's the only piece in the shop she does by machine.
+                The bib is different. The bib is machine-embroidered with a personalized name — five or six letters, no more — because a bib lives in the washing machine three times a week and the name has to survive. The blanket goes in the crib. The bib goes to the table. Each piece gets the technique that fits the life it's going to have.
               </p>
               <p>
                 Her sons built this website. Mom does the stitching. We do the typing.
@@ -399,13 +399,13 @@ export function HomeView({
         <h2 className="font-display text-4xl lg:text-5xl mb-12 text-center" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Good questions.</h2>
         <div className="space-y-1">
           {[
-            { q: "How long does it take to make my blanket?", a: "Each blanket is made to order. Please allow 5–10 business days before it ships." },
-            { q: "Which letters come on the blanket?", a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The alphabet is stitched twice, along two parallel diagonals that run top-left to bottom-right, so six letter-squares appear across the blanket in total — three letters in one diagonal, the same three again in the other. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
-            { q: "Which way do the letters run?", a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
-            { q: "How do I tell you which alphabet I picked?", a: "Your choice goes through with the order. If you want anything different, message us on Instagram (@lusikandsons), call or text (760) 874-2333, or reply to your order confirmation email." },
-            { q: "Is this safe for babies?", a: "Yes. The blanket is soft acrylic, machine-washable. Gentle cycle, cold water, and lay flat to dry." },
-            { q: "What's the difference between the blanket and the bib?", a: "The blanket is hand cross-stitched by Lusik. The bib is machine-embroidered with a personalized name (up to five or six letters) — its surface is too small for counted cross-stitch to read well, so each piece gets the technique that suits its size." },
-            { q: "Do you ship internationally?", a: "Not yet. We ship within the United States only." },
+            { q: "How long does it take to make my blanket?", a: "Each blanket is made to order — Lusik works on one at a time, the way her grandmother did. Plan on 5–10 business days from the day you order to the day it leaves her hands. If a specific date matters (a christening, a baby shower, a flight home to see family), tell us at checkout and we'll write back honestly about whether we can meet it." },
+            { q: "Which letters come on the blanket?", a: "Three letters — Armenian (Ա, Բ, Գ) or English (A, B, C), you choose on the product page. The alphabet is stitched twice along two parallel diagonals running corner to corner, so six letter-squares cross the surface in total — three letters in one diagonal, the same three again in the other. For a different letter, an unusual combination, or a name you'd like spelled out in full, write Lusik directly at hello@lusikandsons.com. She always reads them herself." },
+            { q: "Which way do the letters run?", a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter sits at the heart of the blanket." },
+            { q: "How do I tell you which alphabet I picked?", a: "Your choice travels through with the order. If anything needs to change after you've checked out, message us on Instagram (@lusikandsons), call or text (760) 874-2333, or reply to your order confirmation email — Lusik or one of her sons will read it." },
+            { q: "Is this safe for babies?", a: "Yes. The blanket is soft acrylic, gentle enough for a newborn. Machine-washable on cold, gentle cycle, laid flat to dry — though for a piece you're hoping to keep for the next baby in the family, we'd recommend dry cleaning instead." },
+            { q: "What's the difference between the blanket and the bib?", a: "The blanket is hand cross-stitched by Lusik. The bib is machine-embroidered with a personalized name — its surface is too small for counted cross-stitch to read well, and bibs live a harder life than blankets do (formula, oatmeal, the washing machine three times a week). Each piece gets the technique that fits the life it's going to have. There's a journal post explaining the difference if you'd like to read it." },
+            { q: "Do you ship internationally?", a: "Not yet — only within the United States. We'll add more countries as the shop grows. If you have family abroad and want to send a piece, write us and we'll see what we can arrange." },
           ].map((item, i) => (
             <details key={i} className="border-b group" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
               <summary className="py-5 flex items-center justify-between cursor-pointer">
@@ -422,17 +422,17 @@ export function HomeView({
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Get in Touch</p>
-            <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Four ways to order.</h2>
+            <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Four ways to reach Lusik.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
-              Check out directly on this site, give us a call, message us on Instagram, or send an email for custom commissions and bulk gift orders.
+              Check out directly on this site, give us a call, send a message on Instagram, or write an email — for custom commissions, family-name requests, bulk gift orders, or simply to ask Lusik a question. She or one of her sons writes back, usually within a day.
             </p>
           </div>
           <div className="space-y-1">
             {[
               { Icon: ShoppingBag, label: "Shop online", detail: "Browse and check out", action: () => onNavigateShop?.() },
               { Icon: Phone, label: "Call us", detail: "(760) 874-2333", action: () => window.open("tel:+17608742333") },
-              { Icon: Instagram, label: "DM on Instagram", detail: "@lusikandsons", action: () => window.open("https://instagram.com", "_blank", "noopener,noreferrer") },
-              { Icon: Mail, label: "Email inquiry", detail: "hello@lusikandsons.com", action: () => window.open("mailto:hello@lusikandsons.com") },
+              { Icon: Instagram, label: "Message on Instagram", detail: "@lusikandsons", action: () => window.open("https://instagram.com", "_blank", "noopener,noreferrer") },
+              { Icon: Mail, label: "Write Lusik directly", detail: "hello@lusikandsons.com", action: () => window.open("mailto:hello@lusikandsons.com") },
             ].map((c, i) => (
               <button key={i} onClick={c.action} className="w-full flex items-center gap-5 p-5 group hover:bg-[rgba(26,22,18,0.04)]" style={{ borderTop: i === 0 ? "1px solid rgba(26,22,18,0.1)" : "none", borderBottom: "1px solid rgba(26,22,18,0.1)" }}>
                 <c.Icon size={22} strokeWidth={1.25} style={{ color: "#B08842" }} />
@@ -455,10 +455,10 @@ export function HomeView({
                 Send a <em style={{ fontWeight: 400 }}>letter</em>.
               </h3>
               <p className="text-base lg:text-lg opacity-80 leading-relaxed">
-                For handwritten orders, returns, gift notes, and heritage requests — Lusik retrieves mail from our local UPS Store mailbox in Buena Park.
+                For handwritten orders, gift notes you'd like tucked into the box, family-name requests, and the slower kind of correspondence — Lusik checks mail at our local UPS Store mailbox in Buena Park.
               </p>
               <p className="text-sm opacity-60 italic mt-4 leading-relaxed">
-                This is a mail-receiving address only — please don't visit in person.
+                A mail-receiving address only — please don't visit in person. Lusik works from her kitchen, and that's a private one.
               </p>
             </div>
             <div className="p-6 lg:p-8" style={{ border: "1px solid rgba(26,22,18,0.15)", background: "rgba(255,255,255,0.35)" }}>
@@ -481,7 +481,7 @@ export function HomeView({
               <div className="pt-5" style={{ borderTop: "1px solid rgba(26,22,18,0.12)" }}>
                 <p className="text-xs tracking-[0.3em] uppercase mb-3 opacity-70">Mail pickup hours</p>
                 <p className="text-xs opacity-60 italic mb-4 leading-relaxed">
-                  When Lusik can collect your letter from the UPS Store.
+                  The hours Lusik can stop by the UPS Store to gather your letter.
                 </p>
                 <div className="text-sm space-y-2">
                   {[
@@ -506,14 +506,14 @@ export function HomeView({
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Shipping & Tracking</p>
-            <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Drop-off & tracking, made easy.</h2>
+            <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>How your piece gets home.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
-              Find your nearest carrier location, or track an order on its way. Direct links — no account required.
+              Find the carrier office closest to you, or follow a piece already on its way. Direct links to USPS, UPS, and FedEx — no account required, no extra clicks.
             </p>
           </div>
           <div className="space-y-8">
             <div>
-              <p className="text-xs tracking-[0.2em] uppercase opacity-70 mb-4">Find a location near you</p>
+              <p className="text-xs tracking-[0.2em] uppercase opacity-70 mb-4">Find a carrier near you</p>
               <div className="grid grid-cols-3 gap-2">
                 <button onClick={() => window.open("https://www.google.com/maps/search/USPS+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
                   <MapPin size={18} />
@@ -528,7 +528,7 @@ export function HomeView({
                   <span style={{ fontWeight: 500 }}>FedEx</span>
                 </button>
               </div>
-              <p className="text-xs opacity-60 mt-3">Opens in Google Maps with locations near you.</p>
+              <p className="text-xs opacity-60 mt-3">Opens Google Maps with the offices closest to you.</p>
             </div>
             <TrackingForm />
           </div>
@@ -539,9 +539,9 @@ export function HomeView({
       <section className="py-20 lg:py-28" style={{ background: "rgba(176,136,66,0.08)" }}>
         <div className="max-w-3xl mx-auto px-6 lg:px-12 text-center">
           <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Stay Connected</p>
-          <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Be first to know.</h2>
+          <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>The occasional note.</h2>
           <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-10 max-w-xl mx-auto">
-            New letter colors, special edition pieces, and seasonal collections. About one email a month — never more, never spam.
+            When Lusik adds a new alphabet, a seasonal piece, or one of the placeholders finally goes live — we'll write you a short note. About one email a month. Never more, never anything we wouldn't send to our own mother.
           </p>
           <NewsletterSignup variant="hero" />
         </div>

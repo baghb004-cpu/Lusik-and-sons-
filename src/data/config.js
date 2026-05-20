@@ -243,7 +243,7 @@ export const CONFIG = {
     CHAT_ASSISTANT: {
       ENABLED: false,
       LAUNCHER_LABEL: "Ask us anything",              // text on the floating button
-      WELCOME: "Hi! I'm the Lusik & Sons assistant. Ask me about the alphabet blanket, the bibs, sizing, shipping — anything I can help with.",
+      WELCOME: "Hello — I'm the Lusik & Sons assistant. Ask me about the alphabet blanket, the bibs, the towels, the colors Lusik works in, shipping, sizing, anything. If a question is best for Lusik herself, I'll tell you that too.",
       PLACEHOLDER: "Type your question…",
     },
   },

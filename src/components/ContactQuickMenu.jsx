@@ -121,7 +121,7 @@ export function ContactQuickMenu({ isOpen, onClose }) {
 
         <div className="text-center mb-6">
           <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>
-            Custom requests
+            Write to Lusik
           </p>
           <h2
             id="contact-quick-title"
@@ -179,7 +179,7 @@ export function ContactQuickMenu({ isOpen, onClose }) {
         </button>
 
         <p className="text-xs text-center mt-6 opacity-65 leading-relaxed">
-          Lusik or one of her sons writes back, usually within a day.
+          Lusik writes back herself when she can. Otherwise one of her sons does. Usually within a day, always in real words.
         </p>
       </div>
     </div>
