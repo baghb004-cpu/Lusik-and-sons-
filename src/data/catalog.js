@@ -410,7 +410,7 @@ export const CATALOG = {
         // can express a preference at checkout; Lusik picks the
         // combination that fits.
         //
-        // 25-photo gallery, ordered by curatorial arc:
+        // 26-photo gallery, ordered by curatorial arc:
         //   01-02  HEROES -- cream damask family shot + clean white-
         //          coverlet set, two emotional registers up front
         //   03-04  MOTIF EDUCATION -- pink side-by-side bunny/butterfly
@@ -418,9 +418,13 @@ export const CATALOG = {
         //   05-14  LOOKBOOK -- Oct 2010 white-coverlet shoot, chromatic
         //          order through yellow, mint, pink, blue, with bold
         //          rust accent at the end
-        //   15-22  COLOR CARDS -- Dec 2010 burp-cloth-only archive,
-        //          burp cloth-only color confirmations
-        //   23-25  CONSTRUCTION & DETAIL -- the Aida-cloth inset bib
+        //   15-23  COLOR CARDS -- Dec 2010 burp-cloth-only archive,
+        //          burp cloth-only color confirmations across the
+        //          chromatic range. Position 21 is the light-blue +
+        //          blue card with the small red car corner motif --
+        //          confirmed Western Armenian "Անույշ ըլլայ", same
+        //          blessing as every other piece in the set
+        //   24-26  CONSTRUCTION & DETAIL -- the Aida-cloth inset bib
         //          (different technique), the cap-with-name shot, the
         //          scale relationship between bib and burp cloth
         //
@@ -439,23 +443,25 @@ export const CATALOG = {
         tagline: "Two Armenian meal blessings, one matched set — said before the baby eats, and after.",
         description: "A matched bib and burp cloth, each carrying one half of an Armenian grandmother's table blessing. Before the baby eats, the bib reads Բարի ախորժակ — Bari akhorzhak, bon appétit. After, when the food has worked out, the burp cloth answers Անույշ ըլլայ — Anush ella, may it be sweet. Lusik has been stitching this blessing for years — in cream with botanical green, in pale pink with magenta, in periwinkle with gold, in bubblegum pink with navy. Pick the mood you want — quiet harmony, gentle complement, or bold contrast — and Lusik picks the exact combination that fits. The bib carries a soft white inset panel that gives the cross-stitch a clean page to live on; the burp cloth is single-color terry, the everyday companion to the bib's ceremony. Each piece has a primary motif tucked between the words — a cross-stitched bottle, strawberry, grape, or carrot; an appliquéd butterfly, bunny, or daisies on the pink — and the burp cloth carries Lusik's quiet signature in the corner: a tiny car, a chick, a butterfly, varies by piece. Add the matching cap and your baby's name or initial is cross-stitched in the same thread, turning a set of two into a set of three voices: name on the cap, blessing before on the bib, blessing after on the burp cloth. The bib closes with a fabric tie at the back of the neck — the heritage closure Lusik's grandmother used. Hand cross-stitched by Lusik herself from her home in Cypress, California. Made to order, made to last.",
         coverImage: "/img/bari-akhorzhak-set/cover.jpg",
-        // 25-photo gallery -- the curatorial arc described in the
+        // 26-photo gallery -- the curatorial arc described in the
         // header comment. Indices below are 0-based into this list.
-        images: Array.from({ length: 25 }, (_, i) =>
+        images: Array.from({ length: 26 }, (_, i) =>
           `/img/bari-akhorzhak-set/${String(i + 1).padStart(2, "0")}.jpg`,
         ),
         // Three mood-based colorways. Swatches show a canonical
         // body+thread pairing for each mood; the indices below pull
         // photos from across the gallery that exemplify that mood.
-        // Motif-education shots (2, 3), cap-personalization (23), and
-        // the scale shot (24) live in the gallery but aren't tagged
+        // Motif-education shots (2, 3), cap-personalization (24), and
+        // the scale shot (25) live in the gallery but aren't tagged
         // to a single mood -- they're story shots, not chromatic.
         colorways: [
           {
             // Tonal harmony -- body and thread sit in the same color
             // family. Heirloom-coded; reads quiet, considered.
+            // Position 20 is the new light-blue + blue archival card
+            // (DSCN1086, the one with the small red car in the corner).
             label: "Quiet harmony",
-            indices: [0, 1, 4, 6, 7, 10, 11, 12, 14, 19, 22],
+            indices: [0, 1, 4, 6, 7, 10, 11, 12, 14, 19, 20, 23],
             swatch: { dual: ["#EFE7D6", "#5B6F47"] },
           },
           {
@@ -470,7 +476,7 @@ export const CATALOG = {
             // Bold contrast -- thread sharply opposes the body.
             // Reads modern, statement.
             label: "Bold contrast",
-            indices: [9, 13, 20, 21],
+            indices: [9, 13, 21, 22],
             swatch: { dual: ["#E8579A", "#1A2C5A"] },
           },
         ],
