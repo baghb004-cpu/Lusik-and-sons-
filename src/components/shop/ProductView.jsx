@@ -28,6 +28,7 @@ import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ProductShowcase } from "../ProductShowcase.jsx";
 import { CustomProductCard } from "../CustomProductCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
+import { ProductImageGallery } from "../ProductImageGallery.jsx";
 
 export function ProductView({
   category,
@@ -91,6 +92,16 @@ export function ProductView({
   }
 
   if (product.key === "bib-single") {
+    // Real past-customer bib photos. Lives next to the live SVG
+    // preview in the configurator above -- the configurator shows
+    // the customer's chosen design, this gallery shows what other
+    // customers actually received. Trust + inspiration cues.
+    const customerExamples = [
+      "/img/bib-examples/01.jpg",  // teddy bear + Armenian name on white bib
+      "/img/bib-examples/02.jpg",  // "Armig" + daffodils on white bib
+      "/img/bib-examples/03.jpg",  // tulip + Armenian name on pink bib
+      "/img/bib-examples/04.jpg",  // giraffe + Armenian name on light blue bib
+    ];
     return (
       <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
         <Breadcrumbs trail={trail} />
@@ -99,6 +110,31 @@ export function ProductView({
           onAddCustom={onAddCustom}
           onCartFeedback={onCartFeedback}
         />
+
+        {/* Past customer orders gallery -- same shape as the cotton
+            blanket / days-bib placeholder galleries (tap-to-zoom,
+            chevron arrows, single-row thumb strip) but without the
+            color swatches since thread color is already chosen in
+            the configurator above. */}
+        <section className="mt-16 lg:mt-24 pt-12 lg:pt-16" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
+          <div className="max-w-3xl mb-8 lg:mb-10">
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>
+              Past customer orders
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+              Real bibs Lusik has <em style={{ fontWeight: 400 }}>stitched</em> for other families.
+            </h2>
+            <p className="text-sm lg:text-base opacity-75 leading-relaxed">
+              Armenian names, English names, small embroidered motifs for every milestone — tulips, teddy bears, giraffes, daffodils. Tap any photo to zoom in.
+            </p>
+          </div>
+          <div className="min-w-0 w-full">
+            <ProductImageGallery
+              images={customerExamples}
+              alt="Past customer bibs"
+            />
+          </div>
+        </section>
       </div>
     );
   }
