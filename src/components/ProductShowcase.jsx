@@ -439,7 +439,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
                 </div>
               </div>
               <p className="text-[0.65rem] opacity-60 italic text-center leading-relaxed">
-                Live preview of your design. Real blanket has woven pomegranate texture and fringed edges — tap "Real photos" to see the actual product details.
+                A live preview of how your blanket will look. The real piece has the woven pomegranate texture and the fringed edges — tap "Real photos" to see the cloth Lusik works on.
               </p>
             </>
           ) : (
@@ -516,7 +516,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
         </div>
 
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Made to order · Cypress, CA</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Made to order · From Lusik's home in Cypress, California</p>
           <h2 className="font-display text-4xl lg:text-5xl mb-3 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{product.name}</h2>
           <p className="text-base opacity-70 mb-6">{product.subtitle}</p>
 
@@ -525,8 +525,8 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
           </div>
           <p className="text-xs opacity-60 mb-8">
             {layout.letterCount === 6
-              ? "Premium variant — alphabet stitched twice (six letter squares)."
-              : "Hand cross-stitched by Lusik · made to order."}
+              ? "The premium layout — the alphabet stitched twice, six letter-squares across the blanket."
+              : "Hand cross-stitched by Lusik · made to order, made to last."}
           </p>
 
           <p className="text-base leading-relaxed mb-8 opacity-85">{product.description}</p>
@@ -629,7 +629,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
               })}
             </div>
             <p className="text-xs opacity-60 mt-3 leading-relaxed">
-              {layout.description} For other letters or special requests, <a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline">email Lusik</a>.
+              {layout.description} For a different letter or a name you'd like spelled out, <a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline">write Lusik directly</a> — she always reads them herself.
             </p>
           </CollapsibleSection>
 
@@ -656,7 +656,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
             }
           >
             <p className="text-[0.65rem] opacity-50 italic mb-4">
-              Lusik selects thread for each blanket personally from her current sourcing. Slight color variation between blankets is part of what makes each one unique.
+              Lusik picks the thread for each blanket from whatever spools she has on hand the week she stitches yours. Small variations between blankets are how you know one woman made it.
             </p>
 
             {/* Mode toggle: Presets vs Custom */}
@@ -871,7 +871,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
             }
           >
             <p className="text-[0.65rem] opacity-60 italic mb-4 leading-relaxed">
-              Two short lines Lusik can embroider on a free square of the blanket. Both optional — leave blank to ship with just the alphabet, no extra charge either way.
+              Two short lines Lusik can place on a free square of the blanket — your child's name, a year, a date that mattered. Both optional. Leave them blank and the blanket ships with just the alphabet, no extra charge either way.
             </p>
 
             <div className="space-y-4">

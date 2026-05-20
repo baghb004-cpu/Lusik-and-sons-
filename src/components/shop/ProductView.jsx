@@ -119,13 +119,13 @@ export function ProductView({
         <section className="mt-16 lg:mt-24 pt-12 lg:pt-16" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
           <div className="max-w-3xl mb-8 lg:mb-10">
             <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>
-              Past customer orders
+              From other families' kitchens
             </p>
             <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               Real bibs Lusik has <em style={{ fontWeight: 400 }}>stitched</em> for other families.
             </h2>
             <p className="text-sm lg:text-base opacity-75 leading-relaxed">
-              Armenian names, English names, small embroidered motifs for every milestone — tulips, teddy bears, giraffes, daffodils. Tap any photo to zoom in.
+              Armenian names, English names, a small motif beside each one for the milestone it marked — tulips, teddy bears, giraffes, daffodils, the things a baby will one day point at and ask the word for. Tap any photo to step closer.
             </p>
           </div>
           <div className="min-w-0 w-full">

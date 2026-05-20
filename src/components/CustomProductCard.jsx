@@ -163,7 +163,7 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
         {cleanName.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
             <div className="text-center">
-              <p className="text-xs opacity-50 italic">Type a name to preview yours</p>
+              <p className="text-xs opacity-50 italic">Type your child's name to see how Lusik will stitch it</p>
             </div>
           </div>
         )}
@@ -179,7 +179,7 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
             ${config.price}
           </p>
           <p className="text-[0.65rem] opacity-60 mt-1.5">
-            Made to order · Cypress, CA
+            Made to order · From Lusik's home in Cypress, California
           </p>
         </div>
 

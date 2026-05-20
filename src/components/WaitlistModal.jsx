@@ -55,11 +55,11 @@ export function WaitlistModal({ product, onClose }) {
       track("waitlist-signup", { productKey: product.key });
       toast({
         kind: "success",
-        message: `Added to the ${product.name} waitlist. We'll email you when it's ready.`,
+        message: `Added — we'll write you the day ${product.name} is ready.`,
       });
       onClose?.();
     } catch {
-      toast({ kind: "error", message: "Couldn't add you to the list — please try again or email hello@lusikandsons.com." });
+      toast({ kind: "error", message: "We couldn't add you just now — please try again, or write to hello@lusikandsons.com." });
     } finally {
       setBusy(false);
     }
@@ -72,7 +72,7 @@ export function WaitlistModal({ product, onClose }) {
         <button onClick={onClose} aria-label="Close" className="absolute top-3 right-3 opacity-50 hover:opacity-100 transition">
           <X size={18} />
         </button>
-        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Coming soon</p>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Almost ready</p>
         <h3 className="font-display text-2xl lg:text-3xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
           {product.name}
         </h3>
@@ -81,7 +81,7 @@ export function WaitlistModal({ product, onClose }) {
         )}
         <form onSubmit={handleSubmit} className="mb-4">
           <label className="block mb-1.5">
-            <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70">Notify me when this is available</span>
+            <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70">A single note, the day it's ready</span>
           </label>
           <div className="flex items-stretch gap-2">
             <input
@@ -112,7 +112,7 @@ export function WaitlistModal({ product, onClose }) {
                 cursor: busy ? "wait" : "pointer",
               }}
             >
-              {busy ? "…" : "Notify me"}
+              {busy ? "…" : "Write me"}
             </button>
           </div>
           {/* Honeypot — off-screen, real users never see it. */}
@@ -121,7 +121,7 @@ export function WaitlistModal({ product, onClose }) {
           </label>
         </form>
         <p className="text-xs opacity-60 leading-relaxed">
-          Or <a href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent(`Inquiry: ${product.name}`)}`} className="underline hover:opacity-100">email Lusik directly</a> if you'd rather have a personal conversation.
+          Or <a href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent(`Inquiry: ${product.name}`)}`} className="underline hover:opacity-100">write Lusik directly</a> if you'd rather have the conversation in her own words.
         </p>
       </div>
     </div>

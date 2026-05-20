@@ -68,9 +68,9 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
               <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>
                 Coming soon
               </p>
-              <p className="text-sm opacity-65 italic mb-2">Image goes here</p>
+              <p className="text-sm opacity-65 italic mb-2">Lusik's hands first</p>
               <p className="text-[0.65rem] opacity-45 leading-relaxed max-w-[14em] mx-auto">
-                Lusik is finishing the first piece of this item. Photographs will be posted here once it's ready.
+                Lusik is finishing the first piece of this one on her kitchen table. Photographs will go here the moment it's ready for the world to see.
               </p>
             </div>
           </div>
@@ -87,7 +87,7 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             unavailable" bar with a real "Notify me" button below it. */}
         <div className="min-w-0 w-full">
           <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>
-            Coming soon · Cypress, CA
+            Almost ready · Cypress, California
           </p>
           {/* break-words lets long compound product names ("The
               Armenian Days-of-the-Week Bib Set") wrap at the hyphens
@@ -113,7 +113,7 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             </p>
           </div>
           <p className="text-xs opacity-60 mb-8">
-            Lusik is finalizing pricing for this colorway lineup. Drop your email below and we'll write you the moment it's listed.
+            Lusik is still settling on what to charge for this lineup — she likes to hold a piece in her hands before naming a price. Leave your email below and we'll write you the moment it's listed.
           </p>
 
           {description && (
@@ -175,10 +175,10 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             className="lg-button-ink lg-shine w-full px-6 py-3 text-sm tracking-wide flex items-center justify-center gap-3"
             style={{ fontWeight: 500 }}
           >
-            Notify me when it's available <ArrowRight size={16} strokeWidth={1.5} />
+            Write me when it's ready <ArrowRight size={16} strokeWidth={1.5} />
           </button>
           <p className="text-[0.65rem] opacity-55 text-center mt-3">
-            One email when it lists — no other mail, ever.
+            One note the day it lists — nothing else, ever.
           </p>
 
           {/* CUSTOM REQUEST — keeps the existing direct-email path
@@ -186,10 +186,10 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
               directly than wait for the public listing. */}
           <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
             <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-65">
-              Custom request
+              Or write to Lusik
             </p>
             <p className="text-sm leading-relaxed opacity-80 mb-3">
-              Want to order this directly or ask Lusik a question?
+              If you'd rather not wait for the public listing — or you have a question Lusik should answer herself — send her a note.
             </p>
             <a
               href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent("About the " + product.name)}`}

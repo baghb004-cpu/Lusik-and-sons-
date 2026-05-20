@@ -30,7 +30,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory }) {
         Everything Lusik <em style={{ fontWeight: 400 }}>makes</em>.
       </h1>
       <p className="text-base lg:text-lg opacity-75 max-w-2xl leading-relaxed mb-12 lg:mb-16">
-        Cross-stitched blankets, embroidered bibs, ceremonial towels, and small things for the very first days. Pick a category to see what's available.
+        Cross-stitched blankets for the crib. Embroidered bibs for the kitchen table. Ceremonial towels for the days that count. Small fabric objects for the very first weeks. Each piece by Lusik's own hand, from her home in Cypress, California — made to order, made to last. Pick a category to step in.
       </p>
 
       <div className="grid sm:grid-cols-2 gap-5 lg:gap-6">
@@ -62,7 +62,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory }) {
                   {subtitleParts.join(" · ")}
                 </p>
                 <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
-                  Browse <ArrowRight size={12} strokeWidth={1.75} />
+                  Step in <ArrowRight size={12} strokeWidth={1.75} />
                 </span>
               </div>
             </button>

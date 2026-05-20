@@ -98,9 +98,9 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                   >
                     <div>
                       <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "#B08842", fontWeight: 600 }}>
-                        Coming soon
+                        Almost ready
                       </p>
-                      <p className="text-xs opacity-55 italic">Image goes here</p>
+                      <p className="text-xs opacity-55 italic">Lusik's hands first</p>
                     </div>
                   </div>
                 )}
@@ -119,16 +119,16 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                         From <span style={{ color: "#B08842" }}>${p.priceFrom}</span>
                       </p>
                       <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
-                        View <ArrowRight size={12} strokeWidth={1.75} />
+                        Step in <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>
                   ) : (
                     <>
                       <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "rgba(176,136,66,0.12)", color: "#B08842", fontWeight: 600 }}>
-                        Coming soon
+                        Almost ready
                       </span>
                       <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
-                        Notify me <ArrowRight size={12} strokeWidth={1.75} />
+                        Write me <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>
                   )}

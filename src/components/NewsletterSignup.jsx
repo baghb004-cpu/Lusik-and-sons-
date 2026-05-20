@@ -52,13 +52,13 @@ export function NewsletterSignup({ variant = "footer" }) {
       track("newsletter-signup");
       toast({
         kind: "success",
-        message: "Thanks — we'll let you know when Lusik adds a new alphabet.",
+        message: "Thank you — we'll write the moment Lusik adds something new.",
       });
       setEmail("");
     } catch {
       toast({
         kind: "error",
-        message: "Couldn't sign you up — please try again, or email hello@lusikandsons.com.",
+        message: "We couldn't add you just now — please try again, or write to hello@lusikandsons.com.",
       });
     } finally {
       setBusy(false);
@@ -71,9 +71,9 @@ export function NewsletterSignup({ variant = "footer" }) {
     <div className={isHero ? "" : "mb-8"}>
       {!isHero && (
         <>
-          <p className="text-xs tracking-[0.3em] uppercase mb-3 opacity-70">Newsletter</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-3 opacity-70">The occasional note</p>
           <p className="text-sm opacity-80 leading-relaxed mb-3 max-w-md">
-            Be the first to hear when Lusik adds a new alphabet or opens custom slots. No spam, no upsells — just the occasional note.
+            When Lusik adds a new alphabet or opens her hands for custom orders, we'll write. About one note a month — never anything we wouldn't send to family.
           </p>
         </>
       )}
@@ -118,7 +118,7 @@ export function NewsletterSignup({ variant = "footer" }) {
             cursor: busy ? "wait" : "pointer",
           }}
         >
-          {busy ? "…" : "Sign me up"}
+          {busy ? "…" : "Write me"}
         </button>
       </form>
     </div>

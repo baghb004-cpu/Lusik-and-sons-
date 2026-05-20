@@ -152,7 +152,7 @@ export function OrderHistory({ userId, onReorder }) {
   if (orders.length === 0) {
     return (
       <p className="text-sm opacity-60 italic max-w-md leading-relaxed">
-        No orders yet. When Lusik finishes your blanket and ships it, your order history will appear here — with tracking, photos of the finished piece, and care instructions.
+        Nothing in your hands yet. When Lusik finishes a piece for you and walks it to the carrier, it will show up here — with the tracking number, a photograph of the finished stitchwork, and a few words on how to keep it for the next generation.
       </p>
     );
   }

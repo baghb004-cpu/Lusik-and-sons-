@@ -36,7 +36,7 @@ export const TRANSLATIONS = {
       signIn: "Sign in",
       connect: "Connect",
     },
-    announce: "Hand cross-stitched in Cypress, California",
+    announce: "Hand cross-stitched in Cypress, California — by Lusik, for the families who'll keep it",
 
     // Hero / homepage
     hero: {
@@ -46,7 +46,7 @@ export const TRANSLATIONS = {
       // brand asset (since Lusik makes blankets, bibs, blessings,
       // hats, towels — the maker is the constant, the products vary).
       headline: "Stitched by Lusik.",
-      headlineEm: "Made to last",
+      headlineEm: "Kept by your family",
       // Body intentionally avoids any one product category. Lists
       // three of the categories Lusik actually makes (blankets,
       // bibs, blessings) without claiming exclusivity, and surfaces
@@ -54,10 +54,10 @@ export const TRANSLATIONS = {
       // are handled by the dedicated Custom Requests trust badge
       // popover below the hero, so we don't need an inline email
       // link in the body anymore.
-      body: "From her home in Cypress, California, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made to order. Her sons help run the shop.",
+      body: "From her home in Cypress, California, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made for one specific child. Her sons run the website. Mom does the stitching. We do the typing.",
       shopCta: "See what Lusik makes",
-      storyCta: "About Lusik",
-      callout1: "By Lusik",
+      storyCta: "Meet Lusik",
+      callout1: "By Lusik's own hand",
       callout2: "Made to order",
       // Rotating caption — one short italic line per hero slide,
       // appears between the H1 and the body copy. Sequenced to
@@ -68,7 +68,7 @@ export const TRANSLATIONS = {
         "An alphabet, letter by letter.",
         "Sets for the first day home.",
         "A name on every bib.",
-        "Soft pieces, made small.",
+        "Small cloths for the smallest days.",
         "Blessings, framed in thread.",
         "For the very first head.",
       ],
@@ -139,9 +139,9 @@ export const TRANSLATIONS = {
     story: {
       eyebrow: "Our Story",
       title: "Lusik came to Los Angeles in the late 1970s.",
-      p1: "She brought a cross-stitch hoop, a few skeins of red and gold thread, and a way of working her grandmother had taught her — slow, even stitches that build a letter one X at a time.",
-      p2: "She has been making these blankets, by hand, ever since. Her sons run this website. She does the stitching.",
-      p3: "Every blanket is made to order. Lusik picks up each one when it's ready and personally checks it before it ships.",
+      p1: "She brought a cross-stitch hoop, a few skeins of red and gold thread, and a way of working her grandmother had taught her in Armenia — slow, even stitches that build a letter one small X at a time.",
+      p2: "She has been making these pieces, by hand, ever since. Her sons run this website. She does the stitching. Mom does the work; we do the typing.",
+      p3: "Every blanket is made to order. Lusik picks up each one when it's ready, sits with it on her kitchen table, and personally checks it before it goes in the box for your family.",
       meetLusik: "Meet Lusik",
     },
 
@@ -169,12 +169,12 @@ export const TRANSLATIONS = {
     shipping: {
       eyebrow: "Shipping",
       title: "How your blanket gets to you",
-      p1: "Once Lusik finishes your blanket, we pack it carefully and ship it from Cypress, California.",
-      p2: "We use USPS, UPS, or FedEx — you pick at checkout. Free US shipping on orders over $150.",
+      p1: "Once Lusik finishes the last stitch, she folds the blanket between layers of tissue, places it in the box herself, and walks it to the carrier from her home in Cypress, California.",
+      p2: "USPS, UPS, or FedEx — you pick at checkout. Free U.S. shipping on orders over $150.",
       tracking: "Tracking",
-      trackingBody: "You'll get a tracking number by email as soon as your order ships.",
+      trackingBody: "A tracking number arrives in your inbox the moment the package leaves Lusik's hands.",
       times: "Delivery times",
-      timesBody: "Most orders arrive within 3–5 business days after they ship.",
+      timesBody: "Most orders arrive within 3–5 business days after they ship — and Lusik usually emails you a photograph of the finished piece a day or two before that.",
     },
 
     // Contact / Reach Us drawer
@@ -187,14 +187,14 @@ export const TRANSLATIONS = {
       byPost: "By Post",
       mailPickup: "Mail pickup hours",
       online: "Find us online",
-      onlineNote: "Some accounts are still being set up. If a link doesn't work yet, please email us.",
+      onlineNote: "Some of these accounts are still being set up. If a link hasn't lit up yet, please write — we'll answer the email faster than the algorithm anyway.",
       moreWays: "More ways to reach us",
-      tagline: "Lusik writes back herself, in her own time.",
+      tagline: "Lusik writes back herself, in her own time, in her own voice.",
     },
 
     // Footer
     footer: {
-      brand: "Hand cross-stitched baby blankets with the Armenian alphabet — Ա Բ Գ — or English A B C. Made by Lusik in Cypress, California.",
+      brand: "Hand cross-stitched baby blankets with the Armenian alphabet — Ա Բ Գ — or English A B C. By Lusik herself, from her home in Cypress, California. Made to order, made to last.",
       tagline: "Mom does the stitching. We do the typing.",
       shop: "Shop",
       help: "Help & Policies",
@@ -204,8 +204,8 @@ export const TRANSLATIONS = {
       privacyPolicy: "Privacy Policy",
       termsOfService: "Terms of Service",
       contactUs: "Contact Us",
-      repliesNote: "Lusik usually replies within a day.",
-      trustMade: "Made in Cypress, California",
+      repliesNote: "Lusik writes back herself, usually within a day.",
+      trustMade: "Made by Lusik in Cypress, California",
       trustSecure: "Secure checkout powered by Stripe",
       trustShips: "Ships within the United States",
       copyright: "© {year} Lusik & Sons. All rights reserved.",
@@ -223,8 +223,8 @@ export const TRANSLATIONS = {
       preferToCall: "Prefer to call? ",
       rates: "Standard message rates apply · We never share your number",
       proactiveQ: "Can we help you find something?",
-      proactiveSub: "Lusik usually replies within a day.",
-      chatNow: "Chat now",
+      proactiveSub: "Lusik usually writes back within a day.",
+      chatNow: "Start a conversation",
       noThanks: "No thanks",
     },
 
@@ -266,19 +266,19 @@ export const TRANSLATIONS = {
       orderHistory: "Order History",
       savedAddresses: "Saved Addresses",
       yourInfo: "Your Info",
-      noOrders: "You haven't placed any orders yet.",
-      shopFirstBlanket: "Shop your first blanket",
+      noOrders: "Nothing in your hands yet — but the first piece is waiting whenever you are.",
+      shopFirstBlanket: "Choose your first blanket",
     },
 
     // Custom product cards (bib, towel)
     custom: {
       eyebrow: "Custom Orders",
       title: "Custom orders",
-      subtitle: "Bibs and towels with your child's letter or image.",
+      subtitle: "Bibs and towels with your child's letter or image — Lusik will stitch the exact one you want.",
       bibTitle: "Baby Bib",
-      bibSubtitle: "Machine-embroidered with a personalized name.",
+      bibSubtitle: "Embroidered with your child's name — in Armenian or English.",
       bibMachine: "Machine embroidered",
-      bibMachineNote: "Type a short name (up to 5 or 6 letters). Lusik confirms placement before stitching.",
+      bibMachineNote: "Type a short name (up to five or six letters). Lusik confirms the placement with you before a single stitch goes in.",
       towelTitle: "Custom Embroidered Towel",
       towelSubtitle: "Upload an image; we machine-embroider it.",
       uploadImage: "Upload image (PNG/JPEG, max 5 MB)",
