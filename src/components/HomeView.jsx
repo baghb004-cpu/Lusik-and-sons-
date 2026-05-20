@@ -227,7 +227,16 @@ export function HomeView({
                 eyebrow: "Small piece, big heart",
                 label: "Bibs",
                 blurb: "Machine-embroidered with a personalized name — up to six letters.",
-                images: [PHOTO_BIB_ROMEO],
+                // Brisk slideshow on hover (desktop) or auto-cycle
+                // (touch), cycling through 4 real past-customer bib
+                // photos. Replaces the Romeo + blanket workshop shot
+                // which had a blanket in the background.
+                images: [
+                  "/img/bib-examples/01.jpg",
+                  "/img/bib-examples/02.jpg",
+                  "/img/bib-examples/03.jpg",
+                  "/img/bib-examples/04.jpg",
+                ],
               },
               {
                 slug: "towels",

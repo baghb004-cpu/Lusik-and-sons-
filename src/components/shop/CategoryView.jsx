@@ -21,22 +21,35 @@ import React from "react";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight } from "../icons.jsx";
 import { PRODUCT } from "../../data/product.js";
-import { PHOTO_BIB_ROMEO } from "../../images/photos.js";
+import { CategoryCardImage } from "../CategoryCardImage.jsx";
 
-// Thumbnail image for the category-grid card. Preference order:
-//   1. product.coverImage   — explicit portrait crop if set
-//      (alphabet blanket sets this; cotton blanket sets this)
-//   2. PRODUCT.gallery[0]   — first gallery image for the
-//      alphabet blanket if no coverImage is configured
-//   3. PHOTO_BIB_ROMEO      — fallback for the bib (no dedicated
-//      catalog photo, reuses a workshop shot)
-//   4. null                 — placeholder card renders the
-//      empty "Image goes here" frame
-function productHeroImage(product) {
+// Thumbnail image(s) for the category-grid card. Returns either:
+//   - a string (single image, no slideshow), OR
+//   - an array of strings (brisk slideshow on hover, auto-cycle
+//     on touch -- same behavior as the home-page Featured
+//     Categories cards)
+// Preference order:
+//   1. bib-single  -> the 4 past-customer bib photos as a
+//      brisk slideshow (real customer orders, not the old
+//      Romeo+blanket workshop shot)
+//   2. product.coverImage  -> explicit portrait crop if set
+//      (alphabet blanket, cotton blanket placeholder)
+//   3. PRODUCT.gallery[0]  -> first gallery photo for the
+//      live alphabet blanket
+//   4. null  -> placeholder card renders the empty
+//      "Image goes here" frame
+function productHeroImages(product) {
+  if (product.status === "live" && product.key === "bib-single") {
+    return [
+      "/img/bib-examples/01.jpg",  // teddy bear + Armenian
+      "/img/bib-examples/02.jpg",  // daffodils + "Armig"
+      "/img/bib-examples/03.jpg",  // tulip + Armenian on pink
+      "/img/bib-examples/04.jpg",  // giraffe + Armenian on blue
+    ];
+  }
   if (product.coverImage) return product.coverImage;
-  if (product.status === "live") {
-    if (product.key === "blanket-alphabet") return PRODUCT.gallery?.[0] ?? null;
-    if (product.key === "bib-single")       return PHOTO_BIB_ROMEO;
+  if (product.status === "live" && product.key === "blanket-alphabet") {
+    return PRODUCT.gallery?.[0] ?? null;
   }
   return null;
 }
@@ -61,7 +74,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
         {category.products.map((p) => {
           const isLive = p.status === "live";
-          const hero   = productHeroImage(p);
+          const hero   = productHeroImages(p);
           return (
             <button
               key={p.slug}
@@ -69,16 +82,15 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
               className="lg-button lg-shine text-left flex flex-col"
               aria-label={isLive ? `View ${p.name}` : `${p.name} — coming soon`}
             >
-              {/* Product photo (live) or "Image goes here" placeholder */}
+              {/* Product photo (live) or "Image goes here" placeholder.
+                  CategoryCardImage handles both a single image (static)
+                  and an array of images (brisk slideshow on hover /
+                  auto-cycle on touch). Returns null for products
+                  without a hero, in which case we render the empty
+                  "Image goes here" frame below. */}
               <div className="aspect-[4/5] overflow-hidden" style={{ borderBottom: "1px solid rgba(26,22,18,0.10)" }}>
                 {hero ? (
-                  <img
-                    src={hero}
-                    alt={p.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <CategoryCardImage images={hero} alt={p.name} />
                 ) : (
                   <div
                     className="w-full h-full flex items-center justify-center text-center px-4"
