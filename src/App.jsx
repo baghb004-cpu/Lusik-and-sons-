@@ -47,6 +47,7 @@ import { PolicyModal } from "./components/PolicyModal.jsx";
 import { WaitlistModal } from "./components/WaitlistModal.jsx";
 import { HeartBurst } from "./components/HeartBurst.jsx";
 import { SwipeableRow } from "./components/SwipeableRow.jsx";
+import { QuantityPicker } from "./components/QuantityPicker.jsx";
 import { FreeShippingProgress } from "./components/FreeShippingProgress.jsx";
 import { PaymentMethodsRow } from "./components/PaymentMethodsRow.jsx";
 
@@ -76,7 +77,7 @@ import { ProductView } from "./components/shop/ProductView.jsx";
 // Icons used directly inside App
 import {
   ArrowRight, AtSign, Check, ChevronDown,
-  Instagram, Mail, MapPin, Menu, Minus, Phone, Plus, Send,
+  Instagram, Mail, MapPin, Menu, Phone, Plus, Send,
   ShoppingBag, User, X,
 } from "./components/icons.jsx";
 
@@ -948,6 +949,13 @@ export function App() {
     }
     setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)));
   };
+  // Set qty to an exact value (used by the QuantityPicker popover --
+  // tapping "3" in the list shouldn't have to compute deltas at the
+  // call site). Clamped at the same 1-99 envelope as the validator.
+  const setQtyExact = (id, qty) => {
+    const clamped = Math.min(99, Math.max(1, Math.floor(Number(qty) || 1)));
+    setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: clamped } : i)));
+  };
   const removeFromCart = (id) => {
     // Capture the removed line item so the toast's "Undo" can put it
     // back exactly as it was — including custom metadata and qty.
@@ -1630,11 +1638,12 @@ export function App() {
                             <p className="text-xs opacity-60">{item.subtitle}</p>
                           </div>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 border" style={{ borderColor: "rgba(26,22,18,0.15)" }}>
-                              <button onClick={() => updateQty(item.id, -1)} className="p-2" aria-label={item.qty === 1 ? "Remove item" : "Decrease quantity"}><Minus size={12} /></button>
-                              <span className="text-sm w-6 text-center">{item.qty}</span>
-                              <button onClick={() => updateQty(item.id, 1)} className="p-2" aria-label="Increase quantity"><Plus size={12} /></button>
-                            </div>
+                            <QuantityPicker
+                              value={item.qty}
+                              onChange={(q) => setQtyExact(item.id, q)}
+                              onRemove={() => removeFromCart(item.id)}
+                              productName={item.name}
+                            />
                             <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
                           </div>
                         </div>
