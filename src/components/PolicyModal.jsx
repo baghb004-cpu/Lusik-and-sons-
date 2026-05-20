@@ -90,7 +90,11 @@ export function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Shipping",
-          body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Most orders ship within 5–10 business days of order confirmation. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
+          body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Most orders ship within 5–10 business days of order confirmation; the Cotton Alphabet Crib Blanket — every letter, by hand — needs 3–4 weeks. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
+        },
+        {
+          heading: "Documentation and disputes",
+          body: "Every order is documented from the finished-piece photograph Lusik takes through the moment the package is handed off to the carrier — the piece itself, the packing, and the shipping label, kept on file for 90 days. If your order arrives damaged or doesn't arrive at all, that record lets us resolve things with you directly — and, in the rare cases a dispute goes to our payment processor, gives us what we need to back you up or, honestly, to back ourselves up, depending on what actually happened. Every damage claim is read personally by Lusik or one of her sons; we don't use automated screening on the photographs you send us. The conversation stays human, on both sides."
         },
         {
           heading: "Customer responsibility",
@@ -136,7 +140,7 @@ export function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "We still stand behind our work",
-          body: "Final sale does not mean you are on your own. If your item arrives damaged in transit, has a clear manufacturing defect, or is materially different from what you ordered (wrong alphabet, wrong letter, wrong name, wrong product), email us within 14 days of delivery with photos. At our discretion, Lusik will repair the piece, remake it, or work with you to find an acceptable resolution. This is not a returns process — it is us standing behind the work."
+          body: "Final sale does not mean you are on your own. If your item arrives damaged in transit, has a clear manufacturing defect, or is materially different from what you ordered (wrong alphabet, wrong letter, wrong name, wrong product), email us within 14 days of delivery with photos. We keep our own documentation on every order — the finished-piece photograph, the packaging, the carrier handoff — so most of the picture is usually already on our side; we can skip the back-and-forth and move straight to making it right. At our discretion, Lusik will repair the piece, remake it, or work with you to find an acceptable resolution. This is not a returns process — it is us standing behind the work."
         },
         {
           heading: "Slight variation is part of the work",
