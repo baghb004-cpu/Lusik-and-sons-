@@ -22,7 +22,7 @@
 
 import React from "react";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
-import { ArrowRight, Mail } from "../icons.jsx";
+import { ArrowRight, Mail, Phone } from "../icons.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 
 // Strip the "⚠️ TODO_LUSIK: ..." sentence (and any trailing whitespace)
@@ -38,6 +38,29 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
   const description = cleanText(product.description);
   const hasGallery = Array.isArray(product.images) && product.images.length > 0;
   const details    = Array.isArray(product.details) ? product.details : [];
+
+  // Placeholder products fall into two UX modes:
+  //
+  //   * PRICED (commission-only) -- product.priceFrom is set, so the
+  //     page surfaces the real number alongside a write/call to
+  //     commission flow. This is the heritage-maker pattern (Hermès
+  //     made-to-order, Le Labo by-commission): the price is honest
+  //     and the order path is human, not a checkout button. The
+  //     Cotton Alphabet Crib Blanket lives here -- Lusik makes it,
+  //     priced it, but online checkout isn't wired yet.
+  //
+  //   * UNPRICED (still developing) -- product.priceFrom is null,
+  //     meaning Lusik is still settling on what to charge. Price
+  //     reads "Price coming soon", primary action is waitlist
+  //     ("write me when it's ready").
+  //
+  // Both modes share the same gallery, description, and details
+  // panel. The only difference is the price block + the CTA stack
+  // beneath it.
+  const isPriced = typeof product.priceFrom === "number" && product.priceFrom > 0;
+  const commissionSubject = `Commission a ${product.name}`;
+  const mailtoHref = `mailto:hello@lusikandsons.com?subject=${encodeURIComponent(commissionSubject)}`;
+  const telHref = "tel:+17608742333";
 
   return (
     <div className="fade-in max-w-6xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
@@ -87,7 +110,9 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             unavailable" bar with a real "Notify me" button below it. */}
         <div className="min-w-0 w-full">
           <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>
-            Almost ready · Cypress, California
+            {isPriced
+              ? "By direct order · From Lusik's home in Cypress, California"
+              : "Almost ready · Cypress, California"}
           </p>
           {/* break-words lets long compound product names ("The
               Armenian Days-of-the-Week Bib Set") wrap at the hyphens
@@ -103,18 +128,38 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             </p>
           )}
 
-          {/* PRICE AREA — same vertical rhythm as the live product
-              page's price block, but with placeholder copy. Italic
-              soft gold to read as "we're still figuring this part
-              out" rather than a hard zero / N/A. */}
-          <div className="flex items-baseline gap-3 mb-2">
-            <p className="text-2xl lg:text-3xl italic" style={{ fontWeight: 400, color: "#B08842" }}>
-              Price coming soon
-            </p>
-          </div>
-          <p className="text-xs opacity-60 mb-8">
-            Lusik is still settling on what to charge for this lineup — she likes to hold a piece in her hands before naming a price. Leave your email below and we'll write you the moment it's listed.
-          </p>
+          {/* PRICE AREA — two modes:
+              * Priced placeholder: real number in the live-product
+                style (ink, not italic gold), so the customer reads
+                it as a real number. Subtext explains that online
+                checkout isn't open yet but Lusik will commission one
+                directly.
+              * Unpriced placeholder: italic gold "Price coming soon"
+                signals "we're still figuring this out," waitlist
+                takes over the action below. */}
+          {isPriced ? (
+            <>
+              <div className="flex items-baseline gap-3 mb-2">
+                <p className="text-3xl" style={{ fontWeight: 500, color: "#1A1612" }}>
+                  ${product.priceFrom}
+                </p>
+              </div>
+              <p className="text-xs opacity-60 mb-8 leading-relaxed">
+                Online checkout for this piece isn't open yet — but the price is set and Lusik takes commissions directly. Write or call to start one, and she'll write back herself within a day.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-baseline gap-3 mb-2">
+                <p className="text-2xl lg:text-3xl italic" style={{ fontWeight: 400, color: "#B08842" }}>
+                  Price coming soon
+                </p>
+              </div>
+              <p className="text-xs opacity-60 mb-8">
+                Lusik is still settling on what to charge for this lineup — she likes to hold a piece in her hands before naming a price. Leave your email below and we'll write you the moment it's listed.
+              </p>
+            </>
+          )}
 
           {description && (
             <p className="text-base leading-relaxed mb-8 opacity-85">
@@ -145,61 +190,128 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             </div>
           )}
 
-          {/* DISABLED CTA — looks like an add-to-cart button but
-              greyed-out and unclickable. Communicates the "you can't
-              buy this yet" state. */}
-          <div
-            className="w-full px-6 py-4 mb-3 text-sm tracking-wide flex items-center justify-center gap-3 select-none"
-            style={{
-              background: "rgba(26, 22, 18, 0.08)",
-              color: "rgba(26, 22, 18, 0.45)",
-              border: "1px solid rgba(26, 22, 18, 0.08)",
-              fontWeight: 500,
-              cursor: "not-allowed",
-              letterSpacing: "0.02em",
-            }}
-            role="button"
-            aria-disabled="true"
-            aria-label="Currently unavailable — see the Notify me option below"
-            tabIndex={-1}
-          >
-            Currently unavailable
-          </div>
+          {/* CTA STACK -- two layouts depending on whether the
+              product has a real price set:
+              * Priced (commission-only): primary is a real email
+                button that drafts a commission inquiry; secondary
+                is a phone button; tertiary is the waitlist (in
+                case the customer wants the eventual online listing).
+              * Unpriced: primary is the disabled "Currently
+                unavailable" bar that signals the state; the real
+                action is the waitlist button below it. */}
+          {isPriced ? (
+            <>
+              {/* PRIMARY -- write Lusik to commission. Pre-filled
+                  mailto subject so the conversation starts with
+                  product context already in the inbox. */}
+              <a
+                href={mailtoHref}
+                className="lg-button-ink lg-shine w-full px-6 py-4 mb-3 text-sm tracking-wide flex items-center justify-center gap-3"
+                style={{ fontWeight: 500, letterSpacing: "0.02em" }}
+              >
+                <Mail size={16} strokeWidth={1.5} />
+                Write Lusik to commission this <ArrowRight size={16} strokeWidth={1.5} />
+              </a>
 
-          {/* NOTIFY ME — the real action. Subtler than the live
-              product's primary CTA (since this isn't a purchase),
-              but still visually prominent. Opens the waitlist modal
-              owned by App. */}
-          <button
-            onClick={() => onOpenWaitlist?.(product)}
-            className="lg-button-ink lg-shine w-full px-6 py-3 text-sm tracking-wide flex items-center justify-center gap-3"
-            style={{ fontWeight: 500 }}
-          >
-            Write me when it's ready <ArrowRight size={16} strokeWidth={1.5} />
-          </button>
-          <p className="text-[0.65rem] opacity-55 text-center mt-3">
-            One note the day it lists — nothing else, ever.
-          </p>
+              {/* SECONDARY -- phone, for customers who'd rather
+                  talk than write. tel: opens the dialer on mobile
+                  and the default calling app on desktop. */}
+              <a
+                href={telHref}
+                className="w-full px-6 py-3 mb-3 text-sm tracking-wide flex items-center justify-center gap-3 transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px solid #1A1612",
+                  color: "#1A1612",
+                  fontWeight: 500,
+                  letterSpacing: "0.02em",
+                  background: "transparent",
+                }}
+              >
+                <Phone size={16} strokeWidth={1.5} />
+                Or call (760) 874-2333
+              </a>
 
-          {/* CUSTOM REQUEST — keeps the existing direct-email path
-              available for customers who'd rather talk to Lusik
-              directly than wait for the public listing. */}
-          <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-65">
-              Or write to Lusik
-            </p>
-            <p className="text-sm leading-relaxed opacity-80 mb-3">
-              If you'd rather not wait for the public listing — or you have a question Lusik should answer herself — send her a note.
-            </p>
-            <a
-              href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent("About the " + product.name)}`}
-              className="inline-flex items-center gap-2 text-sm underline hover:opacity-70"
-              style={{ color: "#1A1612" }}
-            >
-              <Mail size={14} strokeWidth={1.5} />
-              hello@lusikandsons.com
-            </a>
-          </div>
+              <p className="text-[0.65rem] opacity-60 text-center mt-3 mb-6 leading-relaxed">
+                Lusik or one of her sons writes back, usually within a day. We'll talk through the colorway, the alphabet, the date you need it by, and confirm the price before stitching begins.
+              </p>
+
+              {/* TERTIARY -- waitlist. For customers who prefer
+                  to wait for the eventual online listing rather
+                  than commission directly. Subtler styling so it
+                  doesn't compete with the commission path above. */}
+              <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
+                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-65">
+                  Or wait for the listing
+                </p>
+                <p className="text-sm leading-relaxed opacity-80 mb-3">
+                  We're working toward opening online checkout for this piece. If you'd rather wait, we'll write you the day it goes live.
+                </p>
+                <button
+                  onClick={() => onOpenWaitlist?.(product)}
+                  className="inline-flex items-center gap-2 text-sm underline hover:opacity-70"
+                  style={{ color: "#1A1612" }}
+                >
+                  <ArrowRight size={14} strokeWidth={1.5} />
+                  Add me to the list
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* DISABLED CTA -- looks like an add-to-cart button
+                  but greyed-out. Communicates the "you can't buy
+                  this yet, no price yet" state. */}
+              <div
+                className="w-full px-6 py-4 mb-3 text-sm tracking-wide flex items-center justify-center gap-3 select-none"
+                style={{
+                  background: "rgba(26, 22, 18, 0.08)",
+                  color: "rgba(26, 22, 18, 0.45)",
+                  border: "1px solid rgba(26, 22, 18, 0.08)",
+                  fontWeight: 500,
+                  cursor: "not-allowed",
+                  letterSpacing: "0.02em",
+                }}
+                role="button"
+                aria-disabled="true"
+                aria-label="Currently unavailable — see the Notify me option below"
+                tabIndex={-1}
+              >
+                Currently unavailable
+              </div>
+
+              {/* NOTIFY ME -- the real action when there's no
+                  price yet. Opens the waitlist modal owned by App. */}
+              <button
+                onClick={() => onOpenWaitlist?.(product)}
+                className="lg-button-ink lg-shine w-full px-6 py-3 text-sm tracking-wide flex items-center justify-center gap-3"
+                style={{ fontWeight: 500 }}
+              >
+                Write me when it's ready <ArrowRight size={16} strokeWidth={1.5} />
+              </button>
+              <p className="text-[0.65rem] opacity-55 text-center mt-3">
+                One note the day it lists — nothing else, ever.
+              </p>
+
+              {/* CUSTOM REQUEST -- keeps the existing direct-email
+                  path available even before the price is set. */}
+              <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
+                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-65">
+                  Or write to Lusik
+                </p>
+                <p className="text-sm leading-relaxed opacity-80 mb-3">
+                  If you'd rather not wait for the public listing — or you have a question Lusik should answer herself — send her a note.
+                </p>
+                <a
+                  href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent("About the " + product.name)}`}
+                  className="inline-flex items-center gap-2 text-sm underline hover:opacity-70"
+                  style={{ color: "#1A1612" }}
+                >
+                  <Mail size={14} strokeWidth={1.5} />
+                  hello@lusikandsons.com
+                </a>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

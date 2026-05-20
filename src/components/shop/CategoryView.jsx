@@ -113,6 +113,15 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                   {p.tagline}
                 </p>
                 <div className="flex items-center justify-between gap-2 pt-3" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
+                  {/* Three-mode footer:
+                      * Live -- price + "Step in" CTA
+                      * Priced placeholder (commission-only) -- price
+                        shown the same way, but CTA reads "By direct
+                        order" so the customer knows clicking goes
+                        to a product page with a commission path,
+                        not to an Add-to-Cart button
+                      * Unpriced placeholder -- "Almost ready" badge
+                        + "Write me" CTA into the waitlist */}
                   {isLive ? (
                     <>
                       <p className="text-sm" style={{ fontWeight: 500 }}>
@@ -120,6 +129,15 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                       </p>
                       <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
                         Step in <ArrowRight size={12} strokeWidth={1.75} />
+                      </span>
+                    </>
+                  ) : typeof p.priceFrom === "number" && p.priceFrom > 0 ? (
+                    <>
+                      <p className="text-sm" style={{ fontWeight: 500 }}>
+                        From <span style={{ color: "#B08842" }}>${p.priceFrom}</span>
+                      </p>
+                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
+                        By direct order <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>
                   ) : (

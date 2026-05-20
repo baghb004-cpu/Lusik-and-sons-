@@ -73,16 +73,26 @@ export const CATALOG = {
         // ============================================================
         // FLIP-TO-LIVE CHECKLIST  (cotton-yarn-blanket)
         // ============================================================
-        // Pricing confirmed by Lusik (May 2026): $165, about two solid
-        // weeks of cross-stitching alone. priceFrom is already set
-        // below, so this is no longer a "set the price" job -- it's
-        // just the live-view + trusted-products wiring left.
+        // Pricing confirmed by Lusik (May 2026): $245, about two solid
+        // weeks of cross-stitching alone. The initial $165 felt too
+        // low for the labor going in -- $245 is the honest heritage
+        // price that still reads accessible to a christening-gift
+        // buyer. priceFrom is already set below, so this is no
+        // longer a "set the price" job -- it's just the live-view +
+        // trusted-products wiring left.
+        //
+        // Until the live view ships, the placeholder page surfaces
+        // the $245 number alongside a "write or call to commission"
+        // path. Customers see the real price and have a clear
+        // way to order; the brand keeps the heritage-maker framing
+        // (Hermès made-to-order, Le Labo by-commission) without
+        // pretending checkout is coming Real Soon.
         //
         //   1. Below: change `status: "placeholder"` → `status: "live"`
-        //      (priceFrom: 165 is already set)
+        //      (priceFrom: 245 is already set)
         //   2. In netlify/functions/_lib/trusted-products.mjs:
         //      Uncomment the "blanket-cotton-cotton" entry and set
-        //      priceCents to 16500 ($165). The server rejects any
+        //      priceCents to 24500 ($245). The server rejects any
         //      cart line item whose productKey isn't in
         //      TRUSTED_PRODUCTS, so this is what makes checkout work.
         //   3. In src/components/shop/ProductView.jsx:
@@ -134,12 +144,16 @@ export const CATALOG = {
         name: "The Cotton Alphabet Crib Blanket",
         // Status stays placeholder until the live cotton view + the
         // trusted-products row are wired (see the flip-to-live
-        // checklist near the top of this entry). Price is confirmed
-        // by Lusik at $165 -- baked in here so the moment we flip
-        // status to "live", the category card + trusted-products
-        // line both have the right number ready.
+        // checklist near the top of this entry). Price is set so
+        // customers can see the actual number and reach Lusik
+        // directly to commission one -- the placeholder page now
+        // surfaces the price + an email/phone commission path
+        // instead of the "price coming soon" framing used for
+        // unpriced placeholders. Once the live view ships, this
+        // same priceFrom feeds the category card + trusted-products
+        // entry without re-editing.
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" once the LiveCottonYarnView + trusted-products entry land
-        priceFrom: 165,                // Confirmed by Lusik (May 2026): about two solid weeks of stitching, alone
+        priceFrom: 245,                // Lusik confirmed $165 felt low for two solid weeks of work; $245 is the honest heritage price (see PR #91 + sitewide pricing analysis)
         // Tagline leads with "Armenian alphabet" -- a high-value
         // search term -- and immediately answers "how much of the
         // alphabet?" (every letter) and "how is it made?" (hand
