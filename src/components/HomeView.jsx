@@ -226,7 +226,7 @@ export function HomeView({
                 slug: "bibs",
                 eyebrow: "Small piece, big heart",
                 label: "Bibs",
-                blurb: "Machine-embroidered with a personalized name — up to six letters.",
+                blurb: "Custom-name bibs, the Armenian days-of-the-week set, and the Հայ եմ ես heritage bib.",
                 // Brisk slideshow on hover (desktop) or auto-cycle
                 // (touch), cycling through 4 real past-customer bib
                 // photos. Replaces the Romeo + blanket workshop shot
