@@ -11,7 +11,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
-import { PHOTO_BIB_ROMEO, PHOTO_BIB_STACK } from "../images/photos.js";
+// PHOTO_BIB_ROMEO + PHOTO_BIB_STACK imports removed -- the Romeo
+// empty-state image and the thread-range reference strip were
+// both removed at user request. They'll be replaced by a real
+// photo slideshow on the bib product page in a follow-up PR.
 import { PRODUCT } from "../data/product.js";
 
 export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
@@ -153,22 +156,14 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           nameColors={supportsColor && letterColorList ? letterColorList.map(c => c.hex) : null}
         />
         {/* Empty-state placeholder — hides as soon as the customer types.
-            Shows a real "Romeo" bib so the first impression is an actual
-            embroidered piece, not a schematic SVG. */}
+            Shows a simple "type a name to preview yours" hint over the
+            faint bib template. The previous Romeo example photo was
+            removed at user request (will be replaced by a real photo
+            slideshow elsewhere on the page in a follow-up). */}
         {cleanName.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
-            <div className="w-28 lg:w-32 aspect-square overflow-hidden mb-3 shadow-sm" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
-              <img
-                src={PHOTO_BIB_ROMEO}
-                alt="Real example — a blue cursive 'Romeo' bib stitched by Lusik"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
             <div className="text-center">
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-50">Real example — 'Romeo'</p>
-              <p className="text-xs opacity-50 mt-1 italic">Type a name to preview yours</p>
+              <p className="text-xs opacity-50 italic">Type a name to preview yours</p>
             </div>
           </div>
         )}
@@ -228,26 +223,6 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
             <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
               2. Thread color
             </label>
-
-            {/* Real-thread reference strip — a stack of finished bibs in every
-                preset color, so the customer can see what Lusik's actual
-                threads look like before they commit to a swatch. The
-                pomegranate-cream backdrop of the photo keeps it visually
-                consistent with the site's warm palette. */}
-            <div className="mb-3 flex items-center gap-3">
-              <div className="w-20 h-20 flex-shrink-0 overflow-hidden" style={{ border: "1px solid rgba(26,22,18,0.1)" }}>
-                <img
-                  src={PHOTO_BIB_STACK}
-                  alt="A stack of Lusik's bibs showing the full range of thread colors"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-              <p className="text-[0.65rem] opacity-65 leading-snug italic">
-                Lusik's real thread range — each color below is one she has on the spool. Slight variation between bibs is part of how each one is made.
-              </p>
-            </div>
 
             {/* Mode toggle: Presets vs Custom */}
             <div className="flex gap-2 mb-3 text-xs">
