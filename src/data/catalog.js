@@ -385,39 +385,101 @@ export const CATALOG = {
         // ============================================================
         // The Bari Akhorzhak Bib & Burp Cloth Set
         // ============================================================
-        // A meal-time set: bib + burp cloth, each carrying one half
-        // of an Armenian grandmother's table blessing.
+        // A meal-time set Lusik has been stitching for years. Bib +
+        // burp cloth (+ optional cap), each carrying one half of an
+        // Armenian grandmother's table blessing.
+        //
         //   Bib:        Բարի ախորժակ ("Bari akhorzhak", "Bon appétit")
         //                              -- said before the baby eats
         //   Burp cloth: Անույշ ըլլայ  ("Anush ella", "May it be sweet")
         //                              -- said after, when the food
         //                              has worked out
-        // Each piece has a small motif (baby bottle, butterfly,
-        // strawberry, daffodil, grape -- varies by colorway). An
-        // optional matching cap can be added.
+        //   Cap:        baby's name or initial cross-stitched in
+        //                              matching thread (optional)
+        //
+        // Bib has a soft white inset panel that gives the cross-stitch
+        // a clean page to live on; burp cloth is single-color terry.
+        // Closure is a fabric tie at the back of the neck -- the
+        // heritage closure Lusik's grandmother used.
+        //
+        // Primary motif (above the lettering): bottle (canonical),
+        // strawberry, grape, carrot, butterfly appliqué, bunny
+        // appliqué, or daisies. Lusik also tucks a small SIGNATURE
+        // motif into the corner of the burp cloth -- a tiny car,
+        // chick, butterfly, or flower -- varies by piece. Customer
+        // can express a preference at checkout; Lusik picks the
+        // combination that fits.
+        //
+        // 25-photo gallery, ordered by curatorial arc:
+        //   01-02  HEROES -- cream damask family shot + clean white-
+        //          coverlet set, two emotional registers up front
+        //   03-04  MOTIF EDUCATION -- pink side-by-side bunny/butterfly
+        //          + pink single, proves "you can choose the motif"
+        //   05-14  LOOKBOOK -- Oct 2010 white-coverlet shoot, chromatic
+        //          order through yellow, mint, pink, blue, with bold
+        //          rust accent at the end
+        //   15-22  COLOR CARDS -- Dec 2010 burp-cloth-only archive,
+        //          burp cloth-only color confirmations
+        //   23-25  CONSTRUCTION & DETAIL -- the Aida-cloth inset bib
+        //          (different technique), the cap-with-name shot, the
+        //          scale relationship between bib and burp cloth
+        //
+        // Three mood-based colorways replace the prior flat list. The
+        // customer picks the chromatic mood (harmony / complement /
+        // contrast); Lusik picks the precise body + thread that fits.
+        // This is honest to how she actually works -- she's stitched
+        // this blessing in 12+ combinations across 8 body colors and
+        // 9 thread colors over the years.
         // ============================================================
         key: "bib-bari-akhorzhak-set",
         slug: "bari-akhorzhak-bib-burp-cloth-set",
         name: "The Bari Akhorzhak Bib & Burp Cloth Set",
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
-        tagline: "Two Armenian meal blessings — \"Bon appétit\" on the bib, \"may it be sweet\" on the burp cloth.",
-        description: "A matched bib + burp cloth set, each carrying one half of an Armenian grandmother's table blessing. The bib reads Բարի ախորժակ (\"Bari akhorzhak\", bon appétit) — said before the baby eats. The burp cloth reads Անույշ ըլլայ (\"Anush ella\", may it be sweet) — said after, when the food has worked out. Each piece has a small motif tucked between the words: a cross-stitched baby bottle on the blue versions; appliquéd butterflies and flowers on the pink; strawberries, daffodils, and grapes on the rest. An optional matching cap can be added. Lusik embroiders each piece by hand from her home in Cypress, California. Made to order, made to last.",
+        tagline: "Two Armenian meal blessings, one matched set — said before the baby eats, and after.",
+        description: "A matched bib and burp cloth, each carrying one half of an Armenian grandmother's table blessing. Before the baby eats, the bib reads Բարի ախորժակ — Bari akhorzhak, bon appétit. After, when the food has worked out, the burp cloth answers Անույշ ըլլայ — Anush ella, may it be sweet. Lusik has been stitching this blessing for years — in cream with botanical green, in pale pink with magenta, in periwinkle with gold, in bubblegum pink with navy. Pick the mood you want — quiet harmony, gentle complement, or bold contrast — and Lusik picks the exact combination that fits. The bib carries a soft white inset panel that gives the cross-stitch a clean page to live on; the burp cloth is single-color terry, the everyday companion to the bib's ceremony. Each piece has a primary motif tucked between the words — a cross-stitched bottle, strawberry, grape, or carrot; an appliquéd butterfly, bunny, or daisies on the pink — and the burp cloth carries Lusik's quiet signature in the corner: a tiny car, a chick, a butterfly, varies by piece. Add the matching cap and your baby's name or initial is cross-stitched in the same thread, turning a set of two into a set of three voices: name on the cap, blessing before on the bib, blessing after on the burp cloth. The bib closes with a fabric tie at the back of the neck — the heritage closure Lusik's grandmother used. Hand cross-stitched by Lusik herself from her home in Cypress, California. Made to order, made to last.",
         coverImage: "/img/bari-akhorzhak-set/cover.jpg",
-        images: Array.from({ length: 20 }, (_, i) =>
+        // 25-photo gallery -- the curatorial arc described in the
+        // header comment. Indices below are 0-based into this list.
+        images: Array.from({ length: 25 }, (_, i) =>
           `/img/bari-akhorzhak-set/${String(i + 1).padStart(2, "0")}.jpg`,
         ),
+        // Three mood-based colorways. Swatches show a canonical
+        // body+thread pairing for each mood; the indices below pull
+        // photos from across the gallery that exemplify that mood.
+        // Motif-education shots (2, 3), cap-personalization (23), and
+        // the scale shot (24) live in the gallery but aren't tagged
+        // to a single mood -- they're story shots, not chromatic.
         colorways: [
-          { label: "Pink",    indices: [0, 8, 12, 13, 19],   swatch: { color: "#E8B5C7" } },
-          { label: "Blue",    indices: [4, 5, 6, 7, 15, 16], swatch: { color: "#93B7D5" } },
-          { label: "Cream",   indices: [1, 2, 3],            swatch: { color: "#EFE7D6" } },
-          { label: "Variety", indices: [9, 10, 11, 14],      swatch: { gradient: ["#E8B5C7", "#BBA8D6", "#93B7D5", "#B5D9BC", "#E8D89B"] } },
+          {
+            // Tonal harmony -- body and thread sit in the same color
+            // family. Heirloom-coded; reads quiet, considered.
+            label: "Quiet harmony",
+            indices: [0, 1, 4, 6, 7, 10, 11, 12, 14, 19, 22],
+            swatch: { dual: ["#EFE7D6", "#5B6F47"] },
+          },
+          {
+            // Gentle complement -- body and thread are soft
+            // counterparts. Reads gift-coded; legible without
+            // shouting.
+            label: "Gentle complement",
+            indices: [5, 8, 15, 16, 17, 18],
+            swatch: { dual: ["#FFFFFF", "#93B7D5"] },
+          },
+          {
+            // Bold contrast -- thread sharply opposes the body.
+            // Reads modern, statement.
+            label: "Bold contrast",
+            indices: [9, 13, 20, 21],
+            swatch: { dual: ["#E8579A", "#1A2C5A"] },
+          },
         ],
         details: [
-          { label: "Set size",  value: "Two pieces — one bib + one matching burp cloth. Add a matching cap as an option at checkout." },
-          { label: "Reads",     value: "Bib: Բարի ախորժակ (\"Bari akhorzhak\", bon appétit). Burp cloth: Անույշ ըլլայ (\"Anush ella\", may it be sweet). Each with a small motif — baby bottle, strawberry, daffodil, butterfly, or grape — varies by colorway." },
-          { label: "Materials", value: "100% cotton terry bib body, cotton terry burp cloth, both with satin trim. Hand cross-stitched or appliquéd embellishments." },
-          { label: "Sizing",    value: "Bib: one size, fits most babies 0–24 months. Burp cloth: standard burp-cloth size (approx. 10 × 17 in)." },
+          { label: "Set",       value: "Two pieces — one bib + one matching burp cloth. Add the matching cap and your baby's name or initial is cross-stitched in the same thread color." },
+          { label: "Reads",     value: "Bib: Բարի ախորժակ (\"Bari akhorzhak,\" bon appétit) — said before the baby eats. Burp cloth: Անույշ ըլլայ (\"Anush ella,\" may it be sweet) — said after. Each piece has a primary motif tucked between the words — a cross-stitched bottle, strawberry, grape, or carrot; an appliquéd butterfly, bunny, or daisies on the pink — and the burp cloth carries Lusik's quiet signature in the corner: a tiny car, a chick, a butterfly, varies by piece." },
+          { label: "Closure",   value: "Bib closes with a fabric tie at the back of the neck — the heritage closure Lusik's grandmother used. Slower than a snap, the way these were always made." },
+          { label: "Materials", value: "100% cotton terry bib body with a soft white inset panel for the lettering, cotton terry burp cloth, both finished with picot edging. Hand cross-stitched or appliquéd embellishments throughout." },
+          { label: "Sizing",    value: "Bib: one size, fits most babies 0–24 months. Burp cloth: standard burp-cloth size (approx. 10 × 17 in). ⚠️ TODO_LUSIK: confirm." },
           { label: "Care",      value: "We recommend professional dry cleaning to preserve the stitching for years. That said, these are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles." },
           { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
         ],
