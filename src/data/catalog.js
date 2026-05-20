@@ -73,19 +73,19 @@ export const CATALOG = {
         // ============================================================
         // FLIP-TO-LIVE CHECKLIST  (cotton-yarn-blanket)
         // ============================================================
-        // When pricing is finalized and Lusik is ready to sell this,
-        // here's everything you have to change. It's a ~5 minute job.
+        // Pricing confirmed by Lusik (May 2026): $165, about two solid
+        // weeks of cross-stitching alone. priceFrom is already set
+        // below, so this is no longer a "set the price" job -- it's
+        // just the live-view + trusted-products wiring left.
         //
         //   1. Below: change `status: "placeholder"` → `status: "live"`
-        //   2. Below: change `priceFrom: null` → `priceFrom: 65`
-        //      (or whatever the agreed price is)
-        //   3. In netlify/functions/_lib/trusted-products.mjs:
+        //      (priceFrom: 165 is already set)
+        //   2. In netlify/functions/_lib/trusted-products.mjs:
         //      Uncomment the "blanket-cotton-cotton" entry and set
-        //      priceCents to match (e.g. priceFrom 65 → priceCents
-        //      6500). The server rejects any cart line item whose
-        //      productKey isn't in TRUSTED_PRODUCTS, so this step
-        //      is what makes the checkout actually work.
-        //   4. In src/components/shop/ProductView.jsx:
+        //      priceCents to 16500 ($165). The server rejects any
+        //      cart line item whose productKey isn't in
+        //      TRUSTED_PRODUCTS, so this is what makes checkout work.
+        //   3. In src/components/shop/ProductView.jsx:
         //      Add a third branch alongside the existing
         //      blanket-alphabet / bib-single cases:
         //          if (product.key === "blanket-cotton-bernat") {
@@ -96,6 +96,11 @@ export const CATALOG = {
         //      selected before Add-to-Cart enables) + an Add-to-Cart
         //      button that calls onAdd with cart-id "blanket-cotton-
         //      cotton" (or per-color if pricing diverges).
+        //   4. Confirm the 3-4 week lead time copy in the Made detail
+        //      row is acceptable to Lusik before flipping. Customers
+        //      who see "3-4 weeks" on a heritage product won't blink;
+        //      customers who order, expect 10 days, then wait three
+        //      weeks WILL blink. The detail row is the contract.
         //
         // No DB change, no schema migration, no Stripe dashboard
         // work needed — Stripe Checkout sessions are created on the
@@ -127,8 +132,14 @@ export const CATALOG = {
         //   - The Cotton Alphabet Crib Blanket: full alphabet,
         //     cotton, satin-backed.
         name: "The Cotton Alphabet Crib Blanket",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the checklist above
-        priceFrom: null,               // ⚠️ TODO_LUSIK: set when going live (catalog card "From $NN")
+        // Status stays placeholder until the live cotton view + the
+        // trusted-products row are wired (see the flip-to-live
+        // checklist near the top of this entry). Price is confirmed
+        // by Lusik at $165 -- baked in here so the moment we flip
+        // status to "live", the category card + trusted-products
+        // line both have the right number ready.
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" once the LiveCottonYarnView + trusted-products entry land
+        priceFrom: 165,                // Confirmed by Lusik (May 2026): about two solid weeks of stitching, alone
         // Tagline leads with "Armenian alphabet" -- a high-value
         // search term -- and immediately answers "how much of the
         // alphabet?" (every letter) and "how is it made?" (hand
@@ -191,7 +202,7 @@ export const CATALOG = {
           // against machine-wash wear" line below puts the
           // responsibility on the customer's chosen method.
           { label: "Care",      value: "Professional dry cleaning recommended to preserve the hand cross-stitch, satin backing, and crochet edging — the dry cleaner gives consistent gentle treatment that a washing machine can't. If you'd rather launder at home, the cotton yarn label reads: machine wash in cool water, do not bleach, do not iron, tumble dry on low / delicate. We can't guarantee against wear from washing-machine cycles." },
-          { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
+          { label: "Made",      value: "By Lusik herself, in Cypress, California. The full Armenian alphabet — all thirty-six letters, plus the satin backing and the cotton crochet edge — is about two solid weeks of cross-stitching for her, working alone. We add a comfortable buffer for life and for the rest of the queue, so please plan on 3–4 weeks from order to ship. If you need it by a specific date — a christening, a baby shower, a flight home — tell us at checkout and we'll write back honestly about whether we can meet it." },
         ],
       },
     ],
