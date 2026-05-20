@@ -43,7 +43,15 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
     <div className="fade-in max-w-6xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
       <Breadcrumbs trail={trail} />
 
+      {/* min-w-0 on grid children prevents the CSS-grid quirk where
+          a column's intrinsic minimum is `auto` (= its widest
+          descendant) instead of zero. Without min-w-0, a wide
+          descendant (e.g. the 7-swatch color picker row, a long
+          product name like "The Armenian Days-of-the-Week Bib Set")
+          can push the column wider than the viewport. min-w-0 makes
+          the column actually respect its fair share. */}
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+        <div className="min-w-0 w-full">
         {/* GALLERY — the showcase-style photo gallery when the
             placeholder product has photos staged (the cotton-yarn-
             blanket case). Falls back to the original "Image goes
@@ -68,6 +76,8 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
           </div>
         )}
 
+        </div>
+
         {/* INFO PANEL — mirrors the live ProductShowcase pattern
             (eyebrow → title → tagline → price-area → description →
             details → CTA) so the customer gets the same visual
@@ -75,11 +85,16 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             (a) price reads "Coming soon" rather than a dollar amount
             and (b) the primary CTA is a disabled "Currently
             unavailable" bar with a real "Notify me" button below it. */}
-        <div>
+        <div className="min-w-0 w-full">
           <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>
             Coming soon · Cypress, CA
           </p>
-          <h1 className="font-display text-4xl lg:text-5xl mb-3 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+          {/* break-words lets long compound product names ("The
+              Armenian Days-of-the-Week Bib Set") wrap at the hyphens
+              instead of forcing the column wider than the viewport.
+              text-3xl on mobile, stepping up on larger screens, so
+              the title scales with available width. */}
+          <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
             {product.name}
           </h1>
           {product.tagline && (

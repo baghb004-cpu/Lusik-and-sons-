@@ -122,7 +122,16 @@ export function ProductImageGallery({
   if (!images || images.length === 0) return null;
 
   return (
-    <div ref={containerRef} tabIndex={0} className="focus:outline-none">
+    // min-w-0 and overflow-x-hidden defend against children pushing
+    // the gallery wider than its grid cell. The thumbnail strip +
+    // swatch row both have their own overflow-x-auto for internal
+    // horizontal scrolling, but without min-w-0 here, the grid
+    // cell would expand to fit them. max-w-full is belt-and-braces.
+    <div
+      ref={containerRef}
+      tabIndex={0}
+      className="focus:outline-none min-w-0 max-w-full w-full overflow-x-hidden"
+    >
       {/* MAIN IMAGE — tap to zoom, chevron buttons on the sides,
           TAP TO ZOOM badge bottom-left, counter bottom-right.
           Mirrors ProductShowcase line-for-line so the customer
