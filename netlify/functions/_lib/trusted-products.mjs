@@ -93,6 +93,32 @@ export const TRUSTED_PRODUCTS = {
   //   priceCents:  9900,   // ⚠️ TODO_LUSIK: confirm (placeholder)
   // },
 
+  // The Mama & Papa's Anushig Bib Set (pair: Mama's + Papa's "sweetheart")
+  // catalog key: bib-anushig-pair
+  // Sold as a pair only (no half-set variant). Single price across
+  // all four colorways (pink / blue / mint / yellow).
+  // "bib-anushig-pair": {
+  //   name:        "The Mama & Papa's Anushig Bib Set",
+  //   variant:     "Pair of matched bibs — Mama's + Papa's",
+  //   priceCents:  4500,   // ⚠️ TODO_LUSIK: confirm
+  // },
+
+  // The Bari Akhorzhak Bib & Burp Cloth Set
+  // catalog key: bib-bari-akhorzhak-set
+  // Two variants -- the set alone, or the set + matching cap. Customer
+  // picks at checkout; CheckoutView's mapLegacyId() emits the matching
+  // key. Single price across all colorways within each variant.
+  // "bib-bari-akhorzhak-set":          {
+  //   name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
+  //   variant:     "Bib + burp cloth",
+  //   priceCents:  4800,   // ⚠️ TODO_LUSIK: confirm
+  // },
+  // "bib-bari-akhorzhak-set-with-cap": {
+  //   name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
+  //   variant:     "Bib + burp cloth + matching cap",
+  //   priceCents:  6500,   // ⚠️ TODO_LUSIK: confirm
+  // },
+
   // The Hye Em Yes Bib ("I am Armenian")
   // catalog key: bib-hy-em
   // Sold either as a bib alone OR a bib + matching cap. Two cart-id

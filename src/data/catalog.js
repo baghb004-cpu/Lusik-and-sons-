@@ -203,7 +203,7 @@ export const CATALOG = {
     // moments. Names them all in one line so customers landing here
     // from a search ("Armenian baby bib", "personalized name bib",
     // "Hye em yes bib") see all three options.
-    description: "Machine-embroidered baby bibs by Lusik — a custom-name bib for everyday wear, a seven-day Armenian set for baby showers, and the heritage Հայ եմ ես (\"I am Armenian\") bib for christenings.",
+    description: "Machine-embroidered baby bibs by Lusik — a custom-name bib for everyday, a seven-day Armenian set for showers, the Հայ եմ ես (\"I am Armenian\") heritage bib, a Mama-and-Papa pair, and the Bari Akhorzhak meal-time set with matching burp cloth.",
     eyebrow: "Small piece, big heart",
     products: [
       {
@@ -340,6 +340,85 @@ export const CATALOG = {
           { label: "Materials", value: "100% cotton terry bib body with satin trim. Commercial-grade machine-embroidery thread on the lettering. Matching cotton cap when paired." },
           { label: "Sizing",    value: "One size, fits most babies 0–24 months." },
           { label: "Care",      value: "We recommend professional dry cleaning to preserve the embroidery for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread that survives a baby's daily bib changes. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles." },
+          { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
+        ],
+      },
+      {
+        // ============================================================
+        // The Mama & Papa's Anushig Bib Set
+        // ============================================================
+        // A matched PAIR of bibs sold together. One reads
+        // "Մայրիկիս Անոյշիկը" (Mama's sweetheart). The other reads
+        // "Պապայիս Անոյշիկը" (Papa's sweetheart). The recurring word
+        // "Անոյշիկ" (Anushig) -- Armenian for "darling / sweet one"
+        // -- gives the product its name. Available in pink, blue,
+        // mint green, and yellow colorways with small motifs between
+        // the two lines (heart, leaf, star).
+        // ============================================================
+        key: "bib-anushig-pair",
+        slug: "anushig-bib-set",
+        name: "The Mama & Papa's Anushig Bib Set",
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
+        priceFrom: null,
+        tagline: "One bib for Mom, one for Dad — Armenian for \"sweetheart,\" hand-embroidered as a pair.",
+        description: "A matched pair of baby bibs — one says Մայրիկիս Անոյշիկը (\"Mama's sweetheart\"), the other Պապայիս Անոյշիկը (\"Papa's sweetheart\"). Anushig is the Armenian word for darling. Embroidered together, gifted together: the bib for the morning Dad gets up first, the bib for the night Mom takes over. A small heritage anchor for the first months, when the question \"whose baby is this?\" needs the right answer from both sides. Lusik embroiders each pair by hand from her home in Cypress, California. Made to order, made to last.",
+        coverImage: "/img/anushig-bib/cover.jpg",
+        images: Array.from({ length: 9 }, (_, i) =>
+          `/img/anushig-bib/${String(i + 1).padStart(2, "0")}.jpg`,
+        ),
+        colorways: [
+          { label: "Pink",   indices: [0],       swatch: { color: "#E8B5C7" } },
+          { label: "Blue",   indices: [1, 7, 8], swatch: { color: "#93B7D5" } },
+          { label: "Mint",   indices: [2],       swatch: { color: "#B5D9BC" } },
+          { label: "Yellow", indices: [3],       swatch: { color: "#E8D89B" } },
+        ],
+        details: [
+          { label: "Set size",  value: "Two matched bibs — one Mama's, one Papa's. Both bibs in the same colorway." },
+          { label: "Reads",     value: "Մայրիկիս Անոյշիկը (\"Mama's sweetheart\") + Պապայիս Անոյշիկը (\"Papa's sweetheart\"), each with a small motif between the two lines — heart, leaf, or star, varies by colorway." },
+          { label: "Materials", value: "100% cotton terry bib body with satin trim. Hand-stitched cross-stitch lettering." },
+          { label: "Sizing",    value: "One size, fits most babies 0–24 months." },
+          { label: "Care",      value: "We recommend professional dry cleaning to preserve the cross-stitch for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the stitching. We can't guarantee against wear from washing-machine cycles." },
+          { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
+        ],
+      },
+      {
+        // ============================================================
+        // The Bari Akhorzhak Bib & Burp Cloth Set
+        // ============================================================
+        // A meal-time set: bib + burp cloth, each carrying one half
+        // of an Armenian grandmother's table blessing.
+        //   Bib:        Բարի ախորժակ ("Bari akhorzhak", "Bon appétit")
+        //                              -- said before the baby eats
+        //   Burp cloth: Անույշ ըլլայ  ("Anush ella", "May it be sweet")
+        //                              -- said after, when the food
+        //                              has worked out
+        // Each piece has a small motif (baby bottle, butterfly,
+        // strawberry, daffodil, grape -- varies by colorway). An
+        // optional matching cap can be added.
+        // ============================================================
+        key: "bib-bari-akhorzhak-set",
+        slug: "bari-akhorzhak-bib-burp-cloth-set",
+        name: "The Bari Akhorzhak Bib & Burp Cloth Set",
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
+        priceFrom: null,
+        tagline: "Two Armenian meal blessings — \"Bon appétit\" on the bib, \"may it be sweet\" on the burp cloth.",
+        description: "A matched bib + burp cloth set, each carrying one half of an Armenian grandmother's table blessing. The bib reads Բարի ախորժակ (\"Bari akhorzhak\", bon appétit) — said before the baby eats. The burp cloth reads Անույշ ըլլայ (\"Anush ella\", may it be sweet) — said after, when the food has worked out. Each piece has a small motif tucked between the words: a cross-stitched baby bottle on the blue versions; appliquéd butterflies and flowers on the pink; strawberries, daffodils, and grapes on the rest. An optional matching cap can be added. Lusik embroiders each piece by hand from her home in Cypress, California. Made to order, made to last.",
+        coverImage: "/img/bari-akhorzhak-set/cover.jpg",
+        images: Array.from({ length: 20 }, (_, i) =>
+          `/img/bari-akhorzhak-set/${String(i + 1).padStart(2, "0")}.jpg`,
+        ),
+        colorways: [
+          { label: "Pink",    indices: [0, 8, 12, 13, 19],   swatch: { color: "#E8B5C7" } },
+          { label: "Blue",    indices: [4, 5, 6, 7, 15, 16], swatch: { color: "#93B7D5" } },
+          { label: "Cream",   indices: [1, 2, 3],            swatch: { color: "#EFE7D6" } },
+          { label: "Variety", indices: [9, 10, 11, 14],      swatch: { gradient: ["#E8B5C7", "#BBA8D6", "#93B7D5", "#B5D9BC", "#E8D89B"] } },
+        ],
+        details: [
+          { label: "Set size",  value: "Two pieces — one bib + one matching burp cloth. Add a matching cap as an option at checkout." },
+          { label: "Reads",     value: "Bib: Բարի ախորժակ (\"Bari akhorzhak\", bon appétit). Burp cloth: Անույշ ըլլայ (\"Anush ella\", may it be sweet). Each with a small motif — baby bottle, strawberry, daffodil, butterfly, or grape — varies by colorway." },
+          { label: "Materials", value: "100% cotton terry bib body, cotton terry burp cloth, both with satin trim. Hand cross-stitched or appliquéd embellishments." },
+          { label: "Sizing",    value: "Bib: one size, fits most babies 0–24 months. Burp cloth: standard burp-cloth size (approx. 10 × 17 in)." },
+          { label: "Care",      value: "We recommend professional dry cleaning to preserve the stitching for years. That said, these are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles." },
           { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
         ],
       },
