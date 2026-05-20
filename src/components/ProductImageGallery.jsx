@@ -143,7 +143,15 @@ export function ProductImageGallery({
             key={currentSrc}
             src={currentSrc}
             alt={alt}
-            className="w-full h-full object-cover pointer-events-none fade-in"
+            // object-contain (not object-cover) so the entire photo
+            // is visible inside the 4:5 portrait container. With
+            // object-cover, landscape photos like the cotton blanket
+            // stack got ~33% horizontally cropped on mobile and the
+            // customer saw only a thin slice of abstract fabric
+            // texture instead of the full product. Letterbox bars
+            // (when an image's aspect doesn't match 4:5) blend into
+            // the cream container background and are barely visible.
+            className="w-full h-full object-contain pointer-events-none fade-in"
             loading="eager"
             fetchPriority="high"
             decoding="async"
