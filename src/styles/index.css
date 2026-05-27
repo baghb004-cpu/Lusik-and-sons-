@@ -1513,6 +1513,37 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* MOBILE APP LAYOUT — Apple Store-style treatment.
+   Light warm-gray background behind the content so white/cream
+   cards pop. Rounded corners on .lg-button / .lg-panel cards
+   get bumped on mobile for the "card on background" read.
+   Desktop is untouched — all rules gated behind max-width. */
+@media (max-width: 1023px) {
+  /* Warm gray background instead of the flat cream — gives
+     the "content cards on a surface" depth that makes the
+     site feel like an app, not a web page. */
+  #main-content {
+    background: color-mix(in srgb, var(--bg-page) 88%, rgba(26,22,18,0.06));
+    min-height: 100vh;
+  }
+
+  /* Bump card radius on mobile to match Apple's 12-16px feel.
+     Desktop keeps the current subtle radius. */
+  .lg-button,
+  .lg-panel,
+  .lg-panel-tall {
+    border-radius: 14px !important;
+  }
+
+  /* The nav is hidden on mobile (hidden lg:block on the <nav>
+     element). Remove its top-margin/padding expectations from
+     the main content. The MobilePageHeader provides the visual
+     top instead. */
+  #main-content > .page-enter > .fade-in:first-child {
+    padding-top: 0;
+  }
+}
+
 /* Honor reduced motion for everything above. */
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
