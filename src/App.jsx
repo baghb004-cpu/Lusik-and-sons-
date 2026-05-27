@@ -48,6 +48,7 @@ import { WaitlistModal } from "./components/WaitlistModal.jsx";
 import { HeartBurst } from "./components/HeartBurst.jsx";
 import { SwipeableRow } from "./components/SwipeableRow.jsx";
 import { QuantityPicker } from "./components/QuantityPicker.jsx";
+import { haptic } from "./lib/haptic.js";
 import { FreeShippingProgress } from "./components/FreeShippingProgress.jsx";
 import { PaymentMethodsRow } from "./components/PaymentMethodsRow.jsx";
 
@@ -750,6 +751,7 @@ export function App() {
   const subtotal = cart.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
 
   const addToCart = (color, qty = 1, selection = null, layout = null, colors = null) => {
+    haptic(12);
     track("add-to-cart", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
     // `selection` is either a `letter` (legacy single-letter bib) or an
     // `alphabet` (current — Armenian/English). When alphabet, `layout` is
@@ -957,6 +959,7 @@ export function App() {
     setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: clamped } : i)));
   };
   const removeFromCart = (id) => {
+    haptic(8);
     // Capture the removed line item so the toast's "Undo" can put it
     // back exactly as it was — including custom metadata and qty.
     // We preserve its position in the cart so an undo restores order.
@@ -995,6 +998,7 @@ export function App() {
   };
 
   const addCustomToCart = ({ productKey, name, price, size, customImage, customImageName, subtitleOverride, customMetadata }) => {
+    haptic(12);
     track("add-to-cart", { kind: "custom", productKey });
     // Each custom upload gets a unique id so multiple custom items don't merge.
     const id = `${productKey}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -1360,6 +1364,14 @@ export function App() {
       </nav>
 
       <main id="main-content" tabIndex={-1}>
+      {/* Page-transition wrapper. The `key` changes whenever the
+          view or the in-view content changes (slug switches, etc.),
+          which causes React to unmount the old tree and mount a
+          fresh one. The .page-enter CSS class fires a 220ms
+          fade-up animation on mount — subtle but enough to make
+          every navigation feel intentional instead of instantaneous.
+          prefers-reduced-motion disables the animation in CSS. */}
+      <div key={[view, shopCategorySlug, shopProductSlug, journalSlug, adminOrderId].filter(Boolean).join("/")} className="page-enter">
       {/* HomeView is brand-only now — the inline ProductShowcase
           and CustomProductCard moved to /shop/blankets/... and
           /shop/bibs/baby-bib. Legacy /blanket and /bib URLs get
@@ -1436,6 +1448,7 @@ export function App() {
           />
         );
       })()}
+      </div>{/* /page-enter */}
       </main>
 
       {/* Waitlist modal for placeholder catalog items */}

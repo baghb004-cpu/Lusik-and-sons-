@@ -34,7 +34,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory }) {
       </p>
 
       <div className="grid sm:grid-cols-2 gap-5 lg:gap-6">
-        {Object.entries(CATALOG).map(([_, category]) => {
+        {Object.entries(CATALOG).map(([_, category], i) => {
           const total       = category.products.length;
           const liveCount   = category.products.filter((p) => p.status === "live").length;
           const subtitleParts = [];
@@ -45,7 +45,8 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory }) {
             <button
               key={category.slug}
               onClick={() => onNavigateCategory(category.slug)}
-              className="lg-button lg-shine text-left p-6 lg:p-8 transition"
+              className="lg-button lg-shine text-left p-6 lg:p-8 transition stagger-reveal"
+              style={{ "--i": i }}
               aria-label={`Browse ${category.label}`}
             >
               <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>
