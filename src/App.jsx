@@ -72,6 +72,7 @@ import { GalleryView } from "./components/GalleryView.jsx";
 import { AdminView } from "./components/AdminView.jsx";
 import { AdminOrderDetail } from "./components/AdminOrderDetail.jsx";
 import { CheckoutView } from "./components/CheckoutView.jsx";
+import { MobileSearchView } from "./components/MobileSearchView.jsx";
 import { ShopIndexView } from "./components/shop/ShopIndexView.jsx";
 import { CategoryView } from "./components/shop/CategoryView.jsx";
 import { ProductView } from "./components/shop/ProductView.jsx";
@@ -575,6 +576,8 @@ export function App() {
       title = `Admin · ${BRAND}`;
     } else if (view === "admin-order") {
       title = `Order · Admin · ${BRAND}`;
+    } else if (view === "search") {
+      title = `Search · ${BRAND}`;
     } else if (view === "checkout") {
       title = `Checkout · ${BRAND}`;
     }
@@ -1386,6 +1389,7 @@ export function App() {
           view === "admin-order" ? "Admin" :
           view === "journal" ? "Journal" :
           view === "gallery" ? "Gallery" :
+          view === "search" ? "Search" :
           "Lusik & Sons"
         }
         subtitle={
@@ -1439,6 +1443,14 @@ export function App() {
         />
       )}
       {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
+
+      {view === "search" && (
+        <MobileSearchView
+          onNavigateProduct={(catSlug, prodSlug) => goShopProduct(catSlug, prodSlug)}
+          onSelectJournalPost={(slug) => { setJournalSlug(slug); setView("journal"); }}
+          onScrollTo={(id) => scrollTo(id)}
+        />
+      )}
 
       {view === "shop" && (
         <ShopIndexView
@@ -1497,11 +1509,9 @@ export function App() {
           cartCount={cart.reduce((n, i) => n + (i.qty || 0), 0)}
           onHome={() => { setView("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           onShop={goShopIndex}
+          onJournal={() => { setJournalSlug(null); setView("journal"); }}
           onCart={() => setCartOpen(true)}
-          onAccount={() => {
-            if (user) setView("account");
-            else setAuthOpen(true);
-          }}
+          onSearch={() => setView("search")}
         />
       )}
 

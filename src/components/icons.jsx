@@ -87,3 +87,5 @@ export const Vevo = (p) => <Icon {...p}><path d="M3 7l4 10 4-10M13 7l4 10 4-10"/
 export const Tumblr = (p) => <Icon {...p}><path d="M12 3v6h5M12 9v8c0 2 1 3 3 3h2v-3h-1c-1 0-1-1-1-2v-6"/><path d="M8 6c2 0 4-1 4-3"/></Icon>;
 export const Teams = (p) => <Icon {...p}><rect x="3" y="7" width="11" height="11" rx="1"/><path d="M5 10h7M8.5 10v6"/><circle cx="18" cy="9" r="2.5"/><path d="M15.5 13c0-1 1-2 2.5-2s2.5 1 2.5 2v3a2 2 0 0 1-2 2h-1"/></Icon>;
 export const Etsy = (p) => <Icon {...p}><path d="M7 4h11v3M7 4v16h11v-3M7 12h6M7 4v8M7 20v-8"/></Icon>;
+export const BookOpen = (p) => <Icon {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></Icon>;
+export const Search = (p) => <Icon {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></Icon>;
