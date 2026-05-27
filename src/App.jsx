@@ -48,6 +48,7 @@ import { WaitlistModal } from "./components/WaitlistModal.jsx";
 import { HeartBurst } from "./components/HeartBurst.jsx";
 import { SwipeableRow } from "./components/SwipeableRow.jsx";
 import { QuantityPicker } from "./components/QuantityPicker.jsx";
+import { MobilePageHeader } from "./components/MobilePageHeader.jsx";
 import { haptic } from "./lib/haptic.js";
 import { FreeShippingProgress } from "./components/FreeShippingProgress.jsx";
 import { PaymentMethodsRow } from "./components/PaymentMethodsRow.jsx";
@@ -1182,14 +1183,18 @@ export function App() {
       {/* ANNOUNCEMENT / ACTIVE-ORDER BAR
           Swaps its content based on whether the signed-in user has
           a live order in flight. Renders the brand announce string
-          otherwise. See ActiveOrderTopBar for the status mapping. */}
-      <ActiveOrderTopBar user={user} onOpenAccount={() => setView("account")} />
+          otherwise. Hidden on mobile where the Apple Store-style
+          layout replaces it with the MobilePageHeader. On desktop
+          it sits above the sticky nav as always. */}
+      <div className="hidden lg:block">
+        <ActiveOrderTopBar user={user} onOpenAccount={() => setView("account")} />
+      </div>
 
       {/* NAV — sticky frosted top bar. The .lg-top-bar tweak (in
           styles/index.css) squares the top corners and lifts the
           shadow to a downward gradient so the bar reads as a
           horizon line over the page content, not a floating chip. */}
-      <nav className="lg-panel-tall lg-top-bar sticky top-0 z-40 theme-surface">
+      <nav className="lg-panel-tall lg-top-bar sticky top-0 z-40 theme-surface hidden lg:block">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
           <button onClick={() => setView("home")}>
             <span className="font-display text-2xl lg:text-3xl tracking-tight" style={{ fontWeight: 500 }}>
@@ -1364,6 +1369,33 @@ export function App() {
       </nav>
 
       <main id="main-content" tabIndex={-1}>
+      {/* MOBILE PAGE HEADER — Apple Store-style large title.
+          Replaces the hidden sticky top nav on phones. The title
+          derives from the current view so it feels like tapping a
+          tab in a native app. Hidden on desktop (lg:hidden inside
+          the component). */}
+      <MobilePageHeader
+        title={
+          view === "home" ? "Lusik & Sons" :
+          view === "shop" ? "Shop" :
+          view === "shop-category" ? "Shop" :
+          view === "shop-product" ? "Shop" :
+          view === "checkout" ? "Checkout" :
+          view === "account" ? "Your Account" :
+          view === "admin" ? "Admin" :
+          view === "admin-order" ? "Admin" :
+          view === "journal" ? "Journal" :
+          view === "gallery" ? "Gallery" :
+          "Lusik & Sons"
+        }
+        subtitle={
+          view === "home" ? "Cypress, California" :
+          view === "checkout" ? "Almost in Lusik's hands" :
+          null
+        }
+        user={user}
+        onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
+      />
       {/* Page-transition wrapper. The `key` changes whenever the
           view or the in-view content changes (slug switches, etc.),
           which causes React to unmount the old tree and mount a
