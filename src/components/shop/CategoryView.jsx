@@ -72,14 +72,15 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
       </p>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
-        {category.products.map((p) => {
+        {category.products.map((p, i) => {
           const isLive = p.status === "live";
           const hero   = productHeroImages(p);
           return (
             <button
               key={p.slug}
               onClick={() => onNavigateProduct(category.slug, p.slug)}
-              className="lg-button lg-shine text-left flex flex-col"
+              className="lg-button lg-shine text-left flex flex-col stagger-reveal"
+              style={{ "--i": i }}
               aria-label={isLive ? `View ${p.name}` : `${p.name} — coming soon`}
             >
               {/* Product photo (live) or "Image goes here" placeholder.

@@ -245,11 +245,12 @@ export function HomeView({
                 blurb: "The white baptism towel godparents bring to the font. The hand towel for the guest bath. The small fabric objects a family pulls out for the days they want to remember.",
                 images: [PHOTO_DATE_DETAIL],
               },
-            ].map((cat) => (
+            ].map((cat, i) => (
               <button
                 key={cat.slug}
                 onClick={() => onNavigateCategory?.(cat.slug)}
-                className="lg-button lg-shine text-left flex flex-col"
+                className="lg-button lg-shine text-left flex flex-col stagger-reveal"
+                style={{ "--i": i }}
                 aria-label={`Browse ${cat.label}`}
               >
                 <div className="aspect-[4/5] overflow-hidden" style={{ borderBottom: "1px solid rgba(26,22,18,0.10)" }}>
@@ -295,24 +296,18 @@ export function HomeView({
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4">
-          <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_DATE_DETAIL} alt="Close-up of 07/05/24 birth date cross-stitched on blanket" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          </div>
-          <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_PURPLE_SIDE} alt="Purple Armenian alphabet detail" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          </div>
-          <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_YELLOWGREEN_2} alt="Yellow and green Armenian alphabet variation" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          </div>
-          <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_BIB_STACK} alt="Stack of machine-embroidered bibs in different colors" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          </div>
-          <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_BIB_PILE} alt="Pile of bibs and blanket showing yellow and green work" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          </div>
-          <div className="aspect-square overflow-hidden">
-            <img src={PHOTO_BIB_ROMEO} alt="Romeo bib with matching blue alphabet blanket" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-          </div>
+          {[
+            { src: PHOTO_DATE_DETAIL, alt: "Close-up of 07/05/24 birth date cross-stitched on blanket" },
+            { src: PHOTO_PURPLE_SIDE, alt: "Purple Armenian alphabet detail" },
+            { src: PHOTO_YELLOWGREEN_2, alt: "Yellow and green Armenian alphabet variation" },
+            { src: PHOTO_BIB_STACK, alt: "Stack of machine-embroidered bibs in different colors" },
+            { src: PHOTO_BIB_PILE, alt: "Pile of bibs and blanket showing yellow and green work" },
+            { src: PHOTO_BIB_ROMEO, alt: "Romeo bib with matching blue alphabet blanket" },
+          ].map((photo, i) => (
+            <div key={i} className="aspect-square overflow-hidden stagger-reveal" style={{ "--i": i }}>
+              <img src={photo.src} alt={photo.alt} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+            </div>
+          ))}
         </div>
       </section>
 

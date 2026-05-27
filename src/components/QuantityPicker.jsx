@@ -36,6 +36,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Minus, Plus, X } from "./icons.jsx";
+import { haptic } from "../lib/haptic.js";
 
 const BULK_EMAIL = "hello@lusikandsons.com";
 const BULK_SUBJECT = "Bulk order request";
@@ -130,11 +131,13 @@ export function QuantityPicker({
     onChange?.(value + 1);
   };
   const handlePick = (n) => {
+    haptic(8);
     onChange?.(n);
     setOpen(false);
     triggerRef.current?.focus();
   };
   const handleRemove = () => {
+    haptic(12);
     onRemove?.();
     setOpen(false);
   };
