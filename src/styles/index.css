@@ -1403,6 +1403,40 @@
     .lg-lens-pressed       { transform: translateX(var(--drag-x, 0)); }
   }
 
+  /* ============================================================
+     Mobile search input — full-width pill, brand palette
+     ============================================================
+     Matches the native feel of Apple's search bars: rounded
+     pill, subtle background, no visible border at rest, gold
+     focus ring. DM Sans body font for the placeholder, same
+     as all other form inputs on the site. */
+  .mobile-search-input {
+    display: block;
+    width: 100%;
+    padding: 14px 40px 14px 44px;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background: var(--bg-subtle, rgba(26, 22, 18, 0.05));
+    color: var(--text-primary);
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    -webkit-appearance: none;
+  }
+  .mobile-search-input::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.6;
+  }
+  .mobile-search-input:focus {
+    border-color: rgba(176, 136, 66, 0.5);
+    box-shadow: 0 0 0 3px rgba(176, 136, 66, 0.15);
+  }
+  :root[data-theme="dark"] .mobile-search-input {
+    background: rgba(245, 239, 227, 0.08);
+  }
+
   /* Top nav edge case — mirror of .lg-bottom-bar but pinned to
      the top. Squares the top corners + drops the top border +
      replaces the shadow with a soft downward bleed. */

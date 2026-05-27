@@ -2,8 +2,13 @@
 // MobileBottomNav — Apple-Store-style floating glass tab bar
 // ============================================================
 // A frosted-glass rounded pill that floats at the bottom of the
-// phone viewport. The active tab is highlighted with a brighter
-// "lens" panel that:
+// phone viewport. Five tabs completing the Apple Store 5-tab
+// pattern: Home, Shop, Journal, Cart, Search.
+//
+// Account access is NO LONGER in the bottom nav — it lives in
+// the avatar circle inside MobilePageHeader (already wired).
+//
+// The active tab is highlighted with a brighter "lens" panel that:
 //
 //   - Slides between tabs with a soft spring on activation
 //   - During a touch-and-drag, follows the finger across the bar
@@ -21,7 +26,7 @@
 //     bounding rect so the touch math doesn't fight CSS percentages.
 //   - Touch handlers use { passive: true } where possible. The
 //     touchmove handler calls preventDefault() ONLY while we've
-//     claimed the gesture as a horizontal drag (move distance ≥ 6px)
+//     claimed the gesture as a horizontal drag (move distance >= 6px)
 //     so vertical scrolling on the rest of the page still works.
 //   - Accessibility: every tab is still a real <button> with its own
 //     onClick. The lens is decorative — keyboard / screen-reader
@@ -29,19 +34,20 @@
 // ============================================================
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Home, Store, ShoppingBag, User } from "./icons.jsx";
+import { Home, Store, BookOpen, ShoppingBag, Search } from "./icons.jsx";
 
-export function MobileBottomNav({ view, cartCount, onHome, onShop, onCart, onAccount }) {
+export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, onCart, onSearch }) {
   // Tab definitions, indexed left-to-right. `activeWhen` decides where
   // the lens settles when no touch is active. Order is load-bearing:
   // changing it would change where the lens snaps when there's no
   // active tab (defaults to index 0, Home).
   const tabs = useMemo(() => ([
     { key: "home",    label: "Home",    Icon: Home,        action: onHome,    activeWhen: view === "home" },
-    { key: "shop",    label: "Shop",    Icon: Store,       action: onShop,    activeWhen: false },
+    { key: "shop",    label: "Shop",    Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
+    { key: "journal", label: "Journal", Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
     { key: "cart",    label: "Cart",    Icon: ShoppingBag, action: onCart,    activeWhen: false, badge: cartCount },
-    { key: "account", label: "Account", Icon: User,        action: onAccount, activeWhen: view === "account" || view === "admin" || view === "admin-order" },
-  ]), [view, cartCount, onHome, onShop, onCart, onAccount]);
+    { key: "search",  label: "Search",  Icon: Search,      action: onSearch,  activeWhen: view === "search" },
+  ]), [view, cartCount, onHome, onShop, onJournal, onCart, onSearch]);
 
   // Index the lens should rest on. Falls back to 0 (Home) if no
   // tab matches the current view.
