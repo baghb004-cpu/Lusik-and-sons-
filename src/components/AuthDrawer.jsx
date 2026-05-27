@@ -5,12 +5,31 @@
 // `auth` wrapper instead of touching window.netlifyIdentity
 // directly — that's the chokepoint for retries + error shape.
 //
+// Swipe-to-close: the drawer supports rightward swipe-to-dismiss
+// on touch devices, matching the cart drawer's gesture. Uses the
+// same CONFIG.SWIPE tunables so both drawers feel identical.
+//
+// "Breathing peek" hint: on mount, after a 600ms delay (enough
+// for the slide-in animation to finish), the drawer nudges 20px
+// to the right and springs back. This single micro-animation
+// teaches the user "I'm dismissible by swiping this direction"
+// without text or arrows — the same pattern iOS uses for bottom
+// sheets and lock-screen shortcuts. Fires once per session
+// (sessionStorage gate), honors prefers-reduced-motion.
+//
 // MIRRORED FROM index.html (~line 6804).
 // ============================================================
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { auth } from "../lib/auth.js";
+import { CONFIG } from "../data/config.js";
 import { ArrowRight, Eye, EyeOff, X } from "./icons.jsx";
+
+// Session-level gate so the peek fires at most once. Using a
+// module-level variable instead of sessionStorage avoids a
+// read on every render — the module lives for the tab's lifetime,
+// same as sessionStorage, so the behavior is identical.
+let peekFiredThisSession = false;
 
 export function AuthDrawer({ onClose, onAuthed }) {
   const [mode, setMode] = useState("signin"); // signin | signup | forgot
@@ -22,6 +41,115 @@ export function AuthDrawer({ onClose, onAuthed }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState(""); // success/info message (e.g. "Check your email")
+
+  // --- SWIPE-TO-DISMISS STATE ---
+  // Mirrors the cart drawer's swipe logic in App.jsx: track a
+  // horizontal drag, dismiss past DISMISS_THRESHOLD_PX, spring
+  // back otherwise. Touch-only — mouse users have the X button
+  // and the backdrop click.
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragStartRef = useRef(null);
+  const dragIntentRef = useRef(null); // null | "horizontal" | "vertical"
+
+  // --- "BREATHING PEEK" HINT STATE ---
+  // peekOffset controls the translateX during the hint. 0 at rest,
+  // 20 during the outward nudge, 0 again on the return spring.
+  // peekTransition controls the CSS transition for the peek
+  // independently of the drag transition.
+  const [peekOffset, setPeekOffset] = useState(0);
+  const [peekTransition, setPeekTransition] = useState("none");
+
+  useEffect(() => {
+    if (peekFiredThisSession) return;
+
+    // Honor reduced motion — skip the animation entirely.
+    const reducedMotion = typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      peekFiredThisSession = true;
+      return;
+    }
+
+    // Wait 600ms for the drawer's slide-in to finish, then nudge.
+    const t1 = setTimeout(() => {
+      peekFiredThisSession = true;
+      // Outward nudge — fast ease-out
+      setPeekTransition("transform 0.15s ease-out");
+      setPeekOffset(20);
+
+      // Spring back — uses a spring-like cubic-bezier
+      const t2 = setTimeout(() => {
+        setPeekTransition("transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)");
+        setPeekOffset(0);
+
+        // Clear the transition so it doesn't interfere with drag
+        const t3 = setTimeout(() => {
+          setPeekTransition("none");
+        }, 420);
+        // Store t3 for cleanup if unmounted mid-animation.
+        cleanupTimers.current.push(t3);
+      }, 160);
+      cleanupTimers.current.push(t2);
+    }, 600);
+
+    const cleanupTimers = { current: [t1] };
+    return () => {
+      cleanupTimers.current.forEach(clearTimeout);
+    };
+  }, []);
+
+  const onTouchStart = useCallback((e) => {
+    const t = e.touches[0];
+    if (!t) return;
+    dragStartRef.current = { x: t.clientX, y: t.clientY };
+    dragIntentRef.current = null;
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    if (!dragStartRef.current) return;
+    // Bail on multi-touch (pinch should not trigger swipe).
+    if (e.touches.length > 1) {
+      onTouchCancel();
+      return;
+    }
+    const t = e.touches[0];
+    const dx = t.clientX - dragStartRef.current.x;
+    const dy = t.clientY - dragStartRef.current.y;
+
+    if (dragIntentRef.current === null) {
+      if (Math.abs(dx) < CONFIG.SWIPE.CLAIM_DIST_PX && Math.abs(dy) < CONFIG.SWIPE.CLAIM_DIST_PX) return;
+      dragIntentRef.current = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+    }
+    if (dragIntentRef.current !== "horizontal") return;
+    // Only react to rightward drag (positive dx). Leftward swipes
+    // should be ignored — the drawer opens from the right edge.
+    setDragging(true);
+    setDragX(Math.max(0, dx));
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (dragIntentRef.current === "horizontal") {
+      setDragging(false);
+      if (dragX > CONFIG.SWIPE.DISMISS_THRESHOLD_PX) {
+        // Dismiss — slide off-screen then call onClose.
+        setDragX(window.innerWidth);
+        setTimeout(() => onClose(), CONFIG.SWIPE.COMMIT_ANIM_MS);
+      } else {
+        // Spring back to 0.
+        setDragX(0);
+      }
+    }
+    dragStartRef.current = null;
+    dragIntentRef.current = null;
+  }, [dragX, onClose]);
+
+  const onTouchCancel = useCallback(() => {
+    setDragging(false);
+    setDragX(0);
+    dragStartRef.current = null;
+    dragIntentRef.current = null;
+  }, []);
 
   const reset = (newMode) => {
     setMode(newMode);
@@ -102,12 +230,33 @@ export function AuthDrawer({ onClose, onAuthed }) {
   const inputCls = "w-full px-4 py-3 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]";
   const inputStyle = { border: "1px solid rgba(26,22,18,0.15)" };
 
+  // Compute the combined translateX: drag takes priority over peek.
+  // When dragging, the peek offset is irrelevant (the finger owns
+  // the position). When idle, the peek offset animates the hint.
+  const translateX = dragging || dragX > 0 ? dragX : peekOffset;
+  const transition = dragging
+    ? "none"
+    : dragX > 0
+      ? "transform 0.2s ease-out"
+      : peekTransition !== "none"
+        ? peekTransition
+        : "transform 0.2s ease-out";
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
       <div className="absolute inset-0 lg-scrim" />
       <div
         className="lg-panel-tall lg-drawer relative w-full max-w-md drawer-in flex flex-col overflow-y-auto"
+        style={{
+          transform: `translateX(${translateX}px)`,
+          transition,
+          touchAction: "pan-y",
+        }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
       >
         {/* Header */}
         <div className="flex items-start justify-between p-6 lg:p-8 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
@@ -208,7 +357,7 @@ export function AuthDrawer({ onClose, onAuthed }) {
               cursor: busy ? "wait" : "pointer",
             }}
           >
-            {busy ? "Working…" : (
+            {busy ? "Working..." : (
               mode === "signin" ? "Sign in" :
               mode === "signup" ? "Create account" :
               "Email me a reset link"
