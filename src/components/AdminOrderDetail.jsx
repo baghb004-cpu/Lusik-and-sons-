@@ -356,7 +356,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
                       ))}
                   </dl>
                 )}
-                {it.custom_image_url && (
+                {it.custom_image_url && /^https?:\/\//i.test(it.custom_image_url) && (
                   <a href={it.custom_image_url} target="_blank" rel="noopener noreferrer" className="text-xs underline mt-2 inline-block" style={{ color: "#B08842" }}>
                     Customer reference image →
                   </a>
