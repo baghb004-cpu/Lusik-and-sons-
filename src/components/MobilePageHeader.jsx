@@ -20,6 +20,8 @@
 
 import React from "react";
 import { User } from "./icons.jsx";
+import { ThemeToggleCompact } from "./ThemeToggleCompact.jsx";
+import { LangToggleCompact } from "./LangToggleCompact.jsx";
 
 export function MobilePageHeader({ title, subtitle, user, onAvatarTap }) {
   const initials = user?.user_metadata?.full_name
@@ -52,35 +54,37 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap }) {
         </h1>
       </div>
 
-      {/* Avatar circle — mirrors the Apple Store's profile icon
-          in the top-right corner. Tapping opens the account view.
-          Shows initials for signed-in users, a generic user icon
-          for signed-out. */}
-      {onAvatarTap && (
-        <button
-          type="button"
-          onClick={onAvatarTap}
-          className="flex-shrink-0 flex items-center justify-center"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            background: initials
-              ? "var(--ink)"
-              : "rgba(26, 22, 18, 0.08)",
-            color: initials
-              ? "var(--text-on-ink)"
-              : "var(--text-muted)",
-            fontFamily: "Fraunces, Georgia, serif",
-            fontSize: "0.85rem",
-            fontWeight: 600,
-            marginTop: 4,
-          }}
-          aria-label="Your account"
-        >
-          {initials || <User size={18} strokeWidth={1.5} />}
-        </button>
-      )}
+      {/* Right cluster — theme toggle, language toggle, avatar.
+          Mirrors the Asbarez header (dark-mode switch + language
+          + search), brought into the brand palette. */}
+      <div className="flex items-center gap-2.5 flex-shrink-0" style={{ marginTop: 4 }}>
+        <ThemeToggleCompact />
+        <LangToggleCompact />
+        {onAvatarTap && (
+          <button
+            type="button"
+            onClick={onAvatarTap}
+            className="flex items-center justify-center"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: initials
+                ? "var(--ink)"
+                : "rgba(26, 22, 18, 0.08)",
+              color: initials
+                ? "var(--text-on-ink)"
+                : "var(--text-muted)",
+              fontFamily: "Fraunces, Georgia, serif",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+            }}
+            aria-label="Your account"
+          >
+            {initials || <User size={18} strokeWidth={1.5} />}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
