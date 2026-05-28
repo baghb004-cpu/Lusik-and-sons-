@@ -94,7 +94,7 @@ export function MobileBottomNav({
     { key: "home",    label: "Home",    Icon: Home,        action: onHome,    activeWhen: view === "home" },
     { key: "shop",    label: "Shop",    Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
     { key: "journal", label: "Journal", Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
-    { key: "cart",    label: "Cart",    Icon: ShoppingBag, action: onCart,    activeWhen: false, badge: cartCount },
+    { key: "cart",    label: "Cart",    Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
   ]), [view, cartCount, onHome, onShop, onJournal, onCart]);
 
   const baseIndex = useMemo(() => {
