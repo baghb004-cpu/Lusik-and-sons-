@@ -1391,30 +1391,32 @@ export function App() {
           Replaces the hidden sticky top nav on phones. The title
           derives from the current view so it feels like tapping a
           tab in a native app. Hidden on desktop (lg:hidden inside
-          the component). */}
-      <MobilePageHeader
-        title={
-          view === "home" ? "Lusik & Sons" :
-          view === "shop" ? "Shop" :
-          view === "shop-category" ? "Shop" :
-          view === "shop-product" ? "Shop" :
-          view === "checkout" ? "Checkout" :
-          view === "account" ? "Your Account" :
-          view === "admin" ? "Admin" :
-          view === "admin-order" ? "Admin" :
-          view === "journal" ? "Journal" :
-          view === "gallery" ? "Gallery" :
-          view === "search" ? "Search" :
-          "Lusik & Sons"
-        }
-        subtitle={
-          view === "home" ? "Cypress, California" :
-          view === "checkout" ? "Almost in Lusik's hands" :
-          null
-        }
-        user={user}
-        onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
-      />
+          the component). The search view is excluded — it renders
+          its own dedicated full-screen panel with its own title. */}
+      {view !== "search" && (
+        <MobilePageHeader
+          title={
+            view === "home" ? "Lusik & Sons" :
+            view === "shop" ? "Shop" :
+            view === "shop-category" ? "Shop" :
+            view === "shop-product" ? "Shop" :
+            view === "checkout" ? "Checkout" :
+            view === "account" ? "Your Account" :
+            view === "admin" ? "Admin" :
+            view === "admin-order" ? "Admin" :
+            view === "journal" ? "Journal" :
+            view === "gallery" ? "Gallery" :
+            "Lusik & Sons"
+          }
+          subtitle={
+            view === "home" ? "Cypress, California" :
+            view === "checkout" ? "Almost in Lusik's hands" :
+            null
+          }
+          user={user}
+          onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
+        />
+      )}
       {/* Page-transition wrapper. The `key` changes whenever the
           view or the in-view content changes (slug switches, etc.),
           which causes React to unmount the old tree and mount a
@@ -1459,15 +1461,11 @@ export function App() {
       )}
       {view === "journal" && <JournalView slug={journalSlug} onSelectPost={(s) => setJournalSlug(s)} onBack={() => { setJournalSlug(null); setView("home"); }} />}
 
-      {view === "search" && (
-        <MobileSearchView
-          query={searchQuery}
-          onQueryChange={setSearchQuery}
-          onNavigateProduct={goShopProduct}
-          onSelectJournalPost={(slug) => { setJournalSlug(slug); setView("journal"); }}
-          onScrollTo={scrollTo}
-        />
-      )}
+      {/* Search is rendered OUTSIDE the page-enter wrapper (below)
+          as a fixed full-screen panel — a position:fixed child of
+          a CSS-transformed ancestor would be positioned relative
+          to that ancestor during the page-enter animation, which
+          would break the full-screen layout. */}
 
       {view === "shop" && (
         <ShopIndexView
@@ -1510,6 +1508,23 @@ export function App() {
         );
       })()}
       </div>{/* /page-enter */}
+
+      {/* MOBILE SEARCH — dedicated fixed full-screen panel, rendered
+          outside the page-enter wrapper so its position:fixed is
+          viewport-relative (not relative to a transformed ancestor).
+          Results anchor to the top and snap into view as the
+          customer types. */}
+      {view === "search" && (
+        <MobileSearchView
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          onNavigateProduct={goShopProduct}
+          onSelectJournalPost={(slug) => { setJournalSlug(slug); setView("journal"); }}
+          onScrollTo={scrollTo}
+          user={user}
+          onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
+        />
+      )}
       </main>
 
       {/* Waitlist modal for placeholder catalog items */}
