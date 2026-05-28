@@ -33,11 +33,17 @@ import { FreeShippingProgress } from "./FreeShippingProgress.jsx";
 import { ShippingEstimator } from "./ShippingEstimator.jsx";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { PRODUCT } from "../data/product.js";
-import { X, ShoppingBag, ArrowRight, Check, ChevronDown } from "./icons.jsx";
+import { CONFIG } from "../data/config.js";
+import { X, ShoppingBag, ArrowRight, Check, ChevronDown, MessageCircle, Phone } from "./icons.jsx";
 
 // Opens the shared PolicyModal (App listens for this CustomEvent).
 const openPolicy = (key) =>
   window.dispatchEvent(new CustomEvent("openPolicy", { detail: key }));
+
+// Contact deep links for the in-cart "Still have questions?" card.
+// Same sms:/tel: shapes used elsewhere; details live in CONFIG.
+const SMS_HREF = `sms:${CONFIG.TEXT_US.phone_e164}?&body=${encodeURIComponent(CONFIG.TEXT_US.sms_prefill)}`;
+const TEL_HREF = `tel:${CONFIG.TEXT_US.phone_e164}`;
 
 export function CartContents({
   variant = "drawer",
@@ -194,6 +200,49 @@ export function CartContents({
               </SwipeableRow>
             ))}
           </div>
+
+          {/* "Still have questions?" — compact contact card (mobile
+              bag only, shown whenever there are items), mirroring the
+              Apple Store bag. Text + call open the native apps. */}
+          {isPage && (
+            <div className="px-6 pt-4">
+              <div
+                className="flex items-center justify-between gap-4 p-5"
+                style={{
+                  borderRadius: 18,
+                  background: "var(--bg-surface, #FFFFFF)",
+                  border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+                }}
+              >
+                <div className="min-w-0">
+                  <p className="font-display" style={{ fontSize: "1.05rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}>
+                    Still have questions?
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary, rgba(26,22,18,0.65))" }}>
+                    Lusik or one of her sons will help.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <a
+                    href={SMS_HREF}
+                    aria-label="Text us"
+                    className="flex items-center justify-center"
+                    style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(176,136,66,0.10)" }}
+                  >
+                    <MessageCircle size={20} strokeWidth={1.7} style={{ color: "#B08842" }} />
+                  </a>
+                  <a
+                    href={TEL_HREF}
+                    aria-label="Call us"
+                    className="flex items-center justify-center"
+                    style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(176,136,66,0.10)" }}
+                  >
+                    <Phone size={20} strokeWidth={1.7} style={{ color: "#B08842" }} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
           <div
             className="border-t p-6"
             style={{
