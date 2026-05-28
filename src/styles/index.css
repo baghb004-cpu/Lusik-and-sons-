@@ -1246,6 +1246,32 @@
     bottom: max(10px, env(safe-area-inset-bottom));
     z-index: 30;
     height: 64px;
+    /* The island is now a TRANSPARENT flex wrapper: a frosted "pill"
+       (.lg-nav-pill) plus a detached frosted circle (.lg-nav-orb)
+       sit inside it with a gap between them — matching the Apple
+       Store, where the magnifying glass / X is its own bubble
+       isolated from the menu pill. The frosted styling lives on the
+       children now, not here. */
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    background: none;
+    border: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Frosted pill — the main bar (4 tabs in normal mode, or the
+     search input in search mode). Flexes to fill the space left of
+     the orb. Carries the glass styling the island used to have. */
+  .lg-nav-pill {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 64px;
     display: flex;
     align-items: stretch;
     border-radius: 28px;
@@ -1258,15 +1284,33 @@
       inset 0 -1px 0 0 var(--lg-edge-dark),
       0 22px 56px -16px rgba(26, 22, 18, 0.28),
       0 6px 16px -4px rgba(26, 22, 18, 0.12);
-    /* Containing block for the absolutely-positioned .lg-lens, and
-       a new stacking context so the lens shadow + the tabs don't
-       blend awkwardly with whatever is behind on the page. */
     isolation: isolate;
     overflow: hidden;
-    /* Prevent the browser from interpreting horizontal drags on
-       the bar as a page swipe. The JS in MobileBottomNav also
-       calls preventDefault() once a drag is claimed. */
-    touch-action: pan-y;
+  }
+
+  /* Frosted orb — the detached circular satellite (Search in normal
+     mode; Cart-badge / X in search mode). Same glass as the pill,
+     but a fixed-width circle sitting apart with the island's gap. */
+  .lg-nav-orb {
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--lg-tint-island, rgba(255,251,243,0.72));
+    border: 1px solid var(--lg-border-strong, rgba(255,255,255,0.85));
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+            backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 0 var(--lg-highlight),
+      inset 0 -1px 0 0 var(--lg-edge-dark),
+      0 22px 56px -16px rgba(26, 22, 18, 0.28),
+      0 6px 16px -4px rgba(26, 22, 18, 0.12);
+    color: var(--text-primary);
+    position: relative;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
 
