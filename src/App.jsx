@@ -1611,6 +1611,7 @@ export function App() {
           onNavigateCategory={goShopCategory}
           onNavigateProduct={goShopProduct}
           onNavigateJournal={() => { setJournalSlug(null); setView("journal"); }}
+          onOpenPolicy={(key) => setPolicyOpen(key)}
           simplified={!showHomeIntro}
         />
       )}
@@ -1766,8 +1767,13 @@ export function App() {
         />
       )}
 
-      {/* FOOTER */}
-      <footer className="border-t mt-12 theme-surface" style={{ borderColor: "var(--border-default)", background: "var(--bg-elevated)" }}>
+      {/* FOOTER — desktop only. On mobile the site is an app-style
+          surface: the brand blurb, link columns, trust row, copyright
+          and the language/theme toggles are all hidden (the toggles
+          live in the top MobilePageHeader on phones, and every footer
+          destination is reachable as a card on the For You page). The
+          full footer is kept on desktop, where there's no top toggle. */}
+      <footer className="hidden lg:block border-t mt-12 theme-surface" style={{ borderColor: "var(--border-default)", background: "var(--bg-elevated)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
           {/* Main columns */}
           <div className="grid md:grid-cols-12 gap-10 lg:gap-12">

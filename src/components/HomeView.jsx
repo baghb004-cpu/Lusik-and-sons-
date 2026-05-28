@@ -95,6 +95,10 @@ export function HomeView({
   pageSlug = null,
   onNavigatePage,
   onBackToForYou,
+  // Opens a policy modal (finalSale | privacy | terms). The policy links used
+  // to live only in the footer, which is now hidden on mobile — so on phones
+  // they survive as small cards in the Explore "More" row below.
+  onOpenPolicy,
   // Mobile-only: on a return visit within the same session the App
   // collapses the home screen to an Apple Store "For You" layout —
   // the brand hero is dropped and the For-You sections lead. Desktop
@@ -380,6 +384,40 @@ export function HomeView({
             );
           })}
         </div>
+      </section>
+
+      {/* ── MOBILE-ONLY footer replacement ────────────────────────
+          The desktop footer is hidden on phones for an app-style feel,
+          so the policy links that lived only there survive here as
+          small cards, followed by one quiet credit line. Everything
+          else from the old footer (brand blurb, link columns, trust
+          row, language/theme toggles) is intentionally gone on mobile:
+          the toggles are in the top header and every other destination
+          is a card above. Desktop keeps the full footer. */}
+      <section className="lg:hidden px-6 pb-12 pt-2 max-w-7xl mx-auto">
+        <p className="text-xs tracking-[0.25em] uppercase opacity-50 mb-3">More</p>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { key: "finalSale", label: "Final Sale" },
+            { key: "privacy",   label: "Privacy" },
+            { key: "terms",     label: "Terms" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onOpenPolicy?.(key)}
+              className="rounded-2xl p-4 text-left active:scale-[0.98] transition-transform"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+              aria-label={`${label} policy`}
+            >
+              <Shield size={20} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              <p className="text-sm mt-2 leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{label}</p>
+            </button>
+          ))}
+        </div>
+        <p className="text-[0.7rem] opacity-45 text-center mt-8 leading-relaxed">
+          © {new Date().getFullYear()} Lusik &amp; Sons · Made in Cypress, CA
+        </p>
       </section>
 
       {/* Contact quick-menu — controlled by the "Custom requests"
