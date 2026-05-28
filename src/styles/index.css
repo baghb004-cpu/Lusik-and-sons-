@@ -156,6 +156,13 @@
   @keyframes drawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
   .drawer-in { animation: drawerIn 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
 
+  /* Bottom-sheet slide-up entrance (mobile Account). Same easing as
+     the side drawers, on the vertical axis. The swipe-to-dismiss +
+     breathing-nudge are driven by inline transform in AccountSheet.jsx;
+     this rule only animates the one-time entrance. */
+  @keyframes sheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .account-sheet { animation: sheetIn 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
   /* ============================================================
      Toast notifications — slide in from the right edge (top of
      viewport), stack vertically with a small gap. Position is
@@ -1631,7 +1638,8 @@
 /* Honor reduced motion for everything above. */
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
-  .stagger-reveal {
+  .stagger-reveal,
+  .account-sheet {
     animation: none !important;
   }
   .lg-button-ink:active,
