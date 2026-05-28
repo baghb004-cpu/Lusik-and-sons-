@@ -90,9 +90,12 @@ export function MobileBottomNav({
   };
 
   // ── 4 tabs (Search is now the orb, not a tab) ────────────
+  // Mobile-only labels mirror the Apple Store app's tab names: "For You"
+  // (home) and "Products" (shop). This component is lg:hidden, so the
+  // desktop top-nav labels ("Home"/"Shop") are unaffected.
   const tabs = useMemo(() => ([
-    { key: "home",    label: "Home",    Icon: Home,        action: onHome,    activeWhen: view === "home" },
-    { key: "shop",    label: "Shop",    Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
+    { key: "home",    label: "For You",  Icon: Home,        action: onHome,    activeWhen: view === "home" },
+    { key: "shop",    label: "Products", Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
     { key: "journal", label: "Journal", Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
     { key: "cart",    label: "Cart",    Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
   ]), [view, cartCount, onHome, onShop, onJournal, onCart]);

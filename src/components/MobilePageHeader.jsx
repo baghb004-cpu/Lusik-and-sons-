@@ -68,7 +68,7 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack })
         <h1
           className="font-display leading-tight"
           style={{
-            fontSize: "2.1rem",
+            fontSize: "2.4rem",
             fontWeight: 700,
             letterSpacing: "-0.02em",
             color: "var(--text-primary)",
