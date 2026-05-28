@@ -23,12 +23,13 @@
 // buyable yet or not.
 // ============================================================
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ProductShowcase } from "../ProductShowcase.jsx";
 import { CustomProductCard } from "../CustomProductCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
+import { recordProductView } from "../../lib/recentActivity.js";
 
 export function ProductView({
   category,
@@ -55,6 +56,26 @@ export function ProductView({
     { label: category.label, onClick: () => onNavigateCategory(category.slug) },
     { label: product.name },
   ];
+
+  // Record this product into the device-local "recently viewed" memory
+  // (localStorage, never sent to a server). Keyed on the slug so it only
+  // re-fires when the customer navigates to a *different* product, not on
+  // every re-render. Image resolution mirrors what each surface shows as
+  // a cover: the live blanket + bib have richer galleries than the
+  // catalog coverImage, so prefer those when available.
+  useEffect(() => {
+    let image;
+    if (product.key === "blanket-alphabet") image = productData?.gallery?.[0];
+    else if (product.key === "bib-single") image = "/img/bib-examples/01.jpg";
+    else if (product.coverImage) image = product.coverImage;
+    recordProductView({
+      slug: product.slug,
+      categorySlug: category.slug,
+      name: product.name,
+      image,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.slug]);
 
   // Placeholder products: render the "coming soon" template
   // with the catalog description and a Notify-me button. No buy

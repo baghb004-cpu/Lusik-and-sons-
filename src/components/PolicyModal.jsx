@@ -52,7 +52,7 @@ export function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Cookies and tracking",
-          body: "We use only the cookies necessary to keep you signed in and to remember your cart. We don't use Google Analytics, Facebook Pixel, or any other cross-site tracking, and we don't run advertisements. The site may use a privacy-first analytics provider (Umami) for aggregate pageview counts; if active, it doesn't set cookies, doesn't track you across other sites, and doesn't collect personal data. You can confirm what's running by opening your browser's developer tools and looking at the Network tab — every request the site makes will be visible there."
+          body: "We use only the cookies necessary to keep you signed in and to remember your cart. We don't use Google Analytics, Facebook Pixel, or any other cross-site tracking, and we don't run advertisements. The site may use a privacy-first analytics provider (Umami) for aggregate pageview counts; if active, it doesn't set cookies, doesn't track you across other sites, and doesn't collect personal data. On mobile, the site also remembers your recently viewed items and recent searches locally in your own browser to help you pick up where you left off — that history stays on your device, is never sent to us, and you can clear it anytime from the search screen. You can confirm what's running by opening your browser's developer tools and looking at the Network tab — every request the site makes will be visible there."
         },
         {
           heading: "Children's privacy",

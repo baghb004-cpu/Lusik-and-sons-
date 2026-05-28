@@ -29,6 +29,14 @@ import React, { useMemo, useRef, useEffect, useState } from "react";
 import { CATALOG } from "../data/catalog.js";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { Search, ChevronRight, User } from "./icons.jsx";
+import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
+import {
+  getRecentlyViewed,
+  clearRecentlyViewed,
+  getRecentSearches,
+  recordSearch,
+  clearRecentSearches,
+} from "../lib/recentActivity.js";
 
 const SITE_SECTIONS = [
   { label: "FAQ",                id: "faq",      type: "section" },
@@ -83,6 +91,23 @@ export function MobileSearchView({
   onAvatarTap,
 }) {
   const scrollRef = useRef(null);
+
+  // Device-local "recently viewed" + "recent searches" memory (read
+  // from localStorage on mount). The panel remounts whenever the
+  // customer opens search, so initializing from the getters on mount
+  // is enough to stay fresh. Held in state so the Clear buttons can
+  // update the UI immediately.
+  const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewed());
+  const [recentSearches, setRecentSearches] = useState(() => getRecentSearches());
+
+  const handleClearViewed = () => {
+    clearRecentlyViewed();
+    setRecentlyViewed([]);
+  };
+  const handleClearSearches = () => {
+    clearRecentSearches();
+    setRecentSearches([]);
+  };
 
   // Size the panel to the VISIBLE viewport (the area above the
   // keyboard), tracked via the VisualViewport API. This is the fix
@@ -139,6 +164,9 @@ export function MobileSearchView({
   const handleSuggestion = (text) => onQueryChange?.(text);
 
   const handleResultTap = (result) => {
+    // Remember intentional searches — ones that actually led somewhere
+    // — so they show up in the Recent Searches list next time.
+    recordSearch(query);
     if (result.type === "product") onNavigateProduct(result.categorySlug, result.productSlug);
     else if (result.type === "journal") onSelectJournalPost(result.slug);
     else if (result.type === "section") onScrollTo(result.id);
@@ -214,23 +242,68 @@ export function MobileSearchView({
         }}
       >
         {showSuggestions && (
-          <div>
-            <p className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
-              Try searching
-            </p>
-            <div className="flex flex-col">
-              {SUGGESTIONS.map((text) => (
-                <button
-                  key={text}
-                  type="button"
-                  onClick={() => handleSuggestion(text)}
-                  className="flex items-center gap-3 py-3.5 text-left border-b"
-                  style={{ borderColor: "var(--border-soft)" }}
-                >
-                  <Search size={15} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-                  <span className="text-sm" style={{ color: "var(--text-primary)" }}>{text}</span>
-                </button>
-              ))}
+          <div className="flex flex-col gap-8">
+            {/* Recently Viewed — horizontal strip of product cards.
+                Device-local, mobile-only. Hidden when empty. */}
+            <RecentlyViewedStrip
+              items={recentlyViewed}
+              onTap={(categorySlug, slug) => onNavigateProduct?.(categorySlug, slug)}
+              onClear={handleClearViewed}
+              heading="Recently Viewed"
+            />
+
+            {/* Recent Searches — vertical list, re-runs the search on tap. */}
+            {recentSearches.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs tracking-[0.2em] uppercase" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+                    Recent Searches
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleClearSearches}
+                    className="text-xs"
+                    style={{ color: "var(--accent)", fontWeight: 500 }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div className="flex flex-col">
+                  {recentSearches.map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => onQueryChange?.(term)}
+                      className="flex items-center gap-3 py-3.5 text-left border-b"
+                      style={{ borderColor: "var(--border-soft)" }}
+                    >
+                      <Search size={15} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                      <span className="text-sm" style={{ color: "var(--text-primary)" }}>{term}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Try searching — always present in the empty state. */}
+            <div>
+              <p className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+                Try searching
+              </p>
+              <div className="flex flex-col">
+                {SUGGESTIONS.map((text) => (
+                  <button
+                    key={text}
+                    type="button"
+                    onClick={() => handleSuggestion(text)}
+                    className="flex items-center gap-3 py-3.5 text-left border-b"
+                    style={{ borderColor: "var(--border-soft)" }}
+                  >
+                    <Search size={15} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                    <span className="text-sm" style={{ color: "var(--text-primary)" }}>{text}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}

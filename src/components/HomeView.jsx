@@ -35,7 +35,9 @@ import { HeroSlideshow } from "./HeroSlideshow.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
 import { ContactQuickMenu } from "./ContactQuickMenu.jsx";
 import { CategoryCardImage } from "./CategoryCardImage.jsx";
-import { ArrowRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
+import { ArrowRight, ChevronRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
+import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
+import { getRecentlyViewed } from "../lib/recentActivity.js";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import {
   PHOTO_BIB_PILE,
@@ -62,6 +64,10 @@ export function HomeView({
   // the left-column text block stays in sync with the photo on
   // the right. Updated via the onIndexChange callback.
   const [heroIndex, setHeroIndex] = useState(0);
+  // Device-local "recently viewed" memory (localStorage). Read once on
+  // mount — feeds the mobile-only "Your recent activity" strip below the
+  // hero. Empty for first-time visitors, who just see hero + curated card.
+  const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewed());
   return (
     <div className="fade-in">
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24">
@@ -121,6 +127,67 @@ export function HomeView({
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ============================================================
+          FOR YOU — mobile-only (lg:hidden)
+          ============================================================
+          Apple Store "For You" page, scaled to one maker's shop.
+          Two parts, both phone-only so desktop is untouched:
+            a) "We think you'll love" — a curated feature card. Always
+               shown; features the live flagship blanket.
+            b) "Your recent activity" — the same device-local recently-
+               viewed strip the search page uses; only renders when the
+               guest has actually viewed something.
+          Sits right after the brand hero so the hero still leads. */}
+      <section className="lg:hidden px-6 pt-2 pb-10">
+        {/* a) We think you'll love — curated feature card */}
+        <div className="mb-3">
+          <p className="text-xs tracking-[0.2em] uppercase" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+            We think you'll love
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigateProduct?.("blankets", "armenian-alphabet-blanket")}
+          className="w-full flex items-center gap-4 text-left rounded-2xl p-3"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+          aria-label="The Armenian Alphabet Blanket — selected for you"
+        >
+          <div
+            className="flex-shrink-0 overflow-hidden rounded-xl"
+            style={{ width: 72, height: 72, background: "var(--bg-subtle, #F5EFE3)" }}
+          >
+            <img
+              src={product.gallery[0]}
+              alt="The Armenian Alphabet Blanket"
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[0.6rem] tracking-[0.2em] uppercase mb-1" style={{ color: "#B08842", fontWeight: 600 }}>
+              ✦ Selected for you
+            </p>
+            <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+              The Armenian Alphabet Blanket
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>From $65</p>
+          </div>
+          <ChevronRight size={18} strokeWidth={1.5} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+        </button>
+
+        {/* b) Your recent activity — only when the guest has viewed something */}
+        {recentlyViewed.length > 0 && (
+          <div className="mt-8">
+            <RecentlyViewedStrip
+              items={recentlyViewed}
+              onTap={(categorySlug, slug) => onNavigateProduct?.(categorySlug, slug)}
+              heading="Your recent activity"
+            />
+          </div>
+        )}
       </section>
 
       <section className="border-y py-8" style={{ borderColor: "rgba(26,22,18,0.08)", background: "rgba(176,136,66,0.04)" }}>
