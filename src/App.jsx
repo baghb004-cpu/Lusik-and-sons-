@@ -773,6 +773,19 @@ export function App() {
   const cartCount = cart.reduce((s, i) => s + (Number(i.qty) || 0), 0);
   const subtotal = cart.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
 
+  // Open the cart in the right surface for the viewport: on mobile
+  // the full-page Bag view (where the bottom nav stays visible, so
+  // the customer is never trapped); on desktop the slide-in drawer
+  // (desktop has the top nav, no bottom tab bar, drawer fits there).
+  // Used by every "show the cart" trigger EXCEPT the desktop-only
+  // top-nav cart icon (which always opens the drawer directly).
+  const openCart = () => {
+    const isMobile = typeof window !== "undefined"
+      && window.matchMedia?.("(max-width: 1023px)").matches;
+    if (isMobile) setView("cart");
+    else setCartOpen(true);
+  };
+
   const addToCart = (color, qty = 1, selection = null, layout = null, colors = null) => {
     haptic(12);
     track("add-to-cart", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
@@ -888,7 +901,7 @@ export function App() {
         } : null,
       }];
     });
-    setCartOpen(true);
+    openCart();
   };
 
   // Cart drawer dismissal: Escape key + swipe-right-to-dismiss on mobile.
@@ -1041,7 +1054,7 @@ export function App() {
       customImageName,
       customMetadata: customMetadata || null,
     }]);
-    setCartOpen(true);
+    openCart();
   };
 
   const goCheckout = () => {
@@ -1167,8 +1180,9 @@ export function App() {
         kind: "success",
         message: `Added ${restored} item${restored === 1 ? "" : "s"} from order ${order.order_number} to your cart.`,
       });
-      setView("home");
-      setCartOpen(true);
+      // On desktop this opens the drawer; on mobile it routes to the
+      // full-page Bag (openCart handles the viewport split).
+      openCart();
     }
     if (skipped > 0) {
       toast({
