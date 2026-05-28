@@ -147,6 +147,16 @@ export function TextUsWidget() {
   // Show the expanded pill only when: desktop + idle expansion timer fired + panel closed.
   const showAsPill = isDesktop && pillExpanded && !open;
 
+  // Desktop-only: the floating contact bubble is hidden on phones and
+  // touch tablets. Mobile already has plenty of ways to reach Lusik
+  // (the bottom-nav, the in-cart "Still have questions?" card, and the
+  // Text/Call/Email/Video circles on Shop + product pages), so the
+  // always-on bubble is reserved for big-screen mouse users. `isDesktop`
+  // = (pointer: fine) AND (min-width: 768px), and it's reactive — a
+  // desktop user who narrows the window drops the widget at the
+  // breakpoint. Placed after every hook so the early return is safe.
+  if (!isDesktop) return null;
+
   return (
     <>
       {/* PANEL */}
