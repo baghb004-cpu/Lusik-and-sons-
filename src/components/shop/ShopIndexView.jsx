@@ -22,8 +22,50 @@
 
 import React from "react";
 import { CATALOG } from "../../data/catalog.js";
+import { JOURNAL_POSTS } from "../../data/journalPosts.js";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight } from "../icons.jsx";
+
+// ------------------------------------------------------------
+// FEATURED_PIECES — the curated mobile "Featured pieces" set.
+// Hardcoded on purpose: the copy here (eyebrow / tagline / price
+// label) is intentional editorial framing, NOT derived from
+// CATALOG. Re-deriving would lose the hand-written voice and the
+// "By direct order" treatment for the commission-only crib
+// blanket. If Lusik adds artwork or changes a price, edit here.
+// All three image paths verified present under public/img/.
+// ------------------------------------------------------------
+const FEATURED_PIECES = [
+  {
+    categorySlug: "blankets",
+    slug: "armenian-alphabet-blanket",
+    eyebrow: "Lusik's signature",
+    name: "The Armenian Alphabet Blanket",
+    tagline: "Ա Բ Գ, hand cross-stitched corner to corner.",
+    price: "From $65",
+    image: "/img/abc-blanket/cover.jpg",
+  },
+  {
+    categorySlug: "blankets",
+    slug: "cotton-yarn-blanket",
+    eyebrow: "The heirloom",
+    name: "The Cotton Alphabet Crib Blanket",
+    tagline: "Every letter of the Armenian alphabet, all thirty-six.",
+    // Placeholder priced at $245, sold by commission — surface
+    // the commission framing rather than a clickable "From" price.
+    price: "By direct order · $245",
+    image: "/img/cotton-yarn/cover.jpg",
+  },
+  {
+    categorySlug: "bibs",
+    slug: "baby-bib",
+    eyebrow: "For every day",
+    name: "The Custom Name Bib",
+    tagline: "Your child's name, in Armenian or English.",
+    price: "From $22",
+    image: "/img/bib-examples/01.jpg",
+  },
+];
 
 // Per-category cover image for the mobile title cards. Keyed by
 // category slug. Towels + Baby have no real photography yet, so
@@ -109,7 +151,147 @@ function CategoryCard({ category, onTap }) {
   );
 }
 
-export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct }) {
+// ------------------------------------------------------------
+// FeaturedPieceCard — one large Apple-Products "feature card":
+// full-bleed product photo on top, an editorial body below with
+// eyebrow / name / tagline and a footer that pairs the price with
+// a "View" pill. "View" (not "Buy") because every piece needs the
+// product page to pick colors / name / layout before checkout.
+// ------------------------------------------------------------
+function FeaturedPieceCard({ piece, onTap }) {
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-label={`View ${piece.name}`}
+      className="block w-full text-left"
+      style={{
+        background: "var(--bg-surface, #FFFFFF)",
+        border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+        borderRadius: 20,
+        boxShadow: "0 2px 12px rgba(26,22,18,0.07)",
+        overflow: "hidden",
+        marginBottom: 16,
+      }}
+    >
+      <img
+        src={piece.image}
+        alt={piece.name}
+        loading="lazy"
+        style={{ width: "100%", height: 260, objectFit: "cover", display: "block" }}
+      />
+      <div style={{ padding: "18px 20px 20px" }}>
+        <p
+          className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
+          style={{ color: "#B08842" }}
+        >
+          {piece.eyebrow}
+        </p>
+        <h3
+          className="font-display mb-1.5"
+          style={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
+        >
+          {piece.name}
+        </h3>
+        <p className="text-sm opacity-70 leading-relaxed">
+          {piece.tagline}
+        </p>
+        <div className="flex items-center justify-between" style={{ marginTop: 14 }}>
+          <span
+            className="text-sm"
+            style={{ fontWeight: 500, color: "var(--text-primary, #1A1612)" }}
+          >
+            {piece.price}
+          </span>
+          {/* Pill is purely visual — the whole card is the button. */}
+          <span
+            className="text-sm rounded-full"
+            style={{
+              background: "var(--text-primary, #1A1612)",
+              color: "#F5EFE3",
+              padding: "10px 22px",
+              fontWeight: 500,
+            }}
+          >
+            View
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ------------------------------------------------------------
+// JournalCard — one editorial card in the horizontal "From the
+// Journal" carousel. Journal posts have no photography, so this
+// is an all-text card: gold "Journal" eyebrow, post title, a
+// line-clamped excerpt that flexes to fill, and a gold "Read"
+// footer. Fixed width so the next card peeks at the page edge.
+// ------------------------------------------------------------
+function JournalCard({ post, onTap }) {
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-label={`Read ${post.title}`}
+      className="flex flex-col text-left"
+      style={{
+        flexShrink: 0,
+        width: 300,
+        minHeight: 210,
+        scrollSnapAlign: "start",
+        background: "var(--bg-surface, #FFFFFF)",
+        border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+        borderRadius: 20,
+        boxShadow: "0 2px 12px rgba(26,22,18,0.07)",
+        padding: 20,
+      }}
+    >
+      <p
+        className="text-[0.6rem] tracking-[0.3em] uppercase mb-3"
+        style={{ color: "#B08842" }}
+      >
+        Journal
+      </p>
+      <h3
+        className="font-display mb-2"
+        style={{
+          fontSize: "1.3rem",
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          lineHeight: 1.2,
+          color: "var(--text-primary, #1A1612)",
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {post.title}
+      </h3>
+      <p
+        className="text-sm opacity-70 leading-relaxed"
+        style={{
+          flex: 1,
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {post.excerpt}
+      </p>
+      <p
+        className="text-[0.7rem] tracking-[0.15em] uppercase"
+        style={{ color: "#B08842", marginTop: 12, fontWeight: 500 }}
+      >
+        Read · {post.readMinutes} min
+      </p>
+    </button>
+  );
+}
+
+export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost }) {
   return (
     <div className="fade-in">
       {/* ====================================================== */}
@@ -200,6 +382,59 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
               </p>
             </div>
           </button>
+        </section>
+
+        {/* "Featured pieces" — a vertical stack of large Apple-style
+            product feature cards for the curated set (signature
+            blanket, heirloom crib blanket, name bib). Each card
+            deep-links to its product page. */}
+        <section className="px-6 mb-10">
+          <h2
+            className="font-display mb-4"
+            style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
+          >
+            Featured pieces
+          </h2>
+          {FEATURED_PIECES.map((piece) => (
+            <FeaturedPieceCard
+              key={`${piece.categorySlug}/${piece.slug}`}
+              piece={piece}
+              onTap={() => onNavigateProduct?.(piece.categorySlug, piece.slug)}
+            />
+          ))}
+        </section>
+
+        {/* "From the Journal" — a horizontal editorial carousel of
+            every journal post. Same edge-flush + trailing-pad trick
+            as the category strip so the last card and the peek of
+            the next scroll fully into view. */}
+        <section className="mb-10">
+          <h2
+            className="font-display mb-4 px-6"
+            style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
+          >
+            From the Journal
+          </h2>
+          <div
+            className="flex"
+            style={{
+              gap: 14,
+              overflowX: "auto",
+              scrollSnapType: "x proximity",
+              WebkitOverflowScrolling: "touch",
+              paddingLeft: 24,
+              paddingRight: 24,
+              paddingBottom: 4,
+            }}
+          >
+            {JOURNAL_POSTS.map((post) => (
+              <JournalCard
+                key={post.slug}
+                post={post}
+                onTap={() => onNavigateJournalPost?.(post.slug)}
+              />
+            ))}
+          </div>
         </section>
       </div>
 
