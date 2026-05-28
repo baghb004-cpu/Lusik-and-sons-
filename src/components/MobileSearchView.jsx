@@ -29,6 +29,7 @@ import React, { useMemo, useRef, useEffect } from "react";
 import { CATALOG } from "../data/catalog.js";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { Search, ChevronRight, User } from "./icons.jsx";
+import { useKeyboardOffset } from "../lib/useKeyboardOffset.js";
 
 const SITE_SECTIONS = [
   { label: "FAQ",                id: "faq",      type: "section" },
@@ -83,6 +84,10 @@ export function MobileSearchView({
   onAvatarTap,
 }) {
   const scrollRef = useRef(null);
+  // Keyboard height so the results' bottom padding clears both the
+  // floating search bar AND the keyboard — the last row stays
+  // reachable while typing.
+  const kbOffset = useKeyboardOffset(true);
 
   // Snap results back to the top whenever the query changes so the
   // first match is always immediately visible — the core fix.
@@ -177,7 +182,12 @@ export function MobileSearchView({
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto"
-        style={{ padding: "0 24px", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 150px)" }}
+        style={{
+          padding: "0 24px",
+          // Clear the floating search bar (~90px) plus the keyboard
+          // when it's open, so the last result is always reachable.
+          paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${90 + kbOffset}px)`,
+        }}
       >
         {showSuggestions && (
           <div>
