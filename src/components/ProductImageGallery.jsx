@@ -26,6 +26,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, X } from "./icons.jsx";
+import { useSwipe } from "../lib/useSwipe.js";
 
 export function ProductImageGallery({
   images,
@@ -108,6 +109,13 @@ export function ProductImageGallery({
   const goPrev = () => setActiveIdx((p) => (p - 1 + count) % count);
   const goNext = () => setActiveIdx((p) => (p + 1) % count);
 
+  // Swipe gestures for the main image + the fullscreen lightbox.
+  // Swipe left → next photo, swipe right → previous. The `swiped`
+  // ref guards the main image's tap-to-zoom so a swipe doesn't
+  // also open the lightbox.
+  const mainSwipe = useSwipe({ onSwipeLeft: goNext, onSwipeRight: goPrev });
+  const zoomSwipe = useSwipe({ onSwipeLeft: goNext, onSwipeRight: goPrev });
+
   // Toggle a colorway. Clicking the active one again clears the
   // filter and returns to all photos.
   const toggleColorway = (idx) => {
@@ -140,10 +148,11 @@ export function ProductImageGallery({
       <div
         className="relative aspect-[4/5] overflow-hidden mb-4"
         style={{ background: "rgba(26,22,18,0.04)" }}
+        {...mainSwipe.handlers}
       >
         <button
           type="button"
-          onClick={() => setZoomOpen(true)}
+          onClick={() => { if (!mainSwipe.swiped.current) setZoomOpen(true); }}
           className="absolute inset-0 w-full h-full block"
           aria-label={`Zoom photo ${safeIdx + 1} of ${count}`}
           style={{ cursor: "zoom-in", padding: 0, border: 0, background: "transparent" }}
@@ -297,6 +306,7 @@ export function ProductImageGallery({
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ background: "rgba(26, 22, 18, 0.92)" }}
           onClick={() => setZoomOpen(false)}
+          {...zoomSwipe.handlers}
         >
           <img
             src={currentSrc}
