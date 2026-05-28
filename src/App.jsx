@@ -1451,7 +1451,6 @@ export function App() {
             view === "checkout" ? "Almost in Lusik's hands" :
             null
           }
-          labelMode={view === "home" && !showHomeIntro}
           user={user}
           onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
           onBack={

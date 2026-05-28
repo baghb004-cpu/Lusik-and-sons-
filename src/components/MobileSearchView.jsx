@@ -206,7 +206,7 @@ export function MobileSearchView({
       >
         <h1
           className="font-display leading-tight"
-          style={{ fontSize: "2.1rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}
+          style={{ fontSize: "2.4rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}
         >
           Search
         </h1>
@@ -250,57 +250,60 @@ export function MobileSearchView({
               onTap={(categorySlug, slug) => onNavigateProduct?.(categorySlug, slug)}
               onClear={handleClearViewed}
               heading="Recently Viewed"
+              large
             />
 
             {/* Recent Searches — vertical list, re-runs the search on tap. */}
             {recentSearches.length > 0 && (
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs tracking-[0.2em] uppercase" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="leading-tight" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
                     Recent Searches
                   </p>
                   <button
                     type="button"
                     onClick={handleClearSearches}
-                    className="text-xs"
+                    className="text-sm"
                     style={{ color: "var(--accent)", fontWeight: 500 }}
                   >
                     Clear
                   </button>
                 </div>
-                <div className="flex flex-col">
-                  {recentSearches.map((term) => (
+                <div style={{ background: "var(--bg-surface, #FFFFFF)", borderRadius: 18, border: "1px solid var(--border-soft, rgba(26,22,18,0.08))", overflow: "hidden" }}>
+                  {recentSearches.map((term, i) => (
                     <button
                       key={term}
                       type="button"
                       onClick={() => onQueryChange?.(term)}
-                      className="flex items-center gap-3 py-3.5 text-left border-b"
-                      style={{ borderColor: "var(--border-soft)" }}
+                      className="flex items-center gap-3 px-4 py-4 text-left w-full"
+                      style={{ borderBottom: i < recentSearches.length - 1 ? "1px solid var(--border-soft, rgba(26,22,18,0.07))" : "none" }}
                     >
-                      <Search size={15} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-                      <span className="text-sm" style={{ color: "var(--text-primary)" }}>{term}</span>
+                      <Search size={17} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                      <span className="text-base" style={{ color: "var(--text-primary)" }}>{term}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Try searching — always present in the empty state. */}
+            {/* Try Searching — always present in the empty state.
+                Suggestions sit in a white rounded bubble with hairline
+                dividers, Apple Store-style. */}
             <div>
-              <p className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
-                Try searching
+              <p className="leading-tight mb-3" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+                Try Searching
               </p>
-              <div className="flex flex-col">
-                {SUGGESTIONS.map((text) => (
+              <div style={{ background: "var(--bg-surface, #FFFFFF)", borderRadius: 18, border: "1px solid var(--border-soft, rgba(26,22,18,0.08))", overflow: "hidden" }}>
+                {SUGGESTIONS.map((text, i) => (
                   <button
                     key={text}
                     type="button"
                     onClick={() => handleSuggestion(text)}
-                    className="flex items-center gap-3 py-3.5 text-left border-b"
-                    style={{ borderColor: "var(--border-soft)" }}
+                    className="flex items-center gap-3 px-4 py-4 text-left w-full"
+                    style={{ borderBottom: i < SUGGESTIONS.length - 1 ? "1px solid var(--border-soft, rgba(26,22,18,0.07))" : "none" }}
                   >
-                    <Search size={15} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-                    <span className="text-sm" style={{ color: "var(--text-primary)" }}>{text}</span>
+                    <Search size={17} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                    <span className="text-base" style={{ color: "var(--text-primary)" }}>{text}</span>
                   </button>
                 ))}
               </div>
@@ -316,14 +319,14 @@ export function MobileSearchView({
         )}
 
         {results && results.length > 0 && (
-          <div className="flex flex-col">
+          <div style={{ background: "var(--bg-surface, #FFFFFF)", borderRadius: 18, border: "1px solid var(--border-soft, rgba(26,22,18,0.08))", overflow: "hidden" }}>
             {results.map((r, i) => (
               <button
                 key={`${r.type}-${r.slug || r.id || r.productSlug || i}`}
                 type="button"
                 onClick={() => handleResultTap(r)}
-                className="flex items-center gap-3 py-3.5 text-left border-b"
-                style={{ borderColor: "var(--border-soft)" }}
+                className="flex items-center gap-3 px-4 py-4 text-left w-full"
+                style={{ borderBottom: i < results.length - 1 ? "1px solid var(--border-soft, rgba(26,22,18,0.07))" : "none" }}
               >
                 <div className="flex-1 min-w-0">
                   {r.type === "product" && (

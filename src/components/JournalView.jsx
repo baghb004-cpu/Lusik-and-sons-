@@ -17,6 +17,7 @@
 
 import React, { useEffect } from "react";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
+import { BookOpen } from "./icons.jsx";
 
 function formatPublishedDate(iso) {
   if (!iso) return "";
@@ -29,45 +30,105 @@ function formatPublishedDate(iso) {
 
 export function JournalListView({ posts, onSelectPost, onBack }) {
   return (
-    <div className="fade-in max-w-4xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
-      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
-        ← Back to the shop
-      </button>
-      <header className="mb-12 lg:mb-16">
-        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>The Journal</p>
-        <h1 className="font-display text-4xl lg:text-5xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-          Notes from <em style={{ fontWeight: 400 }}>Lusik's table</em>.
-        </h1>
-        <p className="text-base lg:text-lg opacity-75 leading-relaxed max-w-2xl">
-          Short posts about the craft we make — the Armenian alphabet, the technique behind cross-stitch, the symbols woven into Lusik's blankets. Written for anyone curious about what goes into the work, not just the work itself.
+    <div className="fade-in">
+      {/* ============================================================
+          MOBILE — Apple Store "Go Further" style: a section label and
+          large editorial cards. The page title ("Journal") is supplied
+          by MobilePageHeader above, mirroring the app's tab title.
+          ============================================================ */}
+      <div className="lg:hidden px-6 pt-1 pb-12">
+        <p className="leading-tight mb-5" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+          Read something new
         </p>
-      </header>
-      <div className="space-y-10">
-        {posts.map((post) => (
-          <article
-            key={post.slug}
-            className="group cursor-pointer pb-10"
-            style={{ borderBottom: "1px solid rgba(26,22,18,0.1)" }}
-            onClick={() => onSelectPost(post.slug)}
-          >
-            <div className="flex items-baseline gap-3 mb-2 flex-wrap">
-              <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60" dateTime={post.publishedAt}>
-                {formatPublishedDate(post.publishedAt)}
-              </time>
-              <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
-              <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60">{post.readMinutes} min read</span>
-            </div>
-            <h2 className="font-display text-2xl lg:text-3xl mb-3 transition group-hover:opacity-80" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-              {post.title}
-            </h2>
-            <p className="text-sm lg:text-base opacity-80 leading-relaxed mb-4 max-w-2xl">
-              {post.excerpt}
-            </p>
-            <span className="text-[0.65rem] tracking-[0.2em] uppercase transition group-hover:opacity-100" style={{ color: "#B08842", fontWeight: 500 }}>
-              Keep reading →
-            </span>
-          </article>
-        ))}
+        <div className="space-y-5">
+          {posts.map((post) => (
+            <article
+              key={post.slug}
+              onClick={() => onSelectPost(post.slug)}
+              className="w-full text-left overflow-hidden block cursor-pointer"
+              style={{ borderRadius: 22, background: "var(--bg-surface, #FFFFFF)", border: "1px solid var(--border-soft, rgba(26,22,18,0.08))" }}
+            >
+              {/* "Cover" band — the title set large, like the media art
+                  on an Apple card (we have no per-post photos, so a soft
+                  brand-gold wash + the title carries it). */}
+              <div
+                className="relative flex flex-col justify-end"
+                style={{
+                  minHeight: 172,
+                  padding: "20px",
+                  background: "linear-gradient(150deg, rgba(176,136,66,0.22) 0%, rgba(176,136,66,0.07) 55%, rgba(26,22,18,0.04) 100%)",
+                }}
+              >
+                <span
+                  className="text-[0.6rem] tracking-[0.3em] uppercase"
+                  style={{ color: "#B08842", fontWeight: 600, position: "absolute", top: 18, left: 20 }}
+                >
+                  Journal
+                </span>
+                <h2 className="font-display leading-tight" style={{ fontSize: "1.6rem", fontWeight: 400, letterSpacing: "-0.01em", color: "var(--text-primary)" }}>
+                  {post.title}
+                </h2>
+              </div>
+              {/* Body — excerpt + a read-time meta pill. */}
+              <div style={{ padding: "16px 20px 20px" }}>
+                <p className="text-sm leading-relaxed mb-4 line-clamp-3" style={{ color: "var(--text-secondary, rgba(26,22,18,0.7))" }}>
+                  {post.excerpt}
+                </p>
+                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                  <BookOpen size={14} strokeWidth={1.6} style={{ color: "#B08842" }} />
+                  <span>{post.readMinutes} min read</span>
+                  <span style={{ opacity: 0.4 }}>·</span>
+                  <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      {/* ============================================================
+          DESKTOP — the existing editorial layout, unchanged.
+          ============================================================ */}
+      <div className="hidden lg:block max-w-4xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
+        <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
+          ← Back to the shop
+        </button>
+        <header className="mb-12 lg:mb-16">
+          <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>The Journal</p>
+          <h1 className="font-display text-4xl lg:text-5xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+            Notes from <em style={{ fontWeight: 400 }}>Lusik's table</em>.
+          </h1>
+          <p className="text-base lg:text-lg opacity-75 leading-relaxed max-w-2xl">
+            Short posts about the craft we make — the Armenian alphabet, the technique behind cross-stitch, the symbols woven into Lusik's blankets. Written for anyone curious about what goes into the work, not just the work itself.
+          </p>
+        </header>
+        <div className="space-y-10">
+          {posts.map((post) => (
+            <article
+              key={post.slug}
+              className="group cursor-pointer pb-10"
+              style={{ borderBottom: "1px solid rgba(26,22,18,0.1)" }}
+              onClick={() => onSelectPost(post.slug)}
+            >
+              <div className="flex items-baseline gap-3 mb-2 flex-wrap">
+                <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60" dateTime={post.publishedAt}>
+                  {formatPublishedDate(post.publishedAt)}
+                </time>
+                <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
+                <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60">{post.readMinutes} min read</span>
+              </div>
+              <h2 className="font-display text-2xl lg:text-3xl mb-3 transition group-hover:opacity-80" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+                {post.title}
+              </h2>
+              <p className="text-sm lg:text-base opacity-80 leading-relaxed mb-4 max-w-2xl">
+                {post.excerpt}
+              </p>
+              <span className="text-[0.65rem] tracking-[0.2em] uppercase transition group-hover:opacity-100" style={{ color: "#B08842", fontWeight: 500 }}>
+                Keep reading →
+              </span>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   );
