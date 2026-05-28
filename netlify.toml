@@ -79,6 +79,41 @@
   to     = "/index.html"
   status = 200
 
+# SPA fallback for the section pages promoted off the home page (Our Story,
+# Workshop, FAQ, Contact, Shipping, Newsletter). Same rewrite pattern as the
+# journal/shop rules so direct visits + shared links resolve and the React
+# history-API router renders the right page. Scoped to the exact slugs (not a
+# catch-all) so typos still 404 honestly.
+[[redirects]]
+  from   = "/story"
+  to     = "/index.html"
+  status = 200
+
+[[redirects]]
+  from   = "/workshop"
+  to     = "/index.html"
+  status = 200
+
+[[redirects]]
+  from   = "/faq"
+  to     = "/index.html"
+  status = 200
+
+[[redirects]]
+  from   = "/contact"
+  to     = "/index.html"
+  status = 200
+
+[[redirects]]
+  from   = "/shipping"
+  to     = "/index.html"
+  status = 200
+
+[[redirects]]
+  from   = "/newsletter"
+  to     = "/index.html"
+  status = 200
+
 # Legacy SPA fallback shortcuts. These predate the /shop hierarchy
 # and remain so any inbound link bookmarked under the old URLs
 # still resolves to index.html and the SPA handles the path. New

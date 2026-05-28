@@ -93,6 +93,13 @@ export function App() {
   // ?order=success load starts clean.
   const [buyNowItem, setBuyNowItem] = useState(null);
   const [view, setView] = useState("home");
+  // Section pages promoted off the home page (Our Story, Workshop, FAQ,
+  // Contact, Shipping, Newsletter). When `view === "home"` and pageSlug is
+  // set, HomeView renders ONLY that section under a big "‹ For You" back
+  // header instead of the home feed. null = the short For You home. Each
+  // slug has a real URL (/story, /faq, ...) so the pages are shareable +
+  // crawlable, mirroring the journal routing.
+  const [pageSlug, setPageSlug] = useState(null);
   // Search query lives in App so both the bottom-nav search input
   // (in collapsed mode) and the MobileSearchView results panel
   // share the same string. Cleared when navigating away from search.
@@ -118,6 +125,12 @@ export function App() {
   // out from under them.)
   useEffect(() => {
     if (view !== "checkout") setBuyNowItem(null);
+  }, [view]);
+  // A section page only exists under the home view. Any navigation to a
+  // different top-level view (shop, journal, account, …) drops the section
+  // so returning to home lands on the For You feed, not a stale page.
+  useEffect(() => {
+    if (view !== "home") setPageSlug(null);
   }, [view]);
   const [cartOpen, setCartOpen] = useState(false);
   // Cart edit mode: when true, QuantityPicker + remove buttons are
@@ -450,6 +463,15 @@ export function App() {
         setJournalSlug(m[1] ?? null);
         return;
       }
+
+      // ----- section pages promoted off the home page -----
+      const sec = path.match(/^\/(story|workshop|faq|contact|shipping|newsletter)\/?$/);
+      if (sec) {
+        setView("home");
+        setPageSlug(sec[1]);
+        return;
+      }
+
       const h = window.location.hash.match(/^#journal(?:\/([\w-]+))?/);
       if (h) {
         const slug = h[1] ?? null;
@@ -457,7 +479,15 @@ export function App() {
         window.history.replaceState({}, "", newPath);
         setView("journal");
         setJournalSlug(slug);
+        return;
       }
+
+      // Root or any path this router doesn't own (the /shop, /gallery and
+      // legacy /blanket·/bib owners run in their own effects and correct
+      // themselves after). Land on the home For You feed and clear any
+      // stale section so back/forward to "/" resets cleanly.
+      setView("home");
+      setPageSlug(null);
     };
     applyFromUrl();
     window.addEventListener("popstate", applyFromUrl);
@@ -585,6 +615,29 @@ export function App() {
     }
   }, [view]);
 
+  // Section pages (/story, /faq, …). Push the slug path when a section is
+  // open so it's shareable and the back button walks section → home. We
+  // pushState synchronously here only for the slug case; the shop/journal/
+  // gallery URL owners are untouched. A complementary effect resets a
+  // section path back to "/" when the section is cleared (tapping the
+  // "‹ For You" back header or a bottom-nav home tap).
+  const SECTION_PATH_RE = /^\/(story|workshop|faq|contact|shipping|newsletter)\/?$/;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (view !== "home" || !pageSlug) return;
+    const next = `/${pageSlug}`;
+    if (window.location.pathname !== next) {
+      window.history.pushState({}, "", next);
+    }
+  }, [view, pageSlug]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (view !== "home" || pageSlug) return;
+    if (SECTION_PATH_RE.test(window.location.pathname)) {
+      window.history.pushState({}, "", "/");
+    }
+  }, [view, pageSlug]);
+
   // --- DOCUMENT TITLE + CANONICAL per route ---
   // Without these, every URL on the site reports the same <title>
   // and the same canonical link, so Google treats individual
@@ -595,7 +648,14 @@ export function App() {
     const BRAND = "Lusik & Sons";
     let title = `${BRAND} — Hand-Embroidered Armenian Alphabet Blankets | Cypress, CA`;
     let canonical = "https://lusikandsons.com/";
-    if (view === "journal") {
+    const SECTION_TITLES = {
+      story: "Our Story", workshop: "From Lusik's Workshop", faq: "Good Questions",
+      contact: "Contact Lusik", shipping: "Shipping & Tracking", newsletter: "Stay Connected",
+    };
+    if (view === "home" && pageSlug && SECTION_TITLES[pageSlug]) {
+      title     = `${SECTION_TITLES[pageSlug]} · ${BRAND}`;
+      canonical = `https://lusikandsons.com/${pageSlug}`;
+    } else if (view === "journal") {
       if (journalSlug) {
         const post = JOURNAL_POSTS.find((p) => p.slug === journalSlug);
         if (post) {
@@ -645,7 +705,7 @@ export function App() {
       document.head.appendChild(link);
     }
     link.setAttribute("href", canonical);
-  }, [view, journalSlug, shopCategorySlug, shopProductSlug]);
+  }, [view, pageSlug, journalSlug, shopCategorySlug, shopProductSlug]);
 
   // --- PRIVACY-FIRST ANALYTICS (opt-in via CONFIG.ANALYTICS) ---
   // On mount, if the customer set CONFIG.ANALYTICS.UMAMI_WEBSITE_ID,
@@ -1266,10 +1326,23 @@ export function App() {
   };
 
 
-  const scrollTo = (id) => {
-    if (view !== "home") setView("home");
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 80);
+  // Open one of the promoted section pages (Our Story, FAQ, …). These used
+  // to be in-page anchors on the home view (scrollTo); they're now their own
+  // pages, so every former scrollTo caller routes here instead.
+  const goPage = (slug) => {
+    setView("home");
+    setPageSlug(slug);
     setMobileNavOpen(false);
+    setConnectOpen(false);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+  // Return to the short For You home feed (the big "‹ For You" back header
+  // and the bottom-nav Home tap both land here).
+  const goForYou = () => {
+    setView("home");
+    setPageSlug(null);
+    setMobileNavOpen(false);
+    window.scrollTo({ top: 0, behavior: "auto" });
   };
 
   return (
@@ -1317,11 +1390,11 @@ export function App() {
               onNavigateCategory={goShopCategory}
               onNavigateProduct={goShopProduct}
             />
-            <button onClick={() => scrollTo("story")} className="hover:opacity-60">{t("nav.story")}</button>
+            <button onClick={() => goPage("story")} className="hover:opacity-60">{t("nav.story")}</button>
             <button onClick={() => { setJournalSlug(null); setView("journal"); }} className="hover:opacity-60">Journal</button>
-            <button onClick={() => scrollTo("faq")} className="hover:opacity-60">{t("nav.faq")}</button>
-            <button onClick={() => scrollTo("shipping")} className="hover:opacity-60">{t("nav.shipping")}</button>
-            <button onClick={() => scrollTo("contact")} className="hover:opacity-60">{t("nav.contact")}</button>
+            <button onClick={() => goPage("faq")} className="hover:opacity-60">{t("nav.faq")}</button>
+            <button onClick={() => goPage("shipping")} className="hover:opacity-60">{t("nav.shipping")}</button>
+            <button onClick={() => goPage("contact")} className="hover:opacity-60">{t("nav.contact")}</button>
             <button onClick={() => setConnectOpen(true)} className="hover:opacity-60 flex items-center gap-2">
               <AtSign size={16} strokeWidth={1.5} />
               <span>{t("nav.connect")}</span>
@@ -1459,11 +1532,11 @@ export function App() {
                   ))}
                 </div>
               </details>
-              <button onClick={() => scrollTo("story")} className="text-left">{t("nav.story")}</button>
+              <button onClick={() => goPage("story")} className="text-left">{t("nav.story")}</button>
               <button onClick={() => { setJournalSlug(null); setView("journal"); setMobileNavOpen(false); }} className="text-left">Journal</button>
-              <button onClick={() => scrollTo("faq")} className="text-left">{t("nav.faq")}</button>
-              <button onClick={() => scrollTo("shipping")} className="text-left">{t("nav.shipping")}</button>
-              <button onClick={() => scrollTo("contact")} className="text-left">{t("nav.contact")}</button>
+              <button onClick={() => goPage("faq")} className="text-left">{t("nav.faq")}</button>
+              <button onClick={() => goPage("shipping")} className="text-left">{t("nav.shipping")}</button>
+              <button onClick={() => goPage("contact")} className="text-left">{t("nav.contact")}</button>
               {isAdmin && (
                 <button
                   onClick={() => { setView("admin"); setMobileNavOpen(false); }}
@@ -1485,7 +1558,7 @@ export function App() {
           tab in a native app. Hidden on desktop (lg:hidden inside
           the component). The search view is excluded — it renders
           its own dedicated full-screen panel with its own title. */}
-      {view !== "search" && view !== "cart" && (
+      {view !== "search" && view !== "cart" && !(view === "home" && pageSlug) && (
         <MobilePageHeader
           title={
             view === "home" ? (showHomeIntro ? "Lusik & Sons" : "For You") :
@@ -1522,7 +1595,7 @@ export function App() {
           fade-up animation on mount — subtle but enough to make
           every navigation feel intentional instead of instantaneous.
           prefers-reduced-motion disables the animation in CSS. */}
-      <div key={[view, shopCategorySlug, shopProductSlug, journalSlug, adminOrderId].filter(Boolean).join("/")} className="page-enter">
+      <div key={[view, pageSlug, shopCategorySlug, shopProductSlug, journalSlug, adminOrderId].filter(Boolean).join("/")} className="page-enter">
       {/* HomeView is brand-only now — the inline ProductShowcase
           and CustomProductCard moved to /shop/blankets/... and
           /shop/bibs/baby-bib. Legacy /blanket and /bib URLs get
@@ -1531,10 +1604,13 @@ export function App() {
       {view === "home" && (
         <HomeView
           product={PRODUCT}
-          scrollTo={scrollTo}
+          pageSlug={pageSlug}
+          onNavigatePage={goPage}
+          onBackToForYou={goForYou}
           onNavigateShop={goShopIndex}
           onNavigateCategory={goShopCategory}
           onNavigateProduct={goShopProduct}
+          onNavigateJournal={() => { setJournalSlug(null); setView("journal"); }}
           simplified={!showHomeIntro}
         />
       )}
@@ -1680,7 +1756,7 @@ export function App() {
         <MobileBottomNav
           view={view}
           cartCount={cart.reduce((n, i) => n + (i.qty || 0), 0)}
-          onHome={() => { setView("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onHome={goForYou}
           onShop={goShopIndex}
           onJournal={() => { setJournalSlug(null); setView("journal"); }}
           onCart={() => setView("cart")}
@@ -1714,9 +1790,9 @@ export function App() {
               <div className="flex flex-col gap-2 text-sm">
                 <button onClick={() => goShopCategory("blankets")} className="text-left hover:opacity-60">{t("nav.blanket")}</button>
                 <button onClick={() => goShopCategory("bibs")} className="text-left hover:opacity-60">{t("nav.custom")}</button>
-                <button onClick={() => scrollTo("story")} className="text-left hover:opacity-60">{t("nav.story")}</button>
+                <button onClick={() => goPage("story")} className="text-left hover:opacity-60">{t("nav.story")}</button>
                 <button onClick={() => { setJournalSlug(null); setView("journal"); }} className="text-left hover:opacity-60">Journal</button>
-                <button onClick={() => scrollTo("faq")} className="text-left hover:opacity-60">{t("nav.faq")}</button>
+                <button onClick={() => goPage("faq")} className="text-left hover:opacity-60">{t("nav.faq")}</button>
               </div>
             </div>
 
@@ -1724,11 +1800,11 @@ export function App() {
             <div className="md:col-span-3">
               <p className="text-xs tracking-[0.3em] uppercase mb-4 opacity-70">{t("footer.help")}</p>
               <div className="flex flex-col gap-2 text-sm">
-                <button onClick={() => scrollTo("shipping")} className="text-left hover:opacity-60">{t("footer.shippingTracking")}</button>
+                <button onClick={() => goPage("shipping")} className="text-left hover:opacity-60">{t("footer.shippingTracking")}</button>
                 <button onClick={() => setPolicyOpen("finalSale")} className="text-left hover:opacity-60">{t("footer.finalSalePolicy")}</button>
                 <button onClick={() => setPolicyOpen("privacy")} className="text-left hover:opacity-60">{t("footer.privacyPolicy")}</button>
                 <button onClick={() => setPolicyOpen("terms")} className="text-left hover:opacity-60">{t("footer.termsOfService")}</button>
-                <button onClick={() => scrollTo("contact")} className="text-left hover:opacity-60">{t("footer.contactUs")}</button>
+                <button onClick={() => goPage("contact")} className="text-left hover:opacity-60">{t("footer.contactUs")}</button>
               </div>
             </div>
 

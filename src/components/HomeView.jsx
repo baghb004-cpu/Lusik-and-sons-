@@ -35,7 +35,7 @@ import { HeroSlideshow } from "./HeroSlideshow.jsx";
 import { CustomerPhotosSection } from "./CustomerPhotosSection.jsx";
 import { ContactQuickMenu } from "./ContactQuickMenu.jsx";
 import { CategoryCardImage } from "./CategoryCardImage.jsx";
-import { ArrowRight, ChevronRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck } from "./icons.jsx";
+import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck, Store, BookOpen, Sparkles, Send } from "./icons.jsx";
 import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import { getRecentlyViewed } from "../lib/recentActivity.js";
 import { galleryRotationStyle } from "../lib/galleryRotation";
@@ -48,21 +48,72 @@ import {
   PHOTO_YELLOWGREEN_2,
 } from "../images/photos.js";
 
+// Big, obvious "‹ For You" back control shown at the top of every promoted
+// section page (Our Story, FAQ, …) on both mobile and desktop. Kept static
+// (not sticky) so it never collides with the desktop sticky top-nav and so
+// it's immune to the position bug inside the page-enter transform; on mobile
+// the always-present bottom-nav "For You" tab is the persistent second way
+// back, so a top-of-page control is plenty.
+function SectionBackHeader({ onBack }) {
+  return (
+    <div
+      className="border-b"
+      style={{ background: "var(--bg-page)", borderColor: "var(--border-soft, rgba(26,22,18,0.08))" }}
+    >
+      <div className="max-w-7xl mx-auto px-4 lg:px-12 py-3 lg:py-4">
+        <button
+          type="button"
+          onClick={() => onBack?.()}
+          className="flex items-center gap-1 -ml-1 pr-4 py-1.5 active:opacity-60 transition-opacity"
+          style={{ color: "#B08842", fontWeight: 600 }}
+          aria-label="Back to the For You page"
+        >
+          <ChevronLeft size={30} strokeWidth={2} />
+          <span className="text-lg lg:text-xl">For You</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function HomeView({
   product,
-  scrollTo,
   // Shop navigation — passed down from App so every CTA on the
   // home page can deep-link into the new /shop hierarchy
   // without HomeView itself owning routing state.
   onNavigateShop,
   onNavigateCategory,
   onNavigateProduct,
+  onNavigateJournal,
+  // Section-page routing. When `pageSlug` is set, HomeView renders ONLY that
+  // promoted section (Our Story / Workshop / FAQ / Contact / Shipping /
+  // Newsletter) under a big "‹ For You" back header instead of the home
+  // feed. `onNavigatePage(slug)` opens one; `onBackToForYou()` returns. This
+  // is what shortens the home page on BOTH mobile and desktop — the heavy
+  // sections live on their own pages now, reachable via the Explore cards
+  // (mobile swipe / desktop grid) and the nav + footer links.
+  pageSlug = null,
+  onNavigatePage,
+  onBackToForYou,
   // Mobile-only: on a return visit within the same session the App
   // collapses the home screen to an Apple Store "For You" layout —
   // the brand hero is dropped and the For-You sections lead. Desktop
   // ignores this entirely (the hero is always shown on lg+).
   simplified = false,
 }) {
+  // The Explore cards — the swipeable (mobile) / grid (desktop) entry points
+  // to everything that used to live further down the home page. Each routes
+  // to a real page so it's shareable + crawlable.
+  const exploreCards = [
+    { key: "shop",       title: "Shop",                  blurb: "Blankets, bibs & towels", Icon: Store,       go: () => onNavigateShop?.() },
+    { key: "story",      title: "Our Story",             blurb: "Armenia → Cypress",        Icon: Heart,       go: () => onNavigatePage?.("story") },
+    { key: "workshop",   title: "From Lusik's Workshop", blurb: "Past blankets, real families", Icon: Sparkles, go: () => onNavigatePage?.("workshop") },
+    { key: "journal",    title: "The Journal",           blurb: "On Armenian craft",        Icon: BookOpen,    go: () => onNavigateJournal?.() },
+    { key: "faq",        title: "Good Questions",        blurb: "How it's made & sent",     Icon: Plus,        go: () => onNavigatePage?.("faq") },
+    { key: "shipping",   title: "Shipping & Tracking",   blurb: "How your piece gets home", Icon: Truck,       go: () => onNavigatePage?.("shipping") },
+    { key: "contact",    title: "Contact Lusik",         blurb: "Four ways to reach us",    Icon: Mail,        go: () => onNavigatePage?.("contact") },
+    { key: "newsletter", title: "Stay Connected",        blurb: "The occasional note",      Icon: Send,        go: () => onNavigatePage?.("newsletter") },
+  ];
   const t = useT();
   const [contactMenuOpen, setContactMenuOpen] = useState(false);
   // Mirrors HeroSlideshow's activeIdx so the rotating caption in
@@ -75,6 +126,13 @@ export function HomeView({
   const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewed());
   return (
     <div className="fade-in">
+      {/* A promoted section page renders ONLY its one section, under the big
+          "‹ For You" back header. The short For You home (pageSlug === null)
+          renders the hero + For You feed + Explore cards below. */}
+      {pageSlug && <SectionBackHeader onBack={onBackToForYou} />}
+
+      {!pageSlug && (
+      <>
       {/* Brand hero. On a simplified mobile return-visit it's hidden
           (hidden lg:block) so the "For You" sections lead, matching the
           Apple Store app. Desktop always renders it. */}
@@ -126,7 +184,7 @@ export function HomeView({
               >
                 {t("hero.shopCta")} <ArrowRight size={16} />
               </button>
-              <button onClick={() => scrollTo("story")} className="text-sm tracking-wide underline underline-offset-4 hover:opacity-60">{t("hero.storyCta")}</button>
+              <button onClick={() => onNavigatePage?.("story")} className="text-sm tracking-wide underline underline-offset-4 hover:opacity-60">{t("hero.storyCta")}</button>
             </div>
           </div>
           <div className="lg:col-span-7 slide-up stagger-2">
@@ -207,6 +265,68 @@ export function HomeView({
         )}
       </section>
 
+      {/* ============================================================
+          EXPLORE — the entry points to everything promoted off the
+          home page. This is what keeps the home short instead of an
+          infinite scroll: each card jumps to its own page (and back
+          via the big "‹ For You" header / bottom-nav Home tab).
+          Mobile: a horizontal swipe row (swipe left for more), Apple
+          Store "Don't miss…" style. Desktop: a tidy grid.
+          ============================================================ */}
+      <section className="px-6 lg:px-12 max-w-7xl mx-auto pt-4 pb-12 lg:py-16">
+        <p
+          className="leading-tight mb-5 lg:mb-8"
+          style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}
+        >
+          Explore the rest
+        </p>
+
+        {/* Mobile: horizontal snap carousel (swipe left for more). The
+            negative margins + padding let cards bleed to the screen edge
+            so a partial next card peeks, signalling "there's more". */}
+        <div className="lg:hidden -mx-6 px-6 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none" }}>
+          {exploreCards.map(({ key, title, blurb, Icon, go }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={go}
+              className="snap-start flex-shrink-0 text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
+              style={{ width: 150, height: 150, background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+              aria-label={`${title} — ${blurb}`}
+            >
+              <Icon size={24} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              <div>
+                <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{title}</p>
+                <p className="text-xs mt-1 opacity-65 leading-snug">{blurb}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop: grid of the same cards. */}
+        <div className="hidden lg:grid grid-cols-4 gap-5">
+          {exploreCards.map(({ key, title, blurb, Icon, go }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={go}
+              className="lg-button lg-shine text-left rounded-2xl p-6 flex flex-col gap-4 transition"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+              aria-label={`${title} — ${blurb}`}
+            >
+              <Icon size={26} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              <div>
+                <p className="font-display text-xl leading-tight mb-1" style={{ fontWeight: 400, color: "var(--text-primary)" }}>{title}</p>
+                <p className="text-sm opacity-70 leading-relaxed">{blurb}</p>
+                <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5 mt-3" style={{ color: "#B08842", fontWeight: 500 }}>
+                  Open <ArrowRight size={12} strokeWidth={1.75} />
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* Trust badges. Hidden on the simplified mobile return-visit
           (hidden lg:block) so the "For You" flow goes straight from
           recent activity into the categories, Apple-style. First visit
@@ -268,111 +388,12 @@ export function HomeView({
         isOpen={contactMenuOpen}
         onClose={() => setContactMenuOpen(false)}
       />
+      </>
+      )}
 
-      {/* ============================================================
-          FEATURED CATEGORIES — a discovery strip, not a product list
-          ============================================================
-          Three category cards that link into the /shop hierarchy.
-          We deliberately do NOT render the full ProductShowcase /
-          bib configurator on the home page anymore — those live at
-          their own /shop/<cat>/<slug> URLs. This strip is a "where
-          to look next" cue, not a buying surface.
-
-          Cards: Blankets (live), Bibs (live), Everything else (all
-          remaining categories rolled into a single "Browse the shop"
-          card). The customer chooses a path and goes deeper. */}
-      <section className="border-y py-14 lg:py-20" style={{ borderColor: "var(--border-default)" }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          {/* Mobile: Apple Store-style simple section label, left-aligned. */}
-          <p className="lg:hidden leading-tight mb-5" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
-            More for you to explore
-          </p>
-          {/* Desktop: the full centered editorial heading (unchanged). */}
-          <div className="hidden lg:block max-w-2xl mx-auto text-center mb-10 lg:mb-14">
-            <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>What Lusik makes</p>
-            <h2 className="font-display text-3xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-              Hand work, <em style={{ fontWeight: 400 }}>by category</em>.
-            </h2>
-            <p className="text-base opacity-75 leading-relaxed">
-              Cross-stitched blankets for the crib, embroidered bibs for the kitchen table, ceremonial towels for the days that count. Each piece picked up, finished, and folded by Lusik in her kitchen before it goes to your family.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-5 lg:gap-6">
-            {[
-              {
-                slug: "blankets",
-                eyebrow: "Lusik's signature work",
-                label: "Blankets",
-                blurb: "Two crib blankets, both Armenian by heritage — the personalized one with three letters, and the full-alphabet one with all thirty-six.",
-                // Two-image cycle: alphabet blanket cover + full-
-                // alphabet blanket cover. The CategoryCardImage
-                // component cycles between them on hover (desktop) or
-                // auto-cycles on touch. Customer gets a preview of
-                // both products in the category without clicking in.
-                images: [
-                  "/img/abc-blanket/cover.jpg",
-                  "/img/full-alphabet/cover.jpg",
-                ],
-              },
-              {
-                slug: "bibs",
-                eyebrow: "Small pieces, biggest hours",
-                label: "Bibs",
-                blurb: "Names on cloth, heritage on cloth, blessings on cloth — the small pieces that hold the busiest hours of a baby's day.",
-                // Brisk slideshow on hover (desktop) or auto-cycle
-                // (touch), cycling through 4 real past-customer bib
-                // photos. Replaces the Romeo + blanket workshop shot
-                // which had a blanket in the background.
-                images: [
-                  "/img/bib-examples/01.jpg",
-                  "/img/bib-examples/02.jpg",
-                  "/img/bib-examples/03.jpg",
-                  "/img/bib-examples/04.jpg",
-                ],
-              },
-              {
-                slug: "towels",
-                eyebrow: "For the days that count",
-                label: "Towels & more",
-                blurb: "The white baptism towel godparents bring to the font. The hand towel for the guest bath. The small fabric objects a family pulls out for the days they want to remember.",
-                images: [PHOTO_DATE_DETAIL],
-              },
-            ].map((cat, i) => (
-              <button
-                key={cat.slug}
-                onClick={() => onNavigateCategory?.(cat.slug)}
-                className="lg-button lg-shine text-left flex flex-col stagger-reveal"
-                style={{ "--i": i }}
-                aria-label={`Browse ${cat.label}`}
-              >
-                <div className="aspect-[4/5] overflow-hidden" style={{ borderBottom: "1px solid rgba(26,22,18,0.10)" }}>
-                  <CategoryCardImage images={cat.images} alt={cat.label} />
-                </div>
-                <div className="p-5">
-                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "#B08842" }}>{cat.eyebrow}</p>
-                  <h3 className="font-display text-xl lg:text-2xl mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{cat.label}</h3>
-                  <p className="text-sm opacity-75 leading-relaxed mb-4">{cat.blurb}</p>
-                  <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
-                    Explore <ArrowRight size={12} strokeWidth={1.75} />
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <button
-              onClick={() => onNavigateShop?.()}
-              className="text-[0.65rem] tracking-[0.25em] uppercase underline underline-offset-4 hover:opacity-70"
-              style={{ color: "#1A1612", fontWeight: 500 }}
-            >
-              Walk through Lusik's whole shop →
-            </button>
-          </div>
-        </div>
-      </section>
-
+      {/* ── PAGE: From Lusik's Workshop ─────────────────────────── */}
+      {pageSlug === "workshop" && (
+      <>
       {/* FROM LUSIK'S WORKSHOP — additional real product photos that aren't
           in the main gallery, showing the range of Lusik's work: different
           color schemes, the date-detail close-up, custom personalization
@@ -403,21 +424,12 @@ export function HomeView({
           ))}
         </div>
       </section>
+      </>
+      )}
 
-      {/* MoreFromWorkshop / "Pieces by commission" coming-soon
-          product grid — REMOVED. As products move from coming-soon
-          to live in /shop/<category>, the dedicated "everything
-          else" teaser became redundant. The Featured Categories
-          strip above already routes customers to the full catalog. */}
-
-      {/* COMMISSION / CUSTOM ORDERS TEASER — REMOVED
-          ============================================================
-          Removed at user request once the shop catalog filled out --
-          the bib has its own /shop/bibs/baby-bib page now, and the
-          ContactQuickMenu trust badge directly above already gives
-          a clear "message Lusik for custom" path. A dedicated
-          full-width teaser duplicated those two surfaces. */}
-
+      {/* ── PAGE: Our Story (+ testimonials + customer photos) ──── */}
+      {pageSlug === "story" && (
+      <>
       <section id="story" className="py-20 lg:py-32" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-12 gap-10 lg:gap-20 items-center">
           <div className="lg:col-span-6 lg:order-2 min-w-0">
@@ -481,7 +493,11 @@ export function HomeView({
           with the testimonials section — text + image, both
           quietly reinforcing "real people, real homes." */}
       <CustomerPhotosSection />
+      </>
+      )}
 
+      {/* ── PAGE: Good Questions (FAQ) ─────────────────────────── */}
+      {pageSlug === "faq" && (
       <section id="faq" className="max-w-4xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
         <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "#B08842" }}>Frequently Asked</p>
         <h2 className="font-display text-4xl lg:text-5xl mb-12 text-center" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Good questions.</h2>
@@ -505,7 +521,10 @@ export function HomeView({
           ))}
         </div>
       </section>
+      )}
 
+      {/* ── PAGE: Contact Lusik (+ send a letter) ─────────────── */}
+      {pageSlug === "contact" && (
       <section id="contact" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
@@ -588,8 +607,10 @@ export function HomeView({
           </div>
         </div>
       </section>
+      )}
 
-      {/* SHIPPING & TRACKING */}
+      {/* ── PAGE: Shipping & Tracking ─────────────────────────── */}
+      {pageSlug === "shipping" && (
       <section id="shipping" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28 border-t" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
@@ -622,8 +643,10 @@ export function HomeView({
           </div>
         </div>
       </section>
+      )}
 
-      {/* NEWSLETTER */}
+      {/* ── PAGE: Stay Connected (newsletter) ─────────────────── */}
+      {pageSlug === "newsletter" && (
       <section className="py-20 lg:py-28" style={{ background: "rgba(176,136,66,0.08)" }}>
         <div className="max-w-3xl mx-auto px-6 lg:px-12 text-center">
           <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Stay Connected</p>
@@ -634,6 +657,7 @@ export function HomeView({
           <NewsletterSignup variant="hero" />
         </div>
       </section>
+      )}
     </div>
   );
 }
