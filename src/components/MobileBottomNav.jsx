@@ -12,6 +12,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Home, Store, BookOpen, ShoppingBag, Search, Mic, X } from "./icons.jsx";
+import { useKeyboardOffset } from "../lib/useKeyboardOffset.js";
 
 const SR = typeof window !== "undefined"
   ? (window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -36,6 +37,11 @@ export function MobileBottomNav({
 
   // Stage 2 = search mode AND input is focused (keyboard is up)
   const isFullSearch = isSearch && inputFocused;
+
+  // Keyboard height — lift the whole bar up above the keyboard so
+  // the search field rides on top of it (iOS keeps fixed elements
+  // under the keyboard otherwise). Only tracked while focused.
+  const kbOffset = useKeyboardOffset(isFullSearch);
 
   // Auto-focus when entering search mode
   useEffect(() => {
@@ -180,6 +186,11 @@ export function MobileBottomNav({
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchCancel}
+      style={{
+        // Ride above the keyboard when the search field is focused.
+        transform: kbOffset ? `translateY(-${kbOffset}px)` : undefined,
+        transition: reducedMotion ? "none" : "transform 0.25s ease",
+      }}
     >
       {/* ── STAGE 0: normal 5-tab bar ─────────────────────── */}
       <span
