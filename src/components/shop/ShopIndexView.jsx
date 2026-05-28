@@ -23,8 +23,9 @@
 import React, { useState, useRef } from "react";
 import { CATALOG } from "../../data/catalog.js";
 import { JOURNAL_POSTS } from "../../data/journalPosts.js";
+import { CONFIG } from "../../data/config.js";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
-import { ArrowRight, Heart, Home, Sparkles } from "../icons.jsx";
+import { ArrowRight, Heart, Home, Sparkles, MessageCircle, Phone, Mail } from "../icons.jsx";
 
 // ------------------------------------------------------------
 // FEATURED_PIECES — the curated mobile "Featured pieces" set.
@@ -507,6 +508,114 @@ function ProductGridCard({ item, onTap }) {
   );
 }
 
+// ------------------------------------------------------------
+// HELP_CONTACTS — the one-tap contact circles for the "Need help
+// deciding?" section (mirrors the Apple Store app's "Shop with a
+// Specialist" block). Text / Call / Email are native deep links;
+// the phone + email are pulled from the CONFIG dial board, and the
+// sms:/mailto: shapes match ContactQuickMenu so behavior is
+// consistent across the site. A Video-call circle is intentionally
+// held back until we decide how it should work (booking link /
+// FaceTime / callback) — no dead buttons on a live page.
+// ------------------------------------------------------------
+const HELP_CONTACTS = [
+  {
+    icon: MessageCircle,
+    label: "Text us",
+    href: `sms:${CONFIG.TEXT_US.phone_e164}?&body=${encodeURIComponent(CONFIG.TEXT_US.sms_prefill)}`,
+  },
+  {
+    icon: Phone,
+    label: "Call us",
+    href: `tel:${CONFIG.TEXT_US.phone_e164}`,
+  },
+  {
+    icon: Mail,
+    label: "Email us",
+    href: `mailto:${CONFIG.TEXT_US.email}?subject=${encodeURIComponent("A question for Lusik")}`,
+  },
+];
+
+// ------------------------------------------------------------
+// HelpDecidingSection — the "Need help deciding?" block. A warm
+// placeholder panel (TODO_LUSIK: swap in a real photo of Lusik and
+// a son), the reassurance line, and a row of perfect-circle
+// one-tap contact buttons.
+// ------------------------------------------------------------
+function HelpDecidingSection() {
+  return (
+    <section className="px-6 mb-12">
+      <h2
+        className="font-display mb-5"
+        style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
+      >
+        Need help deciding?
+      </h2>
+
+      {/* ⚠️ TODO_LUSIK: replace this placeholder with a warm photo of
+          Lusik (and one of her sons) at her table — the equivalent of
+          Apple's two-Specialists image. Until then, a soft cream
+          panel carrying the wordmark keeps the layout intact. */}
+      <div
+        className="flex items-center justify-center"
+        style={{
+          height: 150,
+          borderRadius: 20,
+          background: "rgba(176,136,66,0.08)",
+          border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+          marginBottom: 20,
+        }}
+      >
+        <span className="font-display" style={{ fontSize: "1.5rem", color: "#B08842", letterSpacing: "0.01em" }}>
+          Lusik &amp; Sons
+        </span>
+      </div>
+
+      <p
+        className="font-display text-center"
+        style={{ fontSize: "1.2rem", fontWeight: 600, lineHeight: 1.35, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)", maxWidth: 340, margin: "0 auto" }}
+      >
+        Have a question about a piece? Lusik or one of her sons will be with you shortly.
+      </p>
+
+      <div className="flex items-start justify-center" style={{ gap: 28, marginTop: 26 }}>
+        {HELP_CONTACTS.map((c) => {
+          const Ico = c.icon;
+          return (
+            <a
+              key={c.label}
+              href={c.href}
+              aria-label={c.label}
+              className="flex flex-col items-center"
+              style={{ width: 84, textDecoration: "none" }}
+            >
+              <span
+                className="flex items-center justify-center"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  background: "var(--bg-surface, #FFFFFF)",
+                  border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+                  boxShadow: "0 2px 10px rgba(26,22,18,0.08)",
+                }}
+              >
+                <Ico size={26} strokeWidth={1.6} style={{ color: "#B08842" }} />
+              </span>
+              <span
+                className="text-sm text-center"
+                style={{ color: "var(--text-primary, #1A1612)", marginTop: 10, fontWeight: 500 }}
+              >
+                {c.label}
+              </span>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal }) {
   // Map a DifferenceCarousel slide action to the right navigation.
   const handleDifferenceAction = (action) => {
@@ -686,6 +795,12 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             ))}
           </div>
         </section>
+
+        {/* "Need help deciding?" — the Specialist-contact block:
+            placeholder photo, reassurance line, and one-tap Text /
+            Call / Email circles. (Video call held until we pick a
+            mechanism.) */}
+        <HelpDecidingSection />
       </div>
 
       {/* ====================================================== */}
