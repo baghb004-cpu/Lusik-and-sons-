@@ -100,6 +100,10 @@ export function App() {
     if (view !== "search") setSearchQuery("");
   }, [view]);
   const [cartOpen, setCartOpen] = useState(false);
+  // Cart edit mode: when true, QuantityPicker + remove buttons are
+  // visible on each cart row. When false, only "Qty: N" text shows.
+  // Resets to false whenever the drawer closes.
+  const [cartEditMode, setCartEditMode] = useState(false);
   // Swipe-to-dismiss state for the cart drawer. cartDragX is the
   // current rightward drag offset in px; 0 means resting. Reset
   // every time the drawer closes so the next open animates in cleanly.
@@ -893,6 +897,7 @@ export function App() {
       // doesn't start mid-drag.
       setCartDragX(0);
       setCartDragging(false);
+      setCartEditMode(false);
       cartDragStartRef.current = null;
       cartDragIntentRef.current = null;
       return;
@@ -1658,7 +1663,18 @@ export function App() {
           >
             <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
               <h3 className="font-display text-2xl" style={{ fontWeight: 400 }}>Your cart</h3>
-              <button onClick={() => setCartOpen(false)} aria-label="Close cart" data-tooltip="Close" data-tooltip-pos="left"><X size={20} /></button>
+              <div className="flex items-center gap-4">
+                {cart.length > 0 && (
+                  <button
+                    onClick={() => setCartEditMode((m) => !m)}
+                    className="text-sm transition-opacity hover:opacity-70"
+                    style={{ color: "#B08842", fontWeight: 500 }}
+                  >
+                    {cartEditMode ? "Done" : "Edit"}
+                  </button>
+                )}
+                <button onClick={() => setCartOpen(false)} aria-label="Close cart" data-tooltip="Close" data-tooltip-pos="left"><X size={20} /></button>
+              </div>
             </div>
             {/* Free-shipping progress nudge — renders nothing unless
                 CONFIG.FREE_SHIPPING_ENABLED is flipped on. Lives above
@@ -1706,17 +1722,26 @@ export function App() {
                             {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
                             <p className="text-xs opacity-60">{item.subtitle}</p>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <QuantityPicker
-                              value={item.qty}
-                              onChange={(q) => setQtyExact(item.id, q)}
-                              onRemove={() => removeFromCart(item.id)}
-                              productName={item.name}
-                            />
-                            <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
-                          </div>
+                          {cartEditMode ? (
+                            <div className="flex items-center justify-between">
+                              <QuantityPicker
+                                value={item.qty}
+                                onChange={(q) => setQtyExact(item.id, q)}
+                                onRemove={() => removeFromCart(item.id)}
+                                productName={item.name}
+                              />
+                              <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs opacity-60" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>Qty: {item.qty}</p>
+                              <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
+                            </div>
+                          )}
                         </div>
-                        <button onClick={() => removeFromCart(item.id)} className="opacity-40 hover:opacity-100" aria-label="Remove from cart"><X size={14} /></button>
+                        {cartEditMode && (
+                          <button onClick={() => removeFromCart(item.id)} className="opacity-40 hover:opacity-100" aria-label="Remove from cart"><X size={14} /></button>
+                        )}
                       </div>
                     </SwipeableRow>
                   ))}
