@@ -1491,6 +1491,7 @@ export function App() {
           onNavigateHome={() => setView("home")}
           onNavigateCategory={goShopCategory}
           onNavigateProduct={goShopProduct}
+          onNavigateJournalPost={(slug) => { setJournalSlug(slug); setView("journal"); }}
         />
       )}
       {view === "shop-category" && shopCategorySlug && (() => {
