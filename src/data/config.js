@@ -271,6 +271,12 @@ export const CONFIG = {
     phone_display: "(760) 874-2333",     // pretty format, shown to users
     sms_prefill: "Hi Lusik & Sons — ",   // seeds the SMS body so threads are recognizable
     email: "hello@lusikandsons.com",     // contact email, used in mailto: links
+    // ⚠️ TODO_LUSIK: paste your real Calendly scheduling link here.
+    // Create a free event type at calendly.com (e.g. a 15-min
+    // "Video call with Lusik"), then replace this placeholder URL —
+    // nothing else needs to change. The "Book a video call" circle
+    // on the mobile Shop page opens whatever URL lives here.
+    calendly_url: "https://calendly.com/lusikandsons/video-call",
     headline: "Send us a text.",
     subhead: "Lusik or one of her sons writes back, usually within a day.",
   },
