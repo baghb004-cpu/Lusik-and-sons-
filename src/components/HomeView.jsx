@@ -101,7 +101,13 @@ export function HomeView({
                 </p>
               );
             })()}
-            <p className="text-base lg:text-lg leading-relaxed mb-10 max-w-md" style={{ color: "#3D332A" }}>
+            {/* Body copy. Mobile drops the "Cypress, California" clause
+                (the hero eyebrow above already carries it) via bodyShort;
+                desktop keeps the full body unchanged. */}
+            <p className="lg:hidden text-base leading-relaxed mb-10 max-w-md" style={{ color: "#3D332A" }}>
+              {t("hero.bodyShort")}
+            </p>
+            <p className="hidden lg:block text-lg leading-relaxed mb-10 max-w-md" style={{ color: "#3D332A" }}>
               {t("hero.body")}
             </p>
             <div className="flex items-center gap-6">
