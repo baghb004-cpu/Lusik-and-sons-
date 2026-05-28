@@ -1451,7 +1451,6 @@ export function App() {
             view === "checkout" ? "Almost in Lusik's hands" :
             null
           }
-          labelMode={view === "home" && !showHomeIntro}
           user={user}
           onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
           onBack={
@@ -1483,6 +1482,7 @@ export function App() {
           onNavigateShop={goShopIndex}
           onNavigateCategory={goShopCategory}
           onNavigateProduct={goShopProduct}
+          simplified={!showHomeIntro}
         />
       )}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}

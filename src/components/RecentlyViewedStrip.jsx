@@ -21,15 +21,20 @@
 
 import React from "react";
 
-export function RecentlyViewedStrip({ items = [], onTap, onClear, heading = "Recently Viewed" }) {
+export function RecentlyViewedStrip({ items = [], onTap, onClear, heading = "Recently Viewed", large = false }) {
   if (!items || items.length === 0) return null;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
+        {/* `large` renders the Apple Store "For You" section style (big,
+            bold, ink). Default is the compact gold eyebrow used elsewhere
+            (e.g. the search view), so only opt-in callers change. */}
         <p
-          className="text-xs tracking-[0.2em] uppercase"
-          style={{ color: "var(--text-muted)", fontWeight: 500 }}
+          className={large ? "leading-tight" : "text-xs tracking-[0.2em] uppercase"}
+          style={large
+            ? { fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }
+            : { color: "var(--text-muted)", fontWeight: 500 }}
         >
           {heading}
         </p>
