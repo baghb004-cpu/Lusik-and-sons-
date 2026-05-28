@@ -1490,6 +1490,7 @@ export function App() {
         <ShopIndexView
           onNavigateHome={() => setView("home")}
           onNavigateCategory={goShopCategory}
+          onNavigateProduct={goShopProduct}
         />
       )}
       {view === "shop-category" && shopCategorySlug && (() => {
