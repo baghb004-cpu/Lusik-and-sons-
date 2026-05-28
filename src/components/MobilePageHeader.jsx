@@ -19,11 +19,11 @@
 // ============================================================
 
 import React from "react";
-import { User } from "./icons.jsx";
+import { User, ChevronLeft } from "./icons.jsx";
 import { ThemeToggleCompact } from "./ThemeToggleCompact.jsx";
 import { LangToggleCompact } from "./LangToggleCompact.jsx";
 
-export function MobilePageHeader({ title, subtitle, user, onAvatarTap }) {
+export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack }) {
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.charAt(0).toUpperCase()
     : user?.email
@@ -32,7 +32,31 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap }) {
 
   return (
     <div className="lg:hidden px-6 pt-14 pb-4 flex items-start justify-between">
-      <div>
+      <div className="flex items-start gap-3 min-w-0">
+        {/* Back arrow — Apple Store-style circular chevron that
+            returns to the previous shop window. Only rendered when
+            an onBack handler is passed (product + category pages). */}
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back"
+            className="flex items-center justify-center flex-shrink-0"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: "var(--bg-surface, #FFFFFF)",
+              border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+              boxShadow: "0 1px 4px rgba(26,22,18,0.10)",
+              color: "var(--text-primary, #1A1612)",
+              marginTop: 4,
+            }}
+          >
+            <ChevronLeft size={22} strokeWidth={2} />
+          </button>
+        )}
+      <div className="min-w-0">
         {subtitle && (
           <p
             className="text-xs tracking-[0.2em] uppercase mb-1"
@@ -52,6 +76,7 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap }) {
         >
           {title}
         </h1>
+      </div>
       </div>
 
       {/* Right cluster — theme toggle, language toggle, avatar.
