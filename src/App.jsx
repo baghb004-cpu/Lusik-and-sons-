@@ -89,6 +89,16 @@ export function App() {
   const toast = useToast();
   const [cart, setCart] = useState([]);
   const [view, setView] = useState("home");
+  // Search query lives in App so both the bottom-nav search input
+  // (in collapsed mode) and the MobileSearchView results panel
+  // share the same string. Cleared when navigating away from search.
+  const [searchQuery, setSearchQuery] = useState("");
+  // Clear the search query whenever the customer navigates away
+  // from the search view. This keeps the input fresh for the next
+  // visit and avoids stale results lingering in the background.
+  useEffect(() => {
+    if (view !== "search") setSearchQuery("");
+  }, [view]);
   const [cartOpen, setCartOpen] = useState(false);
   // Swipe-to-dismiss state for the cart drawer. cartDragX is the
   // current rightward drag offset in px; 0 means resting. Reset
@@ -1446,9 +1456,11 @@ export function App() {
 
       {view === "search" && (
         <MobileSearchView
-          onNavigateProduct={(catSlug, prodSlug) => goShopProduct(catSlug, prodSlug)}
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          onNavigateProduct={goShopProduct}
           onSelectJournalPost={(slug) => { setJournalSlug(slug); setView("journal"); }}
-          onScrollTo={(id) => scrollTo(id)}
+          onScrollTo={scrollTo}
         />
       )}
 
@@ -1512,6 +1524,8 @@ export function App() {
           onJournal={() => { setJournalSlug(null); setView("journal"); }}
           onCart={() => setCartOpen(true)}
           onSearch={() => setView("search")}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
         />
       )}
 

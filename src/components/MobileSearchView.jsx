@@ -15,7 +15,7 @@
 // is small enough (< 50 items) that this stays fast.
 // ============================================================
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useMemo } from "react";
 import { CATALOG } from "../data/catalog.js";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { Search, ChevronRight } from "./icons.jsx";
@@ -68,19 +68,11 @@ function buildProductIndex() {
 
 const PRODUCT_INDEX = buildProductIndex();
 
-export function MobileSearchView({ onNavigateProduct, onSelectJournalPost, onScrollTo }) {
-  const [query, setQuery] = useState("");
-  const inputRef = useRef(null);
-
-  // Auto-focus the input when the view mounts so the customer can
-  // start typing immediately. Mobile keyboards open automatically.
-  useEffect(() => {
-    // Small delay lets the page-enter animation finish before the
-    // keyboard rises — avoids a visual jank where the animation
-    // and the keyboard fight for layout space.
-    const t = setTimeout(() => inputRef.current?.focus(), 300);
-    return () => clearTimeout(t);
-  }, []);
+export function MobileSearchView({ query = "", onQueryChange, onNavigateProduct, onSelectJournalPost, onScrollTo }) {
+  // The search input lives in the bottom nav bar (MobileBottomNav)
+  // when the nav collapses into search mode. This component only
+  // renders suggestions + results — the input value is passed in
+  // via the `query` prop from App.jsx.
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -127,7 +119,7 @@ export function MobileSearchView({ onNavigateProduct, onSelectJournalPost, onScr
   }, [query]);
 
   const handleSuggestion = (text) => {
-    setQuery(text);
+    onQueryChange?.(text);
   };
 
   const handleResultTap = (result) => {
@@ -145,37 +137,9 @@ export function MobileSearchView({ onNavigateProduct, onSelectJournalPost, onScr
 
   return (
     <div className="lg:hidden px-6 pb-32">
-      {/* Search input — pill shape, brand palette */}
-      <div className="relative mb-6">
-        <span
-          className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ color: "var(--text-muted)" }}
-        >
-          <Search size={18} strokeWidth={1.5} />
-        </span>
-        <input
-          ref={inputRef}
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="What are you looking for?"
-          className="mobile-search-input"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100"
-            aria-label="Clear search"
-            style={{ color: "var(--text-primary)" }}
-          >
-            <span style={{ fontSize: "1.1rem", fontWeight: 300 }}>&times;</span>
-          </button>
-        )}
-      </div>
+      {/* The search input lives in the bottom nav bar (the "&"
+          icon + search pill at the bottom of the screen). This
+          component just renders suggestions + results above it. */}
 
       {/* Suggestions when input is empty */}
       {showSuggestions && (
