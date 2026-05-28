@@ -49,6 +49,7 @@ import { HeartBurst } from "./components/HeartBurst.jsx";
 import { SwipeableRow } from "./components/SwipeableRow.jsx";
 import { QuantityPicker } from "./components/QuantityPicker.jsx";
 import { MobilePageHeader } from "./components/MobilePageHeader.jsx";
+import { MobileSearchBar } from "./components/MobileSearchBar.jsx";
 import { haptic } from "./lib/haptic.js";
 import { FreeShippingProgress } from "./components/FreeShippingProgress.jsx";
 import { PaymentMethodsRow } from "./components/PaymentMethodsRow.jsx";
@@ -1516,17 +1517,27 @@ export function App() {
           the admin view (any of those is a focused context that
           shouldn't compete with shop-level nav). */}
       {view !== "checkout" && view !== "admin" && view !== "admin-order" && !pdpStickyCtaShown && (
-        <MobileBottomNav
-          view={view}
-          cartCount={cart.reduce((n, i) => n + (i.qty || 0), 0)}
-          onHome={() => { setView("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-          onShop={goShopIndex}
-          onJournal={() => { setJournalSlug(null); setView("journal"); }}
-          onCart={() => setCartOpen(true)}
-          onSearch={() => setView("search")}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-        />
+        <>
+          <MobileBottomNav
+            view={view}
+            cartCount={cart.reduce((n, i) => n + (i.qty || 0), 0)}
+            onHome={() => { setView("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onShop={goShopIndex}
+            onJournal={() => { setJournalSlug(null); setView("journal"); }}
+            onCart={() => setCartOpen(true)}
+            onSearch={() => setView("search")}
+          />
+          {/* Floating search bar — renders ABOVE the tab bar when
+              the Search view is active. Full-width pill with
+              magnifying glass + microphone, 16px font to prevent
+              iOS zoom. Separate from the tab bar, positioned
+              above it — same pattern as the Apple Store app. */}
+          <MobileSearchBar
+            query={searchQuery}
+            onChange={setSearchQuery}
+            visible={view === "search"}
+          />
+        </>
       )}
 
       {/* FOOTER */}
