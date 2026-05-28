@@ -23,6 +23,63 @@ import React, { useState } from "react";
 import { CONFIG } from "../../data/config.js";
 import { MessageCircle, Phone, Mail, Camera, ChevronDown } from "../icons.jsx";
 
+// Shared sms:/tel: deep links (same shapes used across the site).
+const SMS_HREF = `sms:${CONFIG.TEXT_US.phone_e164}?&body=${encodeURIComponent(CONFIG.TEXT_US.sms_prefill)}`;
+const TEL_HREF = `tel:${CONFIG.TEXT_US.phone_e164}`;
+
+// ------------------------------------------------------------
+// StillHaveQuestionsCard — the *limited* contact card (Text +
+// Call only) that Apple shows at the bottom of a product detail
+// page and inside the bag. The fuller four-circle "Need help
+// deciding?" block (with Email + Video) is reserved for the shop
+// index and category pages. Mobile-only.
+// ------------------------------------------------------------
+export function StillHaveQuestionsCard({
+  heading = "Still have questions?",
+  subline = "Lusik or one of her sons will help.",
+  className = "",
+}) {
+  return (
+    <div className={`lg:hidden px-6 ${className}`}>
+      <div
+        className="flex items-center justify-between gap-4 p-5"
+        style={{
+          borderRadius: 18,
+          background: "var(--bg-surface, #FFFFFF)",
+          border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+        }}
+      >
+        <div className="min-w-0">
+          <p className="font-display" style={{ fontSize: "1.05rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}>
+            {heading}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary, rgba(26,22,18,0.65))" }}>
+            {subline}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <a
+            href={SMS_HREF}
+            aria-label="Text us"
+            className="flex items-center justify-center"
+            style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(176,136,66,0.10)" }}
+          >
+            <MessageCircle size={20} strokeWidth={1.7} style={{ color: "#B08842" }} />
+          </a>
+          <a
+            href={TEL_HREF}
+            aria-label="Call us"
+            className="flex items-center justify-center"
+            style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(176,136,66,0.10)" }}
+          >
+            <Phone size={20} strokeWidth={1.7} style={{ color: "#B08842" }} />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const HELP_CONTACTS = [
   {
     icon: MessageCircle,
