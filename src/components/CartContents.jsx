@@ -91,7 +91,18 @@ export function CartContents({
       <button
         onClick={() => onToggleEdit(true)}
         className="text-sm transition-opacity hover:opacity-70"
-        style={{ color: "#B08842", fontWeight: 500 }}
+        style={
+          isPage
+            ? {
+                color: "#B08842",
+                fontWeight: 500,
+                background: "var(--bg-surface, #FFFFFF)",
+                borderRadius: 999,
+                padding: "8px 20px",
+                boxShadow: "0 1px 4px rgba(26,22,18,0.10)",
+              }
+            : { color: "#B08842", fontWeight: 500 }
+        }
       >
         Edit
       </button>
@@ -160,10 +171,21 @@ export function CartContents({
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto">
+          <div className={isPage ? "flex-1 overflow-y-auto px-6 pt-2 space-y-3" : "flex-1 overflow-y-auto"}>
             {cart.map((item) => (
               <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
-                <div className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
+                <div
+                  className={isPage ? "flex gap-4 p-5" : "flex gap-4 p-6 border-b"}
+                  style={
+                    isPage
+                      ? {
+                          background: "var(--bg-surface, #FFFFFF)",
+                          borderRadius: 18,
+                          border: "1px solid var(--border-soft, rgba(26,22,18,0.06))",
+                        }
+                      : { borderColor: "rgba(26,22,18,0.08)" }
+                  }
+                >
                   <div className="relative">
                     <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                     {item.isCustom && (
