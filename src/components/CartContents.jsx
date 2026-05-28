@@ -143,10 +143,25 @@ export function CartContents({
 
       {cart.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
-          <ShoppingBag size={32} strokeWidth={1} className="opacity-30 mb-4" />
-          <p className="opacity-75 mb-2" style={{ fontWeight: 500 }}>Your cart is empty.</p>
-          <p className="text-xs opacity-55 mb-6 max-w-xs leading-relaxed">
-            Lusik stitches each blanket to order. Start with the alphabet picker below.
+          <ShoppingBag size={isPage ? 44 : 32} strokeWidth={1} className="opacity-30 mb-5" />
+          {/* Mobile Bag page mirrors the Apple Store empty-bag layout: a
+              large bold sans heading + a quiet descriptive line. The desktop
+              drawer keeps the smaller "Your cart is empty." to stay
+              consistent with its "Your cart" drawer header. */}
+          <p
+            className={isPage ? "font-mobile-title mb-2" : "mb-2"}
+            style={
+              isPage
+                ? { fontSize: "1.6rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }
+                : { fontWeight: 500, opacity: 0.75 }
+            }
+          >
+            {isPage ? "Your bag is empty." : "Your cart is empty."}
+          </p>
+          <p className={`opacity-55 mb-6 max-w-xs leading-relaxed ${isPage ? "text-sm" : "text-xs"}`}>
+            {user
+              ? "Continue browsing Lusik & Sons or open a design you’ve previously saved."
+              : "Continue browsing Lusik & Sons to start your blanket."}
           </p>
           <button
             onClick={onShopBlankets}

@@ -100,7 +100,7 @@ export const TRANSLATIONS = {
 
     // Common buttons / shared phrases
     common: {
-      addToCart: "Add to cart",
+      addToCart: "Add to Bag",
       continueShopping: "Continue shopping",
       close: "Close",
       readMore: "Read more",

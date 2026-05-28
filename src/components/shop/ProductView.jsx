@@ -40,6 +40,8 @@ export function ProductView({
   customProductData,  // CUSTOM_PRODUCTS.bib for bib
   onAdd,
   onAddCustom,
+  onBuyNow,        // express buy-it-now for the blanket
+  onBuyNowCustom,  // express buy-it-now for the bib
   onCartFeedback,
   user,
   onRequireSignIn,
@@ -108,6 +110,7 @@ export function ProductView({
         <ProductShowcase
           product={productData}
           onAdd={onAdd}
+          onBuyNow={onBuyNow}
           onCartFeedback={onCartFeedback}
           user={user}
           onRequireSignIn={onRequireSignIn}
@@ -134,6 +137,7 @@ export function ProductView({
         <CustomProductCard
           config={customProductData}
           onAddCustom={onAddCustom}
+          onBuyNow={onBuyNowCustom}
           onCartFeedback={onCartFeedback}
         />
 
