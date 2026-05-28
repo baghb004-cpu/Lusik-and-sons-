@@ -207,7 +207,11 @@ export function HomeView({
         )}
       </section>
 
-      <section className="border-y py-8" style={{ borderColor: "rgba(26,22,18,0.08)", background: "rgba(176,136,66,0.04)" }}>
+      {/* Trust badges. Hidden on the simplified mobile return-visit
+          (hidden lg:block) so the "For You" flow goes straight from
+          recent activity into the categories, Apple-style. First visit
+          and desktop keep the row. */}
+      <section className={`${simplified ? "hidden lg:block " : ""}border-y py-8`} style={{ borderColor: "rgba(26,22,18,0.08)", background: "rgba(176,136,66,0.04)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-12">
           {[
             { Icon: Heart, label: "Hand cross-stitched", sub: "Every stitch placed by Lusik" },
