@@ -64,6 +64,7 @@ import { ThemeToggle } from "./components/ThemeToggle.jsx";
 import { HomeView } from "./components/HomeView.jsx";
 import { JournalView } from "./components/JournalView.jsx";
 import { AccountView } from "./components/AccountView.jsx";
+import { AccountSheet } from "./components/AccountSheet.jsx";
 import { GalleryView } from "./components/GalleryView.jsx";
 import { AdminView } from "./components/AdminView.jsx";
 import { AdminOrderDetail } from "./components/AdminOrderDetail.jsx";
@@ -151,6 +152,9 @@ export function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false); // sign-in/sign-up drawer
+  // On phones the Account page is a bottom sheet (slides up, swipe-down to
+  // dismiss) rather than a full-page view. Desktop still uses view==="account".
+  const [accountSheetOpen, setAccountSheetOpen] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(null); // null | "privacy" | "terms" | "finalSale"
   // Placeholder-catalog item the customer just clicked. Drives the
   // WaitlistModal — null when closed, a product object when open.
@@ -217,6 +221,12 @@ export function App() {
   // every auth-state change so the Admin link in the account view appears
   // immediately when Lusik signs in.
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Never leave the mobile account sheet armed for a signed-out user (e.g.
+  // signed out in another tab) — otherwise it could pop open on next sign-in.
+  useEffect(() => {
+    if (!user) setAccountSheetOpen(false);
+  }, [user]);
 
   // Heart-burst + cart-pulse feedback state. `bursts` is a list of {id, x, y} —
   // each maps to a HeartBurst component. They're auto-removed after the animation finishes.
@@ -1200,6 +1210,11 @@ export function App() {
   // ("Manage account →") and the nav (when already signed in).
   const goAccount = () => {
     setAuthOpen(false);
+    // Mobile → bottom sheet over the current page; desktop → full page view.
+    if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 1023px)").matches) {
+      setAccountSheetOpen(true);
+      return;
+    }
     setView("account");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -1370,7 +1385,7 @@ export function App() {
           layout replaces it with the MobilePageHeader. On desktop
           it sits above the sticky nav as always. */}
       <div className="hidden lg:block">
-        <ActiveOrderTopBar user={user} onOpenAccount={() => setView("account")} />
+        <ActiveOrderTopBar user={user} onOpenAccount={goAccount} />
       </div>
 
       {/* NAV — sticky frosted top bar. The .lg-top-bar tweak (in
@@ -1578,7 +1593,7 @@ export function App() {
             null
           }
           user={user}
-          onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
+          onAvatarTap={() => user ? goAccount() : setAuthOpen(true)}
           onBack={
             view === "shop-product" && shopCategorySlug
               ? () => goShopCategory(shopCategorySlug)
@@ -1712,7 +1727,7 @@ export function App() {
           onSelectJournalPost={(slug) => { setJournalSlug(slug); setView("journal"); }}
           onScrollTo={scrollTo}
           user={user}
-          onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
+          onAvatarTap={() => user ? goAccount() : setAuthOpen(true)}
         />
       )}
 
@@ -1738,7 +1753,7 @@ export function App() {
             removeFromCart={removeFromCart}
             onCheckout={goCheckout}
             onShopBlankets={() => goShopCategory("blankets")}
-            onOpenSavedDesigns={() => setView("account")}
+            onOpenSavedDesigns={goAccount}
             user={user}
           />
         </div>
@@ -1913,7 +1928,7 @@ export function App() {
               removeFromCart={removeFromCart}
               onCheckout={goCheckout}
               onShopBlankets={() => { setCartOpen(false); goShopCategory("blankets"); }}
-              onOpenSavedDesigns={() => { setCartOpen(false); setView("account"); }}
+              onOpenSavedDesigns={() => { setCartOpen(false); goAccount(); }}
               user={user}
               onClose={() => setCartOpen(false)}
             />
@@ -2056,6 +2071,21 @@ export function App() {
           onAuthed={() => { setAuthOpen(false); /* user/profile state arrives via onAuthStateChange */ }}
         />
       )}
+
+      {/* ACCOUNT SHEET — mobile-only bottom sheet (desktop uses the
+          view==="account" full page above). Renders the same AccountView;
+          actions that leave the account close the sheet first. */}
+      <AccountSheet
+        open={accountSheetOpen && !!user}
+        onClose={() => setAccountSheetOpen(false)}
+        user={user}
+        profile={profile}
+        onProfileUpdate={setProfile}
+        onSignOut={() => { setAccountSheetOpen(false); handleSignOut(); }}
+        onReorder={(order) => { setAccountSheetOpen(false); reorderFromHistory(order); }}
+        product={PRODUCT}
+        onOpenAdmin={isAdmin ? () => { setAccountSheetOpen(false); setView("admin"); } : null}
+      />
 
       {/* POLICY MODAL — Privacy / Terms / Refunds, opened from the footer */}
       {policyOpen && (

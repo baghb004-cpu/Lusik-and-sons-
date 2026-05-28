@@ -18,7 +18,7 @@ import { SavedDesignsSection } from "./SavedDesignsSection.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import { Camera, ChevronLeft, Eye, EyeOff, LogOut, User } from "./icons.jsx";
 
-export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReorder, product, onOpenAdmin }) {
+export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut, onReorder, product, onOpenAdmin, inSheet = false }) {
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -221,13 +221,17 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
   }
 
   return (
-    <div className="fade-in max-w-4xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
-      {/* Page header */}
-      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
-        <ChevronLeft size={14} /> Back to shop
-      </button>
+    <div className={`fade-in max-w-4xl mx-auto ${inSheet ? "px-6 pt-2 pb-8" : "px-6 lg:px-12 py-12 lg:py-20"}`}>
+      {/* Page header. In the mobile bottom-sheet the X button + grabber +
+          swipe-down already provide "close", so the in-page back link is
+          hidden there. */}
+      {!inSheet && (
+        <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
+          <ChevronLeft size={14} /> Back to shop
+        </button>
+      )}
 
-      <div className="mb-12">
+      <div className={inSheet ? "mb-8" : "mb-12"}>
         <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>My Account</p>
         <h1 className="font-display text-4xl lg:text-5xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
           Welcome{profile?.full_name ? <>, <em style={{ fontWeight: 400 }}>{profile.full_name.split(" ")[0]}</em></> : ""}.
