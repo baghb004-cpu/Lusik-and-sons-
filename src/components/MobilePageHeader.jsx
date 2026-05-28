@@ -23,7 +23,7 @@ import { User, ChevronLeft } from "./icons.jsx";
 import { ThemeToggleCompact } from "./ThemeToggleCompact.jsx";
 import { LangToggleCompact } from "./LangToggleCompact.jsx";
 
-export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack }) {
+export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack, labelMode = false }) {
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.charAt(0).toUpperCase()
     : user?.email
@@ -65,17 +65,35 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack })
             {subtitle}
           </p>
         )}
-        <h1
-          className="font-display leading-tight"
-          style={{
-            fontSize: "2.1rem",
-            fontWeight: 700,
-            letterSpacing: "-0.02em",
-            color: "var(--text-primary)",
-          }}
-        >
-          {title}
-        </h1>
+        {labelMode ? (
+          /* Quiet "For You" label — Apple Store home-tab style. Used on
+             return visits to the home screen within a session, in place
+             of the large brand title. Not an <h1>: the hero below keeps
+             the page's real <h1>, so document structure stays intact. */
+          <p
+            className="leading-tight"
+            style={{
+              fontSize: "1.05rem",
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: "var(--text-primary)",
+            }}
+          >
+            {title}
+          </p>
+        ) : (
+          <h1
+            className="font-display leading-tight"
+            style={{
+              fontSize: "2.1rem",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              color: "var(--text-primary)",
+            }}
+          >
+            {title}
+          </h1>
+        )}
       </div>
       </div>
 

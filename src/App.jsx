@@ -146,6 +146,26 @@ export function App() {
   // pixels on phones.
   const [pdpStickyCtaShown, setPdpStickyCtaShown] = useState(false);
 
+  // Session-conditional home title (mobile only). The large "Lusik & Sons"
+  // masthead shows on the FIRST home view of a browser session — it orients
+  // first-time and search/direct visitors. Once they navigate away, it
+  // retires for the rest of the session, and return visits to home show a
+  // quiet "For You" label instead (Apple Store style). SEO is unaffected:
+  // the page <title> tag and the hero <h1> are separate from this label.
+  const [showHomeIntro, setShowHomeIntro] = useState(() => {
+    try { return sessionStorage.getItem("ls_home_intro_seen") !== "1"; }
+    catch { return true; }
+  });
+  const prevViewRef = useRef(view);
+  useEffect(() => {
+    const prev = prevViewRef.current;
+    prevViewRef.current = view;
+    if (prev === "home" && view !== "home" && showHomeIntro) {
+      try { sessionStorage.setItem("ls_home_intro_seen", "1"); } catch { /* ignore */ }
+      setShowHomeIntro(false);
+    }
+  }, [view, showHomeIntro]);
+
   // Listen for cross-policy link clicks inside the modal (e.g. clicking
   // "Final Sale Policy" from the bottom of "Privacy Policy"). The modal fires
   // a CustomEvent because it doesn't have a direct setter handle.
@@ -1415,7 +1435,7 @@ export function App() {
       {view !== "search" && view !== "cart" && (
         <MobilePageHeader
           title={
-            view === "home" ? "Lusik & Sons" :
+            view === "home" ? (showHomeIntro ? "Lusik & Sons" : "For You") :
             view === "shop" ? "Shop" :
             view === "shop-category" ? "Shop" :
             view === "shop-product" ? "Shop" :
@@ -1428,10 +1448,10 @@ export function App() {
             "Lusik & Sons"
           }
           subtitle={
-            view === "home" ? "Cypress, California" :
             view === "checkout" ? "Almost in Lusik's hands" :
             null
           }
+          labelMode={view === "home" && !showHomeIntro}
           user={user}
           onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
           onBack={

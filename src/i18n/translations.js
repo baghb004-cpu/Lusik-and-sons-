@@ -55,6 +55,10 @@ export const TRANSLATIONS = {
       // popover below the hero, so we don't need an inline email
       // link in the body anymore.
       body: "From her home in Cypress, California, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made for one specific child. Her sons run the website. Mom does the stitching. We do the typing.",
+      // Mobile-only variant — the hero eyebrow already says "Cypress,
+      // California", so the phone body drops the city to avoid repeating
+      // it. Desktop keeps the full `body` above.
+      bodyShort: "From her home, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made for one specific child. Her sons run the website. Mom does the stitching. We do the typing.",
       shopCta: "See what Lusik makes",
       storyCta: "Meet Lusik",
       callout1: "By Lusik's own hand",
@@ -321,6 +325,8 @@ export const TRANSLATIONS = {
       headline: "Կարուած Լուսիկին ձեռքով։",
       headlineEm: "Կը մնայ սերունդէ սերունդ",
       body: "Կիպրեսի (Քալիֆորնիա) իր տունէն, Լուսիկ ձեռքով խաչաձեւ կարկատանով կը պատրաստէ ծածկոցներ, թիկնոցներ եւ օրհնութիւններ — իւրաքանչիւր կտոր ձեռագործ, իւրաքանչիւր կտոր պատուէրով։ Իր տղաքը կ՚օգնեն խանութը վարելու։",
+      // TODO_LUSIK_REVIEW — mobile-only variant, city removed (hero eyebrow already shows it)
+      bodyShort: "Իր տունէն, Լուսիկ ձեռքով խաչաձեւ կարկատանով կը պատրաստէ ծածկոցներ, թիկնոցներ եւ օրհնութիւններ — իւրաքանչիւր կտոր ձեռագործ, իւրաքանչիւր կտոր պատուէրով։ Իր տղաքը կ՚օգնեն խանութը վարելու։",
       shopCta: "Տեսնել Լուսիկին գործերը",
       storyCta: "Լուսիկին մասին",
       callout1: "Լուսիկէն",
@@ -445,6 +451,8 @@ export const TRANSLATIONS = {
       headline: "Կարված Լուսիկի ձեռքով։",
       headlineEm: "Մնում է սերնդեսերունդ",
       body: "Կիպրեսի (Կալիֆոռնիա) իր տնից, Լուսիկը ձեռքով խաչաձև կարկատանով պատրաստում է ծածկոցներ, թիկնոցներ և օրհնություններ — յուրաքանչյուր կտոր ձեռագործ, յուրաքանչյուր կտոր պատվերով։ Նրա տղաները օգնում են խանութը վարել։",
+      // TODO_LUSIK_REVIEW — mobile-only variant, city removed (hero eyebrow already shows it)
+      bodyShort: "Իր տնից, Լուսիկը ձեռքով խաչաձև կարկատանով պատրաստում է ծածկոցներ, թիկնոցներ և օրհնություններ — յուրաքանչյուր կտոր ձեռագործ, յուրաքանչյուր կտոր պատվերով։ Նրա տղաները օգնում են խանութը վարել։",
       shopCta: "Տեսնել Լուսիկի գործերը",
       storyCta: "Լուսիկի մասին",
       callout1: "Լուսիկից",
