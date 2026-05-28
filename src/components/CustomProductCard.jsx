@@ -17,7 +17,7 @@ import { ArrowRight } from "./icons.jsx";
 // photo slideshow on the bib product page in a follow-up PR.
 import { PRODUCT } from "../data/product.js";
 
-export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
+export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback }) {
   const [customName, setCustomName] = useState("");
   const [size, setSize] = useState("");
   const [error, setError] = useState("");
@@ -89,30 +89,25 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
 
-  const handleAdd = (e) => {
-    const now = Date.now();
-    if (adding || now - lastAddTsRef.current < 600) return;
-    if (!size) { setError("Please choose a size."); return; }
-    if (cleanName.length === 0) { setError("Please type a name to embroider."); return; }
-    if (cleanName.length > maxNameLength) { setError(`Name must be ${maxNameLength} letters or fewer — the bib is small.`); return; }
-    lastAddTsRef.current = now;
-    setAdding(true);
-    window.setTimeout(() => setAdding(false), 600);
+  // Validate the bib config, setting an inline error and returning false on
+  // failure. Shared by Add-to-Bag and express Buy-it-now.
+  const validateBib = () => {
+    if (!size) { setError("Please choose a size."); return false; }
+    if (cleanName.length === 0) { setError("Please type a name to embroider."); return false; }
+    if (cleanName.length > maxNameLength) { setError(`Name must be ${maxNameLength} letters or fewer — the bib is small.`); return false; }
+    return true;
+  };
 
-    if (e?.currentTarget && onCartFeedback) {
-      const r = e.currentTarget.getBoundingClientRect();
-      onCartFeedback(r.left + r.width / 2, r.top + r.height / 2);
-    }
-
-    // Build a friendly color description for the cart subtitle and
-    // record canonical color metadata for Lusik's order record.
+  // Build the onAddCustom / onBuyNow payload (cart subtitle + canonical color
+  // metadata for Lusik's order record). One source of truth for both paths.
+  const buildBibPayload = () => {
     const isMulti = Array.isArray(letterColorList) && letterColorList.length > 0;
     const colorDesc = !supportsColor
       ? ""
       : isMulti
         ? ` · ${letterColorList.map(c => c.name).join("/")}`
         : ` · ${letterColor?.name ?? ""}`;
-    onAddCustom({
+    return {
       productKey: config.key,
       name: config.name,
       price: config.price,
@@ -136,12 +131,40 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           : null,
         color_preset_key: activePresetKey ?? null,
       },
-    });
+    };
+  };
+
+  const handleAdd = (e) => {
+    const now = Date.now();
+    if (adding || now - lastAddTsRef.current < 600) return;
+    if (!validateBib()) return;
+    lastAddTsRef.current = now;
+    setAdding(true);
+    window.setTimeout(() => setAdding(false), 600);
+
+    if (e?.currentTarget && onCartFeedback) {
+      const r = e.currentTarget.getBoundingClientRect();
+      onCartFeedback(r.left + r.width / 2, r.top + r.height / 2);
+    }
+
+    onAddCustom(buildBibPayload());
 
     // Reset for next custom order
     setCustomName("");
     setSize("");
     setError("");
+  };
+
+  // Express checkout — same validated payload, but routes straight to Stripe
+  // instead of the bag (no cart-feedback burst since we navigate away).
+  const handleBuyNow = () => {
+    const now = Date.now();
+    if (adding || now - lastAddTsRef.current < 600) return;
+    if (!validateBib()) return;
+    lastAddTsRef.current = now;
+    setAdding(true);
+    window.setTimeout(() => setAdding(false), 600);
+    onBuyNow?.(buildBibPayload());
   };
 
   return (
@@ -393,7 +416,7 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
           </span>
         </div>
 
-        {/* Add to cart */}
+        {/* Add to Bag (primary) + Buy it now (express) */}
         <button
           onClick={handleAdd}
           disabled={!canAdd || adding}
@@ -406,7 +429,25 @@ export function CustomProductCard({ config, onAddCustom, onCartFeedback }) {
             opacity: adding ? 0.6 : 1,
           }}
         >
-          Add to cart — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />
+          Add to Bag — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />
+        </button>
+
+        {/* Express checkout — straight to Stripe with this configured bib.
+            Outlined secondary so the ink-filled Add to Bag stays primary. */}
+        <button
+          onClick={handleBuyNow}
+          disabled={!canAdd || adding}
+          aria-busy={adding}
+          className="mt-2 w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+          style={{
+            background: "transparent",
+            color: canAdd ? "#1A1612" : "rgba(26,22,18,0.4)",
+            border: `1px solid ${canAdd ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+            cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
+            opacity: adding ? 0.6 : 1,
+          }}
+        >
+          Buy it now
         </button>
       </div>
     </div>

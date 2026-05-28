@@ -116,9 +116,9 @@ test.describe("blanket purchase flow", () => {
     // Match just the label so we don't depend on the exact glyph rendering.
     await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
 
-    // Add to cart. The button label varies by selection state, but
-    // it always contains "Add to cart" once a valid config is made.
-    const addToCart = page.getByRole("button", { name: /add to cart.*\$/i }).first();
+    // Add to Bag. The button label varies by selection state, but
+    // it always contains "Add to Bag" once a valid config is made.
+    const addToCart = page.getByRole("button", { name: /add to bag.*\$/i }).first();
     await expect(addToCart).toBeEnabled({ timeout: 5_000 });
     await addToCart.click();
 
@@ -141,7 +141,7 @@ test.describe("checkout view", () => {
     // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
     // Match just the label so we don't depend on the exact glyph rendering.
     await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
-    await page.getByRole("button", { name: /add to cart.*\$/i }).first().click();
+    await page.getByRole("button", { name: /add to bag.*\$/i }).first().click();
 
     // Cart auto-opens. Click Checkout.
     await page.getByRole("button", { name: /^checkout/i }).click();
@@ -174,7 +174,7 @@ test.describe("checkout view", () => {
     // Picker button's accessible name is "Armenian Ա Բ Գ" (label + glyphs).
     // Match just the label so we don't depend on the exact glyph rendering.
     await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
-    await page.getByRole("button", { name: /add to cart.*\$/i }).first().click();
+    await page.getByRole("button", { name: /add to bag.*\$/i }).first().click();
     await page.getByRole("button", { name: /^checkout/i }).click();
     await page.getByRole("button", { name: /pay with stripe/i }).click();
 
@@ -200,6 +200,39 @@ test.describe("checkout view", () => {
     expect(receivedBody.idempotency_key.length).toBeGreaterThan(8);
     expect(receivedBody.idempotency_key.length).toBeLessThanOrEqual(255);
     expect(receivedBody.idempotency_key).toMatch(/^[\x21-\x7e]+$/);
+  });
+
+  test("Buy it now sends exactly one item straight to checkout", async ({ page }) => {
+    // Express checkout must bypass the bag and POST a single configured
+    // item with the same load-bearing productKey shape as a normal add.
+    let receivedBody = null;
+    await page.route("**/.netlify/functions/create-checkout-session*", async (route) => {
+      receivedBody = JSON.parse(route.request().postData() ?? "{}");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ url: null }),
+      });
+    });
+
+    await page.goto("/shop/blankets/armenian-alphabet-blanket");
+    await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
+
+    // Express path: "Buy it now" routes directly to the checkout page —
+    // no cart drawer, no Checkout button in between.
+    const buyNow = page.getByRole("button", { name: /^buy it now$/i }).first();
+    await expect(buyNow).toBeEnabled({ timeout: 5_000 });
+    await buyNow.click();
+
+    await expect(page.getByRole("heading", { name: /almost there/i })).toBeVisible({ timeout: 5_000 });
+    await page.getByRole("button", { name: /pay with stripe/i }).click();
+
+    await expect.poll(() => receivedBody, { timeout: 5_000 }).not.toBeNull();
+    expect(Array.isArray(receivedBody.cart)).toBe(true);
+    // Express checkout is a single transient item — never the whole bag.
+    expect(receivedBody.cart.length).toBe(1);
+    expect(receivedBody.cart[0].productKey).toBeTruthy();
+    expect(receivedBody.cart[0].productKey).toMatch(/^(blanket-|bib$)/);
   });
 });
 

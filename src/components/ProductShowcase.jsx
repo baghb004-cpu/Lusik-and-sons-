@@ -31,7 +31,7 @@ import {
   Instagram, Mail, Minus, Phone, Plus, Share2, X, ZoomIn,
 } from "./icons.jsx";
 
-export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequireSignIn, onStickyCtaShown }) {
+export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown }) {
   const toast = useToast();
   // --- STICKY MOBILE ADD-TO-CART ---
   // Ref on the primary Add-to-cart button. An IntersectionObserver
@@ -109,6 +109,25 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
     // Re-enable after the cart-drawer auto-open + heart-burst land.
     // 600ms matches the throttle so the visual debounce ends in sync.
     window.setTimeout(() => setAdding(false), 600);
+  };
+
+  // Express "Buy it now" — builds the exact same configured item as
+  // addItemToCart but routes straight to checkout (App holds it as a
+  // transient item; the saved bag is never touched). Shares the same
+  // double-tap throttle so a frantic tap can't fire both paths. No
+  // heart-burst here — we navigate away immediately.
+  const buyItemNow = () => {
+    const now = Date.now();
+    if (adding || now - lastAddTsRef.current < 600) return;
+    lastAddTsRef.current = now;
+    onBuyNow?.(color, qty, alphabet, layout, {
+      block: blockColor,
+      letter: letterColor,
+      letterColors: letterColorList,
+      presetKey: activePresetKey,
+      customLine1: customLine1.trim(),
+      customLine2: customLine2.trim(),
+    });
   };
 
   const [activeImg, setActiveImg] = useState(0);
@@ -1159,9 +1178,28 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
                 cursor: adding ? "wait" : "pointer",
               }}
             >
-              Add to cart — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
+              Add to Bag — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
             </button>
           </div>
+          {/* Express checkout — skips the bag and goes straight to Stripe with
+              this exact configuration. Secondary (outlined) so the ink-filled
+              Add to Bag stays the visual primary. Works for guests and
+              signed-in customers alike. */}
+          <button
+            onClick={buyItemNow}
+            disabled={adding}
+            aria-busy={adding}
+            className="w-full py-4 mb-4 text-sm tracking-wide flex items-center justify-center gap-2 transition-opacity"
+            style={{
+              background: "transparent",
+              color: "var(--ink)",
+              border: "1px solid var(--ink)",
+              opacity: adding ? 0.6 : 1,
+              cursor: adding ? "wait" : "pointer",
+            }}
+          >
+            Buy it now
+          </button>
           {/* Estimated delivery — concrete ship-by / arrives-by range
               instead of a vague "5–10 days" line. Computed on every
               render from today's date so it stays current; ranges

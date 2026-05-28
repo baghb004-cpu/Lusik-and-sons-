@@ -84,6 +84,14 @@ export function App() {
   const t = useT();
   const toast = useToast();
   const [cart, setCart] = useState([]);
+  // Express "Buy it now" item. When set, the checkout page renders THIS single
+  // transient item instead of the saved bag, and the saved bag is never
+  // mutated. It's deliberately not persisted to localStorage or the server —
+  // it only lives for the duration of one express-checkout pass and is cleared
+  // the moment the customer leaves checkout (see the [view] effect below). It
+  // also naturally evaporates across the Stripe redirect, so a returning
+  // ?order=success load starts clean.
+  const [buyNowItem, setBuyNowItem] = useState(null);
   const [view, setView] = useState("home");
   // Search query lives in App so both the bottom-nav search input
   // (in collapsed mode) and the MobileSearchView results panel
@@ -101,6 +109,15 @@ export function App() {
   // drawer-close effect below handles the desktop drawer case.
   useEffect(() => {
     if (view !== "cart") setCartEditMode(false);
+  }, [view]);
+  // Drop the transient express Buy-it-now item the moment we leave checkout —
+  // whether via Back, the bottom nav, or any other navigation. This is the
+  // single cleanup path for buyNowItem, so an express item can never leak into
+  // a later, unrelated checkout. (buyNowBlanket/buyNowCustom set view to
+  // "checkout" in the same batch they set the item, so this never clears it
+  // out from under them.)
+  useEffect(() => {
+    if (view !== "checkout") setBuyNowItem(null);
   }, [view]);
   const [cartOpen, setCartOpen] = useState(false);
   // Cart edit mode: when true, QuantityPicker + remove buttons are
@@ -806,9 +823,12 @@ export function App() {
     else setCartOpen(true);
   };
 
-  const addToCart = (color, qty = 1, selection = null, layout = null, colors = null) => {
-    haptic(12);
-    track("add-to-cart", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
+  // Build the canonical blanket cart item (id shape, subtitle, price, and the
+  // customMetadata that flows browser → Stripe → webhook → orders DB). This is
+  // the single source of truth for the load-bearing cart-id shape, shared by
+  // both Add-to-Bag (addToCart) and express Buy-it-now (buyNowBlanket) so the
+  // two paths can never drift. Pure: returns the item, touches no state.
+  const buildBlanketCartItem = (color, qty = 1, selection = null, layout = null, colors = null) => {
     // `selection` is either a `letter` (legacy single-letter bib) or an
     // `alphabet` (current — Armenian/English). When alphabet, `layout` is
     // also expected — it carries the spatial arrangement, the letter count,
@@ -871,10 +891,7 @@ export function App() {
       price = PRODUCT.price;
     }
 
-    setCart((c) => {
-      const existing = c.find((i) => i.id === id);
-      if (existing) return c.map((i) => (i.id === id ? { ...i, qty: i.qty + qty } : i));
-      return [...c, {
+    return {
         id, name: PRODUCT.name, subtitle,
         price, image: PRODUCT.gallery[0],
         qty, colorHex: color.hex,
@@ -919,9 +936,30 @@ export function App() {
           custom_line_1: (colors?.customLine1 ?? "").trim() || null,
           custom_line_2: (colors?.customLine2 ?? "").trim() || null,
         } : null,
-      }];
+      };
+  };
+
+  const addToCart = (color, qty = 1, selection = null, layout = null, colors = null) => {
+    haptic(12);
+    track("add-to-cart", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
+    const item = buildBlanketCartItem(color, qty, selection, layout, colors);
+    setCart((c) => {
+      const existing = c.find((i) => i.id === item.id);
+      if (existing) return c.map((i) => (i.id === item.id ? { ...i, qty: i.qty + qty } : i));
+      return [...c, item];
     });
     openCart();
+  };
+
+  // Express checkout for the blanket — skips the bag and goes straight to
+  // Stripe with a single transient item. The saved bag is left untouched.
+  const buyNowBlanket = (color, qty = 1, selection = null, layout = null, colors = null) => {
+    haptic(12);
+    track("buy-now", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
+    setBuyNowItem(buildBlanketCartItem(color, qty, selection, layout, colors));
+    setCartOpen(false);
+    setView("checkout");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Cart drawer dismissal: Escape key + swipe-right-to-dismiss on mobile.
@@ -1054,27 +1092,42 @@ export function App() {
     });
   };
 
-  const addCustomToCart = ({ productKey, name, price, size, customImage, customImageName, subtitleOverride, customMetadata }) => {
-    haptic(12);
-    track("add-to-cart", { kind: "custom", productKey });
+  // Canonical custom (bib) cart item. Shared by Add-to-Bag (addCustomToCart)
+  // and express Buy-it-now (buyNowCustom) so the productKey / customMetadata
+  // shape that Stripe relies on is produced in exactly one place.
+  const buildCustomCartItem = ({ productKey, name, price, size, customImage, customImageName, subtitleOverride, customMetadata }) => ({
     // Each custom upload gets a unique id so multiple custom items don't merge.
-    const id = `${productKey}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setCart((c) => [...c, {
-      id,
-      name,
-      subtitle: subtitleOverride || `Size: ${size}`,
-      price,
-      // For hand-stitched products there's no uploaded image. Fall back to
-      // the blanket hero image so the cart row still has a thumbnail.
-      image: customImage || PRODUCT.gallery[0],
-      qty: 1,
-      isCustom: true,
-      productKey,
-      size,
-      customImageName,
-      customMetadata: customMetadata || null,
-    }]);
+    id: `${productKey}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    name,
+    subtitle: subtitleOverride || `Size: ${size}`,
+    price,
+    // For hand-stitched products there's no uploaded image. Fall back to
+    // the blanket hero image so the cart row still has a thumbnail.
+    image: customImage || PRODUCT.gallery[0],
+    qty: 1,
+    isCustom: true,
+    productKey,
+    size,
+    customImageName,
+    customMetadata: customMetadata || null,
+  });
+
+  const addCustomToCart = (payload) => {
+    haptic(12);
+    track("add-to-cart", { kind: "custom", productKey: payload.productKey });
+    setCart((c) => [...c, buildCustomCartItem(payload)]);
     openCart();
+  };
+
+  // Express checkout for a custom (bib) item — straight to Stripe with a single
+  // transient item; the saved bag is left untouched.
+  const buyNowCustom = (payload) => {
+    haptic(12);
+    track("buy-now", { kind: "custom", productKey: payload.productKey });
+    setBuyNowItem(buildCustomCartItem(payload));
+    setCartOpen(false);
+    setView("checkout");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goCheckout = () => {
@@ -1485,7 +1538,16 @@ export function App() {
           simplified={!showHomeIntro}
         />
       )}
-      {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}
+      {view === "checkout" && (() => {
+        // Express Buy-it-now sends a single transient item; otherwise checkout
+        // reflects the saved bag. CheckoutView is identical either way — it
+        // just receives a different cart array.
+        const checkoutCart = buyNowItem ? [buyNowItem] : cart;
+        const checkoutSubtotal = buyNowItem
+          ? (Number(buyNowItem.qty) || 0) * (Number(buyNowItem.price) || 0)
+          : subtotal;
+        return <CheckoutView cart={checkoutCart} subtotal={checkoutSubtotal} user={user} profile={profile} onBack={() => setView("home")} />;
+      })()}
       {view === "account" && <AccountView user={user} profile={profile} onProfileUpdate={setProfile} onBack={() => setView("home")} onSignOut={handleSignOut} onReorder={reorderFromHistory} product={PRODUCT} onOpenAdmin={isAdmin ? () => setView("admin") : null} />}
       {view === "gallery" && <GalleryView />}
 
@@ -1545,6 +1607,8 @@ export function App() {
             customProductData={CUSTOM_PRODUCTS?.bib}
             onAdd={addToCart}
             onAddCustom={addCustomToCart}
+            onBuyNow={buyNowBlanket}
+            onBuyNowCustom={buyNowCustom}
             onCartFeedback={triggerCartFeedback}
             user={user}
             onRequireSignIn={() => setAuthOpen(true)}
