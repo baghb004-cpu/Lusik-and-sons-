@@ -46,7 +46,7 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
   //     commission flow. This is the heritage-maker pattern (Hermès
   //     made-to-order, Le Labo by-commission): the price is honest
   //     and the order path is human, not a checkout button. The
-  //     Cotton Alphabet Crib Blanket lives here -- Lusik makes it,
+  //     Full Alphabet Crib Blanket lives here -- Lusik makes it,
   //     priced it, but online checkout isn't wired yet.
   //
   //   * UNPRICED (still developing) -- product.priceFrom is null,
@@ -76,8 +76,8 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         <div className="min-w-0 w-full">
         {/* GALLERY — the showcase-style photo gallery when the
-            placeholder product has photos staged (the cotton-yarn-
-            blanket case). Falls back to the original "Image goes
+            placeholder product has photos staged (the full-alphabet-
+            crib-blanket case). Falls back to the original "Image goes
             here" frame for products with no photos yet. */}
         {hasGallery ? (
           <ProductImageGallery

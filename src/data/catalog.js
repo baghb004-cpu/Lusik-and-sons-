@@ -47,7 +47,7 @@ export const CATALOG = {
     // 2026-voice as the homepage rewrite -- maker + heirloom +
     // search-friendly hooks ("Armenian alphabet", "heritage",
     // "christening", "passed down").
-    description: "Lusik's signature work — the pieces she sits with on her kitchen table for thirty hours at a time. Two crib blankets, both Armenian by heritage: a personalized one cross-stitched with the first three letters a child will ever learn, and a full-alphabet one in cotton that carries every letter from Ա to Ք. Each one stitched by hand, picked up and checked by Lusik before it ships. Made to order. Made to last for the next baby in the family, and the one after that.",
+    description: "Lusik's signature work — the pieces she sits with on her kitchen table for thirty hours at a time. Two crib blankets, both Armenian by heritage: a personalized one cross-stitched with the first three letters a child will ever learn, and a full-alphabet one that carries every letter from Ա to Ք. Each one stitched by hand, picked up and checked by Lusik before it ships. Made to order. Made to last for the next baby in the family, and the one after that.",
     eyebrow: "Lusik's signature work",
     products: [
       {
@@ -71,7 +71,7 @@ export const CATALOG = {
       },
       {
         // ============================================================
-        // FLIP-TO-LIVE CHECKLIST  (cotton-yarn-blanket)
+        // FLIP-TO-LIVE CHECKLIST  (full-alphabet-crib-blanket)
         // ============================================================
         // Pricing confirmed by Lusik (May 2026): $245, about two solid
         // weeks of cross-stitching alone. The initial $165 felt too
@@ -91,21 +91,21 @@ export const CATALOG = {
         //   1. Below: change `status: "placeholder"` → `status: "live"`
         //      (priceFrom: 245 is already set)
         //   2. In netlify/functions/_lib/trusted-products.mjs:
-        //      Uncomment the "blanket-cotton-cotton" entry and set
+        //      Uncomment the "blanket-full-alphabet" entry and set
         //      priceCents to 24500 ($245). The server rejects any
         //      cart line item whose productKey isn't in
         //      TRUSTED_PRODUCTS, so this is what makes checkout work.
         //   3. In src/components/shop/ProductView.jsx:
         //      Add a third branch alongside the existing
         //      blanket-alphabet / bib-single cases:
-        //          if (product.key === "blanket-cotton-bernat") {
-        //            return <LiveCottonYarnView ... />;
+        //          if (product.key === "blanket-full-alphabet") {
+        //            return <LiveFullAlphabetView ... />;
         //          }
         //      That component needs to render the same gallery
         //      (already built) + a color radio (one swatch must be
         //      selected before Add-to-Cart enables) + an Add-to-Cart
-        //      button that calls onAdd with cart-id "blanket-cotton-
-        //      cotton" (or per-color if pricing diverges).
+        //      button that calls onAdd with cart-id "blanket-full-
+        //      alphabet" (or per-color if pricing diverges).
         //   4. Confirm the 3-4 week lead time copy in the Made detail
         //      row is acceptable to Lusik before flipping. Customers
         //      who see "3-4 weeks" on a heritage product won't blink;
@@ -118,31 +118,26 @@ export const CATALOG = {
         // server-side price contract.
         // ============================================================
         //
-        // Catalog key kept stable across the pricing flip so the
-        // cart-id / Stripe trusted-products map don't get broken
-        // when the product goes live. The "bernat" suffix is a
-        // legacy artifact -- the customer-facing copy below no
-        // longer mentions any yarn brand.
-        //
-        // Slug ALSO kept stable ("cotton-yarn-blanket") even though
-        // the display name has changed -- the URL is in sitemap.xml
-        // and may already be indexed by search engines. Changing the
-        // slug would orphan inbound links and reset SEO progress.
-        key: "blanket-cotton-bernat",
-        slug: "cotton-yarn-blanket",
-        // Renamed for SEO + conversion: the cotton blanket shows the
-        // FULL Armenian alphabet (every letter, all 36) rather than
-        // the 3-letter personalized layout of the live Armenian
-        // Alphabet Blanket. Positioning it as "The Cotton Alphabet
-        // Crib Blanket" puts both products in the same "Armenian
+        // Catalog key + slug were renamed to drop the previous fiber
+        // reference from the product entirely — Lusik can no longer
+        // reliably source that material, so every mention of it has
+        // been removed sitewide. The product isn't live yet, so no
+        // in-flight cart or trusted-products row depends on the key;
+        // the rename is safe.
+        key: "blanket-full-alphabet",
+        slug: "full-alphabet-crib-blanket",
+        // The full-alphabet blanket shows every letter (all 36)
+        // rather than the 3-letter personalized layout of the live
+        // Armenian Alphabet Blanket. Naming it "The Full Alphabet
+        // Crib Blanket" keeps both products in the same "Armenian
         // alphabet blanket" search bucket while making the
         // differentiation explicit:
         //   - The Armenian Alphabet Blanket: 3-letter personalized,
-        //     acrylic, fringed.
-        //   - The Cotton Alphabet Crib Blanket: full alphabet,
-        //     cotton, satin-backed.
-        name: "The Cotton Alphabet Crib Blanket",
-        // Status stays placeholder until the live cotton view + the
+        //     fringed.
+        //   - The Full Alphabet Crib Blanket: full alphabet,
+        //     satin-backed.
+        name: "The Full Alphabet Crib Blanket",
+        // Status stays placeholder until the live product view + the
         // trusted-products row are wired (see the flip-to-live
         // checklist near the top of this entry). Price is set so
         // customers can see the actual number and reach Lusik
@@ -152,27 +147,27 @@ export const CATALOG = {
         // unpriced placeholders. Once the live view ships, this
         // same priceFrom feeds the category card + trusted-products
         // entry without re-editing.
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" once the LiveCottonYarnView + trusted-products entry land
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" once the live product view + trusted-products entry land
         priceFrom: 245,                // Lusik confirmed $165 felt low for two solid weeks of work; $245 is the honest heritage price (see PR #91 + sitewide pricing analysis)
         // Tagline leads with "Armenian alphabet" -- a high-value
         // search term -- and immediately answers "how much of the
         // alphabet?" (every letter) and "how is it made?" (hand
         // cross-stitched).
-        tagline: "Every letter of the Armenian alphabet — all thirty-six, hand cross-stitched in cotton yarn.",
+        tagline: "Every letter of the Armenian alphabet — all thirty-six, hand cross-stitched by Lusik.",
         // Description sells the heritage angle, the gifting use cases
         // (christening, baby shower, hospital photo), and the
         // longevity. Echoes the homepage voice ("from her home in
         // Cypress, California, Lusik cross-stitches...") and closes
         // with the same "Made to last" beat as the homepage H1.
-        description: "The full Armenian alphabet — every letter from Ա to Ք, every one set down by Lusik's own hand. The heritage crib blanket for the christening, the baby shower, the photograph at the front door coming home from the hospital — and then folded into a chest for the next baby in the family, and the one after that. Cross-stitched on soft cotton yarn so the blanket breathes through a California summer, and finished with a satin backing matched to the body color so it lays right in the crib. From Lusik's home in Cypress, California. Made to order, made to last.",
+        description: "The full Armenian alphabet — every letter from Ա to Ք, every one set down by Lusik's own hand. The heritage crib blanket for the christening, the baby shower, the photograph at the front door coming home from the hospital — and then folded into a chest for the next baby in the family, and the one after that. Cross-stitched on soft yarn so the blanket breathes through a California summer, and finished with a satin backing matched to the body color so it lays right in the crib. From Lusik's home in Cypress, California. Made to order, made to last.",
         // Cover image — used by the category-grid card as a static
         // thumbnail. Center-cropped to 4:5 at 1200×1500.
-        coverImage: "/img/cotton-yarn/cover.jpg",
+        coverImage: "/img/full-alphabet/cover.jpg",
         // Full gallery — 61 photos, ordered by curatorial arc.
-        // The /img/cotton-yarn/NN.jpg files are flat-numbered;
+        // The /img/full-alphabet/NN.jpg files are flat-numbered;
         // the colorways array below indexes into this list.
         images: Array.from({ length: 61 }, (_, i) =>
-          `/img/cotton-yarn/${String(i + 1).padStart(2, "0")}.jpg`,
+          `/img/full-alphabet/${String(i + 1).padStart(2, "0")}.jpg`,
         ),
         // Color picker — every entry is a button under the gallery
         // thumbnail strip. Clicking it filters the gallery to just
@@ -203,7 +198,7 @@ export const CATALOG = {
         // have to ask. TODO_LUSIK markers flag values that still
         // need her confirmation before flipping the product live.
         details: [
-          { label: "Materials", value: "100% cotton yarn body, cotton crochet edging, satin backing." },
+          { label: "Materials", value: "Soft yarn body, crochet edging, satin backing." },
           { label: "Size",      value: "Approx. 30 × 36 in (76 × 91 cm). ⚠️ TODO_LUSIK: confirm." },
           { label: "Backing",   value: "Every blanket is finished with a satin backing, matched to the body color (white, lavender, pink, blue, or mint). Not optional — included on every piece." },
           // Care field carries both Lusik & Sons' recommendation
@@ -215,8 +210,8 @@ export const CATALOG = {
           // than the raw yarn alone. The "we can't guarantee
           // against machine-wash wear" line below puts the
           // responsibility on the customer's chosen method.
-          { label: "Care",      value: "Professional dry cleaning recommended to preserve the hand cross-stitch, satin backing, and crochet edging — the dry cleaner gives consistent gentle treatment that a washing machine can't. If you'd rather launder at home, the cotton yarn label reads: machine wash in cool water, do not bleach, do not iron, tumble dry on low / delicate. We can't guarantee against wear from washing-machine cycles." },
-          { label: "Made",      value: "By Lusik herself, in Cypress, California. The full Armenian alphabet — all thirty-six letters, plus the satin backing and the cotton crochet edge — is about two solid weeks of cross-stitching for her, working alone. We add a comfortable buffer for life and for the rest of the queue, so please plan on 3–4 weeks from order to ship. If you need it by a specific date — a christening, a baby shower, a flight home — tell us at checkout and we'll write back honestly about whether we can meet it." },
+          { label: "Care",      value: "Professional dry cleaning recommended to preserve the hand cross-stitch, satin backing, and crochet edging — the dry cleaner gives consistent gentle treatment that a washing machine can't. If you'd rather launder at home, the yarn label reads: machine wash in cool water, do not bleach, do not iron, tumble dry on low / delicate. We can't guarantee against wear from washing-machine cycles." },
+          { label: "Made",      value: "By Lusik herself, in Cypress, California. The full Armenian alphabet — all thirty-six letters, plus the satin backing and the crochet edge — is about two solid weeks of cross-stitching for her, working alone. We add a comfortable buffer for life and for the rest of the queue, so please plan on 3–4 weeks from order to ship. If you need it by a specific date — a christening, a baby shower, a flight home — tell us at checkout and we'll write back honestly about whether we can meet it." },
         ],
       },
     ],
@@ -254,10 +249,10 @@ export const CATALOG = {
         key: "bib-days-of-week",
         slug: "days-of-the-week-bib-set",
         // Renamed to lead with "Armenian" -- mirrors the rename
-        // pattern used on "The Cotton Alphabet Crib Blanket".
+        // pattern used on "The Full Alphabet Crib Blanket".
         // Heritage hook + clear product identity in the title.
         name: "The Armenian Days-of-the-Week Bib Set",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the same checklist pattern used on the cotton blanket
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the same checklist pattern used on the full-alphabet blanket
         priceFrom: null,               // ⚠️ TODO_LUSIK: set when going live
         // Tagline leads with the count (seven) + the heritage angle.
         tagline: "Seven bibs for seven days — Monday through Sunday in Armenian, embroidered by Lusik.",
@@ -283,7 +278,7 @@ export const CATALOG = {
         // Bundle shots (indices 0-3) and the rainbow pastel hero
         // (index 4) aren't tied to one variant -- they live in the
         // gallery default view but get no dedicated swatch. Same
-        // pattern as the cotton blanket: only sellable colorways
+        // pattern as the full-alphabet blanket: only sellable colorways
         // become swatches.
         colorways: [
           { label: "Pink",         indices: [5, 6, 7, 9],          swatch: { color: "#E8B5C7" } },
@@ -296,11 +291,11 @@ export const CATALOG = {
         ],
         details: [
           { label: "Set size",  value: "Seven bibs — Monday through Sunday in Armenian (Երկուշաբթի, Երեքշաբթի, Չորեքշաբթի, Հինգշաբթի, Ուրբաթ, Շաբաթ, Կիրակի)." },
-          { label: "Materials", value: "100% cotton terry bib body with satin trim. Commercial-grade machine-embroidery thread on the day name." },
+          { label: "Materials", value: "Soft terry bib body with satin trim. Commercial-grade machine-embroidery thread on the day name." },
           { label: "Sizing",    value: "One size, fits most babies. ⚠️ TODO_LUSIK: confirm." },
           // Care language acknowledges both Lusik & Sons' dry-clean
           // recommendation AND the reality that bibs are designed
-          // to be washed daily. Same hybrid stance as the cotton
+          // to be washed daily. Same hybrid stance as the full-alphabet
           // blanket but with an extra line confirming the
           // commercial-grade thread can survive the wash.
           { label: "Care",      value: "We recommend professional dry cleaning to preserve the embroidery for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread that survives a baby's daily bib changes. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles." },
@@ -318,7 +313,7 @@ export const CATALOG = {
         key: "bib-hy-em",
         slug: "hy-em-armenian-bib",
         name: "The Hye Em Yes Bib",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" when pricing lands (same checklist as cotton blanket)
+        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" when pricing lands (same checklist as the full-alphabet blanket)
         priceFrom: null,               // ⚠️ TODO_LUSIK
         // Tagline = the cultural payload + a hook to the flag colors,
         // which is THE differentiating visual cue on this bib.
@@ -362,7 +357,7 @@ export const CATALOG = {
         ],
         details: [
           { label: "Set",       value: "Bib alone, or bib + matching baby cap. ⚠️ TODO_LUSIK: confirm whether the cap is a separate add-on or bundled in one price." },
-          { label: "Materials", value: "100% cotton terry bib body with satin trim. Commercial-grade machine-embroidery thread on the lettering. Matching cotton cap when paired." },
+          { label: "Materials", value: "Soft terry bib body with satin trim. Commercial-grade machine-embroidery thread on the lettering. Matching cap when paired." },
           { label: "Sizing",    value: "One size, fits most babies 0–24 months." },
           { label: "Care",      value: "We recommend professional dry cleaning to preserve the embroidery for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread that survives a baby's daily bib changes. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles." },
           { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
@@ -400,7 +395,7 @@ export const CATALOG = {
         details: [
           { label: "Set size",  value: "Two matched bibs — one Mama's, one Papa's. Both bibs in the same colorway." },
           { label: "Reads",     value: "Մայրիկիս Անոյշիկը (\"Mama's sweetheart\") + Պապայիս Անոյշիկը (\"Papa's sweetheart\"), each with a small motif between the two lines — heart, leaf, or star, varies by colorway." },
-          { label: "Materials", value: "100% cotton terry bib body with satin trim. Hand-stitched cross-stitch lettering." },
+          { label: "Materials", value: "Soft terry bib body with satin trim. Hand-stitched cross-stitch lettering." },
           { label: "Sizing",    value: "One size, fits most babies 0–24 months." },
           { label: "Care",      value: "We recommend professional dry cleaning to preserve the cross-stitch for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the stitching. We can't guarantee against wear from washing-machine cycles." },
           { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
@@ -509,7 +504,7 @@ export const CATALOG = {
           { label: "Set",       value: "Two pieces — one bib + one matching burp cloth. Add the matching cap and your baby's name or initial is cross-stitched in the same thread color." },
           { label: "Reads",     value: "Bib: Բարի ախորժակ (\"Bari akhorzhak,\" bon appétit) — said before the baby eats. Burp cloth: Անույշ ըլլայ (\"Anush ella,\" may it be sweet) — said after. Each piece has a primary motif tucked between the words — a cross-stitched bottle, strawberry, grape, or carrot; an appliquéd butterfly, bunny, or daisies on the pink — and the burp cloth carries Lusik's quiet signature in the corner: a tiny car, a chick, a butterfly, varies by piece." },
           { label: "Closure",   value: "Bib closes with a fabric tie at the back of the neck — the heritage closure Lusik's grandmother used. Slower than a snap, the way these were always made." },
-          { label: "Materials", value: "100% cotton terry bib body with a soft white inset panel for the lettering, cotton terry burp cloth, both finished with picot edging. Hand cross-stitched or appliquéd embellishments throughout." },
+          { label: "Materials", value: "Soft terry bib body with a soft white inset panel for the lettering, terry burp cloth, both finished with picot edging. Hand cross-stitched or appliquéd embellishments throughout." },
           { label: "Sizing",    value: "Bib: one size, fits most babies 0–24 months. Burp cloth: standard burp-cloth size (approx. 10 × 17 in). ⚠️ TODO_LUSIK: confirm." },
           { label: "Care",      value: "We recommend professional dry cleaning to preserve the stitching for years. That said, these are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles." },
           { label: "Made",      value: "By Lusik herself, in Cypress, California. Made to order — 5–10 business days." },
@@ -530,7 +525,7 @@ export const CATALOG = {
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
         tagline: "Small enough to fit in a gift bag, made to outlive the wedding it was given at.",
-        description: "A hand-sized cotton towel with one of Lusik's hand-embroidered Armenian motifs — the pomegranate, the cross-hatch border, the small bird-and-tree pattern that has lived on Armenian linens for centuries. Folds into a gift bag for a housewarming, a hostess thank-you, a wedding. Sits in a guest bath the way an Armenian grandmother's linens always did — the small good thing on the shelf, waiting for the day someone notices it. Hand-embroidered by Lusik from her home in Cypress, California. Made to order, made to last.",
+        description: "A hand-sized soft towel with one of Lusik's hand-embroidered Armenian motifs — the pomegranate, the cross-hatch border, the small bird-and-tree pattern that has lived on Armenian linens for centuries. Folds into a gift bag for a housewarming, a hostess thank-you, a wedding. Sits in a guest bath the way an Armenian grandmother's linens always did — the small good thing on the shelf, waiting for the day someone notices it. Hand-embroidered by Lusik from her home in Cypress, California. Made to order, made to last.",
       },
       {
         key: "towel-baptism",
@@ -564,7 +559,7 @@ export const CATALOG = {
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
         tagline: "The cloth a new baby is wrapped in for the going-home photograph — embroidered with their name.",
-        description: "A soft cotton swaddle for the earliest weeks — the cloth around the baby in the hospital photograph, the cloth on the first night in the crib, the cloth in the carrier walking through the front door of a house that just got fuller by one. Lusik embroiders the baby's name on it, in Armenian or English, the parents pick. A first object with a first name on it. Made to order by Lusik from her home in Cypress, California. Made to order, made to last.",
+        description: "A soft swaddle for the earliest weeks — the cloth around the baby in the hospital photograph, the cloth on the first night in the crib, the cloth in the carrier walking through the front door of a house that just got fuller by one. Lusik embroiders the baby's name on it, in Armenian or English, the parents pick. A first object with a first name on it. Made to order by Lusik from her home in Cypress, California. Made to order, made to last.",
       },
       {
         key: "baby-bathrobe",
@@ -573,7 +568,7 @@ export const CATALOG = {
         status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
         priceFrom: null,
         tagline: "The hooded towel that becomes every evening's anchor — with your child's name on the hood.",
-        description: "A hooded cotton-terry bathrobe for the after-bath ritual — the wrap that comes out of the warm towel pile every evening for the first three years of a child's life, the wrap a parent's hands learn before the child can hold their own arms out. Lusik embroiders the child's name on the hood in Armenian or English. By the second year the child will be the one pointing at the letters, asking for them by sound. From Lusik's home in Cypress, California. Made to order, made to last.",
+        description: "A hooded terry bathrobe for the after-bath ritual — the wrap that comes out of the warm towel pile every evening for the first three years of a child's life, the wrap a parent's hands learn before the child can hold their own arms out. Lusik embroiders the child's name on the hood in Armenian or English. By the second year the child will be the one pointing at the letters, asking for them by sound. From Lusik's home in Cypress, California. Made to order, made to last.",
       },
     ],
   },

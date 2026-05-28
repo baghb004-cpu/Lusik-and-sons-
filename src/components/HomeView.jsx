@@ -278,15 +278,15 @@ export function HomeView({
                 slug: "blankets",
                 eyebrow: "Lusik's signature work",
                 label: "Blankets",
-                blurb: "Two crib blankets, both Armenian by heritage — the personalized one with three letters, and the full-alphabet cotton one with all thirty-six.",
-                // Two-image cycle: alphabet blanket cover + cotton
-                // blanket cover. The CategoryCardImage component
-                // cycles between them on hover (desktop) or auto-
-                // cycles on touch. Customer gets a preview of both
-                // products in the category without clicking in.
+                blurb: "Two crib blankets, both Armenian by heritage — the personalized one with three letters, and the full-alphabet one with all thirty-six.",
+                // Two-image cycle: alphabet blanket cover + full-
+                // alphabet blanket cover. The CategoryCardImage
+                // component cycles between them on hover (desktop) or
+                // auto-cycles on touch. Customer gets a preview of
+                // both products in the category without clicking in.
                 images: [
                   "/img/abc-blanket/cover.jpg",
-                  "/img/cotton-yarn/cover.jpg",
+                  "/img/full-alphabet/cover.jpg",
                 ],
               },
               {

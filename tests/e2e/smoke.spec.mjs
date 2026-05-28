@@ -237,11 +237,9 @@ test.describe("shop hierarchy navigation", () => {
     await page.getByRole("button", { name: /see everything lusik makes/i }).click();
     await page.getByRole("button", { name: /browse blankets/i }).click();
     // Click the placeholder card — accessible name is
-    // "The Cotton Alphabet Crib Blanket — coming soon". (The slug
-    // stays cotton-yarn-blanket for SEO; only the display name
-    // changed to lead with "Cotton Alphabet" for searchability.)
-    await page.getByRole("button", { name: /cotton alphabet crib blanket.*coming soon/i }).click();
-    await expect(page).toHaveURL(/\/shop\/blankets\/cotton-yarn-blanket\/?$/, { timeout: 10_000 });
+    // "The Full Alphabet Crib Blanket — coming soon".
+    await page.getByRole("button", { name: /full alphabet crib blanket.*coming soon/i }).click();
+    await expect(page).toHaveURL(/\/shop\/blankets\/full-alphabet-crib-blanket\/?$/, { timeout: 10_000 });
 
     // The placeholder template's primary CTA — full unique label so
     // we don't match buttons elsewhere on the page that happen to
@@ -253,7 +251,7 @@ test.describe("shop hierarchy navigation", () => {
     // Product name in the page heading — confirms the placeholder
     // page rendered with the right product, not just any page.
     await expect(
-      page.getByRole("heading", { name: /cotton alphabet crib blanket/i })
+      page.getByRole("heading", { name: /full alphabet crib blanket/i })
     ).toBeVisible({ timeout: 5_000 });
   });
 });

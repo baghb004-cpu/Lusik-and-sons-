@@ -53,30 +53,28 @@ export const TRUSTED_PRODUCTS = {
   // across all colorways/variants of a given product. If pricing
   // ends up diverging (e.g. the bib+cap bundle costs more than
   // the bib alone), split that key into multiple rows and have
-  // the browser cart-id encode the variant suffix. The cotton
-  // blanket has a worked example of that split in the comment
-  // block below.
+  // the browser cart-id encode the variant suffix. The full-
+  // alphabet blanket has a worked example of that split in the
+  // comment block below.
   // ============================================================
 
   // ----- BLANKETS -----
 
-  // The Cotton Alphabet Crib Blanket
-  // catalog key: blanket-cotton-bernat  (legacy "bernat" suffix
-  //   preserved so an in-flight cart isn't broken; customer never
-  //   sees this string)
+  // The Full Alphabet Crib Blanket
+  // catalog key: blanket-full-alphabet
   //
   // If pricing diverges per colorway (e.g. the two-color
   // personalized variant costs more), split this single key
   // into per-color rows:
-  //   "blanket-cotton-blue":     { ..., priceCents: 6500 },
-  //   "blanket-cotton-pink":     { ..., priceCents: 6500 },
+  //   "blanket-full-alphabet-blue":     { ..., priceCents: 6500 },
+  //   "blanket-full-alphabet-pink":     { ..., priceCents: 6500 },
   //   ...
-  //   "blanket-cotton-twocolor": { ..., priceCents: 7500 },
+  //   "blanket-full-alphabet-twocolor": { ..., priceCents: 7500 },
   // and update CheckoutView's mapLegacyId() to emit the
   // colorway suffix on the cart-id.
-  // "blanket-cotton-cotton": {
-  //   name:        "The Cotton Alphabet Crib Blanket",
-  //   variant:     "Full Armenian alphabet, cotton yarn, satin-backed",
+  // "blanket-full-alphabet": {
+  //   name:        "The Full Alphabet Crib Blanket",
+  //   variant:     "Full Armenian alphabet, satin-backed",
   //   priceCents:  6500,   // ⚠️ TODO_LUSIK: confirm
   // },
 
@@ -161,7 +159,7 @@ export const TRUSTED_PRODUCTS = {
   // catalog key: baby-swaddle
   // "baby-swaddle": {
   //   name:        "Baby Swaddle",
-  //   variant:     "Cotton swaddle",
+  //   variant:     "Baby swaddle",
   //   priceCents:  4500,   // ⚠️ TODO_LUSIK: confirm
   // },
 
@@ -169,7 +167,7 @@ export const TRUSTED_PRODUCTS = {
   // catalog key: baby-bathrobe
   // "baby-bathrobe": {
   //   name:        "Baby Bathrobe",
-  //   variant:     "Cotton terry bathrobe",
+  //   variant:     "Hooded terry bathrobe",
   //   priceCents:  5500,   // ⚠️ TODO_LUSIK: confirm
   // },
 

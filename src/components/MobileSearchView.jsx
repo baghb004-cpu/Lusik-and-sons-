@@ -49,7 +49,7 @@ const SUGGESTIONS = [
   "Armenian alphabet blanket",
   "Baptism towel",
   "Bari akhorzhak",
-  "Cotton blanket",
+  "Alphabet crib blanket",
   "Shipping",
   "Refund policy",
 ];

@@ -137,8 +137,8 @@ export function ProductView({
           onCartFeedback={onCartFeedback}
         />
 
-        {/* Past customer orders gallery -- same shape as the cotton
-            blanket / days-bib placeholder galleries (tap-to-zoom,
+        {/* Past customer orders gallery -- same shape as the full-
+            alphabet blanket / days-bib placeholder galleries (tap-to-zoom,
             chevron arrows, single-row thumb strip) but without the
             color swatches since thread color is already chosen in
             the configurator above. */}
