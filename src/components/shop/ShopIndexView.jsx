@@ -20,11 +20,11 @@
 // (product galleries, configurators) lives one level deeper.
 // ============================================================
 
-import React from "react";
+import React, { useState, useRef } from "react";
 import { CATALOG } from "../../data/catalog.js";
 import { JOURNAL_POSTS } from "../../data/journalPosts.js";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
-import { ArrowRight } from "../icons.jsx";
+import { ArrowRight, Heart, Home, Sparkles } from "../icons.jsx";
 
 // ------------------------------------------------------------
 // FEATURED_PIECES — the curated mobile "Featured pieces" set.
@@ -291,7 +291,230 @@ function JournalCard({ post, onTap }) {
   );
 }
 
-export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost }) {
+// ------------------------------------------------------------
+// DIFFERENCE_SLIDES — the "Lusik & Sons difference" value-prop
+// carousel (mirrors the Apple Store app's "The Apple Store
+// difference" centered statements). Each slide is a single brand
+// promise with an icon and a deep link into the relevant surface.
+// `action` is mapped to a navigation callback in ShopIndexView so
+// this data array stays free of component wiring.
+// ------------------------------------------------------------
+const DIFFERENCE_SLIDES = [
+  {
+    icon: Heart,
+    text: "Made to order, made to last. Every stitch set down by Lusik's own hand.",
+    linkLabel: "Shop the blankets",
+    action: "blankets",
+  },
+  {
+    icon: Home,
+    text: "From her home in Cypress, California — stitched for yours.",
+    linkLabel: "Read Lusik's journal",
+    action: "journal",
+  },
+  {
+    icon: Sparkles,
+    text: "Your child's name and birth year, woven into the cloth — in Armenian or English.",
+    linkLabel: "Personalize a blanket",
+    action: "alphabet-blanket",
+  },
+];
+
+// ------------------------------------------------------------
+// DifferenceCarousel — full-width scroll-snap carousel of the
+// brand-promise slides, with Apple-style pagination dots below
+// (the active dot stretches into a pill). The active index tracks
+// the scroll position so the dots stay in sync with a swipe.
+// ------------------------------------------------------------
+function DifferenceCarousel({ onSlideAction }) {
+  const [active, setActive] = useState(0);
+  const trackRef = useRef(null);
+
+  const handleScroll = () => {
+    const el = trackRef.current;
+    if (!el || !el.clientWidth) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    setActive((prev) => (prev === i ? prev : i));
+  };
+
+  return (
+    <section className="mb-10">
+      <h2
+        className="font-display mb-5 px-6"
+        style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
+      >
+        The Lusik &amp; Sons difference
+      </h2>
+      <div
+        ref={trackRef}
+        onScroll={handleScroll}
+        className="flex"
+        style={{
+          overflowX: "auto",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {DIFFERENCE_SLIDES.map((slide, i) => {
+          const Ico = slide.icon;
+          return (
+            <div
+              key={i}
+              className="flex flex-col items-center text-center px-8"
+              style={{ flex: "0 0 100%", scrollSnapAlign: "center", paddingTop: 8, paddingBottom: 8 }}
+            >
+              <div
+                className="flex items-center justify-center"
+                style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(176,136,66,0.10)", marginBottom: 18 }}
+              >
+                <Ico size={28} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              </div>
+              <p
+                className="font-display"
+                style={{ fontSize: "1.3rem", fontWeight: 600, lineHeight: 1.3, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)", maxWidth: 320 }}
+              >
+                {slide.text}
+              </p>
+              <button
+                type="button"
+                onClick={() => onSlideAction?.(slide.action)}
+                className="text-sm flex items-center gap-1.5"
+                style={{ color: "#B08842", fontWeight: 500, marginTop: 16 }}
+              >
+                {slide.linkLabel} <ArrowRight size={14} strokeWidth={1.75} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-center" style={{ gap: 7, marginTop: 20 }}>
+        {DIFFERENCE_SLIDES.map((_, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            style={{
+              height: 7,
+              width: i === active ? 20 : 7,
+              borderRadius: 4,
+              transition: "width 0.25s ease, background 0.25s ease",
+              background: i === active ? "var(--text-primary, #1A1612)" : "rgba(26,22,18,0.22)",
+            }}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------
+// "Shop the collection" 2-column product grid (mirrors the Apple
+// Store app's "Shop for your devices" grid). Built from CATALOG so
+// prices stay in sync — only products that have real photography
+// appear (towels + baby goods are skipped until Lusik delivers
+// photos). The Custom Name Bib has no cover image of its own, so
+// it borrows a representative bib-examples shot.
+// ------------------------------------------------------------
+const PRODUCT_IMAGE_FALLBACK = { "baby-bib": "/img/bib-examples/01.jpg" };
+
+function buildGridItems() {
+  const items = [];
+  for (const category of Object.values(CATALOG)) {
+    for (const p of category.products) {
+      const image = p.coverImage || PRODUCT_IMAGE_FALLBACK[p.slug];
+      if (!image) continue; // no real photo yet → leave it out
+      let priceLabel;
+      if (p.priceFrom && p.status === "live") priceLabel = `From $${p.priceFrom}`;
+      else if (p.priceFrom) priceLabel = `$${p.priceFrom} · by order`;
+      else priceLabel = "Made to order";
+      items.push({
+        categorySlug: category.slug,
+        slug: p.slug,
+        name: p.name,
+        image,
+        priceLabel,
+        swatches: (p.colorways || []).slice(0, 5).map((c) => c.swatch),
+      });
+    }
+  }
+  return items;
+}
+
+const GRID_ITEMS = buildGridItems();
+
+// Render any catalog swatch shape ({color} / {dual:[a,b]} /
+// {gradient:[...]}) as a CSS background for a small dot.
+function swatchBackground(s) {
+  if (!s) return "transparent";
+  if (s.color) return s.color;
+  if (s.dual) return `linear-gradient(135deg, ${s.dual[0]} 0 50%, ${s.dual[1]} 50% 100%)`;
+  if (s.gradient) return `conic-gradient(from 90deg, ${s.gradient.join(", ")})`;
+  return "transparent";
+}
+
+function ProductGridCard({ item, onTap }) {
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-label={`View ${item.name}`}
+      className="flex flex-col text-left"
+    >
+      <div
+        style={{
+          background: "var(--bg-surface, #FFFFFF)",
+          border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
+          borderRadius: 18,
+          boxShadow: "0 1px 6px rgba(26,22,18,0.06)",
+          overflow: "hidden",
+          aspectRatio: "1 / 1",
+        }}
+      >
+        <img
+          src={item.image}
+          alt={item.name}
+          loading="lazy"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      </div>
+      <h3
+        className="font-display"
+        style={{ fontSize: "0.98rem", fontWeight: 600, lineHeight: 1.25, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)", marginTop: 12 }}
+      >
+        {item.name}
+      </h3>
+      <p className="text-sm" style={{ color: "var(--text-muted, rgba(26,22,18,0.65))", marginTop: 4 }}>
+        {item.priceLabel}
+      </p>
+      {item.swatches.length > 0 && (
+        <div className="flex items-center" style={{ gap: 6, marginTop: 10 }}>
+          {item.swatches.map((s, i) => (
+            <span
+              key={i}
+              aria-hidden="true"
+              style={{
+                width: 14,
+                height: 14,
+                borderRadius: "50%",
+                background: swatchBackground(s),
+                border: "1px solid rgba(26,22,18,0.12)",
+                display: "inline-block",
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </button>
+  );
+}
+
+export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal }) {
+  // Map a DifferenceCarousel slide action to the right navigation.
+  const handleDifferenceAction = (action) => {
+    if (action === "blankets") onNavigateCategory?.("blankets");
+    else if (action === "journal") onNavigateJournal?.();
+    else if (action === "alphabet-blanket") onNavigateProduct?.("blankets", "armenian-alphabet-blanket");
+  };
+
   return (
     <div className="fade-in">
       {/* ====================================================== */}
@@ -402,6 +625,33 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
               onTap={() => onNavigateProduct?.(piece.categorySlug, piece.slug)}
             />
           ))}
+        </section>
+
+        {/* "The Lusik & Sons difference" — full-width value-prop
+            carousel with pagination dots, modeled on the Apple Store
+            app's "The Apple Store difference" centered statements. */}
+        <DifferenceCarousel onSlideAction={handleDifferenceAction} />
+
+        {/* "Shop the collection" — a 2-column product grid (Apple's
+            "Shop for your devices"): square photo tile, name, price,
+            and color swatches where the product has colorways. Built
+            from CATALOG so every card deep-links to a real product. */}
+        <section className="px-6 mb-12">
+          <h2
+            className="font-display mb-5"
+            style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
+          >
+            Shop the collection
+          </h2>
+          <div className="grid grid-cols-2" style={{ rowGap: 22, columnGap: 16 }}>
+            {GRID_ITEMS.map((item) => (
+              <ProductGridCard
+                key={`${item.categorySlug}/${item.slug}`}
+                item={item}
+                onTap={() => onNavigateProduct?.(item.categorySlug, item.slug)}
+              />
+            ))}
+          </div>
         </section>
 
         {/* "From the Journal" — a horizontal editorial carousel of

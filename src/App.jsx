@@ -1492,6 +1492,7 @@ export function App() {
           onNavigateCategory={goShopCategory}
           onNavigateProduct={goShopProduct}
           onNavigateJournalPost={(slug) => { setJournalSlug(slug); setView("journal"); }}
+          onNavigateJournal={() => { setJournalSlug(null); setView("journal"); }}
         />
       )}
       {view === "shop-category" && shopCategorySlug && (() => {
