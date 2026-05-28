@@ -20,6 +20,7 @@ import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign } from "../lib/de
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import { useIsMobile } from "../lib/useIsMobile.js";
 import { useSwipe } from "../lib/useSwipe.js";
+import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 import { PHOTO_DATE_DETAIL } from "../images/photos.js";
 import { getDeliveryEstimate } from "../lib/deliveryEstimate.js";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
@@ -366,10 +367,10 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
   const next = () => setActiveImg((i) => (i + 1) % product.gallery.length);
   const prev = () => setActiveImg((i) => (i - 1 + product.gallery.length) % product.gallery.length);
 
-  // Swipe gestures for the photo gallery + the fullscreen lightbox.
-  // Swipe left → next, swipe right → previous. The mainSwipe.swiped
-  // ref guards tap-to-zoom so a swipe doesn't also open the lightbox.
-  const mainSwipe = useSwipe({ onSwipeLeft: next, onSwipeRight: prev });
+  // Main gallery: finger-following glide carousel (drag to slide the
+  // next photo in, release to snap). Lightbox keeps the lighter
+  // swipe-detect. Both guard tap-to-zoom via their `swiped` ref.
+  const glide = useGlideCarousel({ count: product.gallery.length, index: activeImg, setIndex: setActiveImg });
   const zoomSwipe = useSwipe({ onSwipeLeft: next, onSwipeRight: prev });
 
   return (
@@ -455,16 +456,39 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
                   Tap the main image to open a fullscreen lightbox (zoom + pan).
                   The next/prev arrow buttons stop click propagation so they don't
                   also trigger the zoom open. */}
-              <div className="relative aspect-[4/5] overflow-hidden mb-4" style={{ background: "rgba(26,22,18,0.04)" }} {...mainSwipe.handlers}>
-                <button
-                  type="button"
-                  onClick={() => { if (!mainSwipe.swiped.current) setZoomOpen(true); }}
-                  className="absolute inset-0 w-full h-full block"
-                  aria-label={`Zoom photo ${activeImg + 1} of ${product.gallery.length}`}
-                  style={{ cursor: "zoom-in", padding: 0, border: 0, background: "transparent" }}
-                >
-                  <img src={product.gallery[activeImg]} alt={product.name} className="w-full h-full object-cover pointer-events-none" style={galleryRotationStyle(activeImg)} fetchPriority="high" decoding="async" />
-                </button>
+              <div
+                className="relative aspect-[4/5] overflow-hidden mb-4"
+                style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}
+                role="button"
+                aria-label={`Zoom photo ${activeImg + 1} of ${product.gallery.length}`}
+                onClick={() => { if (!glide.swiped.current) setZoomOpen(true); }}
+                {...glide.handlers}
+              >
+                {/* Sliding track — drag follows the finger, neighbour
+                    photo slides in, release snaps. Only ±2 of the
+                    active photo get a real src so the full gallery
+                    doesn't decode at once. */}
+                <div style={glide.trackStyle}>
+                  {product.gallery.map((src, i) => {
+                    const near = Math.abs(i - activeImg) <= 2;
+                    return (
+                      <div key={i} className="min-w-full h-full flex items-center justify-center">
+                        {near && (
+                          <img
+                            src={src}
+                            alt={product.name}
+                            className="w-full h-full object-cover pointer-events-none"
+                            style={galleryRotationStyle(i)}
+                            loading={i === activeImg ? "eager" : "lazy"}
+                            fetchPriority={i === activeImg ? "high" : "auto"}
+                            decoding="async"
+                            draggable={false}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
                 <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label="Previous photo">
                   <ChevronLeft size={18} />
                 </button>
