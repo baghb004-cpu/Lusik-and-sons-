@@ -25,11 +25,10 @@
 // small (< 50 items) so it runs on every keystroke with no debounce.
 // ============================================================
 
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { CATALOG } from "../data/catalog.js";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { Search, ChevronRight, User } from "./icons.jsx";
-import { useKeyboardOffset } from "../lib/useKeyboardOffset.js";
 
 const SITE_SECTIONS = [
   { label: "FAQ",                id: "faq",      type: "section" },
@@ -84,10 +83,28 @@ export function MobileSearchView({
   onAvatarTap,
 }) {
   const scrollRef = useRef(null);
-  // Keyboard height so the results' bottom padding clears both the
-  // floating search bar AND the keyboard — the last row stays
-  // reachable while typing.
-  const kbOffset = useKeyboardOffset(true);
+
+  // Size the panel to the VISIBLE viewport (the area above the
+  // keyboard), tracked via the VisualViewport API. This is the fix
+  // for iOS shoving a position:fixed; inset:0 panel upward when the
+  // keyboard opens — which was scrolling the "Search" title and the
+  // first result off the top. By pinning the panel to
+  // {top: vv.offsetTop, height: vv.height} we force it to fill
+  // exactly the area above the keyboard, so the title stays at the
+  // visible top and the first result sits right under it.
+  const [vp, setVp] = useState(null);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return undefined;
+    const vv = window.visualViewport;
+    const update = () => setVp({ top: vv.offsetTop, height: vv.height });
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   // Snap results back to the top whenever the query changes so the
   // first match is always immediately visible — the core fix.
@@ -141,7 +158,13 @@ export function MobileSearchView({
       className="lg:hidden"
       style={{
         position: "fixed",
-        inset: 0,
+        // Pin to the visible viewport so the keyboard can't push the
+        // title off the top. Falls back to full-height before the
+        // VisualViewport measurement lands (and on older browsers).
+        top: vp ? vp.top : 0,
+        left: 0,
+        right: 0,
+        height: vp ? vp.height : "100%",
         background: "var(--bg-page)",
         zIndex: 20,                 // below the bottom-nav search bar (z-30)
         display: "flex",
@@ -184,9 +207,10 @@ export function MobileSearchView({
         className="flex-1 overflow-y-auto"
         style={{
           padding: "0 24px",
-          // Clear the floating search bar (~90px) plus the keyboard
-          // when it's open, so the last result is always reachable.
-          paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${90 + kbOffset}px)`,
+          // The panel is already sized to the area above the keyboard,
+          // so this just clears the floating search bar (~90px) that
+          // sits at the bottom of the visible region.
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)",
         }}
       >
         {showSuggestions && (
