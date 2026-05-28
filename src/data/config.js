@@ -270,6 +270,7 @@ export const CONFIG = {
     phone_e164: "+17608742333",          // E.164 format, used in tel:/sms: links
     phone_display: "(760) 874-2333",     // pretty format, shown to users
     sms_prefill: "Hi Lusik & Sons — ",   // seeds the SMS body so threads are recognizable
+    email: "hello@lusikandsons.com",     // contact email, used in mailto: links
     headline: "Send us a text.",
     subhead: "Lusik or one of her sons writes back, usually within a day.",
   },
