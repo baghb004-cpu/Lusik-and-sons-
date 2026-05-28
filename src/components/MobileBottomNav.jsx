@@ -11,7 +11,7 @@
 // ============================================================
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Home, Store, BookOpen, ShoppingBag, Search, Mic } from "./icons.jsx";
+import { Home, Store, BookOpen, ShoppingBag, Search, Mic, X } from "./icons.jsx";
 
 const SR = typeof window !== "undefined"
   ? (window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -296,7 +296,7 @@ export function MobileBottomNav({
               border: "1px solid rgba(26,22,18,0.12)",
               background: "rgba(245,239,227,0.6)",
               paddingLeft: 42,
-              paddingRight: searchQuery ? 76 : 46,
+              paddingRight: searchQuery ? 110 : 82,
               fontSize: "16px",
               fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
               fontWeight: 400,
@@ -307,20 +307,20 @@ export function MobileBottomNav({
             }}
           />
 
-          {/* Clear button */}
+          {/* Clear text button — only when there's query text */}
           {searchQuery && (
             <button
               type="button"
               onClick={() => { onSearchQueryChange?.(""); inputRef.current?.focus(); }}
-              aria-label="Clear search"
+              aria-label="Clear search text"
               style={{
-                position: "absolute", right: SR ? 40 : 12, top: "50%",
+                position: "absolute", right: SR ? 76 : 44, top: "50%",
                 transform: "translateY(-50%)",
-                width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+                width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
                 color: "rgba(26,22,18,0.4)", background: "transparent", border: "none", cursor: "pointer",
               }}
             >
-              <span style={{ fontSize: "1.3rem", fontWeight: 300, lineHeight: 1 }}>&times;</span>
+              <span style={{ fontSize: "1.2rem", fontWeight: 300, lineHeight: 1 }}>&times;</span>
             </button>
           )}
 
@@ -331,9 +331,9 @@ export function MobileBottomNav({
               onClick={listening ? () => { try { recognitionRef.current?.stop(); } catch {} setListening(false); } : startVoice}
               aria-label={listening ? "Stop listening" : "Search by voice"}
               style={{
-                position: "absolute", right: 6, top: "50%",
+                position: "absolute", right: 42, top: "50%",
                 transform: "translateY(-50%)",
-                width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
+                width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
                 borderRadius: "50%",
                 background: listening ? "rgba(176,136,66,0.15)" : "transparent",
                 border: "none", cursor: "pointer",
@@ -341,9 +341,36 @@ export function MobileBottomNav({
                 transition: "color 0.2s, background 0.2s",
               }}
             >
-              <Mic size={19} strokeWidth={1.5} />
+              <Mic size={18} strokeWidth={1.5} />
             </button>
           )}
+
+          {/* X (close) — dismisses keyboard + exits search mode.
+              Always visible in search mode. Matches the Apple Store's
+              X button to the right of the mic. */}
+          <button
+            type="button"
+            onClick={() => {
+              inputRef.current?.blur();
+              onSearchQueryChange?.("");
+              try { recognitionRef.current?.stop(); } catch {}
+              setListening(false);
+              onHome?.();
+            }}
+            aria-label="Close search"
+            tabIndex={isSearch ? 0 : -1}
+            style={{
+              position: "absolute", right: 6, top: "50%",
+              transform: "translateY(-50%)",
+              width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
+              borderRadius: "50%",
+              background: "rgba(26,22,18,0.08)",
+              border: "none", cursor: "pointer",
+              color: "rgba(26,22,18,0.5)",
+            }}
+          >
+            <X size={16} strokeWidth={2} />
+          </button>
         </div>
       </div>
     </nav>
