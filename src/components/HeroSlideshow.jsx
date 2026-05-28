@@ -22,6 +22,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "./icons.jsx";
+import { useSwipe } from "../lib/useSwipe.js";
 
 const HERO_PHOTOS = [
   {
@@ -129,6 +130,9 @@ export function HeroSlideshow({ className = "", style = {}, onIndexChange }) {
   const goNext = () => setActiveIdx((prev) => (prev + 1) % HERO_PHOTOS.length);
   const togglePause = () => setUserPaused((p) => !p);
 
+  // Swipe gestures — swipe left → next slide, right → previous.
+  const { handlers: swipeHandlers } = useSwipe({ onSwipeLeft: goNext, onSwipeRight: goPrev });
+
   return (
     <div
       className={`relative overflow-hidden ${className}`}
@@ -137,6 +141,7 @@ export function HeroSlideshow({ className = "", style = {}, onIndexChange }) {
       onMouseLeave={() => setHoverPaused(false)}
       aria-roledescription="carousel"
       aria-label="Lusik's recent work"
+      {...swipeHandlers}
     >
       {HERO_PHOTOS.map((photo, i) => {
         const needsRotation = photo.rotate === 90 || photo.rotate === -90;

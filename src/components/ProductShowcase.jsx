@@ -19,6 +19,7 @@ import { track } from "../lib/analytics.js";
 import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign } from "../lib/designUrl";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import { useIsMobile } from "../lib/useIsMobile.js";
+import { useSwipe } from "../lib/useSwipe.js";
 import { PHOTO_DATE_DETAIL } from "../images/photos.js";
 import { getDeliveryEstimate } from "../lib/deliveryEstimate.js";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
@@ -365,6 +366,12 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
   const next = () => setActiveImg((i) => (i + 1) % product.gallery.length);
   const prev = () => setActiveImg((i) => (i - 1 + product.gallery.length) % product.gallery.length);
 
+  // Swipe gestures for the photo gallery + the fullscreen lightbox.
+  // Swipe left → next, swipe right → previous. The mainSwipe.swiped
+  // ref guards tap-to-zoom so a swipe doesn't also open the lightbox.
+  const mainSwipe = useSwipe({ onSwipeLeft: next, onSwipeRight: prev });
+  const zoomSwipe = useSwipe({ onSwipeLeft: next, onSwipeRight: prev });
+
   return (
     // The outer #blanket id was the legacy home-page-anchor target.
     // With the /shop/blankets/armenian-alphabet-blanket route in
@@ -448,10 +455,10 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
                   Tap the main image to open a fullscreen lightbox (zoom + pan).
                   The next/prev arrow buttons stop click propagation so they don't
                   also trigger the zoom open. */}
-              <div className="relative aspect-[4/5] overflow-hidden mb-4" style={{ background: "rgba(26,22,18,0.04)" }}>
+              <div className="relative aspect-[4/5] overflow-hidden mb-4" style={{ background: "rgba(26,22,18,0.04)" }} {...mainSwipe.handlers}>
                 <button
                   type="button"
-                  onClick={() => setZoomOpen(true)}
+                  onClick={() => { if (!mainSwipe.swiped.current) setZoomOpen(true); }}
                   className="absolute inset-0 w-full h-full block"
                   aria-label={`Zoom photo ${activeImg + 1} of ${product.gallery.length}`}
                   style={{ cursor: "zoom-in", padding: 0, border: 0, background: "transparent" }}
@@ -1180,6 +1187,7 @@ export function ProductShowcase({ product, onAdd, onCartFeedback, user, onRequir
           role="dialog"
           aria-modal="true"
           aria-label={`Photo ${activeImg + 1} of ${product.gallery.length}, zoomed`}
+          {...zoomSwipe.handlers}
         >
           {/* Image — object-contain so the whole photo fits, regardless
               of aspect ratio. touchAction: pinch-zoom lets iOS users
