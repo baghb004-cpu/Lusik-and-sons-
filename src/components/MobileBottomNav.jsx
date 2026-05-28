@@ -242,11 +242,13 @@ export function MobileBottomNav({
           transition: anim ?? "opacity 0.25s ease",
         }}
       >
-        {/* & icon — Stage 1 only (hidden when input is focused) */}
+        {/* & icon OR cart bag icon — Stage 1 only (hidden when input is focused).
+            When cartCount > 0, shows a ShoppingBag with a badge (tapping opens cart).
+            When cartCount === 0, shows the "&" brand icon (tapping goes home). */}
         <button
           type="button"
-          onClick={onHome}
-          aria-label="Back to home"
+          onClick={cartCount > 0 ? onCart : onHome}
+          aria-label={cartCount > 0 ? `Cart (${cartCount} items)` : "Back to home"}
           style={{
             width: isFullSearch ? 0 : 42,
             height: 42,
@@ -261,13 +263,36 @@ export function MobileBottomNav({
             opacity: isFullSearch ? 0 : 1,
             padding: 0,
             transition: anim ?? "width 0.25s ease, opacity 0.2s ease",
+            position: "relative",
           }}
           tabIndex={isSearch && !isFullSearch ? 0 : -1}
         >
-          <span style={{
-            fontFamily: "Fraunces, Georgia, serif",
-            fontSize: "1.2rem", fontWeight: 600, color: "#B08842", lineHeight: 1,
-          }}>&amp;</span>
+          {cartCount > 0 ? (
+            <>
+              <ShoppingBag size={18} strokeWidth={1.6} style={{ color: "#1A1612" }} />
+              <span style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                minWidth: 16,
+                height: 16,
+                padding: "0 4px",
+                borderRadius: 9,
+                background: "#B08842",
+                color: "#F5EFE3",
+                fontSize: "0.6rem",
+                fontWeight: 600,
+                lineHeight: "16px",
+                textAlign: "center",
+                boxShadow: "0 1px 2px rgba(26,22,18,0.18)",
+              }}>{cartCount}</span>
+            </>
+          ) : (
+            <span style={{
+              fontFamily: "Fraunces, Georgia, serif",
+              fontSize: "1.2rem", fontWeight: 600, color: "#B08842", lineHeight: 1,
+            }}>&amp;</span>
+          )}
         </button>
 
         {/* Search input — full-width pill, 16px font (no iOS zoom) */}
