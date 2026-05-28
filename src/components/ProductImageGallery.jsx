@@ -27,6 +27,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, X } from "./icons.jsx";
 import { useSwipe } from "../lib/useSwipe.js";
+import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 
 export function ProductImageGallery({
   images,
@@ -73,9 +74,11 @@ export function ProductImageGallery({
   // hint the next ones.
   useEffect(() => {
     if (typeof window === "undefined" || count < 2) return;
-    const next = visibleIndices[(safeIdx + 1) % count];
-    const prev = visibleIndices[(safeIdx - 1 + count) % count];
-    [next, prev].forEach((i) => {
+    // Warm ±2 (matches the glide track's render window) so a swipe
+    // reveals a loaded photo, never a blank frame.
+    [-2, -1, 1, 2].forEach((d) => {
+      const i = visibleIndices[(safeIdx + d + count) % count];
+      if (i == null) return;
       const img = new window.Image();
       img.src = images[i];
     });
@@ -109,11 +112,11 @@ export function ProductImageGallery({
   const goPrev = () => setActiveIdx((p) => (p - 1 + count) % count);
   const goNext = () => setActiveIdx((p) => (p + 1) % count);
 
-  // Swipe gestures for the main image + the fullscreen lightbox.
-  // Swipe left → next photo, swipe right → previous. The `swiped`
-  // ref guards the main image's tap-to-zoom so a swipe doesn't
-  // also open the lightbox.
-  const mainSwipe = useSwipe({ onSwipeLeft: goNext, onSwipeRight: goPrev });
+  // Main image: finger-following glide carousel — drag to slide the
+  // next/previous photo into view, release to snap. The lightbox
+  // keeps the lighter swipe-detect (a centered contained image isn't
+  // a flex track). Both guard tap-to-zoom via their `swiped` ref.
+  const glide = useGlideCarousel({ count, index: safeIdx, setIndex: setActiveIdx });
   const zoomSwipe = useSwipe({ onSwipeLeft: goNext, onSwipeRight: goPrev });
 
   // Toggle a colorway. Clicking the active one again clears the
@@ -147,34 +150,45 @@ export function ProductImageGallery({
           Armenian Alphabet Blanket or this Cotton Yarn Blanket. */}
       <div
         className="relative aspect-[4/5] overflow-hidden mb-4"
-        style={{ background: "rgba(26,22,18,0.04)" }}
-        {...mainSwipe.handlers}
+        style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}
+        role="button"
+        aria-label={`Zoom photo ${safeIdx + 1} of ${count}`}
+        onClick={() => { if (!glide.swiped.current) setZoomOpen(true); }}
+        {...glide.handlers}
       >
-        <button
-          type="button"
-          onClick={() => { if (!mainSwipe.swiped.current) setZoomOpen(true); }}
-          className="absolute inset-0 w-full h-full block"
-          aria-label={`Zoom photo ${safeIdx + 1} of ${count}`}
-          style={{ cursor: "zoom-in", padding: 0, border: 0, background: "transparent" }}
-        >
-          <img
-            key={currentSrc}
-            src={currentSrc}
-            alt={alt}
-            // object-contain (not object-cover) so the entire photo
-            // is visible inside the 4:5 portrait container. With
-            // object-cover, landscape photos like the cotton blanket
-            // stack got ~33% horizontally cropped on mobile and the
-            // customer saw only a thin slice of abstract fabric
-            // texture instead of the full product. Letterbox bars
-            // (when an image's aspect doesn't match 4:5) blend into
-            // the cream container background and are barely visible.
-            className="w-full h-full object-contain pointer-events-none fade-in"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-          />
-        </button>
+        {/* SLIDING TRACK — all visible photos side by side. The
+            track transforms so the active photo shows; during a
+            drag it follows the finger and the neighbour slides in.
+            key on the colorway so a filter change jumps to photo 1
+            instead of gliding across the whole set.
+
+            object-contain (not cover) keeps the entire photo visible
+            in the 4:5 portrait frame — landscape product shots would
+            otherwise get cropped to a thin slice. Only photos within
+            ±2 of the active index get a real `src`; the rest render
+            an empty slide so a 61-photo set doesn't decode everything
+            at once. The preload effect warms the neighbours so the
+            glide reveals a loaded image, never a blank. */}
+        <div key={activeColorway ?? "all"} style={glide.trackStyle}>
+          {visibleIndices.map((rawI, vi) => {
+            const near = Math.abs(vi - safeIdx) <= 2;
+            return (
+              <div key={rawI} className="min-w-full h-full flex items-center justify-center">
+                {near && (
+                  <img
+                    src={images[rawI]}
+                    alt={alt}
+                    className="w-full h-full object-contain pointer-events-none"
+                    loading={vi === safeIdx ? "eager" : "lazy"}
+                    fetchPriority={vi === safeIdx ? "high" : "auto"}
+                    decoding="async"
+                    draggable={false}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
         {count > 1 && (
           <>
             <button
