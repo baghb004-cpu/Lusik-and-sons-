@@ -33,7 +33,7 @@ import { CategoryCardImage } from "../CategoryCardImage.jsx";
 //      brisk slideshow (real customer orders, not the old
 //      Romeo+blanket workshop shot)
 //   2. product.coverImage  -> explicit portrait crop if set
-//      (alphabet blanket, cotton blanket placeholder)
+//      (alphabet blanket, full-alphabet blanket placeholder)
 //   3. PRODUCT.gallery[0]  -> first gallery photo for the
 //      live alphabet blanket
 //   4. null  -> placeholder card renders the empty

@@ -52,7 +52,7 @@ VOICE:
 - Bilingual touches OK when natural ("շնորհակալություն" for thank you) but don't overdo it.
 
 WHAT WE SELL:
-- Armenian Alphabet Blanket — hand cross-stitched on cream cotton. Each one takes Lusik 5-10 business days. $65. Multiple color presets (Boys, Girls, Unisex, Purple, Armenian Flag) or full customization of block and letter DMC threads.
+- Armenian Alphabet Blanket — hand cross-stitched on a soft cream base. Each one takes Lusik 5-10 business days. $65. Multiple color presets (Boys, Girls, Unisex, Purple, Armenian Flag) or full customization of block and letter DMC threads.
 - Baby Bib — machine-embroidered with the baby's name (up to 6 characters). $22. Names only — not full sentences.
 - Other items (towels, additional blanket layouts) are coming soon — direct them to the waitlist.
 

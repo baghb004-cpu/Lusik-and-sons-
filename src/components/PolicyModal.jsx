@@ -90,7 +90,7 @@ export function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Shipping",
-          body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Most orders ship within 5–10 business days of order confirmation; the Cotton Alphabet Crib Blanket — every letter, by hand — needs 3–4 weeks. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
+          body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Most orders ship within 5–10 business days of order confirmation; the Full Alphabet Crib Blanket — every letter, by hand — needs 3–4 weeks. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
         },
         {
           heading: "Documentation and disputes",

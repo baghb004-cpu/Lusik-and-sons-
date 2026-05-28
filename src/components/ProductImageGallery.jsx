@@ -147,7 +147,7 @@ export function ProductImageGallery({
           TAP TO ZOOM badge bottom-left, counter bottom-right.
           Mirrors ProductShowcase line-for-line so the customer
           gets the same handle whether they're looking at the
-          Armenian Alphabet Blanket or this Cotton Yarn Blanket. */}
+          Armenian Alphabet Blanket or this Full Alphabet Crib Blanket. */}
       <div
         className="relative aspect-[4/5] overflow-hidden mb-4"
         style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}

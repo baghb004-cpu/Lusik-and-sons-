@@ -26,14 +26,18 @@
 // logic lives here.
 // ============================================================
 
-import React from "react";
+import React, { useState } from "react";
 import { SwipeableRow } from "./SwipeableRow.jsx";
 import { QuantityPicker } from "./QuantityPicker.jsx";
 import { FreeShippingProgress } from "./FreeShippingProgress.jsx";
 import { ShippingEstimator } from "./ShippingEstimator.jsx";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { PRODUCT } from "../data/product.js";
-import { X, ShoppingBag, ArrowRight, Check } from "./icons.jsx";
+import { X, ShoppingBag, ArrowRight, Check, ChevronDown } from "./icons.jsx";
+
+// Opens the shared PolicyModal (App listens for this CustomEvent).
+const openPolicy = (key) =>
+  window.dispatchEvent(new CustomEvent("openPolicy", { detail: key }));
 
 export function CartContents({
   variant = "drawer",
@@ -50,6 +54,12 @@ export function CartContents({
   onClose,
 }) {
   const isPage = variant === "page";
+
+  // Mobile-only "Order details & policies" expandable (Apple Store
+  // puts the legal block at the bottom of the bag). Collapsed by
+  // default — a wall of fine print above the pay button reads as
+  // friction for a small handmade brand.
+  const [policiesOpen, setPoliciesOpen] = useState(false);
 
   // Edit/Done ink-checkmark toggle — identical in both variants.
   const editToggle = cart.length > 0 && (
@@ -204,6 +214,16 @@ export function CartContents({
             </div>
             <ShippingEstimator subtotalCents={Math.round(subtotal * 100)} />
             <p className="text-[0.65rem] opacity-55 italic leading-relaxed mb-4">Made to order — every blanket starts after Lusik receives your order.</p>
+            {/* Plain-language consent line above the pay button —
+                mobile only. Policy names open the shared PolicyModal. */}
+            {isPage && (
+              <p className="text-[0.7rem] text-center opacity-65 leading-relaxed mb-3">
+                By placing your order you agree to our{" "}
+                <button type="button" onClick={() => openPolicy("terms")} className="underline">Terms</button>,{" "}
+                <button type="button" onClick={() => openPolicy("privacy")} className="underline">Privacy</button>{" & "}
+                <button type="button" onClick={() => openPolicy("finalSale")} className="underline">Final Sale</button> policies.
+              </p>
+            )}
             <button onClick={onCheckout} className="w-full py-4 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
               Checkout <ArrowRight size={16} />
             </button>
@@ -214,6 +234,40 @@ export function CartContents({
             <p className="text-xs text-center opacity-60 mt-3">
               Or <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">DM us on Instagram</button> to order
             </p>
+
+            {/* Order details & policies — collapsed by default,
+                mobile only. The longer plain-language recap lives
+                here so the pay button stays uncluttered. */}
+            {isPage && (
+              <div className="mt-6" style={{ borderTop: "1px solid var(--border-soft, rgba(26,22,18,0.10))" }}>
+                <button
+                  type="button"
+                  onClick={() => setPoliciesOpen((v) => !v)}
+                  aria-expanded={policiesOpen}
+                  className="w-full flex items-center justify-between text-left"
+                  style={{ padding: "14px 0", background: "none", border: "none", color: "var(--text-primary)" }}
+                >
+                  <span className="text-xs" style={{ fontWeight: 600, letterSpacing: "0.02em" }}>Order details &amp; policies</span>
+                  <ChevronDown
+                    size={18}
+                    strokeWidth={1.8}
+                    style={{ color: "#B08842", flexShrink: 0, transition: "transform 0.2s ease", transform: policiesOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                  />
+                </button>
+                {policiesOpen && (
+                  <div className="text-[0.7rem] leading-relaxed pb-4" style={{ opacity: 0.7 }}>
+                    <p className="mb-2">Every piece is made to order and finished by hand by Lusik in Cypress, California, so work begins as soon as you check out. Because each order is personalized, all sales are final — see our{" "}
+                      <button type="button" onClick={() => openPolicy("finalSale")} className="underline">Final Sale Policy</button>.</p>
+                    <p className="mb-2">Most orders ship within 5–10 business days; the Full Alphabet Crib Blanket — every letter, by hand — needs 3–4 weeks. We ship within the United States via USPS, UPS, or FedEx (your choice at checkout). Shipping costs and any duties are the customer's responsibility.</p>
+                    <p className="mb-2">Payment is processed securely by Stripe — your card details are never seen or stored by Lusik &amp; Sons.</p>
+                    <p>Full details: our{" "}
+                      <button type="button" onClick={() => openPolicy("terms")} className="underline">Terms of Service</button>,{" "}
+                      <button type="button" onClick={() => openPolicy("privacy")} className="underline">Privacy Policy</button>, and{" "}
+                      <button type="button" onClick={() => openPolicy("finalSale")} className="underline">Final Sale Policy</button>.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
