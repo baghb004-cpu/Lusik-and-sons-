@@ -29,7 +29,7 @@ import { ProductShowcase } from "../ProductShowcase.jsx";
 import { CustomProductCard } from "../CustomProductCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
-import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
+import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
 
 export function ProductView({
@@ -181,13 +181,10 @@ export function ProductView({
   return (
     <>
       {surface}
-      <HelpDecidingSection
-        heading="Still need help deciding?"
-        showPhoto={false}
-        showLede={false}
-        showFaq={false}
-        bordered
-      />
+      {/* Product detail pages get the *limited* contact card (Text +
+          Call). The fuller Email + Video options live on the category
+          and shop-index pages. Mobile only. */}
+      <StillHaveQuestionsCard className="mt-10 mb-12" />
     </>
   );
 }

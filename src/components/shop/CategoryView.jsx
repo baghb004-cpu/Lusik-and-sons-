@@ -22,6 +22,7 @@ import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight } from "../icons.jsx";
 import { PRODUCT } from "../../data/product.js";
 import { CategoryCardImage } from "../CategoryCardImage.jsx";
+import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
 
 // Thumbnail image(s) for the category-grid card. Returns either:
 //   - a string (single image, no slideshow), OR
@@ -56,6 +57,7 @@ function productHeroImages(product) {
 
 export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct }) {
   return (
+    <>
     <div className="fade-in max-w-6xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
       <Breadcrumbs trail={[
         { label: "Home", onClick: onNavigateHome },
@@ -158,5 +160,16 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
         })}
       </div>
     </div>
+    {/* Category pages get the fuller "Still need help deciding?" block
+        — Text / Call / Email / Video — matching the Apple Store
+        category screen. Mobile only (the section is lg:hidden). */}
+    <HelpDecidingSection
+      heading="Still need help deciding?"
+      showPhoto={false}
+      showLede={false}
+      showFaq={false}
+      bordered
+    />
+    </>
   );
 }
