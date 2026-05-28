@@ -22,7 +22,7 @@ const STORE_NAME = "order-finished-photos";
 export default async (req, context) => {
   if (req.method !== "GET") return json(405, { error: "Method not allowed" });
 
-  const auth = requireUser(context);
+  const auth = requireUser(req, context);
   if (auth.response) return auth.response;
 
   const url = new URL(req.url);

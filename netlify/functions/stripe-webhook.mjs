@@ -30,6 +30,7 @@ import {
   sendRefundNotification,
   sendCartAbandonmentRecovery,
   sendEmail,
+  esc,
 } from "./_lib/email.mjs";
 
 // Lazy-init the Stripe client so a missing STRIPE_SECRET_KEY env var
@@ -553,7 +554,7 @@ async function handlePaymentFailed(intent) {
   await sendEmail({
     to: adminEmail,
     subject: "Stripe payment failed (" + currency + " " + amount + ")",
-    html: "<h2>Stripe payment failed</h2><p><b>Amount:</b> " + currency + " " + amount + "</p><p><b>Customer:</b> " + email + "</p><p><b>Reason:</b> " + reason + "</p><p><b>PaymentIntent:</b> " + intent.id + "</p><p>No order created -- this was a failed attempt.</p><p>See Stripe dashboard: https://dashboard.stripe.com/payments/" + intent.id + "</p>",
+    html: "<h2>Stripe payment failed</h2><p><b>Amount:</b> " + currency + " " + amount + "</p><p><b>Customer:</b> " + esc(email) + "</p><p><b>Reason:</b> " + esc(reason) + "</p><p><b>PaymentIntent:</b> " + esc(intent.id) + "</p><p>No order created -- this was a failed attempt.</p><p>See Stripe dashboard: https://dashboard.stripe.com/payments/" + esc(intent.id) + "</p>",
   });
   return new Response("ok", { status: 200 });
 }
@@ -569,7 +570,7 @@ async function handleDisputeCreated(dispute) {
   await sendEmail({
     to: adminEmail,
     subject: "URGENT: Stripe dispute opened (" + currency + " " + amount + ") -- respond within 7 days",
-    html: "<h2>New Stripe dispute / chargeback</h2><p><b>Amount:</b> " + currency + " " + amount + "</p><p><b>Reason:</b> " + reason + "</p><p><b>Dispute ID:</b> " + dispute.id + "</p><p><b>Deadline:</b> " + dueBy + "</p><p>You typically have ~7 days to submit evidence.</p><p>See dispute: https://dashboard.stripe.com/disputes/" + dispute.id + "</p>",
+    html: "<h2>New Stripe dispute / chargeback</h2><p><b>Amount:</b> " + currency + " " + amount + "</p><p><b>Reason:</b> " + esc(reason) + "</p><p><b>Dispute ID:</b> " + esc(dispute.id) + "</p><p><b>Deadline:</b> " + esc(dueBy) + "</p><p>You typically have ~7 days to submit evidence.</p><p>See dispute: https://dashboard.stripe.com/disputes/" + esc(dispute.id) + "</p>",
   });
   return new Response("ok", { status: 200 });
 }
@@ -582,7 +583,7 @@ async function handleFraudWarning(warning) {
   await sendEmail({
     to: adminEmail,
     subject: "Stripe Radar fraud warning -- review or refund",
-    html: "<h2>Early fraud warning from Stripe Radar</h2><p>Refund within ~48h typically avoids the chargeback.</p><p><b>Fraud type:</b> " + fraudType + "</p><p><b>Charge:</b> " + warning.charge + "</p><p><b>Warning ID:</b> " + warning.id + "</p><p>See: https://dashboard.stripe.com/payments/" + warning.charge + "</p>",
+    html: "<h2>Early fraud warning from Stripe Radar</h2><p>Refund within ~48h typically avoids the chargeback.</p><p><b>Fraud type:</b> " + esc(fraudType) + "</p><p><b>Charge:</b> " + esc(warning.charge) + "</p><p><b>Warning ID:</b> " + esc(warning.id) + "</p><p>See: https://dashboard.stripe.com/payments/" + esc(warning.charge) + "</p>",
   });
   return new Response("ok", { status: 200 });
 }

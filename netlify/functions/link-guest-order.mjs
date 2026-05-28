@@ -52,7 +52,7 @@ export default async (req, context) => {
   // while OAuth signups land the boolean as `email_verified` at
   // the top level OR inside `app_metadata`. Accept any of the
   // three; treat absence everywhere as unverified.
-  const raw = user.raw ?? {};
+  const raw = user._raw ?? {};
   const verified =
     !!raw.confirmed_at ||
     raw.email_verified === true ||

@@ -94,7 +94,7 @@ export async function sendEmail({ to, subject, html, text }) {
 // HTML-escape user-controlled strings before interpolating into
 // the email body. Resend won't sanitize for us, and a customer
 // name with "<" in it shouldn't break the layout.
-function esc(s) {
+export function esc(s) {
   if (s === null || s === undefined) return "";
   return String(s)
     .replace(/&/g, "&amp;")

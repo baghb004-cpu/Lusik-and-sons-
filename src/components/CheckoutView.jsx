@@ -268,22 +268,6 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
     }
   };
 
-  // Map legacy IDs (without explicit productKey) — defensive copy of the
-  // server-side helper, so the browser does the right thing pre-flight.
-  function mapLegacyId(id) {
-    if (!id) return null;
-    if (id.startsWith?.("bib-")) return "bib";
-    if (id.startsWith?.("blanket-")) {
-      // Cart ids: `blanket-{alphabet}-{layoutKey}-{blockDmc}-{letterDmc}[-multi-...][-c...]`.
-      // Layout keys themselves use underscores, never dashes — so parts[2] is
-      // the whole layout token. TRUSTED_PRODUCTS keys off `blanket-{layoutKey}`.
-      const parts = id.split("-");
-      if (parts.length >= 3) return `blanket-${parts[2]}`;
-      return "blanket";
-    }
-    return null;
-  }
-
   return (
     <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
       <button onClick={onBack} className="text-sm tracking-wide opacity-70 hover:opacity-100 mb-8">← Continue shopping</button>
