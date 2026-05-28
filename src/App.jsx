@@ -1434,6 +1434,13 @@ export function App() {
           }
           user={user}
           onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
+          onBack={
+            view === "shop-product" && shopCategorySlug
+              ? () => goShopCategory(shopCategorySlug)
+              : view === "shop-category"
+                ? goShopIndex
+                : undefined
+          }
         />
       )}
       {/* Page-transition wrapper. The `key` changes whenever the

@@ -29,6 +29,7 @@ import { ProductShowcase } from "../ProductShowcase.jsx";
 import { CustomProductCard } from "../CustomProductCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
+import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
 
 export function ProductView({
@@ -77,6 +78,10 @@ export function ProductView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.slug]);
 
+  // Each product surface is built below, then wrapped once with the
+  // mobile-only "Still need help deciding?" contact block so it
+  // appears at the bottom of every product page (Apple Store style).
+  const surface = (() => {
   // Placeholder products: render the "coming soon" template
   // with the catalog description and a Notify-me button. No buy
   // flow — there's nothing to add to cart yet.
@@ -170,5 +175,19 @@ export function ProductView({
       trail={trail}
       onOpenWaitlist={onOpenWaitlist}
     />
+  );
+  })();
+
+  return (
+    <>
+      {surface}
+      <HelpDecidingSection
+        heading="Still need help deciding?"
+        showPhoto={false}
+        showLede={false}
+        showFaq={false}
+        bordered
+      />
+    </>
   );
 }
