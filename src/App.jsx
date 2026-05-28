@@ -1483,6 +1483,7 @@ export function App() {
           onNavigateShop={goShopIndex}
           onNavigateCategory={goShopCategory}
           onNavigateProduct={goShopProduct}
+          simplified={!showHomeIntro}
         />
       )}
       {view === "checkout" && <CheckoutView cart={cart} subtotal={subtotal} user={user} profile={profile} onBack={() => setView("home")} />}

@@ -57,6 +57,11 @@ export function HomeView({
   onNavigateShop,
   onNavigateCategory,
   onNavigateProduct,
+  // Mobile-only: on a return visit within the same session the App
+  // collapses the home screen to an Apple Store "For You" layout —
+  // the brand hero is dropped and the For-You sections lead. Desktop
+  // ignores this entirely (the hero is always shown on lg+).
+  simplified = false,
 }) {
   const t = useT();
   const [contactMenuOpen, setContactMenuOpen] = useState(false);
@@ -70,7 +75,10 @@ export function HomeView({
   const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewed());
   return (
     <div className="fade-in">
-      <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24">
+      {/* Brand hero. On a simplified mobile return-visit it's hidden
+          (hidden lg:block) so the "For You" sections lead, matching the
+          Apple Store app. Desktop always renders it. */}
+      <section className={`${simplified ? "hidden lg:block " : ""}max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24`}>
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
           <div className="lg:col-span-5 slide-up min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#B08842" }}>Cypress, California</p>
@@ -146,10 +154,12 @@ export function HomeView({
                viewed strip the search page uses; only renders when the
                guest has actually viewed something.
           Sits right after the brand hero so the hero still leads. */}
-      <section className="lg:hidden px-6 pt-2 pb-10">
-        {/* a) We think you'll love — curated feature card */}
-        <div className="mb-3">
-          <p className="text-xs tracking-[0.2em] uppercase" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+      <section className={`lg:hidden px-6 ${simplified ? "pt-3" : "pt-2"} pb-10`}>
+        {/* a) We think you'll love — curated feature card.
+            Heading uses the Apple Store "For You" section style: large,
+            bold, ink-colored, left-aligned (not the small gold eyebrow). */}
+        <div className="mb-4">
+          <p className="leading-tight" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
             We think you'll love
           </p>
         </div>
@@ -191,6 +201,7 @@ export function HomeView({
               items={recentlyViewed}
               onTap={(categorySlug, slug) => onNavigateProduct?.(categorySlug, slug)}
               heading="Your recent activity"
+              large
             />
           </div>
         )}
@@ -268,7 +279,12 @@ export function HomeView({
           card). The customer chooses a path and goes deeper. */}
       <section className="border-y py-14 lg:py-20" style={{ borderColor: "var(--border-default)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="max-w-2xl mx-auto text-center mb-10 lg:mb-14">
+          {/* Mobile: Apple Store-style simple section label, left-aligned. */}
+          <p className="lg:hidden leading-tight mb-5" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+            More for you to explore
+          </p>
+          {/* Desktop: the full centered editorial heading (unchanged). */}
+          <div className="hidden lg:block max-w-2xl mx-auto text-center mb-10 lg:mb-14">
             <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>What Lusik makes</p>
             <h2 className="font-display text-3xl lg:text-5xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               Hand work, <em style={{ fontWeight: 400 }}>by category</em>.
