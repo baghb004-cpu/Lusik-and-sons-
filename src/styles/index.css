@@ -1547,18 +1547,6 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* SEARCH-MODE COLLAPSED NAV — the bottom island transitions
-   from a 5-tab bar to a [& icon] + [search input] layout when
-   the Search tab is active. The .lg-search-bar-layout class
-   handles the internal flex positioning. */
-.lg-search-bar-layout {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 0 2px;
-}
-
 /* MOBILE APP LAYOUT — Apple Store-style treatment.
    Light warm-gray background behind the content so white/cream
    cards pop. Rounded corners on .lg-button / .lg-panel cards

@@ -1,25 +1,15 @@
 // ============================================================
 // MobileBottomNav — Apple-Store-style floating glass tab bar
-//                   with search-mode collapse
 // ============================================================
-// Two visual modes, same component:
+// Five frosted-glass tabs in a pill: Home, Shop, Journal, Cart,
+// Search. Always visible, never collapses. The Search tab simply
+// navigates to the search view; the actual search input is a
+// separate floating bar (MobileSearchBar) that renders above
+// this tab bar.
 //
-//   NORMAL (any view except search):
-//     Five frosted-glass tabs in a pill: Home, Shop, Journal,
-//     Cart, Search. The active tab has a sliding "lens" with
-//     spring physics + icon magnification. Touch-drag the lens
-//     between tabs. Same behavior as before.
-//
-//   SEARCH (view === "search"):
-//     The five tabs collapse into a single small circular button
-//     on the left (the brand "&" in gold). A pill-shaped search
-//     input fills the remaining space. Tapping the "&" takes the
-//     user home and restores the full nav. The search input is
-//     the actual functional input — its value is lifted to App
-//     so MobileSearchView can show results in the main area.
-//
-// The transition between modes is animated: tabs fade out while
-// the icon + input fade in, with a slight horizontal slide.
+// The active tab is highlighted with a brighter "lens" panel
+// that slides between tabs with a spring curve. Touch-drag the
+// lens between tabs to navigate by gesture.
 //
 // Account access is via the avatar circle in MobilePageHeader
 // (not in this nav bar).
@@ -28,20 +18,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Home, Store, BookOpen, ShoppingBag, Search } from "./icons.jsx";
 
-export function MobileBottomNav({
-  view,
-  cartCount,
-  onHome,
-  onShop,
-  onJournal,
-  onCart,
-  onSearch,
-  searchQuery = "",
-  onSearchQueryChange,
-}) {
-  const isSearch = view === "search";
-
-  // ── Tab definitions (normal mode) ────────────────────────
+export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, onCart, onSearch }) {
   const tabs = useMemo(() => ([
     { key: "home",    label: "Home",    Icon: Home,        action: onHome,    activeWhen: view === "home" },
     { key: "shop",    label: "Shop",    Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
@@ -56,7 +33,6 @@ export function MobileBottomNav({
   }, [tabs]);
 
   const navRef = useRef(null);
-  const searchInputRef = useRef(null);
   const [lensIndex,  setLensIndex]  = useState(baseIndex);
   const [dragOffset, setDragOffset] = useState(0);
   const [pressed,    setPressed]    = useState(false);
@@ -68,14 +44,6 @@ export function MobileBottomNav({
   useEffect(() => {
     if (!pressed) setLensIndex(baseIndex);
   }, [baseIndex, pressed]);
-
-  // Auto-focus the search input when entering search mode.
-  useEffect(() => {
-    if (isSearch) {
-      const t = setTimeout(() => searchInputRef.current?.focus(), 350);
-      return () => clearTimeout(t);
-    }
-  }, [isSearch]);
 
   const reducedMotion = useMemo(() => (
     typeof window !== "undefined"
@@ -101,9 +69,7 @@ export function MobileBottomNav({
     return clientX - center;
   }, [tabCount]);
 
-  // ── Touch handlers (normal mode only) ────────────────────
   const onTouchStart = (e) => {
-    if (isSearch) return;
     const t = e.touches[0];
     if (!t) return;
     startXRef.current = t.clientX;
@@ -117,7 +83,6 @@ export function MobileBottomNav({
   };
 
   const onTouchMove = (e) => {
-    if (isSearch) return;
     const t = e.touches[0];
     if (!t) return;
     const dx = t.clientX - startXRef.current;
@@ -141,7 +106,6 @@ export function MobileBottomNav({
   };
 
   const onTouchEnd = (e) => {
-    if (isSearch) return;
     setPressed(false);
     setHoverIndex(null);
     setDragOffset(0);
@@ -160,7 +124,6 @@ export function MobileBottomNav({
   };
 
   const onTouchCancel = () => {
-    if (isSearch) return;
     setPressed(false);
     setDragOffset(0);
     setHoverIndex(null);
@@ -177,107 +140,16 @@ export function MobileBottomNav({
 
   const slotPct = 100 / tabCount;
 
-  // ── Render ───────────────────────────────────────────────
   return (
     <nav
       ref={navRef}
-      className={"lg-bottom-island lg:hidden" + (isSearch ? " lg-bottom-search" : "")}
+      className="lg-bottom-island lg:hidden"
       aria-label="Bottom navigation"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchCancel}
     >
-      {/* ── SEARCH MODE: collapsed icon + search input ──── */}
-      <div
-        className="lg-search-bar-layout"
-        style={{
-          opacity: isSearch ? 1 : 0,
-          pointerEvents: isSearch ? "auto" : "none",
-          transform: isSearch ? "translateY(0)" : "translateY(8px)",
-          transition: reducedMotion ? "none" : "opacity 0.25s ease, transform 0.25s ease",
-          position: isSearch ? "relative" : "absolute",
-          width: "100%",
-        }}
-        aria-hidden={!isSearch}
-      >
-        {/* Collapsed nav icon — the brand "&" in gold on a
-            frosted circle. Tapping goes home + restores the
-            full tab bar. */}
-        <button
-          type="button"
-          onClick={onHome}
-          className="lg-collapsed-nav-icon"
-          aria-label="Back to home"
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: "50%",
-            background: "var(--bg-surface, rgba(245,239,227,0.85))",
-            border: "1px solid rgba(26,22,18,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            boxShadow: "0 2px 8px -2px rgba(26,22,18,0.15)",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "Fraunces, Georgia, serif",
-              fontSize: "1.2rem",
-              fontWeight: 600,
-              color: "#B08842",
-              lineHeight: 1,
-            }}
-          >
-            &amp;
-          </span>
-        </button>
-
-        {/* Search input — pill shape, fills the remaining space */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <span
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <Search size={16} strokeWidth={1.5} />
-          </span>
-          <input
-            ref={searchInputRef}
-            type="search"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange?.(e.target.value)}
-            placeholder="What are you looking for?"
-            className="mobile-search-input"
-            style={{
-              width: "100%",
-              paddingLeft: "2.5rem",
-              paddingRight: searchQuery ? "2.2rem" : "1rem",
-              height: 42,
-              fontSize: "0.85rem",
-            }}
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            tabIndex={isSearch ? 0 : -1}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => onSearchQueryChange?.("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100"
-              aria-label="Clear search"
-              style={{ color: "var(--text-primary)", lineHeight: 1 }}
-              tabIndex={isSearch ? 0 : -1}
-            >
-              <span style={{ fontSize: "1.1rem", fontWeight: 300 }}>&times;</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── NORMAL MODE: 5 tabs with lens ───────────────── */}
       <span
         className={"lg-lens" + (pressed ? " lg-lens-pressed" : "")}
         aria-hidden="true"
@@ -285,12 +157,11 @@ export function MobileBottomNav({
           width:     `${slotPct}%`,
           left:      `${lensIndex * slotPct}%`,
           transform: `translateX(${dragOffset}px)`,
-          opacity: isSearch ? 0 : 1,
           transition: reducedMotion
             ? "none"
             : draggingRef.current
-              ? "transform 0ms, left 0ms, opacity 0.2s ease"
-              : "left 0.32s cubic-bezier(0.4, 1.4, 0.6, 1), transform 0.32s cubic-bezier(0.4, 1.4, 0.6, 1), opacity 0.2s ease",
+              ? "transform 0ms, left 0ms"
+              : "left 0.32s cubic-bezier(0.4, 1.4, 0.6, 1), transform 0.32s cubic-bezier(0.4, 1.4, 0.6, 1)",
         }}
       />
       {tabs.map((t, i) => {
@@ -303,13 +174,6 @@ export function MobileBottomNav({
             className="lg-tab"
             aria-current={active ? "page" : undefined}
             aria-label={t.label + (t.badge ? ` (${t.badge} item${t.badge === 1 ? "" : "s"})` : "")}
-            tabIndex={isSearch ? -1 : 0}
-            style={{
-              opacity: isSearch ? 0 : 1,
-              pointerEvents: isSearch ? "none" : "auto",
-              transform: isSearch ? "scale(0.85)" : "scale(1)",
-              transition: reducedMotion ? "none" : "opacity 0.2s ease, transform 0.25s ease",
-            }}
           >
             <span
               className="lg-tab-icon"
