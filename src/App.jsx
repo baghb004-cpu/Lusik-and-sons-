@@ -1680,13 +1680,33 @@ export function App() {
               <h3 className="font-display text-2xl" style={{ fontWeight: 400 }}>Your cart</h3>
               <div className="flex items-center gap-4">
                 {cart.length > 0 && (
-                  <button
-                    onClick={() => setCartEditMode((m) => !m)}
-                    className="text-sm transition-opacity hover:opacity-70"
-                    style={{ color: "#B08842", fontWeight: 500 }}
-                  >
-                    {cartEditMode ? "Done" : "Edit"}
-                  </button>
+                  cartEditMode ? (
+                    // Done — ink circle with a white checkmark (Apple's
+                    // edit-confirm affordance, in the brand's ink rather
+                    // than Apple blue so it sits in the warm palette).
+                    <button
+                      onClick={() => setCartEditMode(false)}
+                      aria-label="Done editing cart"
+                      className="flex items-center justify-center transition-transform active:scale-95"
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: "50%",
+                        background: "var(--ink)",
+                        color: "var(--text-on-ink)",
+                      }}
+                    >
+                      <Check size={17} strokeWidth={2.5} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setCartEditMode(true)}
+                      className="text-sm transition-opacity hover:opacity-70"
+                      style={{ color: "#B08842", fontWeight: 500 }}
+                    >
+                      Edit
+                    </button>
+                  )
                 )}
                 <button onClick={() => setCartOpen(false)} aria-label="Close cart" data-tooltip="Close" data-tooltip-pos="left"><X size={20} /></button>
               </div>
