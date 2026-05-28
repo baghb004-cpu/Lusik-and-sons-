@@ -310,3 +310,22 @@ test.describe("journal navigation", () => {
     expect(page.url()).toMatch(/\/journal\/[a-z0-9-]+/);
   });
 });
+
+test.describe("section pages (promoted off the home page)", () => {
+  test("Story opens /story and the big back header returns to For You", async ({ page }) => {
+    await page.goto("/");
+
+    // Desktop top-nav "Story" link — a <button> doing SPA nav. Exact match
+    // so it doesn't collide with the "Our Story" Explore card.
+    await page.getByRole("button", { name: /^story$/i }).first().click();
+    await expect(page).toHaveURL(/\/story\/?$/, { timeout: 5_000 });
+
+    // The promoted page renders the big "‹ For You" back control.
+    const back = page.getByRole("button", { name: /back to the for you page/i });
+    await expect(back).toBeVisible({ timeout: 5_000 });
+
+    // Tapping it returns to the For You home and resets the URL to root.
+    await back.click();
+    await expect(page).toHaveURL(/\/$/, { timeout: 5_000 });
+  });
+});
