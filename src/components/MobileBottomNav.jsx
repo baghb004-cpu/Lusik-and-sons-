@@ -6,7 +6,7 @@
 // where the magnifying glass / X is its own bubble isolated from
 // the menu pill:
 //
-//   NORMAL:   [ Home  Shop  Journal  Cart ]   ( 🔍 )
+//   NORMAL:   [ Home  Shop  Journal  Bag ]    ( 🔍 )
 //             └─────── pill (4 tabs) ──────┘   └ orb ┘
 //
 //   SEARCH (typing, not focused):
@@ -97,7 +97,7 @@ export function MobileBottomNav({
     { key: "home",    label: "For You",  Icon: Home,        action: onHome,    activeWhen: view === "home" },
     { key: "shop",    label: "Products", Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
     { key: "journal", label: "Journal", Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
-    { key: "cart",    label: "Cart",    Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
+    { key: "cart",    label: "Bag",     Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
   ]), [view, cartCount, onHome, onShop, onJournal, onCart]);
 
   const baseIndex = useMemo(() => {
