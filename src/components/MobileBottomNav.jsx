@@ -79,11 +79,14 @@ export function MobileBottomNav({
   };
 
   const closeSearch = () => {
+    // Just collapse the keyboard and return to the search menu —
+    // blurring the input drops the keyboard, clearing the query
+    // brings back the "Try searching" suggestions, and we STAY on
+    // the search view (no navigation home, no page reload).
     inputRef.current?.blur();
     onSearchQueryChange?.("");
     try { recognitionRef.current?.stop(); } catch {}
     setListening(false);
-    onHome?.();
   };
 
   // ── 4 tabs (Search is now the orb, not a tab) ────────────
