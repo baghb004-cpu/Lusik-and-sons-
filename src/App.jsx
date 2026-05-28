@@ -46,12 +46,9 @@ import { AuthDrawer } from "./components/AuthDrawer.jsx";
 import { PolicyModal } from "./components/PolicyModal.jsx";
 import { WaitlistModal } from "./components/WaitlistModal.jsx";
 import { HeartBurst } from "./components/HeartBurst.jsx";
-import { SwipeableRow } from "./components/SwipeableRow.jsx";
-import { QuantityPicker } from "./components/QuantityPicker.jsx";
 import { MobilePageHeader } from "./components/MobilePageHeader.jsx";
 import { haptic } from "./lib/haptic.js";
-import { FreeShippingProgress } from "./components/FreeShippingProgress.jsx";
-import { PaymentMethodsRow } from "./components/PaymentMethodsRow.jsx";
+import { CartContents } from "./components/CartContents.jsx";
 
 // Lang machinery
 import { FirstVisitLangBanner } from "./components/FirstVisitLangBanner.jsx";
@@ -61,7 +58,6 @@ import { BetaTranslationBadge } from "./components/BetaTranslationBadge.jsx";
 // Home + ancillary
 import { ShopMegaMenu } from "./components/ShopMegaMenu.jsx";
 import { NewsletterSignup } from "./components/NewsletterSignup.jsx";
-import { ShippingEstimator } from "./components/ShippingEstimator.jsx";
 import { ThemeToggle } from "./components/ThemeToggle.jsx";
 
 // Views
@@ -98,6 +94,13 @@ export function App() {
   // visit and avoids stale results lingering in the background.
   useEffect(() => {
     if (view !== "search") setSearchQuery("");
+  }, [view]);
+  // Mirror the drawer's edit-mode reset for the full-page Bag view:
+  // leaving the cart page (e.g. via the bottom nav) drops edit mode
+  // so the next visit starts in the default read-only state. The
+  // drawer-close effect below handles the desktop drawer case.
+  useEffect(() => {
+    if (view !== "cart") setCartEditMode(false);
   }, [view]);
   const [cartOpen, setCartOpen] = useState(false);
   // Cart edit mode: when true, QuantityPicker + remove buttons are
@@ -592,6 +595,8 @@ export function App() {
       title = `Order · Admin · ${BRAND}`;
     } else if (view === "search") {
       title = `Search · ${BRAND}`;
+    } else if (view === "cart") {
+      title = `Your Cart · ${BRAND}`;
     } else if (view === "checkout") {
       title = `Checkout · ${BRAND}`;
     }
@@ -1393,7 +1398,7 @@ export function App() {
           tab in a native app. Hidden on desktop (lg:hidden inside
           the component). The search view is excluded — it renders
           its own dedicated full-screen panel with its own title. */}
-      {view !== "search" && (
+      {view !== "search" && view !== "cart" && (
         <MobilePageHeader
           title={
             view === "home" ? "Lusik & Sons" :
@@ -1525,6 +1530,34 @@ export function App() {
           onAvatarTap={() => user ? setView("account") : setAuthOpen(true)}
         />
       )}
+
+      {/* MOBILE BAG — full-page cart (Apple Store style). Phones get
+          this instead of the slide-in drawer; the fixed bottom nav
+          stays visible + tappable so the customer can navigate away
+          anytime. Rendered outside the page-enter transform wrapper
+          (same reason as the search view) and as a normal in-flow
+          block — the bottom nav is position:fixed and floats above
+          it. min-height fills the screen for short carts; the page
+          variant's footer carries ~120px bottom padding so the
+          Checkout button clears the nav island. Desktop keeps the
+          drawer; this block is lg:hidden. */}
+      {view === "cart" && (
+        <div className="lg:hidden flex flex-col" style={{ minHeight: "100vh", paddingBottom: 24 }}>
+          <CartContents
+            variant="page"
+            cart={cart}
+            subtotal={subtotal}
+            cartEditMode={cartEditMode}
+            onToggleEdit={setCartEditMode}
+            setQtyExact={setQtyExact}
+            removeFromCart={removeFromCart}
+            onCheckout={goCheckout}
+            onShopBlankets={() => goShopCategory("blankets")}
+            onOpenSavedDesigns={() => setView("account")}
+            user={user}
+          />
+        </div>
+      )}
       </main>
 
       {/* Waitlist modal for placeholder catalog items */}
@@ -1542,7 +1575,7 @@ export function App() {
           onHome={() => { setView("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           onShop={goShopIndex}
           onJournal={() => { setJournalSlug(null); setView("journal"); }}
-          onCart={() => setCartOpen(true)}
+          onCart={() => setView("cart")}
           onSearch={() => setView("search")}
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
@@ -1676,136 +1709,24 @@ export function App() {
             onTouchEnd={onCartDrawerTouchEnd}
             onTouchCancel={onCartDrawerTouchCancel}
           >
-            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
-              <h3 className="font-display text-2xl" style={{ fontWeight: 400 }}>Your cart</h3>
-              <div className="flex items-center gap-4">
-                {cart.length > 0 && (
-                  cartEditMode ? (
-                    // Done — ink circle with a white checkmark (Apple's
-                    // edit-confirm affordance, in the brand's ink rather
-                    // than Apple blue so it sits in the warm palette).
-                    <button
-                      onClick={() => setCartEditMode(false)}
-                      aria-label="Done editing cart"
-                      className="flex items-center justify-center transition-transform active:scale-95"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: "50%",
-                        background: "var(--ink)",
-                        color: "var(--text-on-ink)",
-                      }}
-                    >
-                      <Check size={17} strokeWidth={2.5} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setCartEditMode(true)}
-                      className="text-sm transition-opacity hover:opacity-70"
-                      style={{ color: "#B08842", fontWeight: 500 }}
-                    >
-                      Edit
-                    </button>
-                  )
-                )}
-                <button onClick={() => setCartOpen(false)} aria-label="Close cart" data-tooltip="Close" data-tooltip-pos="left"><X size={20} /></button>
-              </div>
-            </div>
-            {/* Free-shipping progress nudge — renders nothing unless
-                CONFIG.FREE_SHIPPING_ENABLED is flipped on. Lives above
-                the item list so it's the first thing the customer
-                sees when the drawer opens with items in it. */}
-            {cart.length > 0 && <FreeShippingProgress subtotalCents={Math.round(subtotal * 100)} />}
-            {cart.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
-                <ShoppingBag size={32} strokeWidth={1} className="opacity-30 mb-4" />
-                <p className="opacity-75 mb-2" style={{ fontWeight: 500 }}>Your cart is empty.</p>
-                <p className="text-xs opacity-55 mb-6 max-w-xs leading-relaxed">
-                  Lusik stitches each blanket to order. Start with the alphabet picker below.
-                </p>
-                <button
-                  onClick={() => { setCartOpen(false); goShopCategory("blankets"); }}
-                  className="px-6 py-3 text-xs tracking-[0.2em] uppercase mb-4"
-                  style={{ background: "var(--ink)", color: "var(--text-on-ink)", fontWeight: 500 }}
-                >
-                  Shop the blanket
-                </button>
-                {user && (
-                  <button
-                    onClick={() => { setCartOpen(false); setView("account"); }}
-                    className="text-[0.65rem] tracking-[0.18em] uppercase opacity-60 hover:opacity-100 underline underline-offset-4 transition"
-                  >
-                    Or open a saved design →
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto">
-                  {cart.map((item) => (
-                    <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
-                      <div className="flex gap-4 p-6 border-b" style={{ borderColor: "rgba(26,22,18,0.08)" }}>
-                        <div className="relative">
-                          <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
-                          {item.isCustom && (
-                            <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-display text-lg leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
-                          <div className="flex items-center gap-2 mb-3">
-                            {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                            <p className="text-xs opacity-60">{item.subtitle}</p>
-                          </div>
-                          {cartEditMode ? (
-                            <div className="flex items-center justify-between">
-                              <QuantityPicker
-                                value={item.qty}
-                                onChange={(q) => setQtyExact(item.id, q)}
-                                onRemove={() => removeFromCart(item.id)}
-                                productName={item.name}
-                              />
-                              <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs opacity-60" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>Qty: {item.qty}</p>
-                              <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
-                            </div>
-                          )}
-                        </div>
-                        {cartEditMode && (
-                          <button onClick={() => removeFromCart(item.id)} className="opacity-40 hover:opacity-100" aria-label="Remove from cart"><X size={14} /></button>
-                        )}
-                      </div>
-                    </SwipeableRow>
-                  ))}
-                </div>
-                <div className="border-t p-6" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
-                  {cart.some((i) => i.isCustom) && (
-                    <div className="mb-4 p-3 text-xs leading-relaxed" style={{ background: "rgba(176,136,66,0.1)", border: "1px solid rgba(176,136,66,0.3)" }}>
-                      <span style={{ color: "#B08842", fontWeight: 500 }}>Custom orders:</span> Your uploaded designs are saved with your order. We'll email you a proof of your stitched design before running it through the embroidery machine.
-                    </div>
-                  )}
-                  <div className="flex justify-between mb-3 text-sm">
-                    <span className="opacity-70">Subtotal</span>
-                    <span style={{ fontWeight: 500 }}>${subtotal.toFixed(2)}</span>
-                  </div>
-                  <ShippingEstimator subtotalCents={Math.round(subtotal * 100)} />
-                  <p className="text-[0.65rem] opacity-55 italic leading-relaxed mb-4">Made to order — every blanket starts after Lusik receives your order.</p>
-                  <button onClick={goCheckout} className="w-full py-4 text-sm tracking-wide flex items-center justify-center gap-2" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
-                    Checkout <ArrowRight size={16} />
-                  </button>
-                  {/* Trust signal: which payment methods Stripe will accept on
-                      the next page. Sized smaller than the CTA so it informs
-                      without competing. */}
-                  <PaymentMethodsRow className="mt-4" />
-                  <p className="text-xs text-center opacity-60 mt-3">
-                    Or <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">DM us on Instagram</button> to order
-                  </p>
-                </div>
-              </>
-            )}
+            {/* Drawer body shares CartContents with the mobile Bag
+                page (view === "cart"). The drawer-specific chrome
+                (scrim, slide-in container, swipe handlers) stays
+                here; only the inner body is the shared component. */}
+            <CartContents
+              variant="drawer"
+              cart={cart}
+              subtotal={subtotal}
+              cartEditMode={cartEditMode}
+              onToggleEdit={setCartEditMode}
+              setQtyExact={setQtyExact}
+              removeFromCart={removeFromCart}
+              onCheckout={goCheckout}
+              onShopBlankets={() => { setCartOpen(false); goShopCategory("blankets"); }}
+              onOpenSavedDesigns={() => { setCartOpen(false); setView("account"); }}
+              user={user}
+              onClose={() => setCartOpen(false)}
+            />
           </div>
         </div>
       )}
