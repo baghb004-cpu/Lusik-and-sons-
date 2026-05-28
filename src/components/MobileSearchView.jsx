@@ -205,7 +205,7 @@ export function MobileSearchView({
         style={{ padding: "56px 24px 14px", flexShrink: 0 }}
       >
         <h1
-          className="font-display leading-tight"
+          className="font-mobile-title leading-tight"
           style={{ fontSize: "2.4rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}
         >
           Search

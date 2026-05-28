@@ -112,7 +112,7 @@ export function CartContents({
         // Padding mirrors MobilePageHeader (pt-14 / px-6).
         <div className="px-6 pt-14 pb-4 flex items-center justify-between">
           <h1
-            className="font-display leading-tight"
+            className="font-mobile-title leading-tight"
             style={{
               fontSize: "2.1rem",
               fontWeight: 700,
@@ -120,7 +120,7 @@ export function CartContents({
               color: "var(--text-primary)",
             }}
           >
-            Your Cart
+            Bag
           </h1>
           <div className="flex items-center gap-4 flex-shrink-0">{editToggle}</div>
         </div>
