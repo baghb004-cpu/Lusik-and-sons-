@@ -109,23 +109,20 @@ export function MobileBottomNav({
   const tabCount = tabs.length;
   const slotPct = 100 / tabCount;
 
-  // ── GESTURE STATE MACHINE ────────────────────────────────
-  // Default mode is ROUTE-DRIVEN: the lens sits at `baseIndex`. While a finger
-  // is actively dragging, `dragIndex` (a float) takes over. The instant the
-  // finger lifts / the gesture is cancelled / capture is lost / the route
-  // changes / the tab is hidden, resetGestureState() hard-returns to
-  // route-driven. The lens can NEVER stay stuck in drag mode, and tapping
-  // NEVER depends on drag state.
+  // ── GESTURE MODEL ────────────────────────────────────────
+  // Default = ROUTE-DRIVEN: the lens sits at `baseIndex`. While a finger drags
+  // horizontally on the pill, `dragIndex` (a float) takes over; on release we
+  // snap to the nearest tab + navigate, then fall back to route-driven.
+  //
+  // The drag uses NATIVE touch listeners (attached below with { passive:false })
+  // rather than React's pointer/touch props, for two reasons that matter on iOS
+  // Safari: (1) a non-passive touchmove lets us preventDefault the page scroll
+  // so the bar wins the gesture, and (2) touch events self-capture to the start
+  // element for the whole gesture — no flaky setPointerCapture. React's
+  // synthetic pointer events were dropping moves on the device.
   const [pressed,   setPressed]   = useState(false);
-  const [dragging,  setDragging]  = useState(false);   // for the transition only
-  const [dragIndex, setDragIndex] = useState(null);    // float while dragging, else null
-
-  const draggingRef      = useRef(false);              // source of truth (sync)
-  const pointerIdRef     = useRef(null);               // the one pointer we track
-  const startRef         = useRef({ x: 0, y: 0 });
-  const capturedRef      = useRef(false);
-  const rafRef           = useRef(0);
-  const lastXRef         = useRef(0);
+  const [dragging,  setDragging]  = useState(false);
+  const [dragIndex, setDragIndex] = useState(null);
   const suppressClickRef = useRef(false);
   const suppressTimerRef = useRef(0);
 
@@ -147,101 +144,84 @@ export function MobileBottomNav({
     return Math.max(0, Math.min(tabCount - 1, (clientX - rect.left) / slotW - 0.5));
   }, [tabCount]);
 
-  // THE single cleanup. Returns the bar to route-driven mode and frees every
-  // live gesture resource. Idempotent — safe to call any number of times, from
-  // anywhere (pointerup, cancel, lostcapture, route change, hide, unmount).
-  const resetGestureState = useCallback(() => {
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
-    if (capturedRef.current && pointerIdRef.current != null && pillRef.current) {
-      try { pillRef.current.releasePointerCapture(pointerIdRef.current); } catch {}
-    }
-    capturedRef.current = false;
-    pointerIdRef.current = null;
-    draggingRef.current = false;
-    setDragging(false);
-    setDragIndex(null);
-    setPressed(false);
-  }, []);
+  useEffect(() => {
+    const el = pillRef.current;
+    if (!el || isSearch) return;   // no drag in search mode
 
-  const onPointerDown = useCallback((e) => {
-    if (isSearch) return;
-    // Single active pointer only. If anything was left active from a prior
-    // gesture that didn't end cleanly, hard-reset so it can't poison this one.
-    if (pointerIdRef.current != null) resetGestureState();
-    pointerIdRef.current = e.pointerId;
-    startRef.current = { x: e.clientX, y: e.clientY };
-    lastXRef.current = e.clientX;
-    suppressClickRef.current = false;
-    draggingRef.current = false;
-    setPressed(true);
-  }, [isSearch, resetGestureState]);
+    // All live gesture state is local to the listener — nothing can leak between
+    // gestures, so the bar can't get "stuck".
+    let active = false, isDrag = false, sx = 0, sy = 0, lx = 0, raf = 0;
+    const stopRaf = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } };
 
-  const onPointerMove = useCallback((e) => {
-    if (isSearch || e.pointerId !== pointerIdRef.current) return;
-    if (!draggingRef.current) {
-      const dx = e.clientX - startRef.current.x;
-      const dy = e.clientY - startRef.current.y;
-      // Become a drag only once horizontal intent is clear — otherwise let the
-      // page scroll vertically (touch-action: pan-y permits that).
-      if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
-      draggingRef.current = true;
-      setDragging(true);
-      try { pillRef.current?.setPointerCapture(e.pointerId); capturedRef.current = true; } catch {}
-    }
-    // One lens update per frame, even under a fast finger.
-    lastXRef.current = e.clientX;
-    if (!rafRef.current) {
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = 0;
-        setDragIndex(floatIndexFromX(lastXRef.current));
+    const onStart = (e) => {
+      const t = e.touches[0]; if (!t) return;
+      active = true; isDrag = false;
+      sx = t.clientX; sy = t.clientY; lx = t.clientX;
+      suppressClickRef.current = false;
+      setPressed(true);
+    };
+    const onMove = (e) => {
+      if (!active) { return; }
+      const t = e.touches[0]; if (!t) return;
+      const dx = t.clientX - sx, dy = t.clientY - sy;
+      if (!isDrag) {
+        // Wait for clear horizontal intent before claiming the gesture.
+        if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
+        isDrag = true;
+        setDragging(true);
+      }
+      e.preventDefault();          // NON-PASSIVE: stop the page from scrolling
+      lx = t.clientX;
+      if (!raf) raf = requestAnimationFrame(() => {
+        raf = 0;
+        setDragIndex(floatIndexFromX(lx));
       });
-    }
-  }, [isSearch, floatIndexFromX]);
+    };
+    const onEnd = () => {
+      if (!active) return;
+      const wasDrag = isDrag, x = lx;
+      active = false; isDrag = false;
+      stopRaf();
+      setPressed(false);
+      setDragging(false);
+      setDragIndex(null);          // back to route-driven (batches with fireTab → no flicker)
+      if (wasDrag) {
+        suppressClickRef.current = true;   // swallow the click a drag would synthesise
+        if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current);
+        suppressTimerRef.current = setTimeout(() => { suppressClickRef.current = false; }, 400);
+        fireTab(Math.max(0, Math.min(tabCount - 1, Math.round(floatIndexFromX(x)))));
+      }
+    };
 
-  const onPointerUp = useCallback((e) => {
-    if (isSearch || (pointerIdRef.current != null && e.pointerId !== pointerIdRef.current)) return;
-    const wasDragging = draggingRef.current;
-    const targetX = lastXRef.current;
-    resetGestureState();                       // ALWAYS fully reset first
-    if (wasDragging) {
-      // Swallow the click the browser synthesises after a drag, then navigate.
-      // resetGestureState() already set dragIndex=null; that + fireTab() batch
-      // into one render so the lens lands on the new route with no backflicker.
-      suppressClickRef.current = true;
-      if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current);
-      suppressTimerRef.current = setTimeout(() => { suppressClickRef.current = false; }, 400);
-      fireTab(Math.max(0, Math.min(tabCount - 1, Math.round(floatIndexFromX(targetX)))));
-    }
-  }, [isSearch, tabCount, floatIndexFromX, fireTab, resetGestureState]);
+    el.addEventListener("touchstart",  onStart, { passive: true });
+    el.addEventListener("touchmove",   onMove,  { passive: false });
+    el.addEventListener("touchend",    onEnd,   { passive: true });
+    el.addEventListener("touchcancel", onEnd,   { passive: true });
+    return () => {
+      el.removeEventListener("touchstart",  onStart);
+      el.removeEventListener("touchmove",   onMove);
+      el.removeEventListener("touchend",    onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+      stopRaf();
+    };
+  }, [isSearch, fireTab, floatIndexFromX, tabCount]);
 
-  const onPointerCancel = useCallback(() => { if (!isSearch) resetGestureState(); }, [isSearch, resetGestureState]);
-  const onLostPointerCapture = useCallback(() => { resetGestureState(); }, [resetGestureState]);
-
-  // Tap → navigate. A genuine tap (no preceding drag) always goes through; the
-  // click synthesised right after a drag is swallowed exactly once.
+  // Tap → navigate. A genuine tap always goes through; the click synthesised
+  // right after a drag is swallowed exactly once.
   const onTabClick = useCallback((i) => {
     if (suppressClickRef.current) { suppressClickRef.current = false; return; }
     fireTab(i);
   }, [fireTab]);
 
-  // Route changed → snap the lens to the new route. (Can't fire mid-drag since
-  // we only navigate on release.) This is the belt to the pointerup suspenders:
-  // even if a tap navigates from elsewhere, the lens always re-syncs.
-  useEffect(() => { resetGestureState(); }, [baseIndex, resetGestureState]);
-
-  // Backgrounding / page hide can swallow pointerup — reset so we never resume
-  // stuck. Also clears the suppress timer + resets on unmount.
+  // Any route change → lens snaps to the new route; nothing can stay stuck on a
+  // stale index (belt-and-suspenders alongside the on-release reset).
   useEffect(() => {
-    const onHide = () => resetGestureState();
-    document.addEventListener("visibilitychange", onHide);
-    window.addEventListener("pagehide", onHide);
-    return () => {
-      document.removeEventListener("visibilitychange", onHide);
-      window.removeEventListener("pagehide", onHide);
-      if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current);
-      resetGestureState();
-    };
-  }, [resetGestureState]);
+    setDragIndex(null);
+    setDragging(false);
+    setPressed(false);
+  }, [baseIndex]);
+
+  useEffect(() => () => { if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current); }, []);
 
   const visualIndex  = dragIndex != null ? dragIndex : baseIndex;
   const activeVisual = dragIndex != null ? Math.round(dragIndex) : baseIndex;
@@ -371,11 +351,6 @@ export function MobileBottomNav({
             ref={pillRef}
             className="lg-nav-pill lg-nav-pill--tabs"
             style={{ touchAction: "none", overscrollBehavior: "contain" }}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerCancel}
-            onLostPointerCapture={onLostPointerCapture}
           >
             <span
               className="lg-lens"
