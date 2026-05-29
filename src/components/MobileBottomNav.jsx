@@ -106,94 +106,127 @@ export function MobileBottomNav({
   }, [tabs]);
 
   const pillRef = useRef(null);
-  const [lensIndex,  setLensIndex]  = useState(baseIndex);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [pressed,    setPressed]    = useState(false);
-  const draggingRef = useRef(false);
-  const startXRef   = useRef(0);
-  const startYRef   = useRef(0);
-  const [hoverIndex, setHoverIndex] = useState(null);
+  const tabCount = tabs.length;
+  const slotPct = 100 / tabCount;
 
-  useEffect(() => {
-    if (!pressed) setLensIndex(baseIndex);
-  }, [baseIndex, pressed]);
+  // Lens position model:
+  //   - `dragIndex` (a float 0..count-1) wins while the finger is dragging,
+  //     and is briefly held after release until the route catches up.
+  //   - otherwise the lens is route-driven via `baseIndex`.
+  // So the selector both FOLLOWS THE FINGER and TRACKS THE ROUTE.
+  const [pressed,   setPressed]   = useState(false);
+  const [dragging,  setDragging]  = useState(false);
+  const [dragIndex, setDragIndex] = useState(null);     // float, or null = route-driven
+  const dragIndexRef   = useRef(null);
+  const draggingRef    = useRef(false);
+  const justDraggedRef = useRef(false);                 // swallow the click after a drag
+  const startRef       = useRef({ x: 0, y: 0, id: null, captured: false });
 
   const reducedMotion = useMemo(() => (
     typeof window !== "undefined"
       && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
   ), []);
-
-  const tabCount = tabs.length;
   const anim = reducedMotion ? "none" : undefined;
 
-  const xToIndex = useCallback((clientX) => {
+  const setDrag = useCallback((fi) => { dragIndexRef.current = fi; setDragIndex(fi); }, []);
+
+  const fireTab = useCallback((idx) => {
+    const tab = tabs[idx];
+    if (tab?.action) { try { tab.action(); } catch {} }
+  }, [tabs]);
+
+  // Finger X → floating tab index, centring the lens under the finger.
+  const floatIndexFromX = useCallback((clientX) => {
     const rect = pillRef.current?.getBoundingClientRect();
-    if (!rect) return baseIndex;
-    const x = clientX - rect.left;
-    const slot = rect.width / tabCount;
-    return Math.max(0, Math.min(tabCount - 1, Math.floor(x / slot)));
+    if (!rect || !rect.width) return baseIndex;
+    const slotW = rect.width / tabCount;
+    const raw = (clientX - rect.left) / slotW - 0.5;
+    return Math.max(0, Math.min(tabCount - 1, raw));
   }, [baseIndex, tabCount]);
 
-  const xToOffset = useCallback((clientX, fromIndex) => {
-    const rect = pillRef.current?.getBoundingClientRect();
-    if (!rect) return 0;
-    const slot = rect.width / tabCount;
-    return clientX - (rect.left + slot * (fromIndex + 0.5));
-  }, [tabCount]);
+  // Once the route catches up to a committed drag target, hand the lens back
+  // to route-driven mode — no visible jump since the values already match.
+  useEffect(() => {
+    if (!draggingRef.current && dragIndex != null && Math.round(dragIndex) === baseIndex) {
+      setDrag(null);
+    }
+  }, [baseIndex, dragIndex, setDrag]);
 
-  const onTouchStart = (e) => {
+  const releaseCapture = useCallback((e) => {
+    if (startRef.current.captured) {
+      try { e.currentTarget.releasePointerCapture(startRef.current.id); } catch {}
+      startRef.current.captured = false;
+    }
+  }, []);
+
+  const onPointerDown = useCallback((e) => {
     if (isSearch) return;
-    const t = e.touches[0]; if (!t) return;
-    startXRef.current = t.clientX; startYRef.current = t.clientY;
-    draggingRef.current = false; setPressed(true);
-    const idx = xToIndex(t.clientX);
-    setLensIndex(idx); setHoverIndex(idx); setDragOffset(0);
-  };
-  const onTouchMove = (e) => {
+    // Record the start but DON'T claim the gesture yet — a still finger stays
+    // a tap, and a vertical move stays a page scroll (touch-action: pan-y).
+    startRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId, captured: false };
+    justDraggedRef.current = false;
+    setPressed(true);
+  }, [isSearch]);
+
+  const onPointerMove = useCallback((e) => {
     if (isSearch) return;
-    const t = e.touches[0]; if (!t) return;
-    const dx = t.clientX - startXRef.current;
-    const dy = t.clientY - startYRef.current;
     if (!draggingRef.current) {
-      if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
+      const dx = e.clientX - startRef.current.x;
+      const dy = e.clientY - startRef.current.y;
+      // Become a drag only once horizontal intent is clear.
+      if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
       draggingRef.current = true;
+      setDragging(true);
+      // Capture so the drag continues even past the pill's edges.
+      try { e.currentTarget.setPointerCapture(e.pointerId); startRef.current.captured = true; } catch {}
     }
-    e.preventDefault?.();
-    const idx = xToIndex(t.clientX);
-    if (idx !== lensIndex) setLensIndex(idx);
-    setHoverIndex(idx); setDragOffset(xToOffset(t.clientX, idx));
-  };
-  const fireTab = (idx) => {
-    const tab = tabs[idx];
-    if (tab?.action) try { tab.action(); } catch {}
-  };
-  const onTouchEnd = (e) => {
+    setDrag(floatIndexFromX(e.clientX));
+  }, [isSearch, floatIndexFromX, setDrag]);
+
+  const onPointerUp = useCallback((e) => {
     if (isSearch) return;
-    setPressed(false); setHoverIndex(null); setDragOffset(0);
-    if (!draggingRef.current) {
-      const tapX = e.changedTouches?.[0]?.clientX ?? null;
-      if (tapX != null) setLensIndex(xToIndex(tapX));
-      draggingRef.current = false; return;
+    setPressed(false);
+    if (draggingRef.current) {
+      draggingRef.current = false;
+      setDragging(false);
+      justDraggedRef.current = true;   // suppress the synthesised click
+      const fi = dragIndexRef.current;
+      if (fi != null) {
+        const target = Math.max(0, Math.min(tabCount - 1, Math.round(fi)));
+        setDrag(target);               // snap lens to nearest tab (glides), held until route catches up
+        fireTab(target);               // navigate
+      } else {
+        setDrag(null);
+      }
     }
+    releaseCapture(e);
+  }, [isSearch, tabCount, setDrag, fireTab, releaseCapture]);
+
+  const onPointerCancel = useCallback((e) => {
+    if (isSearch) return;
+    setPressed(false);
     draggingRef.current = false;
-    const endX = e.changedTouches?.[0]?.clientX ?? null;
-    if (endX == null) return;
-    const idx = xToIndex(endX); setLensIndex(idx); fireTab(idx);
-  };
-  const onTouchCancel = () => {
-    if (isSearch) return;
-    setPressed(false); setDragOffset(0); setHoverIndex(null);
-    draggingRef.current = false; setLensIndex(baseIndex);
-  };
+    setDragging(false);
+    setDrag(null);                     // snap back to the current route
+    releaseCapture(e);
+  }, [isSearch, setDrag, releaseCapture]);
+
+  // Tap → navigate. A click synthesised right after a drag is swallowed so we
+  // never double-navigate; a genuine tap (no drag) always goes through.
+  const onTabClick = useCallback((i) => {
+    if (justDraggedRef.current) { justDraggedRef.current = false; return; }
+    fireTab(i);
+  }, [fireTab]);
+
+  // What the lens shows, and which tab live-previews as active.
+  const visualIndex = dragIndex != null ? dragIndex : baseIndex;
+  const activeVisual = dragIndex != null ? Math.round(dragIndex) : baseIndex;
 
   const scaleFor = (i) => {
-    const target = hoverIndex ?? lensIndex;
-    if (i === target) return 1.18;
-    if (Math.abs(i - target) === 1) return 1.06;
+    if (i === activeVisual) return 1.16;
+    if (dragging && Math.abs(i - activeVisual) === 1) return 1.05;
     return 1;
   };
-
-  const slotPct = 100 / tabCount;
 
   // ── Shared search-pill markup (Stage 1 + Stage 2) ────────
   const searchPill = (
@@ -312,28 +345,29 @@ export function MobileBottomNav({
           <div
             ref={pillRef}
             className="lg-nav-pill"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            onTouchCancel={onTouchCancel}
+            style={{ touchAction: "pan-y" }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
           >
             <span
               className="lg-lens"
               aria-hidden="true"
               style={{
-                width: `${slotPct}%`, left: `${lensIndex * slotPct}%`,
-                transform: `translateX(${dragOffset}px) scale(${pressed ? 1.05 : 1})`,
-                transition: anim ?? (draggingRef.current
-                  ? "transform 0ms, left 0ms"
-                  : "left 0.42s cubic-bezier(0.2,0.9,0.2,1), transform 0.34s cubic-bezier(0.2,0.9,0.2,1)"),
+                width: `${slotPct}%`, left: `${visualIndex * slotPct}%`,
+                transform: `scale(${pressed ? 1.05 : 1})`,
+                transition: anim ?? (dragging
+                  ? "left 0ms, transform 0.18s ease"
+                  : "left 0.42s cubic-bezier(0.2,0.9,0.2,1), transform 0.3s cubic-bezier(0.2,0.9,0.2,1)"),
               }}
             />
             {tabs.map((t, i) => {
-              const active = i === lensIndex;
+              const active = i === activeVisual;
               return (
                 <button
                   key={t.key} type="button"
-                  onClick={() => { setLensIndex(i); fireTab(i); }}
+                  onClick={() => onTabClick(i)}
                   className="lg-tab"
                   aria-current={active ? "page" : undefined}
                   aria-label={t.label + (t.badge ? ` (${t.badge})` : "")}

@@ -1335,6 +1335,9 @@
     border-radius: 999px;
     isolation: isolate;   /* contain the lens' blend-mode + backdrop blur */
     overflow: hidden;
+    /* Reserve horizontal gestures for the drag-to-slide selector while still
+       allowing vertical page scroll to start from the bar. */
+    touch-action: pan-y;
   }
 
   /* Detached circular satellite — Search (normal) / Cart badge / X (search). */
