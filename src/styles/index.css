@@ -1254,7 +1254,7 @@
   /* Liquid Glass design tokens — tuned per theme. The lens, pill and orb
      all read from these so the material stays consistent. */
   :root {
-    --glass-bg:             rgba(252, 249, 244, 0.42);
+    --glass-bg:             rgba(252, 249, 244, 0.26);
     --glass-border:         rgba(255, 255, 255, 0.78);
     --glass-shadow:         rgba(26, 22, 18, 0.30);
     --glass-highlight:      rgba(255, 255, 255, 0.95);
@@ -1263,7 +1263,7 @@
     --glass-chromatic-green:rgba(52, 199, 89, 0.40);
   }
   :root[data-theme="dark"] {
-    --glass-bg:             rgba(34, 27, 21, 0.50);
+    --glass-bg:             rgba(34, 27, 21, 0.34);
     --glass-border:         rgba(245, 239, 227, 0.24);
     --glass-shadow:         rgba(0, 0, 0, 0.62);
     --glass-highlight:      rgba(245, 239, 227, 0.55);
@@ -1312,11 +1312,13 @@
   .lg-nav-orb {
     position: relative;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.50), rgba(255,255,255,0.10) 55%, rgba(255,255,255,0.22)),
+      linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.15)),
       var(--glass-bg);
     border: 1px solid var(--glass-border);
-    -webkit-backdrop-filter: blur(20px) saturate(190%) contrast(112%) brightness(104%);
-            backdrop-filter: blur(20px) saturate(190%) contrast(112%) brightness(104%);
+    /* A bit more blur + saturation keeps it reading as glass now that the tint
+       is more transparent: page content shows through, but stays frosted. */
+    -webkit-backdrop-filter: blur(24px) saturate(200%) contrast(112%) brightness(104%);
+            backdrop-filter: blur(24px) saturate(200%) contrast(112%) brightness(104%);
     box-shadow:
       inset 0 1px 1px var(--glass-highlight),         /* top rim light */
       inset 0 -1px 1px rgba(255,255,255,0.45),        /* bottom edge highlight */
