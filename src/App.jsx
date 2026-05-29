@@ -1361,7 +1361,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen pb-28 lg:pb-0">
+    <div className="min-h-screen pb-32 lg:pb-0 mobile-liquid-bg">
       {/* Skip-to-content link for keyboard + screen-reader users.
           Visually hidden until focused; the first Tab on any page
           surfaces it as the first interactive element so users

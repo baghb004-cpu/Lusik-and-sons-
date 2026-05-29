@@ -50,12 +50,11 @@ export function MobileBottomNav({
   const isFullSearch = isSearch && inputFocused;
   const kbOffset = useKeyboardOffset(isFullSearch);
 
+  // Search opens UNFOCUSED (Apple Store style): the customer first sees the bag
+  // shortcut / suggestions, and taps the field to bring up the keyboard. (No
+  // auto-focus — that's what kept the X permanently visible and hid the bag.)
   useEffect(() => {
-    if (isSearch) {
-      const t = setTimeout(() => inputRef.current?.focus(), 300);
-      return () => clearTimeout(t);
-    }
-    setInputFocused(false);
+    if (!isSearch) setInputFocused(false);
   }, [isSearch]);
 
   useEffect(() => {
@@ -106,94 +105,137 @@ export function MobileBottomNav({
   }, [tabs]);
 
   const pillRef = useRef(null);
-  const [lensIndex,  setLensIndex]  = useState(baseIndex);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [pressed,    setPressed]    = useState(false);
-  const draggingRef = useRef(false);
-  const startXRef   = useRef(0);
-  const startYRef   = useRef(0);
-  const [hoverIndex, setHoverIndex] = useState(null);
+  const tabCount = tabs.length;
+  const slotPct = 100 / tabCount;
 
-  useEffect(() => {
-    if (!pressed) setLensIndex(baseIndex);
-  }, [baseIndex, pressed]);
+  // ── GESTURE MODEL ────────────────────────────────────────
+  // Default = ROUTE-DRIVEN: the lens sits at `baseIndex`. While a finger drags
+  // horizontally on the pill, `dragIndex` (a float) takes over; on release we
+  // snap to the nearest tab + navigate, then fall back to route-driven.
+  //
+  // The drag uses NATIVE touch listeners (attached below with { passive:false })
+  // rather than React's pointer/touch props, for two reasons that matter on iOS
+  // Safari: (1) a non-passive touchmove lets us preventDefault the page scroll
+  // so the bar wins the gesture, and (2) touch events self-capture to the start
+  // element for the whole gesture — no flaky setPointerCapture. React's
+  // synthetic pointer events were dropping moves on the device.
+  const [pressed,   setPressed]   = useState(false);
+  const [dragging,  setDragging]  = useState(false);
+  const [dragIndex, setDragIndex] = useState(null);
+  const suppressClickRef = useRef(false);
+  const suppressTimerRef = useRef(0);
 
   const reducedMotion = useMemo(() => (
     typeof window !== "undefined"
       && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
   ), []);
 
-  const tabCount = tabs.length;
-  const anim = reducedMotion ? "none" : undefined;
+  const fireTab = useCallback((idx) => {
+    const tab = tabs[idx];
+    if (tab?.action) { try { tab.action(); } catch {} }
+  }, [tabs]);
 
-  const xToIndex = useCallback((clientX) => {
+  // Finger X → floating tab index, centring the lens under the finger.
+  const floatIndexFromX = useCallback((clientX) => {
     const rect = pillRef.current?.getBoundingClientRect();
-    if (!rect) return baseIndex;
-    const x = clientX - rect.left;
-    const slot = rect.width / tabCount;
-    return Math.max(0, Math.min(tabCount - 1, Math.floor(x / slot)));
-  }, [baseIndex, tabCount]);
-
-  const xToOffset = useCallback((clientX, fromIndex) => {
-    const rect = pillRef.current?.getBoundingClientRect();
-    if (!rect) return 0;
-    const slot = rect.width / tabCount;
-    return clientX - (rect.left + slot * (fromIndex + 0.5));
+    if (!rect || !rect.width) return 0;
+    const slotW = rect.width / tabCount;
+    return Math.max(0, Math.min(tabCount - 1, (clientX - rect.left) / slotW - 0.5));
   }, [tabCount]);
 
-  const onTouchStart = (e) => {
-    if (isSearch) return;
-    const t = e.touches[0]; if (!t) return;
-    startXRef.current = t.clientX; startYRef.current = t.clientY;
-    draggingRef.current = false; setPressed(true);
-    const idx = xToIndex(t.clientX);
-    setLensIndex(idx); setHoverIndex(idx); setDragOffset(0);
-  };
-  const onTouchMove = (e) => {
-    if (isSearch) return;
-    const t = e.touches[0]; if (!t) return;
-    const dx = t.clientX - startXRef.current;
-    const dy = t.clientY - startYRef.current;
-    if (!draggingRef.current) {
-      if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
-      draggingRef.current = true;
-    }
-    e.preventDefault?.();
-    const idx = xToIndex(t.clientX);
-    if (idx !== lensIndex) setLensIndex(idx);
-    setHoverIndex(idx); setDragOffset(xToOffset(t.clientX, idx));
-  };
-  const fireTab = (idx) => {
-    const tab = tabs[idx];
-    if (tab?.action) try { tab.action(); } catch {}
-  };
-  const onTouchEnd = (e) => {
-    if (isSearch) return;
-    setPressed(false); setHoverIndex(null); setDragOffset(0);
-    if (!draggingRef.current) {
-      const tapX = e.changedTouches?.[0]?.clientX ?? null;
-      if (tapX != null) setLensIndex(xToIndex(tapX));
-      draggingRef.current = false; return;
-    }
-    draggingRef.current = false;
-    const endX = e.changedTouches?.[0]?.clientX ?? null;
-    if (endX == null) return;
-    const idx = xToIndex(endX); setLensIndex(idx); fireTab(idx);
-  };
-  const onTouchCancel = () => {
-    if (isSearch) return;
-    setPressed(false); setDragOffset(0); setHoverIndex(null);
-    draggingRef.current = false; setLensIndex(baseIndex);
-  };
+  useEffect(() => {
+    const el = pillRef.current;
+    if (!el || isSearch) return;   // no drag in search mode
+
+    // All live gesture state is local to the listener — nothing can leak between
+    // gestures, so the bar can't get "stuck".
+    let active = false, isDrag = false, sx = 0, sy = 0, lx = 0, raf = 0;
+    const stopRaf = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } };
+
+    const onStart = (e) => {
+      const t = e.touches[0]; if (!t) return;
+      active = true; isDrag = false;
+      sx = t.clientX; sy = t.clientY; lx = t.clientX;
+      suppressClickRef.current = false;
+      setPressed(true);
+    };
+    const onMove = (e) => {
+      if (!active) { return; }
+      const t = e.touches[0]; if (!t) return;
+      // Any move while a finger is down on the bar belongs to the bar: block the
+      // page from scrolling in ANY direction. This is the belt to touch-action:
+      // none (which older iOS Safari doesn't fully honour) — a non-passive
+      // touchmove + preventDefault is the only thing that reliably stops it.
+      if (e.cancelable) e.preventDefault();
+      const dx = t.clientX - sx, dy = t.clientY - sy;
+      if (!isDrag) {
+        // Wait for clear horizontal intent before claiming it as a drag (so a
+        // still finger stays a tap); the scroll is already blocked above.
+        if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
+        isDrag = true;
+        setDragging(true);
+      }
+      lx = t.clientX;
+      if (!raf) raf = requestAnimationFrame(() => {
+        raf = 0;
+        setDragIndex(floatIndexFromX(lx));
+      });
+    };
+    const onEnd = () => {
+      if (!active) return;
+      const wasDrag = isDrag, x = lx;
+      active = false; isDrag = false;
+      stopRaf();
+      setPressed(false);
+      setDragging(false);
+      setDragIndex(null);          // back to route-driven (batches with fireTab → no flicker)
+      if (wasDrag) {
+        suppressClickRef.current = true;   // swallow the click a drag would synthesise
+        if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current);
+        suppressTimerRef.current = setTimeout(() => { suppressClickRef.current = false; }, 400);
+        fireTab(Math.max(0, Math.min(tabCount - 1, Math.round(floatIndexFromX(x)))));
+      }
+    };
+
+    el.addEventListener("touchstart",  onStart, { passive: true });
+    el.addEventListener("touchmove",   onMove,  { passive: false });
+    el.addEventListener("touchend",    onEnd,   { passive: true });
+    el.addEventListener("touchcancel", onEnd,   { passive: true });
+    return () => {
+      el.removeEventListener("touchstart",  onStart);
+      el.removeEventListener("touchmove",   onMove);
+      el.removeEventListener("touchend",    onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+      stopRaf();
+    };
+  }, [isSearch, fireTab, floatIndexFromX, tabCount]);
+
+  // Tap → navigate. A genuine tap always goes through; the click synthesised
+  // right after a drag is swallowed exactly once.
+  const onTabClick = useCallback((i) => {
+    if (suppressClickRef.current) { suppressClickRef.current = false; return; }
+    fireTab(i);
+  }, [fireTab]);
+
+  // Any route change → lens snaps to the new route; nothing can stay stuck on a
+  // stale index (belt-and-suspenders alongside the on-release reset).
+  useEffect(() => {
+    setDragIndex(null);
+    setDragging(false);
+    setPressed(false);
+  }, [baseIndex]);
+
+  useEffect(() => () => { if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current); }, []);
+
+  const visualIndex  = dragIndex != null ? dragIndex : baseIndex;
+  const activeVisual = dragIndex != null ? Math.round(dragIndex) : baseIndex;
+  const anim = reducedMotion ? "none" : undefined;
 
   const scaleFor = (i) => {
-    const target = hoverIndex ?? lensIndex;
-    if (i === target) return 1.18;
-    if (Math.abs(i - target) === 1) return 1.06;
+    if (i === activeVisual) return 1.16;
+    if (dragging && Math.abs(i - activeVisual) === 1) return 1.05;
     return 1;
   };
-
-  const slotPct = 100 / tabCount;
 
   // ── Shared search-pill markup (Stage 1 + Stage 2) ────────
   const searchPill = (
@@ -267,15 +309,17 @@ export function MobileBottomNav({
     >
       {isSearch ? (
         <>
-          {/* Detached orb — Cart-badge / "&" (Stage 1, left) or
-              X close (Stage 2, right). Single element so the search
-              input never remounts; only order + content change. */}
+          {/* Detached orb — three states (single element so the search input
+              never remounts; only order + content change):
+                • typing/focused  → X (right)  → dismiss the keyboard
+                • not focused, cart has items → bag + badge (left) → open Bag
+                • not focused, empty cart → X (left) → close search → For You */}
           <button
             type="button"
             className="lg-nav-orb"
             style={{ order: isFullSearch ? 1 : -1 }}
             onClick={isFullSearch ? closeSearch : (cartCount > 0 ? onCart : onHome)}
-            aria-label={isFullSearch ? "Close search" : (cartCount > 0 ? "Open cart" : "Back to home")}
+            aria-label={isFullSearch ? "Dismiss keyboard" : (cartCount > 0 ? "Open bag" : "Close search")}
           >
             {isFullSearch ? (
               <span style={{ color: "var(--text-primary)" }}>
@@ -298,10 +342,9 @@ export function MobileBottomNav({
                 </span>
               </span>
             ) : (
-              <span style={{
-                fontFamily: "Fraunces, Georgia, serif", fontSize: "1.3rem",
-                fontWeight: 600, color: "#B08842", lineHeight: 1,
-              }}>&amp;</span>
+              <span style={{ color: "var(--text-primary)" }}>
+                <X size={20} strokeWidth={2} />
+              </span>
             )}
           </button>
           {searchPill}
@@ -311,29 +354,29 @@ export function MobileBottomNav({
           {/* NORMAL: 4-tab frosted pill + detached Search orb */}
           <div
             ref={pillRef}
-            className="lg-nav-pill"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            onTouchCancel={onTouchCancel}
+            className="lg-nav-pill lg-nav-pill--tabs"
+            style={{ touchAction: "none", overscrollBehavior: "contain" }}
           >
             <span
-              className={"lg-lens" + (pressed ? " lg-lens-pressed" : "")}
+              className="lg-lens"
               aria-hidden="true"
               style={{
-                width: `${slotPct}%`, left: `${lensIndex * slotPct}%`,
-                transform: `translateX(${dragOffset}px)`,
-                transition: anim ?? (draggingRef.current
-                  ? "transform 0ms, left 0ms"
-                  : "left 0.32s cubic-bezier(0.4,1.4,0.6,1), transform 0.32s cubic-bezier(0.4,1.4,0.6,1)"),
+                width: `${slotPct}%`,
+                transform: `translateX(${visualIndex * 100}%) scale(${pressed ? 1.05 : 1})`,
+                transition: anim ?? (dragging
+                  ? "transform 0ms"
+                  : "transform 0.4s cubic-bezier(0.2, 0.9, 0.2, 1)"),
+                // Drop the (expensive) moving backdrop-filter while a finger
+                // drags so the glass tracks smoothly; it restores on release.
+                ...(dragging ? { backdropFilter: "none", WebkitBackdropFilter: "none" } : null),
               }}
             />
             {tabs.map((t, i) => {
-              const active = i === lensIndex;
+              const active = i === activeVisual;
               return (
                 <button
                   key={t.key} type="button"
-                  onClick={() => { setLensIndex(i); fireTab(i); }}
+                  onClick={() => onTabClick(i)}
                   className="lg-tab"
                   aria-current={active ? "page" : undefined}
                   aria-label={t.label + (t.badge ? ` (${t.badge})` : "")}
@@ -342,12 +385,12 @@ export function MobileBottomNav({
                     transform: `scale(${scaleFor(i)})`,
                     transition: anim ?? "transform 0.22s cubic-bezier(0.34,1.56,0.64,1)",
                   }}>
-                    <t.Icon size={22} strokeWidth={active ? 2 : 1.6}
-                      style={{ color: active ? "var(--text-primary)" : "var(--text-muted)" }} />
+                    <t.Icon size={22} strokeWidth={active ? 2.1 : 1.6}
+                      style={{ color: active ? "var(--accent)" : "var(--text-muted)" }} />
                     {t.badge > 0 && <span className="lg-tab-badge" aria-hidden="true">{t.badge}</span>}
                   </span>
                   <span className="lg-tab-label" style={{
-                    color: active ? "var(--text-primary)" : "var(--text-muted)",
+                    color: active ? "var(--accent)" : "var(--text-muted)",
                     fontWeight: active ? 600 : 500,
                   }}>{t.label}</span>
                 </button>

@@ -229,7 +229,7 @@ export function HomeView({
           type="button"
           onClick={() => onNavigateProduct?.("blankets", "armenian-alphabet-blanket")}
           className="w-full flex items-center gap-4 text-left rounded-2xl p-3"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 10px 26px -14px rgba(26,22,18,0.24)" }}
           aria-label="The Armenian Alphabet Blanket — selected for you"
         >
           <div
@@ -285,22 +285,25 @@ export function HomeView({
           Explore the rest
         </p>
 
-        {/* Mobile: horizontal snap carousel (swipe left for more). The
-            negative margins + padding let cards bleed to the screen edge
-            so a partial next card peeks, signalling "there's more". */}
-        <div className="lg:hidden -mx-6 px-6 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none" }}>
+        {/* Mobile: horizontal snap carousel. Left edge sits flush to the page
+            gutter (aligned with every other card section); only the RIGHT side
+            bleeds to the screen edge (-mr-6) so the next card peeks, signalling
+            "there's more" — the Apple Store pattern. */}
+        <div className="lg:hidden -mr-6 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none", scrollPaddingLeft: 0 }}>
           {exploreCards.map(({ key, title, blurb, Icon, go }) => (
             <button
               key={key}
               type="button"
               onClick={go}
               className="snap-start flex-shrink-0 text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
-              style={{ width: 150, height: 150, background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+              style={{ width: 156, height: 156, background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${title} — ${blurb}`}
             >
               <Icon size={24} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              {/* Title reserves two lines so 1- and 2-line titles align the
+                  same across the whole row (no more random heights). */}
               <div>
-                <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{title}</p>
+                <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)", minHeight: "2.4em" }}>{title}</p>
                 <p className="text-xs mt-1 opacity-65 leading-snug">{blurb}</p>
               </div>
             </button>
@@ -398,19 +401,19 @@ export function HomeView({
         <p className="text-xs tracking-[0.25em] uppercase opacity-50 mb-3">More</p>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { key: "finalSale", label: "Final Sale" },
-            { key: "privacy",   label: "Privacy" },
-            { key: "terms",     label: "Terms" },
-          ].map(({ key, label }) => (
+            { key: "finalSale", label: "Final Sale", Icon: ShoppingBag },
+            { key: "privacy",   label: "Privacy",    Icon: Shield },
+            { key: "terms",     label: "Terms",      Icon: BookOpen },
+          ].map(({ key, label, Icon }) => (
             <button
               key={key}
               type="button"
               onClick={() => onOpenPolicy?.(key)}
               className="rounded-2xl p-4 text-left active:scale-[0.98] transition-transform"
-              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${label} policy`}
             >
-              <Shield size={20} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              <Icon size={20} strokeWidth={1.5} style={{ color: "#B08842" }} />
               <p className="text-sm mt-2 leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{label}</p>
             </button>
           ))}
