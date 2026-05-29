@@ -544,6 +544,11 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
               WebkitOverflowScrolling: "touch",
               paddingLeft: 24,
               paddingRight: 24,
+              // Snap respects the 24px page gutter, so the first card snaps
+              // flush with the "Shop" title / "Browse by category" label
+              // instead of jumping to the screen edge.
+              scrollPaddingLeft: 24,
+              scrollPaddingRight: 24,
               paddingBottom: 4,
             }}
           >

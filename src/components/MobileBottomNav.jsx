@@ -50,12 +50,11 @@ export function MobileBottomNav({
   const isFullSearch = isSearch && inputFocused;
   const kbOffset = useKeyboardOffset(isFullSearch);
 
+  // Search opens UNFOCUSED (Apple Store style): the customer first sees the bag
+  // shortcut / suggestions, and taps the field to bring up the keyboard. (No
+  // auto-focus — that's what kept the X permanently visible and hid the bag.)
   useEffect(() => {
-    if (isSearch) {
-      const t = setTimeout(() => inputRef.current?.focus(), 300);
-      return () => clearTimeout(t);
-    }
-    setInputFocused(false);
+    if (!isSearch) setInputFocused(false);
   }, [isSearch]);
 
   useEffect(() => {
@@ -310,15 +309,17 @@ export function MobileBottomNav({
     >
       {isSearch ? (
         <>
-          {/* Detached orb — Cart-badge / "&" (Stage 1, left) or
-              X close (Stage 2, right). Single element so the search
-              input never remounts; only order + content change. */}
+          {/* Detached orb — three states (single element so the search input
+              never remounts; only order + content change):
+                • typing/focused  → X (right)  → dismiss the keyboard
+                • not focused, cart has items → bag + badge (left) → open Bag
+                • not focused, empty cart → X (left) → close search → For You */}
           <button
             type="button"
             className="lg-nav-orb"
             style={{ order: isFullSearch ? 1 : -1 }}
             onClick={isFullSearch ? closeSearch : (cartCount > 0 ? onCart : onHome)}
-            aria-label={isFullSearch ? "Close search" : (cartCount > 0 ? "Open cart" : "Back to home")}
+            aria-label={isFullSearch ? "Dismiss keyboard" : (cartCount > 0 ? "Open bag" : "Close search")}
           >
             {isFullSearch ? (
               <span style={{ color: "var(--text-primary)" }}>
@@ -341,10 +342,9 @@ export function MobileBottomNav({
                 </span>
               </span>
             ) : (
-              <span style={{
-                fontFamily: "Fraunces, Georgia, serif", fontSize: "1.3rem",
-                fontWeight: 600, color: "#B08842", lineHeight: 1,
-              }}>&amp;</span>
+              <span style={{ color: "var(--text-primary)" }}>
+                <X size={20} strokeWidth={2} />
+              </span>
             )}
           </button>
           {searchPill}
