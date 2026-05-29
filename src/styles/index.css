@@ -1282,7 +1282,7 @@
     width: min(92vw, 430px);
     bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
     z-index: 60;
-    height: 64px;
+    height: 72px;
     /* Transparent flex wrapper holding two frosted glass pieces (the 4-tab
        pill + the detached search orb) with a gap between them, Apple-Store
        style. The glass material lives on the children. pointer-events:none
@@ -1329,7 +1329,7 @@
   .lg-nav-pill {
     flex: 1 1 auto;
     min-width: 0;
-    height: 64px;
+    height: 72px;
     display: flex;
     align-items: stretch;
     border-radius: 999px;
@@ -1354,8 +1354,8 @@
   /* Detached circular satellite — Search (normal) / Cart badge / X (search). */
   .lg-nav-orb {
     flex: 0 0 auto;
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     display: flex;
     align-items: center;
