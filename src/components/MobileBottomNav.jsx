@@ -121,6 +121,8 @@ export function MobileBottomNav({
   const draggingRef    = useRef(false);
   const justDraggedRef = useRef(false);                 // swallow the click after a drag
   const startRef       = useRef({ x: 0, y: 0, id: null, captured: false });
+  const rafRef         = useRef(0);                     // coalesce drag updates to 1/frame
+  const lastXRef       = useRef(0);                     // latest finger X (read on release)
 
   const reducedMotion = useMemo(() => (
     typeof window !== "undefined"
@@ -180,36 +182,46 @@ export function MobileBottomNav({
       // Capture so the drag continues even past the pill's edges.
       try { e.currentTarget.setPointerCapture(e.pointerId); startRef.current.captured = true; } catch {}
     }
-    setDrag(floatIndexFromX(e.clientX));
+    // Coalesce to one lens update per animation frame — keeps the glass gliding
+    // smoothly under a fast finger instead of re-rendering on every move event.
+    lastXRef.current = e.clientX;
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = 0;
+        setDrag(floatIndexFromX(lastXRef.current));
+      });
+    }
   }, [isSearch, floatIndexFromX, setDrag]);
 
   const onPointerUp = useCallback((e) => {
     if (isSearch) return;
     setPressed(false);
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
     if (draggingRef.current) {
       draggingRef.current = false;
       setDragging(false);
       justDraggedRef.current = true;   // suppress the synthesised click
-      const fi = dragIndexRef.current;
-      if (fi != null) {
-        const target = Math.max(0, Math.min(tabCount - 1, Math.round(fi)));
-        setDrag(target);               // snap lens to nearest tab (glides), held until route catches up
-        fireTab(target);               // navigate
-      } else {
-        setDrag(null);
-      }
+      // Compute the target from the final finger position (robust even if a
+      // move's rAF hadn't flushed yet) and soft-snap to the nearest tab.
+      const target = Math.max(0, Math.min(tabCount - 1, Math.round(floatIndexFromX(lastXRef.current))));
+      setDrag(target);                 // snap lens to nearest tab (glides), held until route catches up
+      fireTab(target);                 // navigate
     }
     releaseCapture(e);
-  }, [isSearch, tabCount, setDrag, fireTab, releaseCapture]);
+  }, [isSearch, tabCount, floatIndexFromX, setDrag, fireTab, releaseCapture]);
 
   const onPointerCancel = useCallback((e) => {
     if (isSearch) return;
     setPressed(false);
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
     draggingRef.current = false;
     setDragging(false);
     setDrag(null);                     // snap back to the current route
     releaseCapture(e);
   }, [isSearch, setDrag, releaseCapture]);
+
+  // Cancel any pending drag frame if the bar unmounts mid-gesture.
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
   // Tap → navigate. A click synthesised right after a drag is swallowed so we
   // never double-navigate; a genuine tap (no drag) always goes through.
