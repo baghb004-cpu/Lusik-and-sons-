@@ -163,14 +163,19 @@ export function MobileBottomNav({
     const onMove = (e) => {
       if (!active) { return; }
       const t = e.touches[0]; if (!t) return;
+      // Any move while a finger is down on the bar belongs to the bar: block the
+      // page from scrolling in ANY direction. This is the belt to touch-action:
+      // none (which older iOS Safari doesn't fully honour) — a non-passive
+      // touchmove + preventDefault is the only thing that reliably stops it.
+      if (e.cancelable) e.preventDefault();
       const dx = t.clientX - sx, dy = t.clientY - sy;
       if (!isDrag) {
-        // Wait for clear horizontal intent before claiming the gesture.
+        // Wait for clear horizontal intent before claiming it as a drag (so a
+        // still finger stays a tap); the scroll is already blocked above.
         if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
         isDrag = true;
         setDragging(true);
       }
-      e.preventDefault();          // NON-PASSIVE: stop the page from scrolling
       lx = t.clientX;
       if (!raf) raf = requestAnimationFrame(() => {
         raf = 0;

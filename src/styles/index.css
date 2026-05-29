@@ -1362,6 +1362,7 @@
     justify-content: center;
     color: var(--text-primary);
     cursor: pointer;
+    touch-action: none;   /* the orb is a control too — never scroll from it */
   }
 
   :root[data-theme="dark"] .lg-nav-pill,
