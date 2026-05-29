@@ -1,206 +1,373 @@
 // ============================================================
-// MobileBottomNav — Apple-style floating bottom tab bar (mobile)
+// MobileBottomNav — Apple-Store-style pill + detached orb
 // ============================================================
-// A frosted, floating "liquid glass" island with up to 4 tabs +
-// a detached search orb. Mirrors the iOS tab bar: icon + label,
-// active tab tinted.
+// The bar is a transparent flex wrapper holding two frosted glass
+// pieces with a gap between them — exactly like the Apple Store,
+// where the magnifying glass / X is its own bubble isolated from
+// the menu pill:
 //
-// Liquid-glass press gesture (the premium bit): touch-and-hold the
-// pill and a glass "lens" appears beneath your finger, the pill
-// swells slightly, and the focused tab's icon magnifies. Slide
-// left/right and the lens glides between tabs with a springy,
-// liquid feel, magnifying whichever tab it's over. Lift to select
-// the focused tab. Mouse + keyboard fall back to plain clicks, so
-// accessibility is unaffected.
+//   NORMAL:   [ Home  Shop  Journal  Bag ]    ( 🔍 )
+//             └─────── pill (4 tabs) ──────┘   └ orb ┘
+//
+//   SEARCH (typing, not focused):
+//             ( 🛍2 )   [ 🔍  What are you looking for?   🎤 ]
+//             └ orb ┘   └──────────── pill ───────────────┘
+//
+//   SEARCH (focused / keyboard up):
+//             [ 🔍  What are you looking for?   🎤 ]   ( ✕ )
+//             └──────────── pill ───────────────┘     └orb┘
+//
+// The orb swaps role + side by flex `order`; the search input
+// stays mounted across stages so focus is preserved. The 4-tab
+// pill keeps the sliding "lens" + drag-to-navigate.
 // ============================================================
 
-import React, { useMemo, useRef, useState, useCallback, useLayoutEffect, useEffect } from "react";
-import { Home, Store, BookOpen, ShoppingBag, Search } from "./icons.jsx";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Home, Store, BookOpen, ShoppingBag, Search, Mic, X } from "./icons.jsx";
+import { useKeyboardOffset } from "../lib/useKeyboardOffset.js";
 
-export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, onCart, onSearch }) {
+const SR = typeof window !== "undefined"
+  ? (window.SpeechRecognition || window.webkitSpeechRecognition)
+  : null;
+
+export function MobileBottomNav({
+  view,
+  cartCount,
+  onHome,
+  onShop,
+  onJournal,
+  onCart,
+  onSearch,
+  searchQuery = "",
+  onSearchQueryChange,
+}) {
+  const isSearch = view === "search";
+  const [inputFocused, setInputFocused] = useState(false);
+  const [listening, setListening] = useState(false);
+  const inputRef = useRef(null);
+  const recognitionRef = useRef(null);
+
+  const isFullSearch = isSearch && inputFocused;
+  const kbOffset = useKeyboardOffset(isFullSearch);
+
+  useEffect(() => {
+    if (isSearch) {
+      const t = setTimeout(() => inputRef.current?.focus(), 300);
+      return () => clearTimeout(t);
+    }
+    setInputFocused(false);
+  }, [isSearch]);
+
+  useEffect(() => {
+    return () => { try { recognitionRef.current?.abort(); } catch {} };
+  }, []);
+
+  const startVoice = () => {
+    if (!SR) return;
+    const r = new SR();
+    r.lang = "en-US";
+    r.interimResults = false;
+    r.onstart = () => setListening(true);
+    r.onend = () => setListening(false);
+    r.onerror = () => setListening(false);
+    r.onresult = (e) => {
+      const t = e.results?.[0]?.[0]?.transcript;
+      if (t) onSearchQueryChange?.(t);
+    };
+    recognitionRef.current = r;
+    r.start();
+  };
+
+  const closeSearch = () => {
+    // Just collapse the keyboard and return to the search menu —
+    // blurring the input drops the keyboard, clearing the query
+    // brings back the "Try searching" suggestions, and we STAY on
+    // the search view (no navigation home, no page reload).
+    inputRef.current?.blur();
+    onSearchQueryChange?.("");
+    try { recognitionRef.current?.stop(); } catch {}
+    setListening(false);
+  };
+
+  // ── 4 tabs (Search is now the orb, not a tab) ────────────
+  // Mobile-only labels mirror the Apple Store app's tab names: "For You"
+  // (home) and "Products" (shop). This component is lg:hidden, so the
+  // desktop top-nav labels ("Home"/"Shop") are unaffected.
   const tabs = useMemo(() => ([
     { key: "home",    label: "For You",  Icon: Home,        action: onHome,    activeWhen: view === "home" },
     { key: "shop",    label: "Products", Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
-    { key: "journal", label: "Journal",  Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
-    { key: "cart",    label: "Bag",      Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
+    { key: "journal", label: "Journal", Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
+    { key: "cart",    label: "Bag",     Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
   ]), [view, cartCount, onHome, onShop, onJournal, onCart]);
 
-  // The currently-selected tab. The glass lens rests over this tab at all
-  // times (Apple Music / App Store style — the active tab sits inside its
-  // own frosted capsule), and glides to a new tab when one is chosen.
-  const activeIndex = useMemo(() => {
+  const baseIndex = useMemo(() => {
     const i = tabs.findIndex((t) => t.activeWhen);
-    return i === -1 ? 0 : i;
+    return i < 0 ? 0 : i;
   }, [tabs]);
 
-  // --- LIQUID-GLASS PRESS/SLIDE GESTURE ---
   const pillRef = useRef(null);
-  const tabRefs = useRef([]);
-  const focusedRef = useRef(null);          // index under the finger (ref for activation)
-  const gesturingRef = useRef(false);
-  const [pressing, setPressing] = useState(false);
-  const [focused, setFocused] = useState(null);
-  const [lens, setLens] = useState({ left: 0, width: 64 });
-  const [snap, setSnap] = useState(false);  // true = jump (no slide) on first touch-down
+  const [lensIndex,  setLensIndex]  = useState(baseIndex);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [pressed,    setPressed]    = useState(false);
+  const draggingRef = useRef(false);
+  const startXRef   = useRef(0);
+  const startYRef   = useRef(0);
+  const [hoverIndex, setHoverIndex] = useState(null);
 
-  // Which tab sits under a given clientX (nearest if past the ends).
-  const indexFromX = useCallback((clientX) => {
-    const els = tabRefs.current;
-    let best = 0, bestDist = Infinity;
-    for (let i = 0; i < els.length; i++) {
-      const el = els[i];
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      if (clientX >= r.left && clientX <= r.right) return i;
-      const d = Math.abs(clientX - (r.left + r.width / 2));
-      if (d < bestDist) { bestDist = d; best = i; }
-    }
-    return best;
-  }, []);
-
-  // Sit the lens over tab `i` (a touch wider than the tab for the bubble feel).
-  const positionLens = useCallback((i) => {
-    const pill = pillRef.current;
-    const el = tabRefs.current[i];
-    if (!pill || !el) return;
-    const pr = pill.getBoundingClientRect();
-    const r = el.getBoundingClientRect();
-    const pad = 4;
-    setLens({ left: r.left - pr.left - pad, width: r.width + pad * 2 });
-  }, []);
-
-  const setFocus = useCallback((i) => {
-    focusedRef.current = i;
-    setFocused(i);
-    positionLens(i);
-  }, [positionLens]);
-
-  // Park the lens over the active tab whenever the selection changes (and on
-  // first paint), unless a finger is currently dragging it. useLayoutEffect so
-  // it's positioned before the browser paints — no flash at left:0 on mount.
-  useLayoutEffect(() => {
-    if (gesturingRef.current) return;
-    positionLens(activeIndex);
-  }, [activeIndex, positionLens]);
-
-  // Keep it parked correctly across viewport changes (rotation, keyboard, etc.).
   useEffect(() => {
-    const reflow = () => { if (!gesturingRef.current) positionLens(activeIndex); };
-    window.addEventListener("resize", reflow);
-    window.addEventListener("orientationchange", reflow);
-    return () => {
-      window.removeEventListener("resize", reflow);
-      window.removeEventListener("orientationchange", reflow);
-    };
-  }, [activeIndex, positionLens]);
+    if (!pressed) setLensIndex(baseIndex);
+  }, [baseIndex, pressed]);
 
-  const onPointerDown = useCallback((e) => {
-    // Mouse + pen keep the native click path (and keyboard via onClick).
-    // Only touch drives the magnifying lens gesture.
-    if (e.pointerType !== "touch") return;
-    e.preventDefault();                       // suppress the emulated click
-    gesturingRef.current = true;
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
-    setSnap(true);                            // jump under the finger, don't slide in
-    setPressing(true);
-    setFocus(indexFromX(e.clientX));
-    // After the snap frame, re-enable the gliding transition for slides.
-    requestAnimationFrame(() => requestAnimationFrame(() => setSnap(false)));
-  }, [indexFromX, setFocus]);
+  const reducedMotion = useMemo(() => (
+    typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  ), []);
 
-  const onPointerMove = useCallback((e) => {
-    if (!gesturingRef.current) return;
-    const i = indexFromX(e.clientX);
-    if (i !== focusedRef.current) setFocus(i);
-  }, [indexFromX, setFocus]);
+  const tabCount = tabs.length;
+  const anim = reducedMotion ? "none" : undefined;
 
-  const endGesture = useCallback((activate) => {
-    if (!gesturingRef.current) return;
-    gesturingRef.current = false;
-    const i = focusedRef.current;
-    setPressing(false);
-    setFocused(null);
-    focusedRef.current = null;
-    if (activate && i != null) {
-      // The chosen tab becomes active → the layout effect glides the lens
-      // there on the next render. (If it's already the active tab, the lens
-      // is already parked on it.)
-      tabs[i]?.action?.();
-    } else {
-      // Cancelled (slid off / lifted on nothing) — settle back onto the
-      // current active tab so the lens never strands on a non-selected slot.
-      positionLens(activeIndex);
+  const xToIndex = useCallback((clientX) => {
+    const rect = pillRef.current?.getBoundingClientRect();
+    if (!rect) return baseIndex;
+    const x = clientX - rect.left;
+    const slot = rect.width / tabCount;
+    return Math.max(0, Math.min(tabCount - 1, Math.floor(x / slot)));
+  }, [baseIndex, tabCount]);
+
+  const xToOffset = useCallback((clientX, fromIndex) => {
+    const rect = pillRef.current?.getBoundingClientRect();
+    if (!rect) return 0;
+    const slot = rect.width / tabCount;
+    return clientX - (rect.left + slot * (fromIndex + 0.5));
+  }, [tabCount]);
+
+  const onTouchStart = (e) => {
+    if (isSearch) return;
+    const t = e.touches[0]; if (!t) return;
+    startXRef.current = t.clientX; startYRef.current = t.clientY;
+    draggingRef.current = false; setPressed(true);
+    const idx = xToIndex(t.clientX);
+    setLensIndex(idx); setHoverIndex(idx); setDragOffset(0);
+  };
+  const onTouchMove = (e) => {
+    if (isSearch) return;
+    const t = e.touches[0]; if (!t) return;
+    const dx = t.clientX - startXRef.current;
+    const dy = t.clientY - startYRef.current;
+    if (!draggingRef.current) {
+      if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
+      draggingRef.current = true;
     }
-  }, [tabs, activeIndex, positionLens]);
+    e.preventDefault?.();
+    const idx = xToIndex(t.clientX);
+    if (idx !== lensIndex) setLensIndex(idx);
+    setHoverIndex(idx); setDragOffset(xToOffset(t.clientX, idx));
+  };
+  const fireTab = (idx) => {
+    const tab = tabs[idx];
+    if (tab?.action) try { tab.action(); } catch {}
+  };
+  const onTouchEnd = (e) => {
+    if (isSearch) return;
+    setPressed(false); setHoverIndex(null); setDragOffset(0);
+    if (!draggingRef.current) {
+      const tapX = e.changedTouches?.[0]?.clientX ?? null;
+      if (tapX != null) setLensIndex(xToIndex(tapX));
+      draggingRef.current = false; return;
+    }
+    draggingRef.current = false;
+    const endX = e.changedTouches?.[0]?.clientX ?? null;
+    if (endX == null) return;
+    const idx = xToIndex(endX); setLensIndex(idx); fireTab(idx);
+  };
+  const onTouchCancel = () => {
+    if (isSearch) return;
+    setPressed(false); setDragOffset(0); setHoverIndex(null);
+    draggingRef.current = false; setLensIndex(baseIndex);
+  };
+
+  const scaleFor = (i) => {
+    const target = hoverIndex ?? lensIndex;
+    if (i === target) return 1.18;
+    if (Math.abs(i - target) === 1) return 1.06;
+    return 1;
+  };
+
+  const slotPct = 100 / tabCount;
+
+  // ── Shared search-pill markup (Stage 1 + Stage 2) ────────
+  const searchPill = (
+    <div className="lg-nav-pill" style={{ order: 0, alignItems: "center", padding: "0 6px 0 16px" }}>
+      <span style={{ flexShrink: 0, color: "rgba(26,22,18,0.4)" }}>
+        <Search size={18} strokeWidth={1.6} />
+      </span>
+      <input
+        ref={inputRef}
+        type="search"
+        value={searchQuery}
+        onChange={(e) => onSearchQueryChange?.(e.target.value)}
+        onFocus={() => setInputFocused(true)}
+        onBlur={() => setTimeout(() => setInputFocused(false), 150)}
+        placeholder="What are you looking for?"
+        autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+        tabIndex={isSearch ? 0 : -1}
+        style={{
+          flex: 1, minWidth: 0, height: "100%",
+          border: "none", outline: "none", background: "transparent",
+          fontSize: "16px",
+          fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
+          fontWeight: 400,
+          color: "var(--text-primary, #1A1612)",
+          paddingLeft: 10, paddingRight: 6,
+          WebkitAppearance: "none", appearance: "none",
+        }}
+      />
+      {searchQuery && (
+        <button
+          type="button"
+          onClick={() => { onSearchQueryChange?.(""); inputRef.current?.focus(); }}
+          aria-label="Clear search text"
+          style={{
+            flexShrink: 0, width: 26, height: 26, display: "flex",
+            alignItems: "center", justifyContent: "center",
+            color: "rgba(26,22,18,0.4)", background: "transparent", border: "none",
+          }}
+        >
+          <span style={{ fontSize: "1.2rem", fontWeight: 300, lineHeight: 1 }}>&times;</span>
+        </button>
+      )}
+      {SR && (
+        <button
+          type="button"
+          onClick={listening ? () => { try { recognitionRef.current?.stop(); } catch {} setListening(false); } : startVoice}
+          aria-label={listening ? "Stop listening" : "Search by voice"}
+          style={{
+            flexShrink: 0, width: 38, height: 38, display: "flex",
+            alignItems: "center", justifyContent: "center", borderRadius: "50%",
+            background: listening ? "rgba(176,136,66,0.15)" : "transparent",
+            border: "none", cursor: "pointer",
+            color: listening ? "#B08842" : "rgba(26,22,18,0.4)",
+            transition: "color 0.2s, background 0.2s",
+          }}
+        >
+          <Mic size={19} strokeWidth={1.6} />
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <nav className="lg-bottom-island lg:hidden" aria-label="Primary">
-      <div
-        ref={pillRef}
-        className="lg-nav-pill"
-        data-pressing={pressing ? "true" : "false"}
-        style={{ order: 0, alignItems: "center", padding: "0 6px 0 16px", touchAction: "none" }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={() => endGesture(true)}
-        onPointerCancel={() => endGesture(false)}
-        onPointerLeave={() => endGesture(false)}
-      >
-        {/* The magnifying glass lens — glides under the focused tab while
-            pressing, fades out at rest. Sits BEHIND the icons (z-index 0). */}
-        <div
-          className="lg-lens"
-          aria-hidden="true"
-          style={{
-            transform: `translateX(${lens.left}px)`,
-            width: lens.width,
-            // Always visible: it's the active-tab capsule at rest, and the
-            // magnifier while pressing. `snap` kills the transition for the
-            // first touch-down jump under the finger; otherwise it glides.
-            opacity: 1,
-            transition: snap
-              ? "none"
-              : "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), width 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
-          }}
-        />
-
-        {tabs.map((tab, i) => {
-          const isActive = tab.activeWhen;
-          const isFocused = focused === i;
-          return (
-            <button
-              key={tab.key}
-              ref={(el) => { tabRefs.current[i] = el; }}
-              onClick={tab.action}
-              className="lg-tab"
-              aria-label={tab.label}
-              aria-current={isActive ? "page" : undefined}
-              data-active={isActive ? "true" : "false"}
-              data-focused={isFocused ? "true" : "false"}
-              style={{ position: "relative" }}
-            >
-              <span className="lg-tab-icon" style={{ display: "inline-flex", position: "relative" }}>
-                <tab.Icon size={22} strokeWidth={isActive || isFocused ? 2.2 : 1.7} />
-                {tab.badge > 0 && (
-                  <span className="lg-tab-badge" aria-hidden="true">{tab.badge}</span>
-                )}
+    <nav
+      className="lg-bottom-island lg:hidden"
+      aria-label="Bottom navigation"
+      style={{
+        transform: kbOffset ? `translateY(-${kbOffset}px)` : undefined,
+        transition: reducedMotion ? "none" : "transform 0.25s ease",
+      }}
+    >
+      {isSearch ? (
+        <>
+          {/* Detached orb — Cart-badge / "&" (Stage 1, left) or
+              X close (Stage 2, right). Single element so the search
+              input never remounts; only order + content change. */}
+          <button
+            type="button"
+            className="lg-nav-orb"
+            style={{ order: isFullSearch ? 1 : -1 }}
+            onClick={isFullSearch ? closeSearch : (cartCount > 0 ? onCart : onHome)}
+            aria-label={isFullSearch ? "Close search" : (cartCount > 0 ? "Open cart" : "Back to home")}
+          >
+            {isFullSearch ? (
+              <span style={{ color: "var(--text-primary)" }}>
+                <X size={20} strokeWidth={2} />
               </span>
-              <span
-                className="lg-tab-label"
-                style={{ fontSize: "0.66rem", marginTop: "3px", fontWeight: isActive ? 600 : 500, letterSpacing: "0.01em" }}
-              >
-                {tab.label}
+            ) : cartCount > 0 ? (
+              <span style={{ position: "relative", color: "var(--text-primary)" }}>
+                <ShoppingBag size={22} strokeWidth={1.7} />
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute", top: -8, right: -10,
+                    minWidth: 18, height: 18, padding: "0 5px",
+                    borderRadius: 999, background: "#B08842", color: "#fff",
+                    fontSize: "0.65rem", fontWeight: 700, lineHeight: "18px",
+                    textAlign: "center",
+                  }}
+                >
+                  {cartCount}
+                </span>
               </span>
-            </button>
-          );
-        })}
-      </div>
+            ) : (
+              <span style={{
+                fontFamily: "Fraunces, Georgia, serif", fontSize: "1.3rem",
+                fontWeight: 600, color: "#B08842", lineHeight: 1,
+              }}>&amp;</span>
+            )}
+          </button>
+          {searchPill}
+        </>
+      ) : (
+        <>
+          {/* NORMAL: 4-tab frosted pill + detached Search orb */}
+          <div
+            ref={pillRef}
+            className="lg-nav-pill"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            onTouchCancel={onTouchCancel}
+          >
+            <span
+              className={"lg-lens" + (pressed ? " lg-lens-pressed" : "")}
+              aria-hidden="true"
+              style={{
+                width: `${slotPct}%`, left: `${lensIndex * slotPct}%`,
+                transform: `translateX(${dragOffset}px)`,
+                transition: anim ?? (draggingRef.current
+                  ? "transform 0ms, left 0ms"
+                  : "left 0.32s cubic-bezier(0.4,1.4,0.6,1), transform 0.32s cubic-bezier(0.4,1.4,0.6,1)"),
+              }}
+            />
+            {tabs.map((t, i) => {
+              const active = i === lensIndex;
+              return (
+                <button
+                  key={t.key} type="button"
+                  onClick={() => { setLensIndex(i); fireTab(i); }}
+                  className="lg-tab"
+                  aria-current={active ? "page" : undefined}
+                  aria-label={t.label + (t.badge ? ` (${t.badge})` : "")}
+                >
+                  <span className="lg-tab-icon" style={{
+                    transform: `scale(${scaleFor(i)})`,
+                    transition: anim ?? "transform 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+                  }}>
+                    <t.Icon size={22} strokeWidth={active ? 2 : 1.6}
+                      style={{ color: active ? "var(--text-primary)" : "var(--text-muted)" }} />
+                    {t.badge > 0 && <span className="lg-tab-badge" aria-hidden="true">{t.badge}</span>}
+                  </span>
+                  <span className="lg-tab-label" style={{
+                    color: active ? "var(--text-primary)" : "var(--text-muted)",
+                    fontWeight: active ? 600 : 500,
+                  }}>{t.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Detached search orb — separate circle to the right, matching the
-          Apple Store app's standalone search button. */}
-      <button className="lg-nav-orb" onClick={onSearch} aria-label="Search">
-        <Search size={22} strokeWidth={1.8} />
-      </button>
+          {/* Detached Search orb */}
+          <button
+            type="button"
+            className="lg-nav-orb"
+            onClick={onSearch}
+            aria-label="Search"
+          >
+            <span style={{ color: "var(--text-primary)" }}>
+              <Search size={22} strokeWidth={1.8} />
+            </span>
+          </button>
+        </>
+      )}
     </nav>
   );
 }
