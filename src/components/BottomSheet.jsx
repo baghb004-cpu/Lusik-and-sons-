@@ -166,27 +166,39 @@ export function BottomSheet({ open, onClose, children, ariaLabel = "Dialog", pee
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchCancel}
       >
-        {/* Grabber handle + white circular close button */}
-        <div className="relative pt-3 pb-2 flex-shrink-0">
+        {/* Close button — a DIRECT child of the full-width panel (which is
+            `relative w-full`), positioned with INLINE styles, so its right
+            edge is always the panel's right edge no matter what. Tailwind
+            offset utilities are avoided here (an absolute element whose
+            offsets don't apply falls back to the top-left and clips); the
+            safe-area inset + min margin keep the bubble clear of notches and
+            rounded display corners on every device. */}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          data-tooltip="Close"
+          className="grid place-items-center rounded-full active:scale-95 transition-transform"
+          style={{
+            position: "absolute",
+            top: 12,
+            right: "max(16px, env(safe-area-inset-right, 0px))",
+            width: 40, height: 40,
+            zIndex: 10,
+            background: "var(--bg-surface, #ffffff)",
+            color: "var(--text-primary, #1A1612)",
+            border: "1px solid var(--border-soft, rgba(26,22,18,0.1))",
+            boxShadow: "0 4px 14px -4px rgba(26,22,18,0.3)",
+          }}
+        >
+          <X size={20} strokeWidth={2.25} />
+        </button>
+
+        {/* Grabber handle */}
+        <div className="pt-3 pb-2 flex-shrink-0">
           <div
             className="mx-auto rounded-full"
             style={{ width: 40, height: 5, background: "var(--border-default, rgba(26,22,18,0.2))" }}
           />
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            data-tooltip="Close"
-            className="absolute right-4 top-2.5 grid place-items-center rounded-full active:scale-95 transition-transform"
-            style={{
-              width: 38, height: 38,
-              background: "var(--bg-surface, #ffffff)",
-              color: "var(--text-primary, #1A1612)",
-              border: "1px solid var(--border-soft, rgba(26,22,18,0.1))",
-              boxShadow: "0 4px 14px -4px rgba(26,22,18,0.3)",
-            }}
-          >
-            <X size={20} strokeWidth={2.25} />
-          </button>
         </div>
 
         {/* Scrollable body */}
