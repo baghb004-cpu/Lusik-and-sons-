@@ -14,7 +14,7 @@
 // accessibility is unaffected.
 // ============================================================
 
-import React, { useMemo, useRef, useState, useCallback } from "react";
+import React, { useMemo, useRef, useState, useCallback, useLayoutEffect, useEffect } from "react";
 import { Home, Store, BookOpen, ShoppingBag, Search } from "./icons.jsx";
 
 export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, onCart, onSearch }) {
@@ -24,6 +24,14 @@ export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, on
     { key: "journal", label: "Journal",  Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
     { key: "cart",    label: "Bag",      Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
   ]), [view, cartCount, onHome, onShop, onJournal, onCart]);
+
+  // The currently-selected tab. The glass lens rests over this tab at all
+  // times (Apple Music / App Store style — the active tab sits inside its
+  // own frosted capsule), and glides to a new tab when one is chosen.
+  const activeIndex = useMemo(() => {
+    const i = tabs.findIndex((t) => t.activeWhen);
+    return i === -1 ? 0 : i;
+  }, [tabs]);
 
   // --- LIQUID-GLASS PRESS/SLIDE GESTURE ---
   const pillRef = useRef(null);
@@ -67,6 +75,25 @@ export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, on
     positionLens(i);
   }, [positionLens]);
 
+  // Park the lens over the active tab whenever the selection changes (and on
+  // first paint), unless a finger is currently dragging it. useLayoutEffect so
+  // it's positioned before the browser paints — no flash at left:0 on mount.
+  useLayoutEffect(() => {
+    if (gesturingRef.current) return;
+    positionLens(activeIndex);
+  }, [activeIndex, positionLens]);
+
+  // Keep it parked correctly across viewport changes (rotation, keyboard, etc.).
+  useEffect(() => {
+    const reflow = () => { if (!gesturingRef.current) positionLens(activeIndex); };
+    window.addEventListener("resize", reflow);
+    window.addEventListener("orientationchange", reflow);
+    return () => {
+      window.removeEventListener("resize", reflow);
+      window.removeEventListener("orientationchange", reflow);
+    };
+  }, [activeIndex, positionLens]);
+
   const onPointerDown = useCallback((e) => {
     // Mouse + pen keep the native click path (and keyboard via onClick).
     // Only touch drives the magnifying lens gesture.
@@ -94,8 +121,17 @@ export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, on
     setPressing(false);
     setFocused(null);
     focusedRef.current = null;
-    if (activate && i != null) tabs[i]?.action?.();
-  }, [tabs]);
+    if (activate && i != null) {
+      // The chosen tab becomes active → the layout effect glides the lens
+      // there on the next render. (If it's already the active tab, the lens
+      // is already parked on it.)
+      tabs[i]?.action?.();
+    } else {
+      // Cancelled (slid off / lifted on nothing) — settle back onto the
+      // current active tab so the lens never strands on a non-selected slot.
+      positionLens(activeIndex);
+    }
+  }, [tabs, activeIndex, positionLens]);
 
   return (
     <nav className="lg-bottom-island lg:hidden" aria-label="Primary">
@@ -118,8 +154,13 @@ export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, on
           style={{
             transform: `translateX(${lens.left}px)`,
             width: lens.width,
-            opacity: pressing ? 1 : 0,
-            transition: snap ? "opacity 0.18s ease" : undefined,
+            // Always visible: it's the active-tab capsule at rest, and the
+            // magnifier while pressing. `snap` kills the transition for the
+            // first touch-down jump under the finger; otherwise it glides.
+            opacity: 1,
+            transition: snap
+              ? "none"
+              : "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), width 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
 
