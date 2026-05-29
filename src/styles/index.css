@@ -1282,7 +1282,7 @@
     width: min(92vw, 430px);
     bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
     z-index: 60;
-    height: 62px;
+    height: 64px;
     /* Transparent flex wrapper holding two frosted glass pieces (the 4-tab
        pill + the detached search orb) with a gap between them, Apple-Store
        style. The glass material lives on the children. pointer-events:none
@@ -1329,22 +1329,33 @@
   .lg-nav-pill {
     flex: 1 1 auto;
     min-width: 0;
-    height: 62px;
+    height: 64px;
     display: flex;
     align-items: stretch;
     border-radius: 999px;
     isolation: isolate;   /* contain the lens' blend-mode + backdrop blur */
     overflow: hidden;
-    /* Reserve horizontal gestures for the drag-to-slide selector while still
-       allowing vertical page scroll to start from the bar. */
+    /* Search-mode pill keeps default scroll behaviour; the 4-tab pill
+       (.lg-nav-pill--tabs) overrides this to own the drag gesture below. */
     touch-action: pan-y;
+  }
+
+  /* The draggable 4-tab pill OWNS its gesture: touch-action:none on the pill
+     AND every child means a finger landing anywhere on it — including on a tab
+     button or its icon/label — can't be hijacked by the page's scroll. (The
+     search-mode pill, which shares .lg-nav-pill, is unaffected.) */
+  .lg-nav-pill--tabs,
+  .lg-nav-pill--tabs * {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /* Detached circular satellite — Search (normal) / Cart badge / X (search). */
   .lg-nav-orb {
     flex: 0 0 auto;
-    width: 62px;
-    height: 62px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     display: flex;
     align-items: center;

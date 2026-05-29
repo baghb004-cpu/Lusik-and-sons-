@@ -369,8 +369,8 @@ export function MobileBottomNav({
           {/* NORMAL: 4-tab frosted pill + detached Search orb */}
           <div
             ref={pillRef}
-            className="lg-nav-pill"
-            style={{ touchAction: "pan-y" }}
+            className="lg-nav-pill lg-nav-pill--tabs"
+            style={{ touchAction: "none", overscrollBehavior: "contain" }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -386,6 +386,9 @@ export function MobileBottomNav({
                 transition: anim ?? (dragging
                   ? "transform 0ms"
                   : "transform 0.4s cubic-bezier(0.2, 0.9, 0.2, 1)"),
+                // Drop the (expensive) moving backdrop-filter while a finger
+                // drags so the glass tracks smoothly; it restores on release.
+                ...(dragging ? { backdropFilter: "none", WebkitBackdropFilter: "none" } : null),
               }}
             />
             {tabs.map((t, i) => {
