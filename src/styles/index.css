@@ -1337,8 +1337,8 @@
     bottom: 6px;
     /* width + left are set inline from JS */
     border-radius: 22px;
-    background: rgba(255, 255, 255, 0.30);
-    border: 1px solid rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     -webkit-backdrop-filter: blur(14px) saturate(140%) brightness(108%);
             backdrop-filter: blur(14px) saturate(140%) brightness(108%);
     box-shadow:
@@ -1350,8 +1350,8 @@
     will-change: left, transform, width;
   }
   :root[data-theme="dark"] .lg-lens {
-    background: rgba(245, 239, 227, 0.14);
-    border-color: rgba(245, 239, 227, 0.30);
+    background: rgba(245, 239, 227, 0.20);
+    border-color: rgba(245, 239, 227, 0.34);
     box-shadow:
       inset 0 1px 0 0 rgba(245, 239, 227, 0.22),
       inset 0 -1px 0 0 rgba(0, 0, 0, 0.4),
@@ -1388,7 +1388,16 @@
     border: 0;
     cursor: pointer;
     font-family: inherit;
+    /* Inactive tabs are muted; icon (currentColor) + label inherit this. */
+    color: var(--text-muted);
+    transition: color 0.25s ease;
     -webkit-tap-highlight-color: transparent;
+  }
+  /* The selected tab — and whichever tab the finger is hovering during the
+     press gesture — light up in brand gold, sitting inside the glass lens. */
+  .lg-tab[data-active="true"],
+  .lg-tab[data-focused="true"] {
+    color: var(--accent);
   }
   .lg-tab:focus-visible {
     outline: 2px solid var(--accent);
@@ -1408,9 +1417,10 @@
   }
 
   .lg-tab-label {
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    /* Apple-style sentence case, not all-caps — reads softer and matches
+       the App Store / Apple Music tab bars. (Size + weight come inline.) */
+    font-size: 0.62rem;
+    letter-spacing: 0.005em;
   }
 
   .lg-tab-badge {
