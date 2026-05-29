@@ -1650,7 +1650,7 @@
   /* Bottom-nav liquid-glass gesture: keep the focus highlight (opacity) but
      drop the springy scaling / gliding for reduced-motion users. */
   .lg-nav-pill,
-  .lg-nav-lens,
+  .lg-lens,
   .lg-tab-icon,
   .lg-tab-label {
     transition: opacity 0.15s ease !important;

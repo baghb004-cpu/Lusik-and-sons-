@@ -113,7 +113,7 @@ export function MobileBottomNav({ view, cartCount, onHome, onShop, onJournal, on
         {/* The magnifying glass lens — glides under the focused tab while
             pressing, fades out at rest. Sits BEHIND the icons (z-index 0). */}
         <div
-          className="lg-nav-lens"
+          className="lg-lens"
           aria-hidden="true"
           style={{
             transform: `translateX(${lens.left}px)`,
