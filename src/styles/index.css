@@ -1382,12 +1382,13 @@
     position: absolute;
     top: 5px;
     bottom: 5px;
+    left: 0;                   /* positioned via transform: translateX (GPU) */
     border-radius: 999px;
     pointer-events: none;
     z-index: 0;
     isolation: isolate;        /* so the chromatic screen-blend is predictable */
     overflow: hidden;          /* keep the colour fringes inside the capsule */
-    will-change: left, transform, width;
+    will-change: transform;
     /* Mostly-clear body: only a bright top-left dome shine is painted, so the
        saturated + blurred backdrop shows THROUGH the lens (the magnifier look)
        instead of a flat white fill hiding it. */
