@@ -24,6 +24,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { auth } from "../lib/auth.js";
 import { CONFIG } from "../data/config.js";
 import { ArrowRight, Eye, EyeOff, X } from "./icons.jsx";
+import { BottomSheet } from "./BottomSheet.jsx";
 
 // Session-level gate so the peek fires at most once. Using a
 // module-level variable instead of sessionStorage avoids a
@@ -242,22 +243,14 @@ export function AuthDrawer({ onClose, onAuthed }) {
         ? peekTransition
         : "transform 0.2s ease-out";
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
-      <div className="absolute inset-0 lg-scrim" />
-      <div
-        className="lg-panel-tall lg-drawer relative w-full max-w-md drawer-in flex flex-col overflow-y-auto"
-        style={{
-          transform: `translateX(${translateX}px)`,
-          transition,
-          touchAction: "pan-y",
-        }}
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onTouchCancel={onTouchCancel}
-      >
+  const isMobile = typeof window !== "undefined"
+    && window.matchMedia?.("(max-width: 1023px)").matches;
+
+  // Header + form — shared between the desktop right-edge drawer and the
+  // mobile bottom sheet (which supplies its own grabber + white X, so the
+  // header's own close button is hidden on mobile).
+  const body = (
+    <>
         {/* Header */}
         <div className="flex items-start justify-between p-6 lg:p-8 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
           <div>
@@ -266,9 +259,11 @@ export function AuthDrawer({ onClose, onAuthed }) {
               {t.heading[0]} <em style={{ fontWeight: 400 }}>{t.heading[1]}</em>.
             </h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:opacity-60 -mt-1 -mr-1" aria-label="Close" data-tooltip="Close" data-tooltip-pos="left">
-            <X size={22} />
-          </button>
+          {!isMobile && (
+            <button onClick={onClose} className="p-1 hover:opacity-60 -mt-1 -mr-1" aria-label="Close" data-tooltip="Close" data-tooltip-pos="left">
+              <X size={22} />
+            </button>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 lg:p-8 space-y-5 flex-1">
@@ -391,6 +386,37 @@ export function AuthDrawer({ onClose, onAuthed }) {
             Your account saves your cart and keeps a record of every blanket Lusik makes for you.
           </p>
         </form>
+    </>
+  );
+
+  // Mobile → rise from the bottom as a swipe-dismissable sheet (matching
+  // the account sheet). Desktop → the original right-edge drawer with its
+  // horizontal swipe-to-dismiss + breathing peek.
+  if (isMobile) {
+    return (
+      <BottomSheet open onClose={onClose} ariaLabel={t.eyebrow} peekKey="auth">
+        {body}
+      </BottomSheet>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+      <div className="absolute inset-0 lg-scrim" />
+      <div
+        className="lg-panel-tall lg-drawer relative w-full max-w-md drawer-in flex flex-col overflow-y-auto"
+        style={{
+          transform: `translateX(${translateX}px)`,
+          transition,
+          touchAction: "pan-y",
+        }}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
+      >
+        {body}
       </div>
     </div>
   );
