@@ -318,14 +318,14 @@ export function MobileBottomNav({
             onTouchCancel={onTouchCancel}
           >
             <span
-              className={"lg-lens" + (pressed ? " lg-lens-pressed" : "")}
+              className="lg-lens"
               aria-hidden="true"
               style={{
                 width: `${slotPct}%`, left: `${lensIndex * slotPct}%`,
-                transform: `translateX(${dragOffset}px)`,
+                transform: `translateX(${dragOffset}px) scale(${pressed ? 1.05 : 1})`,
                 transition: anim ?? (draggingRef.current
                   ? "transform 0ms, left 0ms"
-                  : "left 0.32s cubic-bezier(0.4,1.4,0.6,1), transform 0.32s cubic-bezier(0.4,1.4,0.6,1)"),
+                  : "left 0.42s cubic-bezier(0.2,0.9,0.2,1), transform 0.34s cubic-bezier(0.2,0.9,0.2,1)"),
               }}
             />
             {tabs.map((t, i) => {
@@ -342,12 +342,12 @@ export function MobileBottomNav({
                     transform: `scale(${scaleFor(i)})`,
                     transition: anim ?? "transform 0.22s cubic-bezier(0.34,1.56,0.64,1)",
                   }}>
-                    <t.Icon size={22} strokeWidth={active ? 2 : 1.6}
-                      style={{ color: active ? "var(--text-primary)" : "var(--text-muted)" }} />
+                    <t.Icon size={22} strokeWidth={active ? 2.1 : 1.6}
+                      style={{ color: active ? "var(--accent)" : "var(--text-muted)" }} />
                     {t.badge > 0 && <span className="lg-tab-badge" aria-hidden="true">{t.badge}</span>}
                   </span>
                   <span className="lg-tab-label" style={{
-                    color: active ? "var(--text-primary)" : "var(--text-muted)",
+                    color: active ? "var(--accent)" : "var(--text-muted)",
                     fontWeight: active ? 600 : 500,
                   }}>{t.label}</span>
                 </button>

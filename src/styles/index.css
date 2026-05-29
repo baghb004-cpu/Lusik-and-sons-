@@ -1225,28 +1225,27 @@
   }
 
   /* ============================================================
-     APPLE-STORE-STYLE FLOATING TAB BAR
+     APPLE LIQUID-GLASS FLOATING TAB BAR
      ============================================================
-     Used by src/components/MobileBottomNav.jsx. Single rounded
-     glass pill, pinned above the home indicator on iPhone via
+     Used by src/components/MobileBottomNav.jsx. A centered floating
+     island (max 430px) pinned above the iPhone home indicator via
      env(safe-area-inset-bottom). Behaviorally:
 
-       - .lg-bottom-island sits fixed at the viewport bottom with
-         margin on every side so it visibly floats over the page.
-       - .lg-lens is an absolutely-positioned brighter glass slab
-         behind the active tab. JS sets `left` to the active tab's
-         slot percentage and `transform` to a finger-tracking nudge
-         during a horizontal drag.
-       - .lg-tab is one slot; its width is `100/N%` so the JS can
-         compute slot widths off the container clientWidth.
+       - .lg-bottom-island is a transparent flex wrapper holding the
+         4-tab .lg-nav-pill + the detached .lg-nav-orb search bubble.
+       - .lg-lens is the live selector: a magnifying-glass / refraction
+         bubble that ALWAYS hovers over the active tab and glides as the
+         route changes. JS sets `width` (one slot) + `left` (active slot
+         %); `transform` carries the finger-drag nudge + press lift. It
+         sits behind the icons/labels (z-index 0) but above the pill body,
+         and its own backdrop-filter compounds with the pill's so content
+         reads magnified under it. ::before adds chromatic (blue/red/green)
+         refraction fringes; ::after a spectral bottom rim line.
+       - .lg-tab is one slot; its width is `100/N%` so JS can compute
+         slot widths off the container clientWidth.
        - .lg-tab-icon wraps the SVG so a per-tab `transform: scale`
-         can magnify under the lens.
+         magnifies it under the lens; the active tab tints to --accent.
        - .lg-tab-badge floats over the cart icon for the count.
-
-     The lens uses backdrop-filter at a higher blur radius than
-     the bar itself, producing the chromatic / magnify feel that
-     Apple's Store app uses. On a press-and-hold the lens grows
-     slightly and its shadow softens (.lg-lens-pressed).
 
      Mobile-only — .lg:hidden class on the <nav> hides it on
      desktop. Bottom padding for page content is reserved by
@@ -1254,17 +1253,19 @@
      covers footer buttons. */
   .lg-bottom-island {
     position: fixed;
-    left:   max(12px, env(safe-area-inset-left));
-    right:  max(12px, env(safe-area-inset-right));
-    bottom: max(10px, env(safe-area-inset-bottom));
-    z-index: 30;
-    height: 64px;
-    /* The island is now a TRANSPARENT flex wrapper: a frosted "pill"
-       (.lg-nav-pill) plus a detached frosted circle (.lg-nav-orb)
-       sit inside it with a gap between them — matching the Apple
-       Store, where the magnifying glass / X is its own bubble
-       isolated from the menu pill. The frosted styling lives on the
-       children now, not here. */
+    /* Centered floating island, fixed max width — sits above the iPhone
+       home indicator via the safe-area inset plus a little breathing room. */
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: min(92vw, 430px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    z-index: 60;
+    height: 62px;
+    /* Transparent flex wrapper holding two frosted glass pieces (the 4-tab
+       pill + the detached search orb) with a gap between them, Apple-Store
+       style. The glass material lives on the children. pointer-events:none
+       here + auto on children lets taps fall through the gap to content. */
     display: flex;
     align-items: stretch;
     gap: 10px;
@@ -1274,105 +1275,144 @@
     -webkit-backdrop-filter: none;
             backdrop-filter: none;
     touch-action: pan-y;
+    pointer-events: none;
     -webkit-tap-highlight-color: transparent;
   }
+  .lg-bottom-island > * { pointer-events: auto; }
 
   /* Frosted pill — the main bar (4 tabs in normal mode, or the
      search input in search mode). Flexes to fill the space left of
      the orb. Carries the glass styling the island used to have. */
-  .lg-nav-pill {
+  /* Shared Liquid Glass material for the pill + orb: a translucent body
+     with a top-down sheen, a real backdrop blur/saturate/contrast so page
+     content refracts through it, a crisp rim light, and layered float
+     shadows. Light theme. */
+  .lg-nav-pill,
+  .lg-nav-orb {
     position: relative;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.16)),
+      rgba(250, 246, 238, 0.50);
+    border: 1px solid rgba(255,255,255,0.72);
+    -webkit-backdrop-filter: blur(22px) saturate(185%) contrast(112%);
+            backdrop-filter: blur(22px) saturate(185%) contrast(112%);
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,0.92),
+      inset 0 -10px 22px rgba(255,255,255,0.12),
+      0 12px 34px -10px rgba(26, 22, 18, 0.30),
+      0 4px 12px -4px rgba(26, 22, 18, 0.14);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .lg-nav-pill {
     flex: 1 1 auto;
     min-width: 0;
-    height: 64px;
+    height: 62px;
     display: flex;
     align-items: stretch;
-    border-radius: 28px;
-    background: var(--lg-tint-island, rgba(255,251,243,0.72));
-    border: 1px solid var(--lg-border-strong, rgba(255,255,255,0.85));
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-            backdrop-filter: blur(24px) saturate(180%);
-    box-shadow:
-      inset 0 1px 0 0 var(--lg-highlight),
-      inset 0 -1px 0 0 var(--lg-edge-dark),
-      0 22px 56px -16px rgba(26, 22, 18, 0.28),
-      0 6px 16px -4px rgba(26, 22, 18, 0.12);
-    isolation: isolate;
+    border-radius: 999px;
+    isolation: isolate;   /* contain the lens' blend-mode + backdrop blur */
     overflow: hidden;
   }
 
-  /* Frosted orb — the detached circular satellite (Search in normal
-     mode; Cart-badge / X in search mode). Same glass as the pill,
-     but a fixed-width circle sitting apart with the island's gap. */
+  /* Detached circular satellite — Search (normal) / Cart badge / X (search). */
   .lg-nav-orb {
     flex: 0 0 auto;
-    width: 64px;
-    height: 64px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--lg-tint-island, rgba(255,251,243,0.72));
-    border: 1px solid var(--lg-border-strong, rgba(255,255,255,0.85));
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-            backdrop-filter: blur(24px) saturate(180%);
-    box-shadow:
-      inset 0 1px 0 0 var(--lg-highlight),
-      inset 0 -1px 0 0 var(--lg-edge-dark),
-      0 22px 56px -16px rgba(26, 22, 18, 0.28),
-      0 6px 16px -4px rgba(26, 22, 18, 0.12);
     color: var(--text-primary);
-    position: relative;
     cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root[data-theme="dark"] .lg-nav-pill,
+  :root[data-theme="dark"] .lg-nav-orb {
+    background:
+      linear-gradient(180deg, rgba(245,239,227,0.16), rgba(245,239,227,0.04)),
+      rgba(31, 24, 19, 0.52);
+    border-color: rgba(245,239,227,0.20);
+    box-shadow:
+      inset 0 1px 1px rgba(245,239,227,0.22),
+      inset 0 -10px 22px rgba(0,0,0,0.18),
+      0 12px 34px -10px rgba(0,0,0,0.62),
+      0 4px 12px -4px rgba(0,0,0,0.4);
   }
 
   /* The lens. Sits BEHIND the icons (z-index 0) but above the bar's
      base tint via the parent's stacking context. Its own backdrop-
      filter compounds with the bar's, producing a noticeably
      stronger blur right under the active tab. */
+  /* ── THE LIVE SELECTOR LENS ────────────────────────────────
+     A floating magnifying-glass / refraction bubble that ALWAYS hovers
+     over the active tab and glides between tabs as the route changes.
+     `width` + `left` are set inline from JS (one tab slot, positioned by
+     the active index); `transform` carries the finger-drag nudge. It sits
+     behind the icons/labels (z-index 0, tabs are z-index 1) but above the
+     pill's body, and its own backdrop-filter compounds with the pill's so
+     content reads visibly magnified right under it. */
   .lg-lens {
     position: absolute;
     top: 6px;
     bottom: 6px;
-    /* width + left are set inline from JS */
-    border-radius: 22px;
-    background: rgba(255, 255, 255, 0.30);
-    border: 1px solid rgba(255, 255, 255, 0.65);
-    -webkit-backdrop-filter: blur(14px) saturate(140%) brightness(108%);
-            backdrop-filter: blur(14px) saturate(140%) brightness(108%);
-    box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.85),
-      inset 0 -1px 0 0 rgba(26, 22, 18, 0.06),
-      0 6px 14px -4px rgba(26, 22, 18, 0.14);
+    border-radius: 999px;
     pointer-events: none;
     z-index: 0;
     will-change: left, transform, width;
+    background:
+      radial-gradient(circle at 28% 18%, rgba(255,255,255,0.95), rgba(255,255,255,0.35) 34%, rgba(255,255,255,0.08) 70%),
+      linear-gradient(135deg, rgba(255,255,255,0.55), rgba(255,255,255,0.12));
+    -webkit-backdrop-filter: blur(11px) saturate(200%) contrast(118%) brightness(106%);
+            backdrop-filter: blur(11px) saturate(200%) contrast(118%) brightness(106%);
+    border: 1px solid rgba(255,255,255,0.7);
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,0.95),
+      inset 0 -10px 22px rgba(255,255,255,0.20),
+      0 6px 18px -4px rgba(26,22,18,0.20);
+  }
+  /* Chromatic refraction — a bright top-left highlight plus blue/red/green
+     fringes pooling along the bottom edge, screened over the glass so it
+     reads as light bending through the bubble, not a sticker. */
+  .lg-lens::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(115deg, rgba(255,255,255,0.75), transparent 35%),
+      radial-gradient(circle at 20% 100%, rgba(0,122,255,0.30), transparent 34%),
+      radial-gradient(circle at 62% 100%, rgba(255,45,85,0.24), transparent 34%),
+      radial-gradient(circle at 90% 45%, rgba(52,199,89,0.20), transparent 30%);
+    mix-blend-mode: screen;
+    opacity: 0.72;
+    pointer-events: none;
+  }
+  /* Thin spectral line riding the bottom rim. */
+  .lg-lens::after {
+    content: "";
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    bottom: 3px;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(0,122,255,0.45), rgba(255,45,85,0.35), transparent);
+    opacity: 0.6;
+    pointer-events: none;
   }
   :root[data-theme="dark"] .lg-lens {
-    background: rgba(245, 239, 227, 0.14);
-    border-color: rgba(245, 239, 227, 0.30);
+    background:
+      radial-gradient(circle at 28% 18%, rgba(245,239,227,0.55), rgba(245,239,227,0.18) 40%, transparent 72%),
+      linear-gradient(135deg, rgba(245,239,227,0.22), rgba(245,239,227,0.05));
+    border-color: rgba(245,239,227,0.34);
     box-shadow:
-      inset 0 1px 0 0 rgba(245, 239, 227, 0.22),
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4),
-      0 8px 18px -4px rgba(0, 0, 0, 0.55);
+      inset 0 1px 1px rgba(245,239,227,0.42),
+      inset 0 -10px 22px rgba(0,0,0,0.22),
+      0 6px 18px -4px rgba(0,0,0,0.6);
   }
-  /* Pressed state — lens "lifts" slightly while the finger is on
-     the bar. The scale stays subtle so the lens doesn't visibly
-     overshoot its slot. */
-  .lg-lens-pressed {
-    transform: translateX(var(--drag-x, 0)) scale(1.04);
-    box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-      inset 0 -1px 0 0 rgba(26, 22, 18, 0.04),
-      0 10px 22px -6px rgba(26, 22, 18, 0.22);
-  }
-  :root[data-theme="dark"] .lg-lens-pressed {
-    box-shadow:
-      inset 0 1px 0 0 rgba(245, 239, 227, 0.28),
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.5),
-      0 12px 26px -6px rgba(0, 0, 0, 0.65);
-  }
+  :root[data-theme="dark"] .lg-lens::before { opacity: 0.6; }
 
   .lg-tab {
     flex: 1 1 0;
@@ -1408,9 +1448,10 @@
   }
 
   .lg-tab-label {
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    /* Apple-style sentence case (not all-caps) to match the App Store /
+       Apple Music tab bars. */
+    font-size: 0.62rem;
+    letter-spacing: 0.005em;
   }
 
   .lg-tab-badge {
@@ -1434,14 +1475,16 @@
      lens are still distinguishable because the lens tint is much
      stronger than the bar tint. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .lg-bottom-island { background: rgba(255,251,243,0.96); }
-    .lg-lens          { background: rgba(255,255,255,0.78); }
-    :root[data-theme="dark"] .lg-bottom-island { background: rgba(31,24,19,0.96); }
-    :root[data-theme="dark"] .lg-lens          { background: rgba(245,239,227,0.28); }
+    .lg-nav-pill, .lg-nav-orb { background: rgba(250,246,238,0.97); }
+    .lg-lens                  { background: rgba(255,255,255,0.9); }
+    .lg-lens::before          { opacity: 0.4; }
+    :root[data-theme="dark"] .lg-nav-pill,
+    :root[data-theme="dark"] .lg-nav-orb { background: rgba(31,24,19,0.97); }
+    :root[data-theme="dark"] .lg-lens    { background: rgba(245,239,227,0.34); }
   }
 
   @media (prefers-reduced-transparency: reduce) {
-    .lg-bottom-island {
+    .lg-nav-pill, .lg-nav-orb {
       background: var(--bg-elevated);
       -webkit-backdrop-filter: none;
               backdrop-filter: none;
@@ -1451,13 +1494,35 @@
       -webkit-backdrop-filter: none;
               backdrop-filter: none;
     }
+    .lg-lens::before, .lg-lens::after { display: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     /* JS already short-circuits the spring; this is belt-and-
-       suspenders for any inline transitions that snuck through. */
+       suspenders for any inline transitions that snuck through. The lens
+       still parks over the active tab — it just snaps instead of gliding. */
     .lg-lens, .lg-tab-icon { transition: none !important; }
-    .lg-lens-pressed       { transform: translateX(var(--drag-x, 0)); }
+  }
+
+  /* ── Mobile-only refraction light-field ────────────────────────
+     Liquid Glass only reads as glass when there's something behind it to
+     bend. Page content scrolling under the floating bar does most of that,
+     but on sparse pages we layer two very subtle, fixed tonal pools (warm
+     gold top-left, cool slate bottom-right) on top of the page background
+     so the lens always has gentle colour to refract. Desktop untouched. */
+  @media (max-width: 1023px) {
+    body {
+      background-image:
+        radial-gradient(58% 38% at 12% 10%, rgba(176,136,66,0.055), transparent 72%),
+        radial-gradient(52% 36% at 88% 92%, rgba(120,140,170,0.05), transparent 72%);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+    :root[data-theme="dark"] body {
+      background-image:
+        radial-gradient(58% 38% at 12% 10%, rgba(201,166,120,0.08), transparent 72%),
+        radial-gradient(52% 36% at 88% 92%, rgba(120,140,170,0.07), transparent 72%);
+    }
   }
 
   /* ============================================================
