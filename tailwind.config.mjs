@@ -26,6 +26,10 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
+    // Next.js App Router tree (Vite→Next migration, Phase 2+). Both build
+    // pipelines share this one Tailwind config + the same stylesheet, so a
+    // class used only in app/ still gets emitted.
+    "./app/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {

@@ -15,6 +15,14 @@ netlify/functions/package-lock.json
 # rebuild this on every deploy. Either way, it stays out of git.
 dist/
 
+# Next.js (Vite→Next migration, Phase 2+). Build output, the
+# auto-generated ambient types file, and the TS incremental cache
+# (next build sets compilerOptions.incremental). Not served in
+# production until the Phase 8 netlify.toml flip.
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
 # Playwright test artifacts
 test-results/
 playwright-report/

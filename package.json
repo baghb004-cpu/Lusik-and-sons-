@@ -11,6 +11,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "next:dev": "next dev",
+    "next:build": "next build",
+    "next:start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node --test --test-reporter=spec netlify/functions/_lib/__tests__/*.test.mjs",
@@ -24,6 +27,7 @@
     "@netlify/neon": "^0.1.0",
     "@sentry/react": "^10.54.0",
     "framer-motion": "^12.40.0",
+    "next": "^14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "stripe": "^22.2.0"
