@@ -15,6 +15,7 @@ import Script from "next/script";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
+import { SiteChrome } from "../src/components/SiteChrome.jsx";
 import { SITE_URL, SITE_NAME } from "../src/lib/seo.js";
 
 // metadataBase lets per-route relative canonical/OpenGraph URLs resolve to the
@@ -40,7 +41,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           src="https://identity.netlify.com/v1/netlify-identity-widget.js"
           strategy="beforeInteractive"
         />
-        <Providers>{children}</Providers>
+        <Providers>
+          <SiteChrome>{children}</SiteChrome>
+        </Providers>
       </body>
     </html>
   );
