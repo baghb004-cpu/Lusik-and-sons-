@@ -1,3 +1,5 @@
+"use client";
+
 // ============================================================
 // ProductShowcase — the main PDP for the Armenian Alphabet Blanket
 // ============================================================

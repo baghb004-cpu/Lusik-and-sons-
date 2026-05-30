@@ -1,3 +1,5 @@
+"use client";
+
 // ============================================================
 // ActiveOrderTopBar — top banner that swaps between announce
 // string and "your order is shipped → track" for signed-in

@@ -1,3 +1,5 @@
+"use client";
+
 // ============================================================
 // CollapsibleSection — picker step that collapses to a one-line summary
 // ============================================================

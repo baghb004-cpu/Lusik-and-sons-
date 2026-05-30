@@ -1,3 +1,5 @@
+"use client";
+
 // FirstVisitLangBanner — MIRRORED FROM index.html (~line 2815).
 import React from "react";
 import { LangContext } from "../i18n/LangContext.jsx";

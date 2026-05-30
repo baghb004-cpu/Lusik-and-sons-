@@ -1,3 +1,5 @@
+"use client";
+
 // BetaTranslationBadge — MIRRORED FROM index.html (~line 3003).
 import React from "react";
 import { LangContext, useT } from "../i18n/LangContext.jsx";
