@@ -18,7 +18,7 @@ import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign } from "../lib/designUrl";
 import { galleryRotationStyle } from "../lib/galleryRotation";
-import { useIsMobile } from "../lib/useIsMobile.js";
+import { useIsMobile } from "../lib/useIsMobile";
 import { useSwipe } from "../lib/useSwipe.js";
 import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 import { PHOTO_DATE_DETAIL } from "../images/photos.js";
