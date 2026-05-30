@@ -22,7 +22,7 @@ import { useIsMobile } from "../lib/useIsMobile.js";
 import { useSwipe } from "../lib/useSwipe.js";
 import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 import { PHOTO_DATE_DETAIL } from "../images/photos.js";
-import { getDeliveryEstimate } from "../lib/deliveryEstimate.js";
+import { getDeliveryEstimate } from "../lib/deliveryEstimate";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
 import { useToast } from "./ToastProvider.jsx";
