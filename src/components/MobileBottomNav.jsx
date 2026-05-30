@@ -9,9 +9,14 @@
 //   NORMAL:   [ Home  Shop  Journal  Bag ]    ( 🔍 )
 //             └─────── pill (4 tabs) ──────┘   └ orb ┘
 //
-//   SEARCH (typing, not focused):
+//   SEARCH (not focused, bag has items):
 //             ( 🛍2 )   [ 🔍  What are you looking for?   🎤 ]
 //             └ orb ┘   └──────────── pill ───────────────┘
+//
+//   SEARCH (not focused, bag empty):
+//             ( 🏠 )    [ 🔍  What are you looking for?   🎤 ]
+//             └ orb ┘   └──────────── pill ───────────────┘
+//             (home glyph → For You; flips to 🛍 the moment the bag fills)
 //
 //   SEARCH (focused / keyboard up):
 //             [ 🔍  What are you looking for?   🎤 ]   ( ✕ )
@@ -309,17 +314,23 @@ export function MobileBottomNav({
     >
       {isSearch ? (
         <>
-          {/* Detached orb — three states (single element so the search input
-              never remounts; only order + content change):
-                • typing/focused  → X (right)  → dismiss the keyboard
-                • not focused, cart has items → bag + badge (left) → open Bag
-                • not focused, empty cart → X (left) → close search → For You */}
+          {/* Detached orb — three states, driven by the LIVE bag count
+              (single element so the search input never remounts; only
+              order + content change):
+                • typing/focused              → X (right) → dismiss the keyboard
+                • not focused, bag has items  → bag + badge (left) → open Bag
+                • not focused, bag is empty   → For You / home (left) → go to For You
+
+              The empty-bag case shows the home icon (not an X) so the
+              affordance is obvious — tapping it lands on the For You page.
+              Because the icon keys off cartCount, it flips back to the home
+              glyph the moment the bag is emptied; it can't stay stuck on Bag. */}
           <button
             type="button"
             className="lg-nav-orb"
             style={{ order: isFullSearch ? 1 : -1 }}
             onClick={isFullSearch ? closeSearch : (cartCount > 0 ? onCart : onHome)}
-            aria-label={isFullSearch ? "Dismiss keyboard" : (cartCount > 0 ? "Open bag" : "Close search")}
+            aria-label={isFullSearch ? "Dismiss keyboard" : (cartCount > 0 ? "Open bag" : "Go to the For You page")}
           >
             {isFullSearch ? (
               <span style={{ color: "var(--text-primary)" }}>
@@ -343,7 +354,7 @@ export function MobileBottomNav({
               </span>
             ) : (
               <span style={{ color: "var(--text-primary)" }}>
-                <X size={20} strokeWidth={2} />
+                <Home size={22} strokeWidth={1.7} />
               </span>
             )}
           </button>

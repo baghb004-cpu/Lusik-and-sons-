@@ -680,6 +680,12 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
               WebkitOverflowScrolling: "touch",
               paddingLeft: 24,
               paddingRight: 24,
+              // Snap respects the 24px page gutter (matching the category
+              // strip), so the first card snaps flush under the "From the
+              // Journal" heading instead of jumping to the screen edge and
+              // sitting left of the title.
+              scrollPaddingLeft: 24,
+              scrollPaddingRight: 24,
               paddingBottom: 4,
             }}
           >

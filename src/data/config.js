@@ -24,7 +24,8 @@ export const CONFIG = {
   // to one doesn't accidentally desync the feel of the other.
   SWIPE: {
     CLAIM_DIST_PX:        12,   // px of movement before we decide whether the gesture is ours
-    DELETE_THRESHOLD_PX:  80,   // leftward drag past this commits a row delete
+    DELETE_THRESHOLD_PX:  44,   // leftward drag past this SNAPS the row open to reveal Delete (no auto-delete)
+    REVEAL_WIDTH_PX:      92,   // width of the revealed red Delete button a row snaps open to
     DISMISS_THRESHOLD_PX: 100,  // rightward drag past this commits a drawer dismiss
     COMMIT_ANIM_MS:       180,  // off-screen slide on commit, before unmount / handler fires
   },
