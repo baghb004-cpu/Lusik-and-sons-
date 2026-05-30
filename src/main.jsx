@@ -19,7 +19,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/index.css";
-import { initErrorReporting, Sentry } from "./lib/errorReporting.js";
+import { initErrorReporting, Sentry } from "./lib/errorReporting";
 import { LanguageProvider } from "./i18n/LangContext.jsx";
 import { App } from "./App.jsx";
 
