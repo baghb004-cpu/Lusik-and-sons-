@@ -79,6 +79,12 @@ test.describe("home page", () => {
 });
 
 test.describe("cart drawer", () => {
+  // The cart drawer is a desktop-only surface now. On mobile the bag is
+  // a full page (exercised by the checkout tests below), and there's no
+  // slide-in drawer to open or close — the cart icon routes to the bag
+  // page instead. Skip these two drawer assertions on the mobile project.
+  test.skip(({ isMobile }) => isMobile, "Cart drawer is desktop-only; mobile uses the full bag page");
+
   test("opens and closes via the cart icon + X button", async ({ page }) => {
     await page.goto("/");
 
@@ -146,8 +152,9 @@ test.describe("checkout view", () => {
     // Cart auto-opens. Click Checkout.
     await page.getByRole("button", { name: /^checkout/i }).click();
 
-    // We should land on the Almost There page.
-    await expect(page.getByRole("heading", { name: /almost there/i })).toBeVisible({ timeout: 5_000 });
+    // We should land on the checkout page. The heading was renamed in the
+    // narrative-rewrite pass from "Almost there" to "Almost in Lusik's hands".
+    await expect(page.getByRole("heading", { name: /almost in lusik's hands/i })).toBeVisible({ timeout: 5_000 });
     // Order summary row shows the item.
     await expect(page.getByText(/order summary/i)).toBeVisible();
   });
@@ -224,7 +231,7 @@ test.describe("checkout view", () => {
     await expect(buyNow).toBeEnabled({ timeout: 5_000 });
     await buyNow.click();
 
-    await expect(page.getByRole("heading", { name: /almost there/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("heading", { name: /almost in lusik's hands/i })).toBeVisible({ timeout: 5_000 });
     await page.getByRole("button", { name: /pay with stripe/i }).click();
 
     await expect.poll(() => receivedBody, { timeout: 5_000 }).not.toBeNull();
@@ -240,10 +247,12 @@ test.describe("shop hierarchy navigation", () => {
   test("home → /shop → category → product → URL is the canonical product path", async ({ page }) => {
     await page.goto("/");
 
-    // Open the shop via the home-page "See everything Lusik makes"
-    // link. We deliberately don't use the desktop mega-menu trigger
-    // because mobile-chromium viewport hides it.
-    await page.getByRole("button", { name: /see everything lusik makes/i }).click();
+    // Open /shop via the home "Shop" Explore card. It renders on both
+    // mobile and desktop — the off-viewport copy is display:none, so
+    // getByRole resolves to the single visible card per project. This
+    // replaces the old "See everything Lusik makes" link, which the
+    // bottom-nav redesign removed.
+    await page.getByRole("button", { name: /shop.*blankets, bibs/i }).click();
     await expect(page).toHaveURL(/\/shop\/?$/, { timeout: 5_000 });
 
     // Click into Blankets category. Card uses aria-label="Browse Blankets".
@@ -260,25 +269,30 @@ test.describe("shop hierarchy navigation", () => {
     await expect(page.getByRole("button", { name: /^Armenian\b/ }).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test("placeholder product page shows Notify me CTA", async ({ page }) => {
+  test("placeholder product page shows its commission CTA", async ({ page }) => {
     // We navigate via the SPA (clicks) rather than `page.goto` so
     // the test passes against the static `vite preview` server which
     // doesn't have Netlify's SPA fallback for /shop/* URLs. The
     // SPA's pushState routing handles the hierarchy fine; only the
     // initial server response would 404 on a deep URL.
     await page.goto("/");
-    await page.getByRole("button", { name: /see everything lusik makes/i }).click();
+    // Open /shop via the home "Shop" Explore card (renders on both
+    // viewports — see the test above).
+    await page.getByRole("button", { name: /shop.*blankets, bibs/i }).click();
     await page.getByRole("button", { name: /browse blankets/i }).click();
     // Click the placeholder card — accessible name is
     // "The Full Alphabet Crib Blanket — coming soon".
     await page.getByRole("button", { name: /full alphabet crib blanket.*coming soon/i }).click();
     await expect(page).toHaveURL(/\/shop\/blankets\/full-alphabet-crib-blanket\/?$/, { timeout: 10_000 });
 
-    // The placeholder template's primary CTA — full unique label so
-    // we don't match buttons elsewhere on the page that happen to
-    // contain "Notify me".
+    // The Full Alphabet Crib Blanket is a PRICED placeholder ($245, with
+    // status still "placeholder"), so its page renders the commission
+    // path rather than the unpriced waitlist path. The primary CTA is a
+    // "Write Lusik to commission this" mailto link (role=link), not the
+    // unpriced "Write me when it's ready" button. Assert the CTA that
+    // actually renders for this product.
     await expect(
-      page.getByRole("button", { name: /notify me when it's available/i })
+      page.getByRole("link", { name: /write lusik to commission this/i })
     ).toBeVisible({ timeout: 10_000 });
 
     // Product name in the page heading — confirms the placeholder
@@ -315,9 +329,11 @@ test.describe("section pages (promoted off the home page)", () => {
   test("Story opens /story and the big back header returns to For You", async ({ page }) => {
     await page.goto("/");
 
-    // Desktop top-nav "Story" link — a <button> doing SPA nav. Exact match
-    // so it doesn't collide with the "Our Story" Explore card.
-    await page.getByRole("button", { name: /^story$/i }).first().click();
+    // Open /story via the home "Our Story" Explore card. It renders on
+    // both mobile and desktop, unlike the desktop-only top-nav "Story"
+    // link that the mobile bottom-nav redesign dropped. The card's
+    // accessible name is "Our Story — Armenia → Cypress".
+    await page.getByRole("button", { name: /our story.*armenia.*cypress/i }).click();
     await expect(page).toHaveURL(/\/story\/?$/, { timeout: 5_000 });
 
     // The promoted page renders the big "‹ For You" back control.
