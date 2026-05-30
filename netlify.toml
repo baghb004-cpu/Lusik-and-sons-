@@ -4,14 +4,13 @@
 
 [build]
 # Next build. prenext:build regenerates the journal data first (see
-# package.json). The Netlify Next.js Runtime publishes the build output and
-# wires SSR/ISR + the image CDN itself — do NOT set `publish` by hand.
+# package.json). publish points at Next's build output (.next); the
+# @netlify/plugin-nextjs runtime transforms it into the served output +
+# wires SSR/ISR + the image CDN. (Leaving publish unset made Netlify fall
+# back to the repo root, which the Next plugin rejects as "same as base".)
+publish = ".next"
 command = "npm ci && npm run next:build"
 
-# Netlify's Next.js Runtime. v5 is auto-installed when Netlify detects a Next
-# site; this block makes it explicit/pinned. If you rely on auto-detection you
-# can omit it — confirm on the deploy preview that the runtime is active
-# ("Next.js Runtime" in the deploy log).
 [[plugins]]
 package = "@netlify/plugin-nextjs"
 
@@ -27,8 +26,6 @@ to = "/.netlify/functions/stripe-webhook"
 status = 200
 
 # ── Legacy product shortcuts → canonical Next routes (301) ──
-# These used to 200-rewrite to /index.html for the SPA. Under Next they become
-# real redirects to the current product URLs so old shared links still resolve.
 [[redirects]]
 from = "/blanket"
 to = "/shop/blankets/armenian-alphabet-blanket"
@@ -68,9 +65,6 @@ Referrer-Policy = "strict-origin-when-cross-origin"
 # ============================================================
 # CACHE — point immutable caching at Next's hashed static assets
 # ============================================================
-# Vite emitted /assets/*; Next emits /_next/static/*. The Next.js Runtime
-# usually sets immutable caching on /_next/static itself, so this block is
-# belt-and-suspenders — confirm on the preview and drop if redundant.
 [[headers]]
 for = "/_next/static/*"
 [headers.values]
