@@ -1,3 +1,5 @@
+"use client";
+
 // ShippingEstimator — MIRRORED FROM index.html (~line 4114).
 import React from "react";
 import { useState } from "react";

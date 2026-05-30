@@ -1,3 +1,5 @@
+"use client";
+
 // ============================================================
 // QuantityPicker — three-piece inline qty control + tap-to-open
 //                  popover list (Amazon / Walmart / Apple Store

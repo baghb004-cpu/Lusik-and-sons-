@@ -1,3 +1,5 @@
+"use client";
+
 // ============================================================
 // SwipeableRow — gesture wrapper for cart-row swipe-to-reveal-Delete
 // ============================================================
