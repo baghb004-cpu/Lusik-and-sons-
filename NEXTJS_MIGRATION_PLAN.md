@@ -1,6 +1,6 @@
 # Next.js migration plan — Lusik & Sons
 
-**Status: Phase 1 (scaffold) — production is NOT affected.**
+**Status: Phases 1–3 complete (scaffold → install → provider shell) — production is NOT affected.** See the **Progress log + handoff** section at the bottom for the live state, decision log, and the open question that blocks Phase 4.
 
 Migrate the Vite + React SPA to **Next.js (App Router)** on Netlify, for true
 server rendering on product/journal pages (SEO + first paint), *without breaking
@@ -86,3 +86,90 @@ The real payoff is server-rendered product/journal pages (SEO + first paint). No
 that much per-route SEO — titles, canonical tags, JSON-LD, the sitemap — *already
 exists* in the SPA, so weigh the SSR gain against the migration cost. Proceeding
 deliberately, one green phase at a time, keeps the risk bounded.
+
+---
+
+## Progress log + handoff (for Cowork)
+
+**Phases 1–3 are done and pushed — each its own PR, stacked, all green locally.
+Production is untouched (Vite still builds + serves `dist/`).**
+
+### Stack & merge order (rebase/merge bottom-up)
+
+1. **PR #153 — Phase 1: scaffold + plan.** `next.config.mjs`, `app/` skeleton,
+   this doc. Inert.
+2. **PR #154 — Phase 2: install Next + first route.** `next@^14.2.0` + the
+   non-clobbering `next:dev` / `next:build` / `next:start` scripts;
+   `app/globals.css` re-imports `src/styles/index.css`; Tailwind `content`
+   gains `./app/**`; tsconfig auto-edited by `next build` (jsx→preserve,
+   incremental, the `next` plugin, `.next/types`); `.gitignore` for `.next/`,
+   `next-env.d.ts`, `*.tsbuildinfo`.
+3. **PR #155 — Phase 3: global shell + providers.** `app/providers.tsx` — a
+   single `"use client"` boundary mounting `LanguageProvider` + `ToastProvider`
+   and calling `auth.init()`; `app/layout.tsx` loads the Netlify Identity
+   widget from `identity.netlify.com` via `next/script` (`beforeInteractive`).
+
+Each PR is stacked on the previous, so its diff vs `main` is cumulative until
+the lower ones merge.
+
+### Verify any phase locally
+
+```
+npm ci
+npm run next:build   # App Router build (added in Phase 2)
+npm run typecheck
+npm run build        # Vite — MUST stay byte-identical (the production path)
+npm run test:unit    # 90/90
+npm run test:e2e     # 22 passed, 2 skipped (mobile cart-drawer, by design)
+```
+
+### Decision log
+
+- **Next 14.2, not 15** — keeps the existing **React 18.3** runtime as-is (no
+  React 19 / async-request-API coupling mid-migration). Bump in a later phase
+  if wanted.
+- **One stylesheet** — `app/globals.css` `@import`s `src/styles/index.css` so
+  Vite + Next share one source of truth. Vite's ambient `*.css` type keeps the
+  standalone `tsc` green.
+- **Single client boundary** — the provider `.jsx` files get NO `"use client"`
+  of their own; importing them from `app/providers.tsx` already bundles them
+  client-side. This is the boundary Phase 3 calls for.
+- **Identity** stays on the CDN (`identity.netlify.com`), `beforeInteractive`.
+- **Deferred to the App port (Phase 5):** Sentry (`src/lib/errorReporting.ts`)
+  and analytics (`src/lib/analytics.js`) — both read Vite `import.meta.env` /
+  inject scripts from `App.jsx` effects.
+
+### ⚠️ Open decision that blocks Phase 4 (component port)
+
+Many `src/components/*` and `src/lib/*` read **`import.meta.env.*`**
+(`VITE_SENTRY_DSN`, `import.meta.env.DEV`, …). Next/SWC leaves
+`import.meta.env` **undefined at runtime**, so a strategy is needed before
+porting widely. Options:
+
+- **(A) Env-compat shim** — define the handful of `import.meta.env` keys for
+  the Next build (`next.config` `env` / a small `import-meta-env`-style
+  polyfill). Least churn.
+- **(B) Shared env module** — refactor reads into `src/lib/env.ts` that works
+  under both builds (`import.meta.env` for Vite, `process.env.NEXT_PUBLIC_*`
+  for Next). Cleaner end state, touches more files. **Recommended.**
+- **(C) Case-by-case** as each component ports.
+
+### Other Phase 4 notes
+
+- Add `"use client"` only to components using hooks / browser APIs / event
+  handlers; leaf presentational components can stay server components.
+- `analytics.js` script injection currently lives in `App.jsx` effects — it
+  ports with App (Phase 5).
+- Consider extracting `main.jsx`'s inline `ErrorBoundary` into a shared
+  component so both the Vite and Next entries use it.
+
+### CI / environment caveats
+
+- **Playwright browser mismatch (this dev container only):** the locked
+  `@playwright/test` wants browser build **1223**, but only **1194** is cached
+  and the download is network-blocked. Worked around locally by symlinking the
+  cached headless shell into the 1223 path. In normal CI (where `test:install`
+  fetches the matching browser) this is a non-issue.
+- **`next build` is not yet in the Tests workflow** — production rides Vite, so
+  CI doesn't build Next. Worth adding a `next build` CI step so later phases
+  can't silently break the Next build.
