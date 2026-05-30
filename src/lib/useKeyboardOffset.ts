@@ -16,8 +16,8 @@ import { useEffect, useState } from "react";
 // consumer can apply `translateY(-offset)` unconditionally.
 // ============================================================
 
-export function useKeyboardOffset(active) {
-  const [offset, setOffset] = useState(0);
+export function useKeyboardOffset(active: boolean): number {
+  const [offset, setOffset] = useState<number>(0);
 
   useEffect(() => {
     if (!active || typeof window === "undefined" || !window.visualViewport) {
