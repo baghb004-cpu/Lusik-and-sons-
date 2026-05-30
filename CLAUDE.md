@@ -2,71 +2,114 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Status banner — last updated 2026-05-29.** Two big things changed since the
+> original version of this doc and are now reflected below:
+> 1. **The Vite migration is COMPLETE and flipped to production.** The site is no
+>    longer a single hand-edited `index.html`. The SPA now lives in a `src/` React
+>    component tree, is built with Vite to `dist/`, and Netlify serves `dist/`.
+> 2. **The UI went through an Apple-Store-style redesign** (mobile bottom-nav +
+>    "Liquid Glass" aesthetic, home "Explore" cards, a real `/shop/<category>/<product>`
+>    route hierarchy, and a narrative copy rewrite). The e2e smoke suite was updated
+>    to match in PR #147.
+
 ## What this is
 
-A single-page marketing + e-commerce site for **Lusik & Sons**, a Cypress, CA maker of hand cross-stitched Armenian alphabet baby blankets and related goods. The site is one file (`index.html`, ~7,100 lines) plus a small `netlify/` directory that holds the database schema and the serverless functions every backend interaction goes through.
+A marketing + e-commerce site for **Lusik & Sons**, a Cypress, CA maker of hand
+cross-stitched Armenian alphabet baby blankets and related goods. The frontend is
+a **Vite-built React SPA** (source under `src/`); the backend is a small
+`netlify/` directory holding the database schema and the serverless functions
+every backend interaction goes through.
 
 ## Architecture — the one thing to know
 
-`index.html` is a self-contained SPA. Everything (React components, styles, product data, base64-encoded product photos) lives in this one file. The runtime stack is loaded from CDNs in `<head>`:
+The SPA is a Vite + React app. Source lives under `src/` and is compiled by
+`vite build` into `dist/`, which Netlify serves. The repo-root `index.html` is now
+a **minimal Vite entry** — `<head>` metadata + `<div id="root">` + a
+`<script type="module" src="/src/main.jsx">`. There is no more Babel-Standalone
+runtime transpile, no Tailwind CDN at runtime, no React UMD chain; those were all
+removed at the Vite flip (the final phase of the migration described near the
+bottom of this doc).
 
-- **React 18** + **ReactDOM** (UMD builds)
-- **Babel Standalone** — transpiles the single `<script type="text/babel" data-presets="env,react">` block at runtime, so JSX works without a bundler
-- **Tailwind CDN** — utility classes via runtime JIT
-- **`netlify-identity-widget`** — auth (signup, login, password reset, JWT issuance). The widget is loaded but not auto-rendered; we drive it programmatically through the `auth` wrapper inside `index.html`.
+Runtime stack:
+
+- **React 18** (real npm dependency, bundled by Vite)
+- **Tailwind** via PostCSS at build time (config in `tailwind.config.mjs` /
+  `postcss.config.mjs`) — not the runtime CDN anymore
+- **`netlify-identity-widget`** — auth (signup, login, password reset, JWT
+  issuance), still loaded from `identity.netlify.com` via a `<script>` tag because
+  Netlify's confirmation redirect handler expects `window.netlifyIdentity` from
+  their CDN. Driven programmatically through the `auth` wrapper.
 - Google Fonts: Fraunces (display), DM Sans (body), Allura
 
-Deploy target is **Netlify**. The static `index.html` is the entire frontend — no build step on the SPA side. The `netlify/functions/` directory is its own little project (with its own `package.json`) that Netlify installs and bundles at deploy time. Locally, `netlify dev` runs the static site + functions + Identity together on one port.
+Deploy target is **Netlify**. `netlify.toml` has `command = "npm ci && npm run build"`
+and `publish = "dist"`. The `netlify/functions/` directory is its own little
+project (own `package.json`) that Netlify installs and bundles at deploy time.
+Locally, `netlify dev` runs the built site + functions + Identity together.
 
-### File layout inside `index.html`
+### Source layout (`src/`)
 
-Line numbers drift as the file grows — these are point-in-time snapshots from the audit / hardening pass. If they're off when you read this, use `grep -n '^function ComponentName'` for an exact location. The TABLE OF CONTENTS structure is stable even when individual line numbers shift.
+The code is split into modules rather than one giant file. Exact paths drift as the
+tree grows; use `rg`/`grep` to locate a component. High-level shape:
 
-| Lines | Contents |
+| Path | Contents |
 | --- | --- |
-| 1–80 | `<head>`: meta tags, OpenGraph/Twitter cards, favicons, CDN script tags (React, Identity widget, Babel, Tailwind), web manifest |
-| 80–1000 | `<style>`: custom CSS (animations, mega-menu, back-to-top, text-us widget, tooltips, print styles) |
-| ~1020 | Loading splash + `<div id="root">` + image data placeholder script |
-| ~1024 | `<Icon>` wrapper + per-icon SVG definitions (lucide-style) |
-| ~1100 | `PHOTO_*` constants — `/img/*.jpg` paths + a couple of base64-inlined reference shots |
-| ~1136 | `PRODUCT` — the live Armenian Alphabet Blanket: gallery, specs, thread colors (DMC palette), color presets (Boys/Girls/Unisex/Purple/Armenian Flag), alphabets, layouts |
-| ~1368 | `CUSTOM_PRODUCTS` — bib config (machine-embroidery only, name-mode, color palette + presets) |
-| ~1476 | `CATALOG` — multi-category catalog (blankets / bibs / towels / baby). Most items are `status: "placeholder"` pending Lusik's photos and pricing |
-| ~1580 | `CONFIG` — the dial board: function base path, upload caps, cart storage key, debounce timings, text-us phone, swipe tunables, paid-feature toggles, analytics, free shipping |
-| ~1843 | `SOCIAL_PLATFORMS` — tier1/tier2 social drawer entries |
-| ~1897 | `SOCIAL_CONSENT_PLATFORMS` — opt-in checkout list (Instagram / TikTok / Facebook / YouTube) |
-| ~1904 | `SHIPPING_CARRIERS` — USPS / UPS / FedEx + Track-package URL builders |
-| ~1945 | `JOURNAL_POSTS` — Lusik's Journal article data (slug, title, body nodes) |
-| ~2041 | `LANGUAGES`, `TRANSLATIONS` — i18n tables (en / hy / hyw) |
-| ~2657 | `LangContext` + `LanguageProvider` + `useT()` |
-| ~3015 | `auth` — Netlify Identity wrapper (signup, signin, signout, password reset, JWT) |
-| ~3212 | `db`   — fetch() wrapper around every Netlify Function (profile, addresses, saved-cart, orders, admin endpoints, waitlist) |
-| ~3426 | `ToastProvider` + `ToastViewport` — undo-toast infrastructure (used by cart-remove flow) |
-| ~3573 | `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection` — shared marketing fragments |
-| ~3734 | `WaitlistModal` — placeholder-product "notify me" signup (POSTs to `/.netlify/functions/waitlist`) |
-| ~4234 | `BackToTopButton`, `TextUsWidget` (fixed-position UI) |
-| ~4573 | `ChatAssistant` — off-by-default Anthropic-backed chat widget |
-| ~4911 | `SwipeableRow` — gesture wrapper for cart-row swipe-to-delete on mobile (tunables in `CONFIG.SWIPE`) |
-| ~5012 | `App` — root component. Owns cart, view, auth, cart-drawer swipe state. Also wires the global keydown handlers, view-change scroll-reset (mobile), and analytics page-view dispatch. |
-| ~6403 | `HeartBurst` — add-to-cart feedback animation |
-| ~6450 | `PolicyModal` — Privacy / Terms / Refunds (intentionally English-only) |
-| ~6667 | `AuthDrawer` — sign-in / sign-up |
-| ~6907 | `AccountView` |
-| ~7499 | `OrderHistory` (with post-checkout polling), `Skeleton`, `SavedDesignsSection` |
-| ~7797 | `OrderProgressTimeline`, `OrderCard` — per-order display + reorder action |
-| ~8083 | `AdminOrderRow` — Lusik's admin editor for one order (status, tracking, finished-photo upload, admin notes) |
-| ~8318 | `AdminView` — Lusik's order dashboard + Waitlists notify panel + CSV export |
-| ~8614 | `MobileBottomNav` — bottom tab bar for phones |
-| ~8679 | `ActiveOrderTopBar` — top banner that swaps between announce string and "your order is shipped → track" for signed-in customers with a live order |
-| ~8747 | `JournalListView`, `JournalPostView`, `JournalView` — Lusik's mini-blog |
-| ~8912 | `HomeView`, `TrackingForm`, `NewsletterForm` |
-| ~9323 | `CustomProductCard` — bib customizer (machine-name-only after the dead-code cleanup pass) |
-| ~9730 | `ProductTemplate` — SVG preview for the bib name embroidery |
-| ~9803 | `BlanketLayoutPreview` — the canonical 7x7 grid preview with alphabet cubes (top-right + bottom-left corner regions), name + year diagonals, scattered pomegranate motifs, waffle-weave fabric texture, and top + bottom fringe edges |
-| ~10212 | `CollapsibleSection` — picker step that collapses to a single-row summary |
-| ~10245 | `ProductShowcase` — the main PDP for the Armenian Alphabet Blanket |
-| ~11311 | `CheckoutView` — POSTs the cart to the `create-checkout-session` Function, redirects to Stripe. Order-summary rows are display-only (no qty controls). |
-| ~11861 | `ReactDOM.createRoot(...).render(<LanguageProvider><App/></LanguageProvider>)` |
+| `src/main.jsx` | Entry — `ReactDOM.createRoot(...).render(<LanguageProvider><App/></LanguageProvider>)` |
+| `src/App.jsx` | Root component. Owns cart, view/routing, auth, the `/shop/*` + `/journal/*` + promoted-section routing, mobile bottom-nav state, analytics page-view dispatch |
+| `src/data/*.js` | Pure data: `product.js` (live Armenian Alphabet Blanket), `customProducts.js` (bib), `catalog.js` (multi-category catalog incl. priced + unpriced placeholders), `config.js` (the dial board), `socialPlatforms.js`, `shippingCarriers.ts`, `journalPosts.js` |
+| `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl` |
+| `src/i18n/` | `LangContext.jsx` (+ `LanguageProvider`, `useT()`), `translations.js` (en / hy / hyw) |
+| `src/images/photos.js` | `PHOTO_*` / `IMG_*` constants → `/img/*.jpg` paths |
+| `src/components/` | Leaf + widget + domain components (see below) |
+| `src/components/shop/` | The `/shop` hierarchy: `ShopIndexView` (4 category cards), `CategoryView` (one category's product grid), `ProductView` (resolves live vs placeholder), `ProductPlaceholderView` (coming-soon / commission template), `Breadcrumbs`, `HelpDecidingSection` |
+| `src/styles/` | `index.css` with the `@tailwind` directives + the migrated custom CSS (animations, mega-menu, print styles, the mobile "Liquid Glass" nav) |
+
+Notable components: `HomeView` (the brand-story home + the "Explore" cards),
+`MobileBottomNav`, `MobileSearchView` (the search-orb panel), `ProductShowcase`
+(live blanket PDP), `CustomProductCard` (bib customizer), `BlanketLayoutPreview`,
+`CheckoutView`, `AdminView` + `AdminOrderRow`, `AccountView` + `OrderHistory` /
+`OrderCard`, `JournalView`, `WaitlistModal`, `PolicyModal`, `AuthDrawer`,
+`ChatAssistant`, `BackToTopButton`, `TextUsWidget`.
+
+## The May 2026 redesign (what the UI looks like now)
+
+The site was reworked into an Apple-Store-style experience. The pieces that most
+often trip up code/tests written against the old UI:
+
+- **Mobile is a bottom-nav app, not a drawer site.** Phones get a fixed
+  bottom tab bar (For You / Products / Journal / Bag) plus a floating search orb,
+  rendered with a real "Liquid Glass" refraction effect. The desktop top-nav still
+  exists on `lg+`. The **cart drawer is desktop-only now** — on mobile the bag is a
+  full page. (The e2e cart-drawer tests are skipped on the mobile Playwright project
+  for this reason.)
+- **Home is a brand surface, not a catalog.** `HomeView` leads with a hero +
+  a "For You" block (mobile) + an **"Explore the rest"** card section. Each Explore
+  card is a `<button aria-label="{title} — {blurb}">` that routes to a real page.
+  Both the mobile carousel and desktop grid render the same cards; the off-viewport
+  copy is `display:none`, so `getByRole` resolves to the single visible card. The
+  cards (e.g. `"Shop — Blankets, bibs & towels"`, `"Our Story — Armenia → Cypress"`)
+  are how you reach `/shop` and the promoted section pages from home.
+- **Real `/shop` hierarchy.** `/shop` → `ShopIndexView` (4 category cards,
+  `aria-label="Browse {Category}"`) → `/shop/<category>` → `CategoryView`
+  (product cards, live = `aria-label="View {name}"`, placeholder =
+  `aria-label="{name} — coming soon"`) → `/shop/<category>/<product>` →
+  `ProductView` (live PDP or `ProductPlaceholderView`).
+- **Promoted section pages.** Our Story, Workshop, FAQ, Contact, Shipping,
+  Newsletter were promoted off the home page to their own routes (`/story`, etc.),
+  each rendered under a big "‹ For You" back header (`aria-label="Back to the For You page"`).
+  They're reached via the Explore cards on both viewports.
+- **Narrative copy rewrite.** Several strings changed and are load-bearing for
+  selectors: the home hero CTA is now **"See what Lusik makes"** (navigates to
+  `/shop`, not the blanket PDP); the checkout heading is **"Almost in Lusik's hands"**
+  (was "Almost there"); the journal back button is **"All posts"**.
+- **Priced vs unpriced placeholders.** `ProductPlaceholderView` renders one of two
+  CTA paths depending on the catalog entry's `priceFrom`:
+  - **Priced** placeholder (e.g. the Full Alphabet Crib Blanket, `priceFrom: 245`,
+    `status: "placeholder"`) → a **commission path**: primary CTA is a
+    "Write Lusik to commission this" **mailto link** (role=link), a phone link, and
+    an "Add me to the list" waitlist button. The price is shown.
+  - **Unpriced** placeholder (`priceFrom: null`) → a **waitlist path**: a disabled
+    "Currently unavailable" bar + a "Write me when it's ready" **button**, with
+    "Price coming soon."
 
 ## Backend — what's in this repo, and what's not
 
@@ -88,19 +131,19 @@ netlify/
     │   ├── json.mjs                 # JSON response helper
     │   ├── email.mjs                # Resend wrapper + admin-order email composer
     │   └── trusted-products.mjs     # server-side product price map (Stripe handoff)
-    ├── profile.mjs                  # GET/PUT       /profile
-    ├── addresses.mjs                # GET/POST/DEL  /addresses
-    ├── saved-cart.mjs               # GET/PUT       /saved-cart
-    ├── saved-designs.mjs            # GET/POST/DEL  /saved-designs
-    ├── orders.mjs                   # GET           /orders
-    ├── link-guest-order.mjs         # POST          /link-guest-order
-    ├── avatar.mjs                   # POST          /avatar          (write to Netlify Blobs)
-    ├── avatar-get.mjs               # GET           /avatar-get?key=...  (public read)
-    ├── admin-orders.mjs             # GET/PUT       /admin-orders    (admin role required)
-    ├── admin-order-photo.mjs        # POST          /admin-order-photo (finished-piece upload, admin)
-    ├── order-photo-get.mjs          # GET           /order-photo-get?key=...  (signed-in customer or admin)
-    ├── create-checkout-session.mjs  # POST          /create-checkout-session (Stripe)
-    └── stripe-webhook.mjs           # POST          /api/stripe-webhook (Stripe → DB, fires admin email)
+    ├── profile.mjs                  # GET/PUT /profile
+    ├── addresses.mjs                # GET/POST/DEL /addresses
+    ├── saved-cart.mjs               # GET/PUT /saved-cart
+    ├── saved-designs.mjs            # GET/POST/DEL /saved-designs
+    ├── orders.mjs                   # GET /orders
+    ├── link-guest-order.mjs         # POST /link-guest-order
+    ├── avatar.mjs                   # POST /avatar (write to Netlify Blobs)
+    ├── avatar-get.mjs               # GET /avatar-get?key=... (public read)
+    ├── admin-orders.mjs             # GET/PUT /admin-orders (admin role required)
+    ├── admin-order-photo.mjs        # POST /admin-order-photo (finished-piece upload, admin)
+    ├── order-photo-get.mjs          # GET /order-photo-get?key=... (signed-in customer or admin)
+    ├── create-checkout-session.mjs  # POST /create-checkout-session (Stripe)
+    └── stripe-webhook.mjs           # POST /api/stripe-webhook (Stripe → DB, fires admin email)
 ```
 
 ### Database — Netlify Database (Neon-backed Postgres)
@@ -117,401 +160,171 @@ netlify/
 
 ### Order notification emails (Resend)
 
-The site sends up to five transactional emails across the order lifecycle, all through [Resend](https://resend.com) on the free tier (100/day, 3,000/month). Each fires with error isolation so a Resend outage never breaks the underlying database write — the email helpers log + return false on failure rather than throwing, and the calling code wraps them in `.catch()`.
+The site sends up to six transactional emails across the order lifecycle, all through [Resend](https://resend.com) on the free tier (100/day, 3,000/month). Each fires with error isolation so a Resend outage never breaks the underlying database write — the email helpers log + return false on failure rather than throwing, and the calling code wraps them in `.catch()`.
 
-**At order placement** — the `stripe-webhook` Function fires two emails in parallel (`Promise.allSettled`) after the order row is inserted:
+1. **Admin notification** (`sendAdminOrderEmail`) — at order placement, from `stripe-webhook`: items + design metadata for stitching, shipping address, gift/social-consent info, admin-panel link.
+2. **Customer confirmation** (`sendCustomerOrderConfirmation`) — at order placement: warm, on-brand "Lusik is starting on your order" with expectations and order summary. Intentionally NOT a duplicate of Stripe's receipt.
+3. **Finished-piece notification** (`sendFinishedPhotoNotification`) — first time Lusik uploads a finished photo (gated by `orders.finished_photo_emailed_at`). CTA links to the account page; the photo is gated behind the order's user_id, not embedded.
+4. **Shipped notification** (`sendShippedNotification`) — first time an order flips to `shipped` (gated by `orders.shipped_at`): carrier, monospace tracking number, Track-package CTA.
+5. **Refund notification** (`sendRefundNotification`) — on `charge.refunded` (full or partial). Looks up the order by `stripe_payment_intent`, updates status, stamps `refunded_cents`; cumulative-vs-stored comparison dedupes Stripe re-fires.
+6. **Cart recovery** (`sendCartAbandonmentRecovery`) — on `checkout.session.expired` (~24h after an unpaid session). Reads the pending-orders Blob keyed by `session.id`, sends, then deletes the blob so a re-fire can't double-send.
 
-1. **Admin notification** to Lusik (`sendAdminOrderEmail`) — operational tone: items + full design metadata for stitching, shipping address, gift options if any, social-share consent + handles if any, link to the admin panel.
-2. **Customer confirmation** (`sendCustomerOrderConfirmation`) — warm, on-brand tone: "Lusik is starting on your order," what to expect (5–10 business days, photo before ship, tracking on ship), order summary, gift recap if applicable, contact info for catching mistakes before stitching begins.
+**Stripe dashboard subscription requirement**: subscribe to all three of `checkout.session.completed`, `charge.refunded`, AND `checkout.session.expired`. Without the third, abandoned carts get no recovery email.
 
-The customer confirmation is intentionally NOT a duplicate of Stripe's auto-generated receipt — Stripe handles the financial paperwork; ours handles brand experience + expectation setting.
-
-**At finished-piece photo upload** — the `admin-order-photo` Function fires the third email the first time Lusik uploads a photo for an order:
-
-3. **Finished-piece notification** (`sendFinishedPhotoNotification`) — "Lusik just finished your blanket," with a CTA linking to the customer's account page where the photo is rendered. Slightly different copy for gift orders ("the gift you ordered is ready") vs. self-purchases. We deliberately don't embed the photo in the email itself because access is gated behind the order's user_id — instead the customer signs in to see it.
-
-The `orders.finished_photo_emailed_at` timestamp gates this. Re-uploads or replacements don't re-trigger the email.
-
-**At ship time** — the `admin-orders` Function fires the fourth email the first time Lusik flips an order's `fulfillment_status` to `shipped`:
-
-4. **Shipped notification** (`sendShippedNotification`) — "your order is on its way," with the carrier name, the tracking number rendered in monospace, a Track-package CTA linking to the carrier's public tracking page (USPS/UPS/FedEx URL patterns mirrored from the browser-side `getTrackingUrl`), a callout to the finished-piece photo if Lusik already uploaded one, and the 14-day "if anything's wrong" reassurance.
-
-The `orders.shipped_at` timestamp gates this. Once it's set (the first save with status = shipped), it's never re-fired even if Lusik toggles status back and forth. Both timestamps (`shipped_at` and `finished_photo_emailed_at`) follow the same pattern: stamped in the same UPDATE as the change that triggers them, so the DB write and email send are atomic from the workflow's perspective.
-
-**On refund** — the `stripe-webhook` Function handles `charge.refunded` events in addition to `checkout.session.completed`:
-
-5. **Refund notification** (`sendRefundNotification`) — "We've refunded your order" (full) or "We've applied a partial refund" (partial). Includes order number, original total, refund amount, remaining balance for partial refunds, and the standard "5–10 business days for it to appear on your card" reassurance.
-
-The handler looks up the order by `stripe_payment_intent` (captured at order insert), updates `orders.status` to `refunded` or `partially_refunded`, flips `fulfillment_status` to `refunded` only on a full refund (partial refunds let the customer still receive most of their order), and stamps `refunded_cents` with the cumulative refund total. The cumulative-vs-stored comparison gates dedupe — Stripe sometimes fires the event multiple times for the same refund.
-
-**On checkout abandonment** — the `stripe-webhook` Function also handles `checkout.session.expired` events (Stripe fires these ~24h after a session is created if the customer didn't pay):
-
-6. **Cart recovery** (`sendCartAbandonmentRecovery`) — "We saved your spot." Lists the items they were buying (productName, qty, variant), the subtotal computed from `TRUSTED_PRODUCTS`, and a CTA back to the home page. No urgency, no discount code — the brand voice is "we held it for you," not "act now."
-
-The handler reads the pending-orders Blob keyed by `session.id` (the same blob the success path normally consumes + deletes). Presence of the blob at expiry means the customer didn't complete payment. It sends the email and then deletes the blob, so a Stripe re-fire of the event can never produce a second email. If we have no recipient email or no recognizable items in the cart, the handler skips the send but still cleans up the blob.
-
-**Stripe dashboard subscription requirement**: in the Stripe webhook configuration, three events need to be subscribed: `checkout.session.completed`, `charge.refunded`, AND `checkout.session.expired`. Without the third, abandoned carts get no recovery email.
-
-Required env vars (set in Netlify dashboard → Site → Environment):
-
-- `RESEND_API_KEY` — generate at resend.com/api-keys (free tier: 100 emails/day, 3,000/month; both emails count against this).
-- `ADMIN_NOTIFICATION_EMAIL` — where to send the admin notifications (e.g. `hello@lusikandsons.com`).
-- `RESEND_FROM_EMAIL` *(optional)* — sender address. Defaults to `Lusik & Sons <onboarding@resend.dev>` if unset, which works for testing but will land in spam. To use a real `from`, verify `lusikandsons.com` in Resend → Domains and set this to e.g. `Lusik & Sons <orders@lusikandsons.com>`. Especially important for the customer confirmation — a transactional email from `resend.dev` looks suspicious to non-technical customers.
-
-The composers live in `netlify/functions/_lib/email.mjs`. Shared helpers (`esc`, `dollars`, `summarizeItem`) are reused between both. To extend (e.g. add a shipped-notification email when Lusik flips an order to `shipped`), add another exported function alongside the existing two and call it from wherever in the order pipeline you need.
+Required env vars (Netlify → Site → Environment): `RESEND_API_KEY`, `ADMIN_NOTIFICATION_EMAIL`, and optionally `RESEND_FROM_EMAIL` (defaults to `Lusik & Sons <onboarding@resend.dev>` if unset — verify `lusikandsons.com` in Resend → Domains for a real `from`). The composers live in `netlify/functions/_lib/email.mjs`; shared `PALETTE`, `baseUrl()`, `esc`, `dollars`, `summarizeItem` helpers are reused across them.
 
 ### Lusik's Journal
 
-A small in-file mini-blog at `view === "journal"`, with three starter posts about Armenian craft heritage (the alphabet, cross-stitch as a technique, the pomegranate in textiles). The posts are intentionally *cultural*, not biographical — they make claims about Armenian history that are well-attested rather than claims about Lusik personally that would need her sign-off.
+A mini-blog (`/journal` list, `/journal/<slug>` posts) with starter posts about Armenian craft heritage (the alphabet, cross-stitch, the pomegranate). The posts are *cultural*, not biographical.
 
-- Post data: the `JOURNAL_POSTS` array near the SHIPPING_CARRIERS constant (~line 1455). Each entry has `slug`, `title`, `excerpt`, `publishedAt`, `readMinutes`, and a `content` array of typed nodes (`p`, `h2`, `blockquote`). Adding a new post = prepending an entry **AND** adding a `<url>` block to `sitemap.xml` at the repo root. **Don't change a slug** once a post is shared — old URLs would 404.
-- Components: `JournalListView` (index), `JournalPostView` (single post with inline `BlogPosting` JSON-LD for Google), and the parent `JournalView` that swaps between them.
-- Routing: real history-API URLs (`/journal` for the list, `/journal/<slug>` for a post). Netlify's `[[redirects]]` block in `netlify.toml` serves index.html for any `/journal*` path so direct visits and shared links work. Two effects in `App` keep the URL in sync with state both ways: on mount + popstate, pathname → state; on internal navigation, state → `pushState`. Legacy `#journal/<slug>` hash URLs from before the routing change get silently rewritten to clean pathnames on first load.
-- Per-route `<title>` and `<link rel="canonical">` are set via DOM manipulation when `view` or `journalSlug` changes, so each journal post is indexed as its own page rather than being collapsed into the home page by a static canonical.
-- All three posts carry the `TODO_LUSIK_REVIEW` marker — Lusik should read each one and tell us if anything needs adjusting. She can also send a personal anecdote for any of them, which we'd splice in as a section.
+- Post data lives in `src/data/journalPosts.js`. Each entry has `slug`, `title`, `excerpt`, `publishedAt`, `readMinutes`, and a `content` array of typed nodes (`p`, `h2`, `blockquote`). Adding a post = prepending an entry **AND** adding a `<url>` block to `sitemap.xml`. **Don't change a slug** once a post is shared.
+- Components: `JournalListView`, `JournalPostView` (inline `BlogPosting` JSON-LD), `JournalView`.
+- Routing: real history-API URLs. Netlify's `[[redirects]]` block serves the SPA for `/journal*`. App effects keep URL ↔ state in sync both ways; legacy `#journal/<slug>` hash URLs are rewritten to clean pathnames on first load.
+- Per-route `<title>` + `<link rel="canonical">` are set on navigation so each post indexes as its own page.
+- Posts carry `TODO_LUSIK_REVIEW` markers — Lusik should read each one.
 
 ### PWA (Add to Home Screen) + print styles
 
-The site is wired for both as of the polish pass:
-
-- `manifest.webmanifest` at the repo root declares brand name, theme colors (`#1A1612` ink, `#F5EFE3` cream), display mode (`standalone`), and icon paths. Linked from `<head>` via `<link rel="manifest">`.
-- iOS Safari meta tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`) sit alongside the manifest because Apple ignores `manifest.webmanifest` and uses its own legacy attributes.
-- A `theme-color` meta tag sets the mobile browser address-bar to brand ink on Android Chrome.
-
-**Icon files needed before launch** (referenced by both the manifest and the existing favicon tags — none of these exist in the repo yet, all flagged `TODO_LUSIK`):
-
-- `/favicon.ico` (32×32 or multi-size)
-- `/apple-touch-icon.png` (180×180 for iOS home screen)
-- `/icon-192.png` (192×192 for Android)
-- `/icon-512.png` (512×512 for Android splash + iOS large)
-- `/icon-maskable-512.png` (512×512 with safe-zone padding for Android adaptive icons)
-
-The PWA install still works without them — the browser falls back to a screenshot of the page as the icon — but the experience is much better with proper artwork.
-
-Print styles live in the main `<style>` block (search for `@media print`). They:
-- Hide all fixed-position UI (toasts, drawers, sticky nav, back-to-top, text-us widget, mobile bottom-nav)
-- Convert photos to grayscale to save color toner
-- Append `(URL)` after external links so paper copies stay useful
-- Force `page-break-inside: avoid` on `article`, `section`, and order cards so a long page splits sensibly
+- `manifest.webmanifest` (now served from `/public/`) declares brand name, theme colors (`#1A1612` ink, `#F5EFE3` cream), `standalone` display, icon paths. iOS Safari meta tags + a `theme-color` meta sit in `<head>`.
+- **Icon files still needed before launch** (all flagged `TODO_LUSIK`): `/favicon.ico`, `/apple-touch-icon.png` (180×180), `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png`. PWA install works without them (browser falls back to a page screenshot).
+- Print styles live in the main stylesheet (`@media print`): hide fixed UI, grayscale photos, append `(URL)` after external links, `page-break-inside: avoid` on `article`/`section`/order cards.
 
 ### Analytics (privacy-first, opt-in)
 
-The site is wired for [Umami](https://umami.is)-compatible analytics. Default is OFF — the script tag isn't loaded and no requests are made until `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` (~line 1370 in `index.html`) is set to a real ID.
-
-To enable:
-
-1. Sign up for an Umami Cloud free account (or self-host Umami, or pick a different privacy-first provider — anything that exposes a global `window.umami.track()` works).
-2. Create a website in the dashboard for `lusikandsons.com`, copy the website ID.
-3. Paste it into `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID`. If you're not using Umami Cloud, also update `UMAMI_SRC_URL` to your script URL.
-4. Deploy.
-
-What gets tracked:
-
-- **Pageviews**, including SPA navigation (the App fires `umami.track()` on every `view` or `journalSlug` change so journal posts and account/admin views show up as distinct pages).
-- **Custom events** — wired at the call sites that signal real intent:
-  - `add-to-cart` (with kind: "blanket"/"custom" and design variant info)
-  - `checkout-start` (when Pay-with-Stripe is clicked, with item count + total cents)
-  - `order-complete` (when Stripe redirects back with `?order=success`)
-  - `save-design` (signed-in customer saves a configuration)
-  - `share-design` (any share — native share sheet or clipboard)
-  - `waitlist-signup` (per-product placeholder waitlist email submitted)
-  - `newsletter-signup` (footer newsletter email submitted)
-
-All custom events go through the module-level `track(eventName, data)` helper in `index.html`. When analytics is off, every `track()` call is a no-op and costs nothing.
-
-The Privacy Policy's "Cookies and tracking" clause already acknowledges the optional analytics provider in honest terms ("if active, it doesn't set cookies, doesn't track you across other sites…") — so the disclosure is accurate whether analytics is on or off.
+[Umami](https://umami.is)-compatible, default OFF. Set `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` (in `src/data/config.js`) to a real ID to enable; when off, every `track()` call is a no-op. Tracks pageviews (incl. SPA navigation) and custom events: `add-to-cart`, `checkout-start`, `order-complete`, `save-design`, `share-design`, `waitlist-signup`, `newsletter-signup`. The Privacy Policy's "Cookies and tracking" clause already discloses the optional provider honestly.
 
 ### SEO infrastructure
 
-- `sitemap.xml` at the repo root lists the home page, the journal index, and every journal post with its `<lastmod>`. Update it when you add a new post — there's a comment at the top of the file walking through what to change.
-- `robots.txt` at the repo root tells crawlers everything is allowed except the `/.netlify/` namespace, and points at the sitemap. Both files are static and served directly by Netlify with no special config needed (they live alongside `index.html` at the repo root).
+- `sitemap.xml` (served from `/public/`) lists the home page, journal index, and every journal post with `<lastmod>` — update it when adding a post. A `<url>` for each `/shop/...` page exists too.
+- `robots.txt` (served from `/public/`) allows everything except `/.netlify/` and points at the sitemap.
 
 ### Admin view + roles
 
-Lusik (and her sons) manage orders through a dedicated admin view: `view === "admin"` inside the React app. It's gated three ways:
+Lusik manages orders through `view === "admin"`, gated three ways:
 
-1. **Browser**: the nav link only renders when `auth.isAdmin()` returns true.
-2. **Function**: every admin endpoint calls `requireAdmin(context)` from `_lib/auth.mjs`, which checks the Identity JWT's `app_metadata.roles` for the string `"admin"`. There's also an env-var fallback: `ADMIN_EMAILS` (comma-separated) lets a brand-new deploy work before the role has been assigned in the Netlify dashboard.
-3. **Database**: nothing — the DB just trusts the Function, same pattern as the customer endpoints.
+1. **Browser**: the nav link only renders when `auth.isAdmin()` is true.
+2. **Function**: every admin endpoint calls `requireAdmin(context)` from `_lib/auth.mjs` (checks the Identity JWT's `app_metadata.roles` for `"admin"`), with an `ADMIN_EMAILS` env-var fallback for fresh deploys.
+3. **Database**: nothing — the DB trusts the Function.
 
-Granting admin access (one-time per user):
-
-1. Netlify dashboard → Site → Identity → Users → click the user → Edit role → add `admin` → Save.
-2. The user signs out + signs back in (the role lands on the JWT on next login).
-3. They see "Open admin panel →" at the bottom of their account view.
-
-From the admin view, Lusik can: change `fulfillment_status`, set `carrier` + `tracking_number`, set `estimated_ship_date`, write internal `admin_notes`, and upload a finished-piece photo per order. The customer's order card on their account page picks up every change automatically — the stepped progress timeline, the tracking link, and the finished-piece photo all key off these fields.
+Granting admin: Netlify → Site → Identity → Users → Edit role → add `admin` → Save; the user signs out + back in so the role lands on the JWT. From admin, Lusik can change `fulfillment_status`, set `carrier`/`tracking_number`/`estimated_ship_date`, write `admin_notes`, upload a finished-piece photo, and run the waitlist Notify panel + CSV export.
 
 ### Stripe checkout flow
 
 ```
-Browser  ─POST cart──▶  /create-checkout-session  ─┬─▶ stashes cart in `pending-orders` Blob (key = session.id)
-                                                   └─▶ Stripe Checkout (returns session.url)
+Browser ─POST cart──▶ /create-checkout-session ─┬─▶ stashes cart in `pending-orders` Blob (key = session.id)
+                                                └─▶ Stripe Checkout (returns session.url)
 
-Browser ◀─redirect──   Stripe                       (customer pays)
+Browser ◀─redirect── Stripe (customer pays)
 
-Stripe   ─webhook──▶   /api/stripe-webhook  ─┬─▶ verifies signature
-                                             ├─▶ reads pending cart from Blob
-                                             ├─▶ inserts orders + order_items
-                                             └─▶ deletes the Blob
+Stripe ─webhook──▶ /api/stripe-webhook ─┬─▶ verifies signature
+                                        ├─▶ reads pending cart from Blob
+                                        ├─▶ inserts orders + order_items
+                                        └─▶ deletes the Blob
 ```
 
-Cart-ID shape is load-bearing for this flow: `mapLegacyId()` in `index.html` (search for it inside `CheckoutView`) translates browser cart IDs into `productKey` strings, and the same product keys are the lookup into `_lib/trusted-products.mjs`. If you change cart-ID shape on the browser side, update both.
+Cart-ID shape is load-bearing: `mapLegacyId()` (in `src/lib/cartId.ts`, used by `CheckoutView`) translates browser cart IDs into `productKey` strings, and the same keys are the lookup into `_lib/trusted-products.mjs`. Change the cart-ID shape on the browser side and you must update both. The e2e test `Pay with Stripe POSTs to create-checkout-session` is the safety net — it asserts every cart item's `productKey` matches the shape `TRUSTED_PRODUCTS` recognizes.
 
 ## Conventions
 
-- **One file, no build.** Resist the urge to split `index.html` into modules. Babel Standalone transpiles JSX in-browser; adding a bundler would defeat the deploy-by-uploading-one-file model. (The `netlify/functions/` directory IS bundled by Netlify CI — but that's separate from the SPA.)
-- **`CONFIG` is the dial board.** Tunable numbers, feature flags, the text-us phone, upload caps, the limited-edition order count — change them in `CONFIG` (~line 1085), not inline at call sites.
-- **`auth` and `db` are the only access paths.** Browser-side, every authenticated server call goes through one of these two objects in `index.html` (~line 2210). Don't reach for `window.netlifyIdentity` directly. Don't `fetch()` Functions ad-hoc; add a method to `db` and call it.
-- **Functions enforce authorization.** Inside a Function, call `requireUser(context)` from `_lib/auth.mjs` and filter every query by the returned `user.id`. There's no RLS to save you if you forget.
+- **`CONFIG` is the dial board.** Tunable numbers, feature flags, the text-us phone, upload caps — change them in `src/data/config.js`, not inline at call sites. Don't split `CONFIG`.
+- **`auth` and `db` are the only access paths.** Every authenticated server call goes through one of these (`src/lib/`). Don't reach for `window.netlifyIdentity` directly; don't `fetch()` Functions ad-hoc — add a method to `db`.
+- **Functions enforce authorization.** Inside a Function, call `requireUser(context)` and filter every query by `user.id`. There's no RLS.
 - **Server-side trusted prices.** `_lib/trusted-products.mjs` is the only place pricing is trusted for checkout. The browser may send anything; Stripe gets what this file says.
-- **i18n via `t("key.path")`.** Strings live in `TRANSLATIONS.en|hy|hyw`. Missing keys fall back to English automatically. Eastern Armenian (`hy`) is the only non-English language currently surfaced to users; `hyw` is staged for Lusik's review.
-- **TODO markers are intentional and addressed to Lusik, not Claude.** Two flavors appear throughout:
-  - `⚠️ TODO_LUSIK` — needs Lusik's photos, pricing, or product confirmation before going live
-  - `⚠️ TODO_LUSIK_REVIEW` — auto-translated Armenian strings awaiting a native speaker's review
-  Do not silently "fix" these; they are tracking real product/content gaps.
-- **Placeholder products are real.** Anything in `CATALOG` with `status: "placeholder"` renders a coming-soon card. Don't promote one to `"live"` without the corresponding photos, price, and copy.
-- **`CONFIG.ROTATED_GALLERY_INDEXES`** is a CSS-rotation band-aid for sideways source images. Once an image is re-uploaded correctly, remove its index from that Set; the rotation vanishes everywhere it was applied.
-- **Reduced-motion is honored.** The heart-burst animation and cart pulse explicitly check `prefers-reduced-motion`. Match this pattern for any new decorative animation.
-- **Cart IDs encode the variant.** A blanket cart row's `id` looks like `blanket-{alphabet}-{layout}-{blockDMC}-{letterDMC}[-multi-{dmcs}]`. Two orders with different colors must remain separate line items, not stack as qty=2. The trusted-products map keys off the layout suffix, so the format is load-bearing.
+- **i18n via `t("key.path")`.** Strings live in `TRANSLATIONS.en|hy|hyw` (`src/i18n/translations.js`). Missing keys fall back to English. `hy` is the only non-English language surfaced; `hyw` is staged for review.
+- **TODO markers are intentional and addressed to Lusik, not Claude.** `⚠️ TODO_LUSIK` (needs photos/pricing/product confirmation) and `⚠️ TODO_LUSIK_REVIEW` (auto-translated strings awaiting a native speaker). Do not silently "fix" these.
+- **Placeholder products are real.** Anything in `CATALOG` with `status: "placeholder"` renders a coming-soon card (commission path if priced, waitlist if unpriced). Don't promote one to `"live"` without the photos, price, copy, **and** the matching `_lib/trusted-products.mjs` row.
+- **`CONFIG.ROTATED_GALLERY_INDEXES`** is a CSS-rotation band-aid for sideways source images; remove an index once its image is re-uploaded correctly.
+- **Reduced-motion is honored.** Decorative animations (heart-burst, cart pulse) check `prefers-reduced-motion`. Match this for any new animation.
+- **Cart IDs encode the variant.** A blanket cart row's `id` looks like `blanket-{alphabet}-{layout}-{blockDMC}-{letterDMC}[-multi-{dmcs}]`. Two orders with different colors stay separate line items, not qty=2. The trusted-products map keys off the layout suffix.
 
 ## Local development
 
-- Install the Netlify CLI once: `npm install -g netlify-cli`. Then `netlify dev` runs the static `index.html` + Functions + Identity on a single port (default `http://localhost:8888`). Use that, not `python3 -m http.server` — the latter won't proxy `/.netlify/functions/*` calls.
-- Hard-reload (Cmd/Ctrl-Shift-R) is usually necessary after edits because of the Babel transpile cache and Tailwind CDN behavior.
-- Pre-launch checklist embedded near the top of `<head>` (OpenGraph block, lines 11–35) lists external assets that must exist at deploy time: `/og-image.jpg` (1200×630), `/favicon.ico`, `/apple-touch-icon.png`.
+- `npm ci` once. Then `npm run dev` (Vite dev server) for fast iteration, or `netlify dev` to run the built site + Functions + Identity together (proxies `/.netlify/functions/*`).
+- `npm run build` produces `dist/`. `npm run preview` (or `npx vite preview`) serves the build — this is what the e2e tests run against.
 
 ### Test suite
 
-Two layers, both run by `npm test`:
+Two layers, both run by `npm test`, and CI runs both on every push and PR (`.github/workflows/test.yml`, the **Tests** workflow):
 
-1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`) — Node's built-in test runner. No extra install. Tests the security-critical helpers: `requireUser`/`requireAdmin` shape and ADMIN_EMAILS fallback (`auth.test.mjs`), the HMAC unsubscribe-token sign/verify roundtrip (`email-tokens.test.mjs`), and the `TRUSTED_PRODUCTS` price-map shape + that the live blanket + bib SKUs exist (`trusted-products.test.mjs`). Run with `npm run test:unit`.
+1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`) — Node's built-in test runner, no extra install. Covers the security-critical helpers: `requireUser`/`requireAdmin` + `ADMIN_EMAILS` fallback, the HMAC token roundtrip, the `TRUSTED_PRODUCTS` price-map shape. `npm run test:unit`.
 
-2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a static-served `index.html`. Catches the kind of bugs that broke the site mid-session: JSX runtime crashes, missing imports, broken routes, cart-flow regressions. Backend calls are stubbed via `page.route()` since these run against a static server with no Functions wired up. Run with `npm run test:e2e` (first time: `npm run test:install` to pull the Chromium binary).
+2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a `vite preview` build of the site, configured in `playwright.config.mjs` with **two projects**: `desktop-chromium` and `mobile-chromium` (Pixel 7, so `isMobile` is true). The `webServer` block runs `npm run build && npx vite preview`. Backend calls are stubbed via `page.route()`. `npm run test:e2e` (first time: `npm run test:install`).
 
-The key E2E test that would have caught the cart-ID mismatch bug is in `smoke.spec.mjs` → "Pay with Stripe POSTs to create-checkout-session" — it intercepts the function call and asserts every cart item's `productKey` matches the shape `TRUSTED_PRODUCTS` recognizes.
+   The suite is written against the post-redesign UI (PR #147): it routes home→shop and home→story through the **Explore cards** (which render on both viewports), asserts the **"Almost in Lusik's hands"** checkout heading, asserts the priced-placeholder **"Write Lusik to commission this"** link, and **skips the cart-drawer tests on `mobile-chromium`** (the drawer is desktop-only). When the UI copy or nav changes again, these selectors are the first thing to update.
 
-CI runs both on every push and PR (`.github/workflows/test.yml`).
-
-### One-time Netlify setup (when you spin up a fresh site)
+### One-time Netlify setup (fresh site)
 
 1. Connect the GitHub repo to a Netlify site.
-2. Site → Identity → Enable. Decide on email confirmation policy (default: required).
-3. From a local checkout, `netlify link`, then `netlify database init` to provision the Postgres database.
-4. Apply the schema: `netlify db query --file netlify/schema.sql`.
-5. Set environment variables in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-6. In the Stripe dashboard, add a webhook endpoint pointing at `https://<your-site>.netlify.app/api/stripe-webhook`. Subscribe to **all three** of `checkout.session.completed`, `charge.refunded`, and `checkout.session.expired` (records new orders, handles refunds, fires the cart-abandonment recovery email). Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
-7. (Optional but recommended) Sign up at [resend.com](https://resend.com) — free tier covers 100 emails/day. Generate an API key under "API Keys" and set it as `RESEND_API_KEY` in Netlify. Set `ADMIN_NOTIFICATION_EMAIL` to wherever Lusik wants to receive new-order notifications. (Optionally verify `lusikandsons.com` in Resend → Domains and set `RESEND_FROM_EMAIL` to `Lusik & Sons <orders@lusikandsons.com>`; until then, emails come from `onboarding@resend.dev` which often lands in spam.)
-8. Set `REMINDER_SECRET` to a long random string. Used as the HMAC key for gift-reminder unsubscribe URLs (see "Gift-occasion reminder" below). **Required** — there is no longer a fallback. Without it, unsubscribe links 400 with a warning logged at function start. Rotating this secret invalidates every outstanding unsubscribe link, which is why it must be its own value (rotating Stripe's webhook secret should never touch unsubscribe links).
-9. *(Optional but recommended)* Set `SCHEDULED_FN_SECRET` to a long random string (≥16 chars). Lets you manually trigger the scheduled functions (`cleanup-blobs`, `gift-reminder`) via `curl -H "Authorization: Bearer $SCHEDULED_FN_SECRET" -X POST https://<site>/.netlify/functions/<name>` for one-off catch-up runs or debugging. **Without this env var, only Netlify's own scheduler can invoke those functions** — every other HTTP POST to them returns 403 (see `netlify/functions/_lib/scheduled.mjs`). Rotating this secret immediately invalidates any active manual-trigger shells.
+2. Site → Identity → Enable (decide email-confirmation policy).
+3. From a local checkout: `netlify link`, then `netlify database init`.
+4. Apply schema: `netlify db query --file netlify/schema.sql`.
+5. Set env vars in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+6. In Stripe, add a webhook at `https://<site>.netlify.app/api/stripe-webhook`. Subscribe to **all three** of `checkout.session.completed`, `charge.refunded`, `checkout.session.expired`. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+7. (Recommended) Sign up at resend.com, set `RESEND_API_KEY` + `ADMIN_NOTIFICATION_EMAIL` (optionally verify the domain + set `RESEND_FROM_EMAIL`).
+8. Set `REMINDER_SECRET` to a long random string (HMAC key for gift-reminder unsubscribe URLs — **required**, no fallback).
+9. (Recommended) Set `SCHEDULED_FN_SECRET` (≥16 chars) to allow manual triggering of the scheduled functions (`cleanup-blobs`, `gift-reminder`); without it, only Netlify's scheduler can invoke them.
 
-## Features added in the hardening / polish pass
+## Features beyond the core architecture
 
-A condensed list of things that exist now and weren't in the original architecture doc. Useful when a next-Claude session lands and needs to know what's already wired up.
+A condensed list of things wired up that aren't obvious from the architecture overview.
 
 ### Gift-occasion reminder (opt-in, one-year-later email)
-- Checkbox at checkout (default off) → stamped on `orders.gift_reminder_opt_in`.
-- `netlify/functions/gift-reminder.mjs` is a **scheduled function** that runs daily at 09:00 UTC. Finds orders ~11 months old with the opt-in set, claims each one with an atomic `UPDATE … SET sent_at = now() WHERE … AND sent_at IS NULL RETURNING id` (idempotent under concurrent runs), then sends the email via Resend.
-- `netlify/functions/unsubscribe-gift-reminder.mjs` — HMAC-signed unsubscribe URL embedded in each email. Token = `signReminderToken(orderId)` in `_lib/email.mjs`, verified with `timingSafeEqual`. No sign-in needed.
-- Schema: `orders.gift_reminder_opt_in BOOLEAN`, `orders.gift_reminder_sent_at TIMESTAMPTZ`, plus a partial index for the daily scan.
+- Checkbox at checkout (default off) → `orders.gift_reminder_opt_in`.
+- `netlify/functions/gift-reminder.mjs` — scheduled function (daily 09:00 UTC). Finds ~11-month-old opted-in orders, claims each atomically (`UPDATE … SET sent_at = now() WHERE … AND sent_at IS NULL RETURNING id`), sends via Resend.
+- `netlify/functions/unsubscribe-gift-reminder.mjs` — HMAC-signed unsubscribe URL, verified with `timingSafeEqual`, no sign-in needed.
 
 ### Product waitlist (placeholder catalog → real notification)
-- `netlify/functions/waitlist.mjs` — public POST, IP-keyed daily rate limit (20/day), strict regex on `productKey`, upserts into `product_waitlist` (UNIQUE on `lower(email), product_key`).
-- `netlify/functions/admin-waitlist.mjs` — admin GET returning per-product pending + notified counts. Does NOT return email addresses — admin sees counts only.
-- `netlify/functions/admin-waitlist-notify.mjs` — admin POST that sends `sendWaitlistAvailableEmail` to every entry with `notified_at IS NULL`, stamps the timestamp on success. Capped at 100 per call to protect Resend quota; response includes `remaining` so the admin UI prompts the next click.
-- `WaitlistsPanel` at the top of `AdminView` renders the per-product list with Notify buttons.
+- `waitlist.mjs` — public POST, IP-keyed daily rate limit (20/day), strict `productKey` regex, upserts into `product_waitlist`.
+- `admin-waitlist.mjs` — admin GET, per-product pending + notified **counts only** (no email addresses).
+- `admin-waitlist-notify.mjs` — admin POST, sends `sendWaitlistAvailableEmail` to entries with `notified_at IS NULL`, capped at 100/call.
+- `WaitlistsPanel` at the top of `AdminView`.
 
 ### Cart UX
-- `SwipeableRow` (`index.html` ~4911) — touch handlers + axis-claim gesture machine for left-swipe-to-delete on cart rows. Honors `prefers-reduced-motion`, handles `touchcancel` + multi-touch. Tunables in `CONFIG.SWIPE`.
-- Cart drawer also gets a swipe-right-to-dismiss gesture (`App` ~5012, look for `cartDragX` and `onCartDrawerTouchMove`). Same `CONFIG.SWIPE` tunables.
-- Cart icon's `-` button: tapping minus on `qty === 1` routes to `removeFromCart` (with undo toast) instead of being a no-op.
-- Cart drawer dismissal layered: X button, backdrop click, Escape key, swipe-right. Pick any.
-
-### Mobile polish
-- View-change scroll-reset: `useEffect` on `[view, journalSlug]` that calls `window.scrollTo(0, 0)` when `matchMedia('(max-width: 1023px)')` matches. Fixes the "tap Checkout from the bottom of home page → land on Checkout footer" footgun.
-- Defensive `overflow-x: hidden` + `max-width: 100vw` on `html` and `body` so a stray transformed descendant can't push past the viewport edge on iOS Safari.
-
-### Blanket preview
-The `BlanketLayoutPreview` component went through several iterations during the polish pass. Current state:
-- **7x7 grid** (was 5x5). More room for the cubes to breathe and for the personalization to sit cleanly between them.
-- **Both alphabet diagonals slope ↘**: upper at top-right corner region (positions `[4, 12, 20]` → row 0–2, col 4–6), lower at bottom-left corner region (positions `[28, 36, 44]` → row 4–6, col 0–2). Diagonally opposite corners.
-- **Year + name as 4-cell diagonals** parallel to their nearest alphabet: year at `[3, 11, 19, 27]`, name at `[21, 29, 37, 45]`. Each digit / letter renders in its own cell. Longer text distributes (e.g. a 6-char name gets `["Bo","bb","y",""]`).
-- **Pomegranate motifs** at 18 hand-picked empty cells, all on the even-(row+col) checkerboard so no two are ever edge-adjacent. Rendered as a CSS layered background — the pomegranate SVG is centered at 70% of cell size on top of the waffle tile.
-- **Waffle-weave fabric texture** as a 12px SVG tile background on every non-alphabet cell.
-- **Grid lines** between cells: the 1px gap between cells shows the container's grid-line color (rgba muted accent).
-- **Fringe edges** (top + bottom) when `size >= 80`: SVG tile of 3 short vertical strands repeated horizontally, wrapped around the canvas in a vertical stack. Bottom strip uses the SVG as-is; top strip applies `transform: scaleY(-1)` to make the strands point upward.
-- All cubes get a 2px margin inside their cell so they don't fill the cell edge-to-edge. Catalog thumbnails (`size < 80`) get a 1px margin so the smaller cubes don't get a margin that's larger than the cube itself.
+- `SwipeableRow` — touch gesture machine for left-swipe-to-delete on cart rows (honors `prefers-reduced-motion`, handles `touchcancel` + multi-touch; tunables in `CONFIG.SWIPE`).
+- Cart drawer (desktop) also has swipe-right-to-dismiss, X button, backdrop click, and Escape.
+- Cart `-` on `qty === 1` routes to `removeFromCart` (with undo toast).
 
 ### Security additions
-- `link-guest-order.mjs` requires `email_verified === true` on the JWT before claiming guest orders by email match. If Identity's email-confirmation gets toggled off, this prevents inheritance of someone else's guest orders.
-- `create-checkout-session.mjs` derives `userId` and `customerEmail` from the JWT (never from the body) and validates `gift` + `social_consent` shapes (caps message at 500 chars, whitelists platform IDs).
-- `avatar.mjs` keys avatar blobs with `${user.id}/avatar-${ts}-${nonce}.${ext}` (8-byte hex nonce) so leaking a user_id isn't enough to enumerate timestamps.
-- `avatar-get.mjs` + `order-photo-get.mjs` both UUID-shape-gate keys before any blob lookup, and set `X-Content-Type-Options: nosniff` on responses.
+- `link-guest-order.mjs` requires `email_verified === true` before claiming guest orders by email.
+- `create-checkout-session.mjs` derives `userId`/`customerEmail` from the JWT (never the body) and validates `gift` + `social_consent` shapes.
+- `avatar.mjs` keys blobs with a `<user_id>/avatar-<ts>-<nonce>.<ext>` (8-byte hex nonce).
+- `avatar-get.mjs` + `order-photo-get.mjs` UUID-shape-gate keys before any blob lookup and set `X-Content-Type-Options: nosniff`.
 
-### Email composers (`_lib/email.mjs`)
-Shared `PALETTE` and `baseUrl()` exported from `_lib/email.mjs` so composers (and `unsubscribe-gift-reminder.mjs`) don't redeclare the brand palette in every function.
+## Vite migration — COMPLETE
 
-## Vite migration (in progress)
+The single-file SPA migration to a Vite-built `src/` tree is **done and flipped to
+production**. `netlify.toml` now has `command = "npm ci && npm run build"` and
+`publish = "dist"`; the runtime Babel-Standalone + Tailwind CDN + React UMD chain is
+gone. The historical 10-phase plan (scaffold → static assets → data modules → lib
+modules → i18n → leaf components → widgets → domain components → App/entry flip →
+the netlify.toml flip) has been fully executed.
 
-The single-file SPA is being migrated to a Vite-built source tree, in
-phases, on the `claude/review-fix-website-d0rFL` branch. The point of
-the migration is to delete the runtime Babel-Standalone transpile +
-Tailwind CDN + React UMD dependency chain. Cost stays on Netlify's
-free Starter tier; backend (`netlify/functions/`) is NOT touched at any
-phase.
+A few **durable invariants** survived the migration and still bite if ignored:
 
-**Production is unaffected until the final flip.** Every intermediate
-checkpoint leaves the site building and `netlify.toml`'s `publish = "."`
-keeps serving the hand-edited `index.html` from the repo root. The new
-`dist/` output is gitignored and not deployed until the last phase
-flips `publish = "dist"` and `command = "npm ci && npm run build"`.
-
-### Files in place after Phase B (scaffold)
-
-| File | Role |
-| --- | --- |
-| `vite.config.mjs` | Vite + React plugin, `build.outDir = "dist"`, `assetsInlineLimit: 0` so base64 photo migration doesn't get auto-inlined, dev-server proxy to functions on :9999 |
-| `tailwind.config.mjs` | PostCSS Tailwind config, `content` scans `index.html` + `src/**/*` |
-| `postcss.config.mjs` | tailwindcss + autoprefixer |
-| `src/main.jsx` | Stub entry — renders one line into `#vite-root` if present, otherwise no-op |
-| `src/styles/index.css` | `@tailwind` directives; the giant inline `<style>` block from index.html will paste in here later |
-| `.gitignore` | New: ignores `node_modules`, `dist`, Playwright artifacts, `.env*` |
-
-`npm run build` works locally and produces `dist/`. `npm run dev`
-spins up the Vite dev server. Neither is on the deploy path yet.
-
-### Phase plan (10 phases; one or two per session)
-
-Each phase is a single commit that leaves the repo building. Order is
-low-risk → high-risk so a bad surprise late in the sequence doesn't
-require unwinding earlier work.
-
-1. **Done — Scaffold** — `vite.config.mjs`, Tailwind/PostCSS configs,
-   `src/main.jsx` stub, `.gitignore`, devDependencies added.
-2. **Static assets** — `git mv` `/img/*` → `/public/img/*`. Move
-   `manifest.webmanifest`, `robots.txt`, `sitemap.xml`, `og-image.jpg`,
-   favicons into `/public/`. Vite copies `/public/*` verbatim into
-   `dist/` so the URLs don't change.
-3. **Data modules (pure)** — extract `PRODUCT`, `CUSTOM_PRODUCTS`,
-   `CATALOG`, `CONFIG`, `SOCIAL_PLATFORMS`, `SHIPPING_CARRIERS`,
-   `JOURNAL_POSTS`, `LANGUAGES`, `TRANSLATIONS` from `index.html` into
-   `src/data/*.js`. Pure data, no React; zero behavior change.
-4. **Library modules** — extract the `auth`, `db`, `analytics`,
-   `cartId` (`mapLegacyId`), and `tracking` (`getTrackingUrl`)
-   wrappers into `src/lib/*.js`. Same — non-React.
-5. **i18n** — extract `LangContext`, `LanguageProvider`, `useT` into
-   `src/i18n/LangContext.jsx`.
-6. **Leaf components** — `Icon`, all the per-icon SVGs, `Skeleton`,
-   `HeartBurst`, `CollapsibleSection`, `SwipeableRow`, `ToastProvider`,
-   `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection`,
-   `CustomerPhotosSection`.
-7. **Widget components** — `BackToTopButton`, `TextUsWidget`,
-   `ChatAssistant`, `MobileBottomNav`, `ActiveOrderTopBar`,
-   `WaitlistModal`, `PolicyModal`.
-8. **Domain components (bottom-up)** —
-   - product: `BlanketLayoutPreview` → `ProductTemplate` →
-     `CustomProductCard` → `ProductShowcase`
-   - account: `OrderCard` → `OrderProgressTimeline` →
-     `SavedDesignsSection` → `OrderHistory` → `AccountView`
-   - admin: `AdminOrderRow` → `WaitlistsPanel` → `AdminView`
-   - journal: `JournalListView` → `JournalPostView` → `JournalView`
-   - home + checkout: `HomeView`, `TrackingForm`, `NewsletterForm`,
-     `CheckoutView`, `AuthDrawer`
-9. **App + entry flip** — move `<App>` body into `src/App.jsx`, move
-   the `ReactDOM.createRoot(...).render(...)` call into `src/main.jsx`.
-   Rewrite the now-minimal `index.html` to only contain `<head>`
-   metadata + `<div id="root"></div>` + `<script type="module"
-   src="/src/main.jsx"></script>`. **DO NOT yet flip netlify.toml.**
-10. **The flip** — update `netlify.toml`:
-    ```toml
-    [build]
-      publish = "dist"
-      command = "npm ci && npm run build"
-    ```
-    Run a real $0.50 test purchase on the deploy preview before merging.
-    On merge, Netlify rebuilds and the site is now Vite-served.
-
-### Loadbearing risks during migration
-
-- **The base64 IIFE photos** at `~line 1011` of `index.html`. The
-  values are referenced from the JSX as `<img src={IMG_HERO}>`.
-  When extracted, move every `IMG_*` constant to a real file in
-  `/public/img/` and switch the references to URL strings (the
-  CONFIG.ROTATED_GALLERY_INDEXES mechanism stays untouched).
-- **Dynamic Tailwind class names**. PostCSS Tailwind only emits
-  classes it can statically see. Before flipping production, grep:
-  ```
-  rg '`[^`]*\$\{[^}]*\}[^`]*`' index.html src/ | grep -E '(bg-|text-|border-)'
-  ```
-  Each match either gets a `safelist` entry in `tailwind.config.mjs`
-  or refactors to inline `style={{}}` (recommended for arbitrary
-  hex values like DMC palette colors).
-- **The cart-ID shape is load-bearing for Stripe**. `mapLegacyId`
-  in `CheckoutView` must match what `_lib/trusted-products.mjs`
-  recognizes. The E2E smoke test `Pay with Stripe POSTs to
-  create-checkout-session` is the safety net — keep it green.
-- **React 18 automatic batching** changed how `setState` flushes
-  inside touch handlers. If `SwipeableRow` feels laggier
-  post-migration, wrap state updates in `flushSync`.
-- **netlify-identity-widget stays loaded from
-  `identity.netlify.com`** via a `<script>` tag in `index.html`.
-  Do NOT switch to the npm package — Netlify's own confirmation
-  redirect handler expects `window.netlifyIdentity` from their CDN.
-
-### Anti-patterns (do NOT do during migration)
-
-- Do NOT introduce a state-management library.
-- Do NOT split `CONFIG` — it stays a single dial-board file.
-- Do NOT add a router library; the `/journal*` effect is enough.
-- Do NOT migrate to TypeScript in the same PR series.
-- Do NOT merge `package.json` with `netlify/functions/package.json`.
-- Do NOT touch `netlify/functions/` in any migration commit.
-- Do NOT change the cart-ID shape; the smoke test will catch it.
+- **Photos live in `/public/img/`**, referenced as URL strings (`<img src={...}>`).
+  The `CONFIG.ROTATED_GALLERY_INDEXES` rotation band-aid is unchanged.
+- **Dynamic Tailwind class names** must be statically visible to PostCSS, or
+  safelisted, or refactored to inline `style={{}}` (preferred for arbitrary hex
+  values like DMC palette colors).
+- **The cart-ID shape is load-bearing for Stripe** — `mapLegacyId` must match
+  `_lib/trusted-products.mjs`; the smoke test is the safety net.
+- **`netlify-identity-widget` stays loaded from `identity.netlify.com`** via a
+  `<script>` tag — do NOT switch to the npm package.
+- **`netlify/functions/` was never touched by the migration** and keeps its own
+  `package.json`. Don't merge it with the root one.
 
 ## TypeScript migration (in progress, gradual)
 
-The repo has a `tsconfig.json` and a `npm run typecheck` script. New code should be written as `.ts` / `.tsx`. Existing `.js` / `.jsx` files coexist via Vite's mixed-file support + tsconfig's `allowJs: true, checkJs: false` (so existing JS isn't yet type-checked, just allowed).
+The repo has a `tsconfig.json` and `npm run typecheck`. New code should be `.ts` / `.tsx`. Existing `.js` / `.jsx` coexist (`allowJs: true, checkJs: false`).
 
-### Already migrated to .ts (the foundation layer)
+Already migrated (foundation layer): `src/data/languages.ts`, `src/data/shippingCarriers.ts`, `src/data/socialConsentPlatforms.ts`, `src/lib/cartId.ts`, `src/lib/tracking.ts`, `src/lib/galleryRotation.ts`, `src/lib/designUrl.ts`.
 
-- `src/data/languages.ts`
-- `src/data/shippingCarriers.ts`
-- `src/data/socialConsentPlatforms.ts`
-- `src/lib/cartId.ts`
-- `src/lib/tracking.ts`
-- `src/lib/galleryRotation.ts`
-- `src/lib/designUrl.ts`
-
-Each exports proper types (e.g. `ShippingCarrier`, `DesignPickerState`, `ResolvedDesign`). Downstream `.jsx` files import these and get autocomplete + type-checking at the boundary — but only when the .jsx consumer is itself migrated to .tsx.
-
-### To continue the migration (recommended order)
-
-1. **Remaining data modules**: `customProducts.js`, `catalog.js`, `socialPlatforms.js`, `journalPosts.js`, `config.js`, `product.js`. Each is mechanical — define interfaces matching the object shape, append `: TheInterface` to the export, done.
-
-2. **`src/lib/auth.js` + `src/lib/db.js`**: These wrap external services (Identity, Functions). Define interfaces for the `User`, `Order`, `Profile`, `Address`, `SavedDesign`, etc. — these become the type contract for every component that displays one of these.
-
-3. **`src/lib/analytics.js`**: Trivial. One function.
-
-4. **`src/lib/errorReporting.js`**: Trivial.
-
-5. **`src/i18n/translations.js`**: Generate a TypeScript type for the translation key paths so `useT()` returns a `(key: TranslationKey, vars?: …) => string` instead of `any`. Lots of safety upside — typos in translation keys become compile errors. Some work to map the nested object to a dotted-path union type.
-
-6. **`src/components/icons.jsx` → `icons.tsx`**: Define `IconProps = { size?: number; strokeWidth?: number; className?: string; style?: CSSProperties }` once, every icon uses it.
-
-7. **Leaf components**: `Skeleton`, `FreeShippingProgress`, `PaymentMethodsRow`, `TestimonialsSection`, `CustomerPhotosSection`, `HeartBurst`, `CollapsibleSection`, `SwipeableRow`, `ToastProvider`. Define a Props interface, annotate.
-
-8. **Widget components**: `BackToTopButton`, `TextUsWidget`, `MobileBottomNav`, `ActiveOrderTopBar`, `PolicyModal`, `AuthDrawer`, `ChatAssistant`, `WaitlistModal`.
-
-9. **Domain components**: `TrackingForm`, `NewsletterForm`, `OrderCard`, `OrderHistory`, `SavedDesignsSection`, `AccountView`, `AdminOrderRow`, `AdminView`, `JournalView`, `ProductTemplate`, `BlanketLayoutPreview`, `CustomProductCard`, `ProductShowcase`, `CheckoutView`, `HomeView`.
-
-10. **Finally `App.jsx` → `App.tsx`** and `main.jsx` → `main.tsx`.
-
-11. **Flip `checkJs: true`** to retroactively type-check anything still on `.js`, OR set `allowJs: false` to force migration completion. Whichever.
-
-The migration is gradual on purpose — each file is independent. Run `npm run typecheck` after each file to confirm the migration is clean. If a type mismatch surfaces a real bug, fix it (don't widen the type to `any`).
+Recommended continuation order: remaining data modules → `auth`/`db` (define `User`/`Order`/`Profile`/… interfaces) → `analytics`/`errorReporting` → `translations` (dotted-path key union) → `icons` → leaf components → widget components → domain components → `App`/`main` → flip `checkJs: true`. Each file is independent; run `npm run typecheck` after each. If a type mismatch surfaces a real bug, fix it — don't widen to `any`.
 
 ## Working in this repo
 
-- Active development branch for documentation changes: `claude/add-claude-documentation-Vi3zH`.
-- Remote: `origin` points at `baghb004-cpu/lusik-and-sons-` (GitHub).
-- No README, no Cursor rules, no Copilot instructions exist — this file is the only ambient guidance.
+- Branch protection on `main` requires a PR with an approving review and passing
+  **Tests** + **Lighthouse** checks — commit via a branch + PR, don't push to `main`.
+- Remote: `origin` → `baghb004-cpu/Lusik-and-sons-` (GitHub).
+- This file is the primary ambient guidance. There is no README; if you add one,
+  keep it short and point at this file for depth.
