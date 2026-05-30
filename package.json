@@ -9,6 +9,7 @@
   },
   "scripts": {
     "gen:journal": "node scripts/gen-journal-posts.mjs",
+    "gen:sitemap": "node scripts/gen-journal-posts.mjs && node scripts/gen-sitemap.mjs",
     "predev": "node scripts/gen-journal-posts.mjs",
     "dev": "vite",
     "prebuild": "node scripts/gen-journal-posts.mjs",

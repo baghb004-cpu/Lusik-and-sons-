@@ -13,12 +13,23 @@
 import "./globals.css";
 import Script from "next/script";
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { Providers } from "./providers";
+import { SITE_URL, SITE_NAME } from "../src/lib/seo.js";
 
-export const metadata = {
-  title: "Lusik & Sons",
+// metadataBase lets per-route relative canonical/OpenGraph URLs resolve to the
+// production origin during SSR (Phase 7). The default title is a template so
+// each route's own title reads "<page> — Lusik & Sons".
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — Hand-Embroidered Armenian Alphabet Blankets | Cypress, CA`,
+    template: `%s — ${SITE_NAME}`,
+  },
   description:
     "Hand cross-stitched Armenian alphabet baby blankets, made to order in Cypress, California.",
+  // No global canonical — each route owns its own (a layout-level canonical
+  // would wrongly propagate "/" to every non-overriding page).
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
