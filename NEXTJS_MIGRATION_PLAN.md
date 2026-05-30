@@ -173,3 +173,25 @@ porting widely. Options:
 - **`next build` is not yet in the Tests workflow** — production rides Vite, so
   CI doesn't build Next. Worth adding a `next build` CI step so later phases
   can't silently break the Next build.
+
+### Phase 6 (backend) — done; ⚠️ carry-overs for the Phase 8 flip
+
+Phase 6 keeps `netlify/functions/*` as the API (no migration to `app/api`). A
+guard test (`netlify/functions/_lib/__tests__/migration-api-contract.test.mjs`)
+locks the contract: the `/api/stripe-webhook` rewrite, no `app/api` shadow,
+relative `CONFIG.FN_BASE`, functions intact. The webhook handler is already
+exercised by the existing signature unit tests; `db`/`auth` are framework-
+agnostic (relative `/.netlify/functions` base, no `import.meta`). The only
+piece that needs the real Netlify runtime — the live `/api/stripe-webhook`
+rewrite resolving under Next — is confirmed on the **Phase 8 deploy preview**.
+
+**When flipping `netlify.toml` to the Next runtime at Phase 8, also:**
+- **Remove the SPA-fallback rewrites** (`/journal`, `/journal/*`, `/shop`,
+  `/shop/*`, `/story`, `/workshop`, `/faq`, `/contact`, `/shipping`,
+  `/newsletter`, `/blanket`, `/bib`, `/admin`, `/account`, `/gallery` →
+  `/index.html`). They exist for the Vite SPA; under Next they would shadow the
+  file-based routes. **Keep** the `/api/stripe-webhook` rewrite, the
+  `[functions]` block, and the security/cache headers.
+- Re-point the `/assets/*` immutable-cache header at Next's `/_next/static/*`.
+- Verify `/api/stripe-webhook` end-to-end (Stripe CLI or a test event) on the
+  preview before merging the flip.
