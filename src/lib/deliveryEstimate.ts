@@ -10,7 +10,7 @@ const PRODUCTION_MAX_BIZ_DAYS = 10;
 const TRANSIT_MIN_BIZ_DAYS = 3;
 const TRANSIT_MAX_BIZ_DAYS = 5;
 
-function addBusinessDays(date, n) {
+function addBusinessDays(date: Date, n: number): Date {
   const d = new Date(date);
   let added = 0;
   while (added < n) {
@@ -21,11 +21,16 @@ function addBusinessDays(date, n) {
   return d;
 }
 
-function fmtMonthDay(d) {
+function fmtMonthDay(d: Date): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function getDeliveryEstimate(today = new Date()) {
+export interface DeliveryEstimate {
+  shipBy: string;
+  arrives: string;
+}
+
+export function getDeliveryEstimate(today: Date = new Date()): DeliveryEstimate {
   const shipMin = addBusinessDays(today, PRODUCTION_MIN_BIZ_DAYS);
   const shipMax = addBusinessDays(today, PRODUCTION_MAX_BIZ_DAYS);
   const arriveMin = addBusinessDays(shipMin, TRANSIT_MIN_BIZ_DAYS);

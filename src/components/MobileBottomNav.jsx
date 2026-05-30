@@ -24,7 +24,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Home, Store, BookOpen, ShoppingBag, Search, Mic, X } from "./icons.jsx";
-import { useKeyboardOffset } from "../lib/useKeyboardOffset.js";
+import { useKeyboardOffset } from "../lib/useKeyboardOffset";
 
 const SR = typeof window !== "undefined"
   ? (window.SpeechRecognition || window.webkitSpeechRecognition)
