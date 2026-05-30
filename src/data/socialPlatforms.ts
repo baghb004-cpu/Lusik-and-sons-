@@ -10,13 +10,29 @@
 // MIRRORED FROM index.html (~line 1879).
 // ============================================================
 
+import type { ComponentType, SVGProps } from "react";
 import {
   Instagram, Facebook, TikTok, Youtube, Pinterest, Threads, Etsy,
   XLogo, Snapchat, LinkedIn, Reddit, Tumblr,
   Discord, Twitch, Kick, Xbox, Playstation, PicsArt, Teams,
 } from "../components/icons.jsx";
 
-export const SOCIAL_PLATFORMS = {
+// One social-link entry. `Icon` is a lucide-style SVG component;
+// the icon set is loosely typed (icons.jsx is still JS), so we
+// accept any SVG-ish component here.
+export interface SocialPlatform {
+  Icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number; strokeWidth?: number }>;
+  label: string;
+  handle: string;
+  href: string;
+}
+
+export interface SocialPlatformTiers {
+  tier1: SocialPlatform[];
+  tier2: SocialPlatform[];
+}
+
+export const SOCIAL_PLATFORMS: SocialPlatformTiers = {
   tier1: [
     { Icon: Instagram, label: "Instagram", handle: "@lusikandsons",     href: "https://www.instagram.com/lusikandsons/" },
     { Icon: Facebook,  label: "Facebook",  handle: "Lusik & Sons",      href: "https://www.facebook.com/profile.php?id=61590162116561" },
