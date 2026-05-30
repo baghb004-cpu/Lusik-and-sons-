@@ -23,6 +23,7 @@ import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { LanguageProvider } from "../src/i18n/LangContext.jsx";
 import { ToastProvider } from "../src/components/ToastProvider.jsx";
+import { SiteProvider } from "../src/state/SiteProvider.jsx";
 import { auth } from "../src/lib/auth.js";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -39,7 +40,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <LanguageProvider>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <SiteProvider>{children}</SiteProvider>
+      </ToastProvider>
     </LanguageProvider>
   );
 }
