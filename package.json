@@ -34,7 +34,7 @@
     "@netlify/neon": "^0.1.0",
     "@sentry/react": "^10.54.0",
     "framer-motion": "^12.40.0",
-    "next": "^14.2.35",
+    "next": "^15.5.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "stripe": "^22.2.0"
@@ -52,6 +52,6 @@
     "serve": "^14.2.4",
     "tailwindcss": "^3.4.0",
     "typescript": "^6.0.3",
-    "vite": "^5.4.0"
+    "vite": "^8.0.14"
   }
 }
