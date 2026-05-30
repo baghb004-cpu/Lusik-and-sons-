@@ -23,7 +23,7 @@ import {
   categoryPath,
   productPath,
 } from "./data/catalog.js";
-import { SOCIAL_PLATFORMS } from "./data/socialPlatforms.js";
+import { SOCIAL_PLATFORMS } from "./data/socialPlatforms";
 import { JOURNAL_POSTS } from "./data/journalPosts.js";
 
 // Lib
