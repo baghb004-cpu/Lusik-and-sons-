@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
-// Phase 1 scaffold for the Vite -> Next.js migration. Inert until the
-// `next` dependency is installed (see NEXTJS_MIGRATION_PLAN.md). Production
-// is still served by the Vite build (netlify.toml publish = "dist") and is
-// NOT affected by anything in this file or the app/ directory.
+// Production build for Lusik & Sons. The site is served by Next.js on Netlify
+// via @netlify/plugin-nextjs (see netlify.toml). The legacy Vite entry
+// (index.html / src/main.jsx) is retained only for local tooling + the e2e
+// smoke suite and is not deployed.
 const nextConfig = {
   reactStrictMode: true,
 };

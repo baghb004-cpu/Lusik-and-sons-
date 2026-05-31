@@ -17,8 +17,10 @@ export function generateStaticParams(): Params[] {
   return params;
 }
 
-export function generateMetadata({ params }: { params: Params }): Metadata {
-  const pair = getProductBySlugs(params.category, params.product);
+// Next 15: `params` is async and must be awaited.
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const { category, product } = await params;
+  const pair = getProductBySlugs(category, product);
   if (!pair) return {};
   return pageMetadata({
     title: pair.product.name,
@@ -28,8 +30,9 @@ export function generateMetadata({ params }: { params: Params }): Metadata {
   });
 }
 
-export default function Page({ params }: { params: Params }) {
-  const pair = getProductBySlugs(params.category, params.product);
+export default async function Page({ params }: { params: Promise<Params> }) {
+  const { category, product } = await params;
+  const pair = getProductBySlugs(category, product);
   return (
     <>
       {pair && <script {...jsonLdScript(productJsonLd(pair.category, pair.product))} />}
