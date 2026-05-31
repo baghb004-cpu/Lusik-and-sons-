@@ -109,3 +109,30 @@ export function jsonLdScript(data) {
     dangerouslySetInnerHTML: { __html: JSON.stringify(data).replace(/</g, "\\u003c") },
   };
 }
+
+// Organization structured data — emitted once site-wide from the root layout
+// so search engines can build the brand entity (logo, locality, contact). No
+// `sameAs` yet (no social profiles are wired); add the array when they exist.
+export function organizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: absoluteUrl("/icon-512.png"),
+    description:
+      "Hand cross-stitched Armenian alphabet baby blankets and embroidered baby goods, made to order in Cypress, California.",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Cypress",
+      addressRegion: "CA",
+      addressCountry: "US",
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      email: "hello@lusikandsons.com",
+      telephone: "+1-760-874-2333",
+    },
+  };
+}
