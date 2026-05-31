@@ -1,21 +1,21 @@
 // ============================================================
 // errorReporting — Sentry initialization wrapper
 // ============================================================
-// Off by default; turns on when import.meta.env.VITE_SENTRY_DSN is
+// Off by default; turns on when NEXT_PUBLIC_SENTRY_DSN is
 // set in the Netlify environment. To enable:
 //
 //   1. Sign up at sentry.io (free tier: 5k errors/month).
 //   2. Create a "React" project. Copy the DSN
 //      (looks like https://abc123@o12345.ingest.sentry.io/67890).
 //   3. Netlify dashboard → Site → Environment → add
-//      VITE_SENTRY_DSN = <the DSN>
+//      NEXT_PUBLIC_SENTRY_DSN = <the DSN>
 //   4. Redeploy. Sentry is now wired up site-wide.
 //
-// Vite's `VITE_*` env-var convention: only env vars starting
-// with `VITE_` are exposed to the client bundle. Anything not
-// prefixed stays server-side, which is the right default for
-// secrets. The DSN is browser-side anyway (it has to be — the
-// browser sends events directly to Sentry), so VITE_ is correct.
+// Next's `NEXT_PUBLIC_*` env-var convention: only env vars
+// starting with `NEXT_PUBLIC_` are inlined into the client bundle.
+// Anything not prefixed stays server-side, which is the right
+// default for secrets. The DSN is browser-side anyway (it has to be
+// — the browser sends events directly to Sentry), so NEXT_PUBLIC_ is correct.
 //
 // What gets captured automatically:
 //   - Uncaught exceptions in any component (via ErrorBoundary
@@ -38,7 +38,7 @@
 import * as Sentry from "@sentry/react";
 
 export function initErrorReporting() {
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   if (!dsn) {
     // Not configured — explicit no-op. Don't log a warning;
     // unconfigured-Sentry is the expected state for development
@@ -49,7 +49,7 @@ export function initErrorReporting() {
     dsn,
     // Tag every event with the deploy context so issues from
     // production are distinguishable from deploy-preview noise.
-    environment: import.meta.env.VITE_NETLIFY_CONTEXT || "production",
+    environment: process.env.NEXT_PUBLIC_NETLIFY_CONTEXT || "production",
     // No performance traces — keeps the SDK to error reporting only,
     // which is what the free tier covers and what we actually want.
     // Bumping this to 0.1 later samples 10% of pageviews for traces.
