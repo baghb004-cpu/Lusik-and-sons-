@@ -3,10 +3,12 @@
 // ============================================================
 // NewsletterSignup — email-list signup form
 // ============================================================
-// Posts to Netlify Forms (`data-netlify="true"`), which Netlify
-// detects at build time from the hidden <form> at the top of
-// index.html. Submissions show up in Site → Forms in the Netlify
-// dashboard; Netlify also runs server-side honeypot + reCAPTCHA
+// Posts urlencoded data to Netlify Forms. Under the Next.js runtime
+// (@netlify/plugin-nextjs v5) forms can't be detected from rendered
+// pages, so the form is declared in the static `public/__forms.html`
+// detection target and this component POSTs to `/__forms.html` with a
+// matching `form-name`. Submissions show up in Site → Forms in the
+// Netlify dashboard; Netlify also runs server-side honeypot + reCAPTCHA
 // scoring before storing.
 //
 // `variant`:
@@ -45,7 +47,7 @@ export function NewsletterSignup({ variant = "footer" }) {
         "bot-field": bot,
         email: value,
       }).toString();
-      const res = await fetch("/", {
+      const res = await fetch("/__forms.html", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body,
@@ -82,8 +84,6 @@ export function NewsletterSignup({ variant = "footer" }) {
       <form
         name="newsletter"
         method="POST"
-        data-netlify="true"
-        netlify-honeypot="bot-field"
         onSubmit={handleSubmit}
         className={isHero ? "flex items-stretch gap-2 max-w-md mx-auto" : "flex items-stretch gap-2 max-w-md"}
       >
