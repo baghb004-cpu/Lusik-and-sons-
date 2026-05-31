@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Root package.json. Hosts the SPA build pipeline (Vite + Tailwind PostCSS \u2014 migration in progress, see CLAUDE.md \u00a7 Vite migration) and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external \u2014 DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
+  "description": "Root package.json. Hosts the Next.js (App Router) build + Tailwind PostCSS pipeline and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external \u2014 DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
   "engines": {
     "node": ">=20"
   },

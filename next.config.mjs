@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 // Production build for Lusik & Sons. The site is served by Next.js on Netlify
-// via @netlify/plugin-nextjs (see netlify.toml). The legacy Vite entry
-// (index.html / src/main.jsx) is retained only for local tooling + the e2e
-// smoke suite and is not deployed.
+// via @netlify/plugin-nextjs (see netlify.toml). The site is built and served
+// entirely by Next.js; the old Vite build (index.html / src/main.jsx / App.jsx)
+// has been retired and removed.
 const nextConfig = {
   reactStrictMode: true,
 };
