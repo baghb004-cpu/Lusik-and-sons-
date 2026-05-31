@@ -51,6 +51,11 @@ export function MobileBottomNav({
   const isSearch = view === "search";
   const [inputFocused, setInputFocused] = useState(false);
   const [listening, setListening] = useState(false);
+  // SSR-safe SpeechRecognition support flag. The module-level `SR` is null on
+  // the server but truthy in the browser, so gating the mic button directly on
+  // it rendered the button on the client only → hydration mismatch (React #418).
+  // Start false (matches the server), then flip after mount.
+  const [sttSupported, setSttSupported] = useState(false);
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -65,6 +70,7 @@ export function MobileBottomNav({
   }, [isSearch]);
 
   useEffect(() => {
+    setSttSupported(!!SR);
     return () => { try { recognitionRef.current?.abort(); } catch {} };
   }, []);
 
@@ -132,10 +138,13 @@ export function MobileBottomNav({
   const suppressClickRef = useRef(false);
   const suppressTimerRef = useRef(0);
 
-  const reducedMotion = useMemo(() => (
-    typeof window !== "undefined"
-      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-  ), []);
+  // SSR-safe: false on the server and the client's first render, then read the
+  // real preference after mount so a reduced-motion machine doesn't mismatch.
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
 
   const fireTab = useCallback((idx) => {
     const tab = tabs[idx];
@@ -285,7 +294,7 @@ export function MobileBottomNav({
           <span style={{ fontSize: "1.2rem", fontWeight: 300, lineHeight: 1 }}>&times;</span>
         </button>
       )}
-      {SR && (
+      {sttSupported && (
         <button
           type="button"
           onClick={listening ? () => { try { recognitionRef.current?.stop(); } catch {} setListening(false); } : startVoice}
