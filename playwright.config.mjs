@@ -1,10 +1,15 @@
 // ============================================================
 // Playwright config — E2E smoke tests against the Next.js build
 // ============================================================
-// TEMPORARY: webServer runs `next dev` (not next start) so React's
-// hydration errors surface NON-MINIFIED in the console — the e2e
-// "loads without console errors" test then reports the exact element.
-// Revert to `next build && next start` once the hydration mismatch is fixed.
+// Runs the e2e suite the same way Netlify serves the site: a real
+// production build (`next build`) served by `next start`. This is what's
+// deployed, so the tests exercise the shipped output (pre-compiled routes,
+// minified bundles, production React) rather than the dev server.
+//
+// `next:build` runs its `prenext:build` hook first (generates
+// src/data/journalPostsData.js), so the search index is present before the
+// build. The server gets a generous boot budget (build + start) via the
+// webServer timeout.
 // ============================================================
 import { defineConfig, devices } from "@playwright/test";
 
@@ -15,8 +20,8 @@ export default defineConfig({
   testDir: "./tests/e2e",
   workers: 1,
   reporter: process.env.CI ? "github" : "list",
-  retries: 0,
-  timeout: 60_000,
+  retries: 2,
+  timeout: 300_000,
   expect: { timeout: 15_000 },
   use: {
     baseURL: BASE_URL,
@@ -27,9 +32,10 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile-chromium", use: { ...devices["Pixel 5"] } },
   ],
   webServer: {
-    command: `npm run next:dev -- --port ${PORT}`,
+    command: `npm run next:build && npx next start --port ${PORT}`,
     port: PORT,
     reuseExistingServer: !process.env.CI,
     stdout: "ignore",
