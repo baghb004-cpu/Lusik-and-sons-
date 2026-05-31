@@ -31,6 +31,7 @@
 // ============================================================
 
 import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 const DESKTOP_INTERVAL_MS = 1500;
 const TOUCH_INTERVAL_MS   = 4000;
@@ -111,18 +112,18 @@ export function CategoryCardImage({ images, alt = "", className = "" }) {
       onMouseLeave={() => setHovering(false)}
     >
       {list.map((src, i) => (
-        <img
+        <Image
           key={src}
           src={src}
           alt={i === 0 ? alt : ""}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover"
           style={{
             opacity: i === idx ? 1 : 0,
             transition: prefersReduced ? "none" : `opacity ${FADE_MS}ms ease-in-out`,
           }}
-          loading={i === 0 ? "eager" : "lazy"}
-          fetchPriority={i === 0 ? "high" : "low"}
-          decoding="async"
+          priority={i === 0}
           aria-hidden={i !== idx}
         />
       ))}

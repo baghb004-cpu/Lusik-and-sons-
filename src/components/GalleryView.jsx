@@ -22,6 +22,7 @@
 // ============================================================
 
 import React, { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 // The full list of photo filenames in /img/gallery/. Generated
 // from the source archive — see SLIDESHOW_PHOTOS_PROCESSING.md.
@@ -133,15 +134,15 @@ export function GalleryView() {
             <button
               key={p.src}
               onClick={() => setLightbox(p.src)}
-              className="group aspect-square overflow-hidden bg-[rgba(176,136,66,0.04)]"
+              className="group aspect-square overflow-hidden bg-[rgba(176,136,66,0.04)] relative"
               aria-label={`Open ${p.label} photo`}
             >
-              <img
+              <Image
                 src={p.src}
                 alt={`${p.label} — Lusik's archive`}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                fill
+                sizes="(max-width: 768px) 50vw, 20vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </button>
           ))}

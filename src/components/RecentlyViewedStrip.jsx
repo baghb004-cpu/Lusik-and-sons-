@@ -22,6 +22,7 @@
 // ============================================================
 
 import React from "react";
+import Image from "next/image";
 
 export function RecentlyViewedStrip({ items = [], onTap, onClear, heading = "Recently Viewed", large = false }) {
   if (!items || items.length === 0) return null;
@@ -76,19 +77,19 @@ export function RecentlyViewedStrip({ items = [], onTap, onClear, heading = "Rec
             style={{ width: 140 }}
           >
             <div
-              className="overflow-hidden rounded-2xl"
+              className="overflow-hidden rounded-2xl relative"
               style={{
                 aspectRatio: "1 / 1",
                 background: "var(--bg-subtle, #F5EFE3)",
               }}
             >
               {item.image ? (
-                <img
+                <Image
                   src={item.image}
                   alt={item.name || ""}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
+                  fill
+                  sizes="140px"
+                  className="object-cover"
                 />
               ) : null}
             </div>

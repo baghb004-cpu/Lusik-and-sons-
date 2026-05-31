@@ -23,6 +23,7 @@
 // ============================================================
 
 import React from "react";
+import Image from "next/image";
 
 const CUSTOMER_PHOTOS = [
   // ⚠️ TODO_LUSIK: replace these with real customer photos once
@@ -51,13 +52,12 @@ export function CustomerPhotosSection() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
         {photos.map((p, i) => (
           <figure key={i} className="relative group overflow-hidden" style={{ background: "var(--bg-subtle)", aspectRatio: "4 / 5" }}>
-            <img
+            <Image
               src={p.src}
               alt={p.alt || `Finished piece in a customer's home`}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              style={{ display: "block" }}
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
             />
             {(p.handle || p.city) && (
               <figcaption className="absolute inset-x-0 bottom-0 p-2 lg:p-3 text-[0.65rem] tracking-[0.15em] uppercase" style={{
