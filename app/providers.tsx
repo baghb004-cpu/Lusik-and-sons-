@@ -3,22 +3,14 @@
 // ============================================================
 // Providers — the single client boundary for the Next build
 // ============================================================
-// Vite→Next migration, Phase 3. ONE "use client" boundary that mounts the
-// app-wide React context providers, so the existing client components
-// (which call useT() / useToast() and the auth wrapper) work unchanged once
-// they're ported in later phases. The imported .jsx providers don't need
-// their own "use client" directive — being imported by this client module
+// ONE "use client" boundary that mounts the app-wide React context providers
+// (language, toasts, site/cart/auth state). The imported .jsx providers don't
+// need their own "use client" directive — being imported by this client module
 // already places them (and their subtree) in the client bundle.
 //
-// Deliberately NOT mounted here yet:
-//   • Sentry (src/lib/errorReporting) and analytics (src/lib/analytics) read
-//     Vite's `import.meta.env` / inject scripts from App.jsx effects. Those
-//     are Vite-coupled and move over with the App port (Phase 5); pulling
-//     them in now would drag `import.meta.env` into the Next bundle early.
-//
-// Nothing here is served in production yet — Vite still builds the site
-// (netlify.toml publish = "dist"), and the Vite entry (src/main.jsx) is
-// untouched.
+// On mount it wires the Netlify Identity widget into the auth wrapper and, if a
+// Sentry DSN is configured, initializes error monitoring. Both are no-ops when
+// their dependency isn't present, so the app always renders.
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { LanguageProvider } from "../src/i18n/LangContext.jsx";
@@ -35,6 +27,18 @@ export function Providers({ children }: { children: ReactNode }) {
       auth.init();
     } catch {
       /* Identity unavailable — the site still renders without auth. */
+    }
+
+    // Initialize error monitoring (Sentry). Off until NEXT_PUBLIC_SENTRY_DSN is
+    // set in the Netlify environment; dynamically imported so the Sentry SDK is
+    // only shipped to the browser once a DSN is actually configured (no bundle
+    // cost in the default, unconfigured state).
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      import("../src/lib/errorReporting")
+        .then(({ initErrorReporting }) => initErrorReporting())
+        .catch(() => {
+          /* monitoring unavailable — never block the app on it */
+        });
     }
   }, []);
 

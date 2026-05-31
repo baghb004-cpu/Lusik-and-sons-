@@ -1,6 +1,6 @@
 {
   "$schema": "https://github.com/GoogleChrome/lighthouse-ci/raw/main/docs/configuration.md",
-  "_comment_intro": "Lighthouse CI config. Drives the GitHub Actions workflow at .github/workflows/lighthouse.yml. Runs against the built dist/ via `vite preview` after `npm run build`.",
+  "_comment_intro": "Lighthouse CI config. Drives the GitHub Actions workflow at .github/workflows/lighthouse.yml. Runs against the production Next.js build via `next start` after `next build`.",
 
   "ci": {
     "collect": {
