@@ -15,6 +15,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { CONFIG } from "../data/config.js";
 import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
@@ -493,16 +494,16 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   {product.gallery.map((src, i) => {
                     const near = Math.abs(i - activeImg) <= 2;
                     return (
-                      <div key={i} className="min-w-full h-full flex items-center justify-center">
+                      <div key={i} className="min-w-full h-full flex items-center justify-center relative">
                         {near && (
-                          <img
+                          <Image
                             src={src}
                             alt={product.name}
-                            className="w-full h-full object-cover pointer-events-none"
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 50vw"
+                            className="object-cover pointer-events-none"
                             style={galleryRotationStyle(i)}
-                            loading={i === activeImg ? "eager" : "lazy"}
-                            fetchPriority={i === activeImg ? "high" : "auto"}
-                            decoding="async"
+                            priority={i === activeImg}
                             draggable={false}
                           />
                         )}
@@ -997,12 +998,12 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 the inputs above rather than dominating the section. */}
             <div className="mt-4 flex items-start gap-3 p-3" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.18)" }}>
               <div className="w-24 h-24 lg:w-28 lg:h-28 flex-shrink-0 overflow-hidden" style={{ border: "1px solid rgba(26,22,18,0.08)" }}>
-                <img
+                <Image
                   src={PHOTO_DATE_DETAIL}
+                  width={112}
+                  height={112}
                   alt="Real example — OLEN stitched at the center of the blanket with 2026 on the empty waffle square diagonally above, on the middle line between the two alphabet diagonals"
                   className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
                 />
               </div>
               <div className="flex-1 min-w-0">

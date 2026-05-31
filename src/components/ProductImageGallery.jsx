@@ -27,6 +27,7 @@
 // ============================================================
 
 import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, ZoomIn, X } from "./icons.jsx";
 import { useSwipe } from "../lib/useSwipe.js";
 import { useGlideCarousel } from "../lib/useGlideCarousel.js";
@@ -175,15 +176,15 @@ export function ProductImageGallery({
           {visibleIndices.map((rawI, vi) => {
             const near = Math.abs(vi - safeIdx) <= 2;
             return (
-              <div key={rawI} className="min-w-full h-full flex items-center justify-center">
+              <div key={rawI} className="min-w-full h-full flex items-center justify-center relative">
                 {near && (
-                  <img
+                  <Image
                     src={images[rawI]}
                     alt={alt}
-                    className="w-full h-full object-contain pointer-events-none"
-                    loading={vi === safeIdx ? "eager" : "lazy"}
-                    fetchPriority={vi === safeIdx ? "high" : "auto"}
-                    decoding="async"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-contain pointer-events-none"
+                    priority={vi === safeIdx}
                     draggable={false}
                   />
                 )}
