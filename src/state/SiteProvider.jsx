@@ -39,6 +39,13 @@ export function SiteProvider({ children }) {
   // ── Cart ────────────────────────────────────────────────
   const [cart, setCart] = useState([]);
   const [buyNowItem, setBuyNowItem] = useState(null);
+  // "Open the cart" signal. Adding to the bag should surface the cart (drawer
+  // on desktop, /cart page on mobile) — parity with the old App.jsx openCart().
+  // The cart-open *UI* lives in SiteChrome, so we expose a monotonically
+  // increasing counter it watches; bumping it on each add re-triggers the open
+  // even when the same item is added twice.
+  const [cartOpenSignal, setCartOpenSignal] = useState(0);
+  const requestOpenCart = useCallback(() => setCartOpenSignal((n) => n + 1), []);
 
   const cartCount = useMemo(() => cart.reduce((s, i) => s + (Number(i.qty) || 0), 0), [cart]);
   const subtotal  = useMemo(() => cart.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0), [cart]);
@@ -52,13 +59,15 @@ export function SiteProvider({ children }) {
       if (existing) return c.map((i) => (i.id === item.id ? { ...i, qty: i.qty + qty } : i));
       return [...c, item];
     });
-  }, []);
+    requestOpenCart();
+  }, [requestOpenCart]);
 
   const addCustomToCart = useCallback((payload) => {
     haptic(12);
     track("add-to-cart", { kind: "custom", productKey: payload.productKey });
     setCart((c) => [...c, buildCustomCartItem(payload)]);
-  }, []);
+    requestOpenCart();
+  }, [requestOpenCart]);
 
   // Buy-now sets the single transient item; the calling route pushes /checkout.
   const buyNowBlanket = useCallback((color, qty = 1, selection = null, layout = null, colors = null) => {
@@ -175,9 +184,11 @@ export function SiteProvider({ children }) {
   const value = useMemo(() => ({
     cart, setCart, cartCount, subtotal, buyNowItem, setBuyNowItem,
     addToCart, addCustomToCart, buyNowBlanket, buyNowCustom, removeFromCart, updateQty, setQtyExact,
+    cartOpenSignal, requestOpenCart,
     user, profile, setProfile, isAdmin, authReady, signOut,
   }), [cart, cartCount, subtotal, buyNowItem, addToCart, addCustomToCart, buyNowBlanket, buyNowCustom,
-       removeFromCart, updateQty, setQtyExact, user, profile, isAdmin, authReady, signOut]);
+       removeFromCart, updateQty, setQtyExact, cartOpenSignal, requestOpenCart,
+       user, profile, isAdmin, authReady, signOut]);
 
   return <SiteContext.Provider value={value}>{children}</SiteContext.Provider>;
 }
