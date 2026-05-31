@@ -69,11 +69,11 @@ export default defineConfig({
   // Build cost: ~2 seconds. Wait timeout bumped to 90s for CI cold
   // cache (where npm just installed and Vite has nothing primed).
   webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    command: `npm run next:build && npx next start --port ${PORT}`,
     port: PORT,
     reuseExistingServer: !process.env.CI,
     stdout: "ignore",
     stderr: "pipe",
-    timeout: 90_000,
+    timeout: 300_000,
   },
 });

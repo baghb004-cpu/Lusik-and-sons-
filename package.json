@@ -3,18 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Root package.json. Hosts the SPA build pipeline (Vite + Tailwind PostCSS — migration in progress, see CLAUDE.md § Vite migration) and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external — DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
+  "description": "Root package.json. Hosts the SPA build pipeline (Vite + Tailwind PostCSS \u2014 migration in progress, see CLAUDE.md \u00a7 Vite migration) and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external \u2014 DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "gen:journal": "node scripts/gen-journal-posts.mjs",
     "gen:sitemap": "node scripts/gen-journal-posts.mjs && node scripts/gen-sitemap.mjs",
-    "predev": "node scripts/gen-journal-posts.mjs",
-    "dev": "vite",
-    "prebuild": "node scripts/gen-journal-posts.mjs",
-    "build": "vite build",
-    "preview": "vite preview",
     "prenext:dev": "node scripts/gen-journal-posts.mjs",
     "next:dev": "next dev",
     "prenext:build": "node scripts/gen-journal-posts.mjs",
@@ -46,13 +41,11 @@
     "@types/node": "^25.9.1",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
-    "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.5.15",
     "serve": "^14.2.4",
     "tailwindcss": "^3.4.0",
-    "typescript": "^6.0.3",
-    "vite": "^5.4.0"
+    "typescript": "^6.0.3"
   },
   "overrides": {
     "postcss": "^8.5.15",
