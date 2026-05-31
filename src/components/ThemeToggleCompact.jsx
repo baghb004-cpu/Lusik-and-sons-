@@ -11,17 +11,25 @@
 // is the quick toggle.)
 // ============================================================
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Sun, Moon } from "./icons.jsx";
 import { useTheme } from "../lib/useTheme.js";
 
 export function ThemeToggleCompact() {
   const [pref, setTheme] = useTheme();
+  // SSR-safe: useTheme reads the stored preference on the client (e.g. "dark")
+  // while the server always renders "system", and the resolved-dark check below
+  // reads matchMedia — both differ from the server, which would mismatch the
+  // toggle's position/aria-label on hydration (React #418). Render the stable
+  // default (light) until mounted, then resolve the real theme.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const isDark =
-    pref === "dark" ||
-    (pref === "system" &&
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+    mounted &&
+    (pref === "dark" ||
+      (pref === "system" &&
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-color-scheme: dark)").matches));
 
   return (
     <button

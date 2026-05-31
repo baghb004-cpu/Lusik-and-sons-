@@ -46,7 +46,14 @@ test.describe("home page", () => {
     watchForConsoleErrors(page, errors);
 
     await page.goto("/");
-    await expect(page.getByText("Lusik & Sons").first()).toBeVisible();
+    // "Lusik & Sons" renders in several places — the desktop top-nav (hidden at
+    // mobile breakpoints via lg:), the footer (desktop-only), and the home
+    // content footer line. Assert a VISIBLE instance so this liveness check
+    // holds on both the desktop and mobile projects (plain .first() resolved to
+    // the hidden desktop-nav brand on mobile and timed out).
+    await expect(
+      page.getByText("Lusik & Sons").filter({ visible: true }).first()
+    ).toBeVisible();
     // The hero CTA — present on every home render, good liveness signal.
     // Copy changed in the narrative-rewrite pass: was "Shop the blanket",
     // now "See what Lusik makes" (and the button now navigates to /shop

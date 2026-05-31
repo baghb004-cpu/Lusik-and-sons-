@@ -29,30 +29,33 @@ export function TextUsWidget() {
 
   // canSms is best-effort: we assume mobile-touch devices have an SMS app.
   // Wrong guesses are cheap because we always also show the phone number.
-  const [canSms] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia?.("(pointer: coarse)").matches ?? false;
-  });
+  // SSR-safe: start false (the server value) so the server render and the
+  // client's first render agree, then read the real capability after mount.
+  const [canSms, setCanSms] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    setCanSms(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
 
   // Track "is this a desktop visit." The expanded-by-default pill state and the
   // auto-collapse-on-idle behavior only run on desktop. Mobile users always
   // see the simple circular bubble.
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === "undefined") return false;
-    // Desktop = fine pointer + wide enough viewport that the expanded pill won't
-    // crowd the layout. The 768px threshold matches Tailwind's md: breakpoint
-    // used elsewhere on the site.
-    return (
-      window.matchMedia?.("(pointer: fine)").matches &&
-      window.matchMedia?.("(min-width: 768px)").matches
-    ) ?? false;
-  });
+  // Desktop = fine pointer + wide enough viewport that the expanded pill won't
+  // crowd the layout. The 768px threshold matches Tailwind's md: breakpoint
+  // used elsewhere on the site.
+  //
+  // SSR-safe: must start false so the server (which renders null below) and the
+  // client's first render agree — reading matchMedia here would make the client
+  // render the FAB while the server rendered nothing (React hydration error
+  // #418). The effect below syncs the real value immediately after mount.
+  const [isDesktop, setIsDesktop] = useState(false);
 
   // Listen for viewport size changes so a desktop user resizing into mobile
   // viewport (or rotating a tablet) gets the right widget shape.
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(pointer: fine) and (min-width: 768px)");
+    setIsDesktop(mq.matches); // sync the real value right after hydration
     const onChange = (e) => setIsDesktop(e.matches);
     mq.addEventListener?.("change", onChange);
     return () => mq.removeEventListener?.("change", onChange);
@@ -84,12 +87,16 @@ export function TextUsWidget() {
   // (Session-scoped via sessionStorage; not persisted across visits.)
   const PROACTIVE_DELAY_MS = 45000;
   const [proactiveOpen, setProactiveOpen] = useState(false);
-  const [proactiveDismissed, setProactiveDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
+  // SSR-safe: start false on the server and the client's first render, then
+  // read the per-session dismissal flag from sessionStorage after mount.
+  const [proactiveDismissed, setProactiveDismissed] = useState(false);
+  useEffect(() => {
     try {
-      return sessionStorage.getItem("lusik_proactive_dismissed_v1") === "1";
-    } catch { return false; }
-  });
+      if (sessionStorage.getItem("lusik_proactive_dismissed_v1") === "1") {
+        setProactiveDismissed(true);
+      }
+    } catch { /* sessionStorage blocked — leave as not-dismissed */ }
+  }, []);
 
   useEffect(() => {
     if (proactiveDismissed) return;
