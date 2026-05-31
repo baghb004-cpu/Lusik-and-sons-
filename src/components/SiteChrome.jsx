@@ -76,6 +76,19 @@ export function SiteChrome({ children }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [cartOpen]);
 
+  // Adding to the bag surfaces the cart — the slide-in drawer on desktop, the
+  // full /cart page on mobile (where the drawer would fight the bottom nav).
+  // Parity with the old App.jsx openCart(): SiteProvider bumps cartOpenSignal
+  // on every add; 0 is the initial value (no add yet), so we ignore it.
+  useEffect(() => {
+    if (!site.cartOpenSignal) return;
+    const isMobile =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(max-width: 1023px)").matches;
+    if (isMobile) nav.goCart();
+    else setCartOpen(true);
+  }, [site.cartOpenSignal]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const navView = searchOpen ? "search" : view;
   const showHeader = !searchOpen && view !== "cart" && !isSection && view !== "checkout" && view !== "admin";
   const showBottomNav = !["checkout", "admin"].includes(view);
