@@ -9,8 +9,10 @@ export function generateStaticParams(): Params[] {
   return (Object.values(CATALOG) as any[]).map((c) => ({ category: c.slug }));
 }
 
-export function generateMetadata({ params }: { params: Params }): Metadata {
-  const category = getCategoryBySlug(params.category);
+// Next 15: `params` is async and must be awaited.
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const { category: categorySlug } = await params;
+  const category = getCategoryBySlug(categorySlug);
   if (!category) return {};
   return pageMetadata({
     title: category.label,
