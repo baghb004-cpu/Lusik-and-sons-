@@ -63,9 +63,20 @@ X-Content-Type-Options = "nosniff"
 Referrer-Policy = "strict-origin-when-cross-origin"
 
 # ============================================================
-# CACHE — point immutable caching at Next's hashed static assets
+# CACHE
 # ============================================================
+# Next's hashed static assets — safe to cache forever (immutable).
 [[headers]]
 for = "/_next/static/*"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
+
+# Product + editorial imagery (the bulk of page weight). Photos live at
+# fixed /img/* paths and rarely change, so cache aggressively but keep
+# stale-while-revalidate so a swapped photo still refreshes within a day
+# instead of being frozen for a year. Big win for repeat-visit load time
+# and bandwidth without sacrificing the ability to update a photo.
+[[headers]]
+for = "/img/*"
+[headers.values]
+Cache-Control = "public, max-age=86400, stale-while-revalidate=2592000"
