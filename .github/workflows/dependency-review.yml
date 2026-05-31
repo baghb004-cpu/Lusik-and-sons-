@@ -1,0 +1,26 @@
+# ============================================================
+# Dependency Review — supply-chain gate on pull requests
+# ============================================================
+# Scans dependency manifest changes in a PR and fails if a newly
+# introduced/updated package carries a known HIGH+ severity advisory
+# or an incompatible license. Complements Dependabot (which opens the
+# fix PRs) by blocking risky additions before they reach main.
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
