@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Netlify Forms detection</title>
+  </head>
+  <body>
+    <!--
+      Static Netlify Forms detection target for the Next.js runtime.
+      @netlify/plugin-nextjs v5 cannot detect forms from Next's rendered
+      pages (they aren't emitted as static HTML), so each Netlify form is
+      declared here instead. The live React form (src/components/
+      NewsletterSignup.jsx) POSTs urlencoded data to /__forms.html with a
+      matching `form-name`. Field names MUST match the live form.
+      See https://docs.netlify.com/manage/forms/setup/
+    -->
+    <form name="newsletter" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="newsletter" />
+      <input type="text" name="bot-field" />
+      <input type="email" name="email" />
+    </form>
+  </body>
+</html>

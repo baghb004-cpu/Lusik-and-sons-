@@ -1,303 +1,71 @@
 # ============================================================
-# Lusik & Sons — Netlify project config
-# ============================================================
-# This file tells Netlify two things:
-#   1. Where the serverless functions live (netlify/functions).
-#   2. That the site itself is just static files at the repo root
-#      (no build command — index.html is hand-edited, period).
-#
-# Everything else is a Netlify dashboard concern:
-#   - Netlify Identity is enabled in Site settings -> Identity
-#   - Netlify Database connection string is auto-injected as
-#     NETLIFY_DATABASE_URL by `netlify database init`
-#   - Stripe keys (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
-#     STRIPE_PRICE_*) are set in Site settings -> Environment
+# Lusik & Sons — Netlify project config (Next.js runtime)
 # ============================================================
 
 [build]
-  # Vite migration complete (Phase 10 flip). The SPA is now built from
-  # src/ into dist/ on every deploy. Netlify CI runs `npm ci` to install
-  # root dependencies (Vite, React, Tailwind PostCSS, etc.) then
-  # `npm run build` (= `vite build`) to produce dist/. Functions are
-  # still installed from their own netlify/functions/package.json
-  # independently.
-  publish     = "dist"
-  command     = "npm ci && npm run build"
+# Next build. prenext:build regenerates the journal data first (see
+# package.json). publish points at Next's build output (.next); the
+# @netlify/plugin-nextjs runtime transforms it into the served output +
+# wires SSR/ISR + the image CDN. (Leaving publish unset made Netlify fall
+# back to the repo root, which the Next plugin rejects as "same as base".)
+publish = ".next"
+command = "npm ci && npm run next:build"
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"
 
 [functions]
-  directory = "netlify/functions"
-  # Functions use Node 20+. `@netlify/neon` and `@netlify/blobs` need it.
-  node_bundler = "esbuild"
-  # The Stripe SDK uses dynamic requires that esbuild can't statically
-  # analyze. Without this line, esbuild marks `stripe` as external and
-  # the bundle ships without it — at runtime the function fails with
-  # "Cannot find package 'stripe'" and every checkout 502s. Listing
-  # it here tells Netlify to package the real `stripe` node_modules
-  # folder alongside the bundle so the runtime import resolves.
-  external_node_modules = ["stripe"]
+directory = "netlify/functions"
+node_bundler = "esbuild"
+external_node_modules = ["stripe"]
 
-# Pretty URL for the Stripe webhook so the dashboard URL is clean.
+# ── KEEP: Stripe webhook pretty URL (framework-agnostic) ────
 [[redirects]]
-  from   = "/api/stripe-webhook"
-  to     = "/.netlify/functions/stripe-webhook"
-  status = 200
+from = "/api/stripe-webhook"
+to = "/.netlify/functions/stripe-webhook"
+status = 200
 
-# SPA fallback for the journal — `/journal` and `/journal/<slug>`
-# need to serve index.html so the React app can handle them in
-# the browser. Without this, Netlify would 404 on direct visits
-# to a post URL (e.g. someone clicking a shared link). The 200
-# status is the "rewrite" form — the browser keeps the original
-# URL in the bar while the static file is served, which is what
-# we want for SEO + JS routing.
-#
-# Scoped to /journal specifically (not a catch-all /*) so any
-# typo'd URL still 404s properly and search engines learn it's
-# a dead page.
+# ── Legacy product shortcuts → canonical Next routes (301) ──
 [[redirects]]
-  from   = "/journal"
-  to     = "/index.html"
-  status = 200
-
+from = "/blanket"
+to = "/shop/blankets/armenian-alphabet-blanket"
+status = 301
 [[redirects]]
-  from   = "/journal/*"
-  to     = "/index.html"
-  status = 200
+from = "/bib"
+to = "/shop/bibs/baby-bib"
+status = 301
 
-# SPA fallback for /shop/* — same pattern as the journal rules.
-# Without this, Netlify would 404 on direct visits to a category
-# or product URL (someone clicking a shared link). The 200 status
-# is the "rewrite" form — the browser keeps the original URL in
-# the bar while index.html is served, which is what we want for
-# SEO + the React app's history-API router.
-[[redirects]]
-  from   = "/shop"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/shop/*"
-  to     = "/index.html"
-  status = 200
-
-# SPA fallback for the section pages promoted off the home page (Our Story,
-# Workshop, FAQ, Contact, Shipping, Newsletter). Same rewrite pattern as the
-# journal/shop rules so direct visits + shared links resolve and the React
-# history-API router renders the right page. Scoped to the exact slugs (not a
-# catch-all) so typos still 404 honestly.
-[[redirects]]
-  from   = "/story"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/workshop"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/faq"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/contact"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/shipping"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/newsletter"
-  to     = "/index.html"
-  status = 200
-
-# Legacy SPA fallback shortcuts. These predate the /shop hierarchy
-# and remain so any inbound link bookmarked under the old URLs
-# still resolves to index.html and the SPA handles the path. New
-# product URLs should use /shop/<category>/<product-slug>.
-[[redirects]]
-  from   = "/blanket"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/bib"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/admin"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/account"
-  to     = "/index.html"
-  status = 200
-
-[[redirects]]
-  from   = "/gallery"
-  to     = "/index.html"
-  status = 200
-
-# Don't redirect /index.html or static files — the default behavior already
-# serves them correctly from `publish`.
+# NOTE: every other redirect from the Vite config is intentionally REMOVED.
+# Next's file-based routing now owns /, /shop/*, /journal/*, /story,
+# /workshop, /faq, /contact, /shipping, /newsletter, /account, /admin, /gallery.
 
 # ============================================================
-# SECURITY HEADERS
-# ============================================================
-# Every response on every path gets the same baseline headers.
-# This is the cheapest, broadest defense available — they raise
-# the cost of every common browser-side attack without touching
-# the application code.
-#
-# Header-by-header rationale:
-#
-# Content-Security-Policy
-#   Whitelists exactly which origins the browser is allowed to
-#   load from. Anything not on the list — including a script the
-#   attacker manages to inject via a stored XSS — is silently
-#   blocked by the browser.
-#
-#   Post-Vite-flip the policy is significantly tighter than the
-#   pre-migration version: no Tailwind CDN, no unpkg, no
-#   'unsafe-eval' (Babel Standalone is gone, the bundle is
-#   pre-compiled at build time).
-#
-#   Origins permitted on /* :
-#     - 'self'                            our own pages + /assets/* + functions
-#     - identity.netlify.com              Netlify Identity widget
-#     - fonts.googleapis.com (CSS)        Google Fonts stylesheet
-#     - fonts.gstatic.com   (font files)  Google Fonts binaries
-#     - cloud.umami.is                    optional analytics
-#     - https: (img-src only)             customer photos / Netlify Blob CDN
-#     - data:                             base64 inline images + fonts
-#     - api.anthropic.com (connect-src)   ChatAssistant when enabled
-#     - js.stripe.com / hooks.stripe.com / checkout.stripe.com (frame-src)
-#                                         defensive: today checkout is a
-#                                         top-level redirect, but if anyone
-#                                         later swaps to Stripe Elements
-#                                         the iframe is already allow-listed
-#
-#   /admin/* gets a path-scoped override below that additionally
-#   allows unpkg.com (where Decap CMS loads from with SRI). That
-#   allowance is intentionally NOT in the global policy — the
-#   editor is invite-only and the rest of the site doesn't need
-#   to reach unpkg.
-#
-#   frame-ancestors 'none' = nobody can iframe our site, which
-#   kills click-jacking and most UI-redress attacks dead. (Also
-#   subsumes X-Frame-Options: DENY for modern browsers, but we
-#   send both because old browsers ignore frame-ancestors.)
-#
-#   form-action 'self' https://checkout.stripe.com — the only
-#   place a form on our site is allowed to POST to. Stripe
-#   Checkout is a navigation (window.location.href), not a form
-#   submit, so this is belt-and-suspenders for a future <form
-#   action> attack.
-#
-# Strict-Transport-Security
-#   "Always use HTTPS for this domain for the next 2 years; apply
-#   to every subdomain too." Browsers remember this header even
-#   after the user closes the tab. Once it's set, a man-in-the-
-#   middle attempt at downgrade to plaintext HTTP is auto-blocked
-#   client-side. `preload` is intentionally NOT included yet —
-#   only flip it on once lusikandsons.com is committed to HTTPS
-#   forever (irrevocable for ~6 months once Chrome picks it up).
-#
-# X-Frame-Options
-#   Legacy alias for `frame-ancestors 'none'`. Some old browsers
-#   only honor this one.
-#
-# X-Content-Type-Options
-#   `nosniff` tells the browser not to MIME-sniff a response that
-#   came with text/plain or application/octet-stream; render it
-#   as the declared type or nothing. Defends against the
-#   upload-this-as-image-but-it's-HTML attack the magic-byte
-#   sniffer in _lib/image-sniff.mjs already rejects server-side.
-#
-# Referrer-Policy
-#   `strict-origin-when-cross-origin` sends full referrer to our
-#   own domain (so logs see internal navigation) but only the
-#   origin to cross-origin HTTPS (so Stripe sees "this customer
-#   came from lusikandsons.com" but not which product page), and
-#   sends nothing on HTTPS→HTTP downgrades.
-#
-# Permissions-Policy
-#   The site doesn't use camera, microphone, geolocation, USB,
-#   payment-request API, etc. Disabling them with this header
-#   means a future stored XSS can't pop a "share your location"
-#   prompt to phish the customer.
-#
-# Cross-Origin-Opener-Policy
-#   Lets a future BroadcastChannel-based cross-tab signal work
-#   safely without exposing window.opener to cross-origin pages.
-#   Cheap to add even before we need it.
-# ============================================================
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://cloud.umami.is; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://api.anthropic.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; child-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'; upgrade-insecure-requests"
-    Strict-Transport-Security = "max-age=63072000; includeSubDomains"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
-    Cross-Origin-Opener-Policy = "same-origin"
-
-# ============================================================
-# /admin/* — path-scoped CSP override for Decap CMS
-# ============================================================
-# Decap CMS is loaded from unpkg.com (pinned + SRI in
-# public/admin/index.html). It also bundles a webpack runtime
-# that uses `new Function()` in some code paths, so 'unsafe-eval'
-# is required *only* on this path. The admin is invite-only via
-# Netlify Identity, and the rest of the site never visits /admin/,
-# so this looser policy doesn't widen the public attack surface.
-#
-# Netlify applies the longest-matching path's headers, so this
-# block fully replaces the /* CSP for any URL under /admin/.
+# SECURITY HEADERS — unchanged from the Vite config
 # ============================================================
 [[headers]]
-  for = "/admin/*"
-  [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://api.github.com https://unpkg.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
-    Strict-Transport-Security = "max-age=63072000; includeSubDomains"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-
-# ============================================================
-# Cache-Control — explicit per-path policy
-# ============================================================
-# Vite emits content-hashed filenames under /assets/* (e.g.
-# /assets/index-B3E06FGh.js). Those bytes never change for that
-# hash, so we tell the browser + every intermediate CDN to keep
-# them for a year and never revalidate — instant repeat loads,
-# zero network round-trips. `immutable` is the modern way to say
-# "don't even bother sending If-Modified-Since."
-#
-# /index.html and the SPA shell get the opposite: no-cache, so
-# a deploy with new asset hashes propagates immediately. The
-# index.html file is tiny, the cost of re-fetching is one
-# round-trip per page load worst-case.
-# ============================================================
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+for = "/*"
+[headers.values]
+Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://cloud.umami.is; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://api.anthropic.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; child-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'; upgrade-insecure-requests"
+Strict-Transport-Security = "max-age=63072000; includeSubDomains"
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+Cross-Origin-Opener-Policy = "same-origin"
 
 [[headers]]
-  for = "/index.html"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+for = "/admin/*"
+[headers.values]
+Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://api.github.com https://unpkg.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+Strict-Transport-Security = "max-age=63072000; includeSubDomains"
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
 
-# Same idea for the root path (Netlify serves index.html for /).
+# ============================================================
+# CACHE — point immutable caching at Next's hashed static assets
+# ============================================================
 [[headers]]
-  for = "/"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+for = "/_next/static/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
