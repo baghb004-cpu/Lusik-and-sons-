@@ -22,15 +22,16 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { category, product } = await params;
   const pair = getProductBySlugs(category, product);
   if (!pair) return {};
+  // `pair.product` is inferred as a union of catalog literals; coverImage /
+  // gallery exist only on some members, so cast for the optional share-image
+  // lookup. Falls back to the site default inside pageMetadata.
+  const p = pair.product as any;
   return pageMetadata({
     title: pair.product.name,
     description: pair.product.tagline || pair.product.description || "",
     path: `/shop/${pair.category.slug}/${pair.product.slug}`,
     type: "website",
-    // Per-product share image: a link to this product unfurls with the
-    // product's own cover photo (falls back to the first gallery shot, then
-    // to the site default inside pageMetadata).
-    image: pair.product.coverImage || (pair.product.gallery && pair.product.gallery[0]),
+    image: p.coverImage || (p.gallery && p.gallery[0]),
   });
 }
 
