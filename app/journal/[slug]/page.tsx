@@ -11,8 +11,10 @@ export function generateStaticParams(): Params[] {
   return (JOURNAL_POSTS as any[]).map((p) => ({ slug: p.slug }));
 }
 
-export function generateMetadata({ params }: { params: Params }): Metadata {
-  const post = (JOURNAL_POSTS as any[]).find((p) => p.slug === params.slug);
+// Next 15: `params` is async and must be awaited.
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = (JOURNAL_POSTS as any[]).find((p) => p.slug === slug);
   if (!post) return {};
   return pageMetadata({
     title: post.title,
@@ -22,8 +24,9 @@ export function generateMetadata({ params }: { params: Params }): Metadata {
   });
 }
 
-export default function Page({ params }: { params: Params }) {
-  const post = (JOURNAL_POSTS as any[]).find((p) => p.slug === params.slug);
+export default async function Page({ params }: { params: Promise<Params> }) {
+  const { slug } = await params;
+  const post = (JOURNAL_POSTS as any[]).find((p) => p.slug === slug);
   return (
     <>
       {post && <script {...jsonLdScript(postJsonLd(post))} />}
