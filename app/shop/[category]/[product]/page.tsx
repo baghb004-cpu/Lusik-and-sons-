@@ -27,6 +27,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     description: pair.product.tagline || pair.product.description || "",
     path: `/shop/${pair.category.slug}/${pair.product.slug}`,
     type: "website",
+    // Per-product share image: a link to this product unfurls with the
+    // product's own cover photo (falls back to the first gallery shot, then
+    // to the site default inside pageMetadata).
+    image: pair.product.coverImage || (pair.product.gallery && pair.product.gallery[0]),
   });
 }
 
