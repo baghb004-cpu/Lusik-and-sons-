@@ -23,6 +23,7 @@
 // ============================================================
 
 import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Pause, Play } from "./icons.jsx";
 import { useSwipe } from "../lib/useSwipe.js";
 
@@ -151,19 +152,19 @@ export function HeroSlideshow({ className = "", style = {}, onIndexChange }) {
           ? `rotate(${photo.rotate}deg) scale(${ROTATION_FILL_SCALE})`
           : undefined;
         return (
-          <img
+          <Image
             key={photo.src}
             src={photo.src}
             alt={photo.alt}
-            className="absolute inset-0 w-full h-full object-cover"
+            fill
+            sizes="(max-width: 1024px) 100vw, 58vw"
+            className="object-cover"
             style={{
               opacity: i === activeIdx ? 1 : 0,
               transition: prefersReduced ? "none" : `opacity ${FADE_DURATION_MS}ms ease-in-out`,
               ...(transform ? { transform, transformOrigin: "center center" } : {}),
             }}
-            loading={i === 0 ? "eager" : "lazy"}
-            fetchPriority={i === 0 ? "high" : "low"}
-            decoding="async"
+            priority={i === 0}
             aria-hidden={i !== activeIdx}
           />
         );

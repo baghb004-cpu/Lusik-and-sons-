@@ -29,6 +29,7 @@
 // ============================================================
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { useT } from "../i18n/LangContext.jsx";
 import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
@@ -238,12 +239,12 @@ export function HomeView({
             className="flex-shrink-0 overflow-hidden rounded-xl"
             style={{ width: 72, height: 72, background: "var(--bg-subtle, #F5EFE3)" }}
           >
-            <img
+            <Image
               src={product.gallery[0]}
               alt="The Armenian Alphabet Blanket"
+              width={72}
+              height={72}
               className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -461,8 +462,8 @@ export function HomeView({
             { src: PHOTO_BIB_PILE, alt: "Pile of bibs and blanket showing yellow and green work" },
             { src: PHOTO_BIB_ROMEO, alt: "Romeo bib with matching blue alphabet blanket" },
           ].map((photo, i) => (
-            <div key={i} className="aspect-square overflow-hidden stagger-reveal" style={{ "--i": i }}>
-              <img src={photo.src} alt={photo.alt} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+            <div key={i} className="aspect-square overflow-hidden stagger-reveal relative" style={{ "--i": i }}>
+              <Image src={photo.src} alt={photo.alt} fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" />
             </div>
           ))}
         </div>
@@ -476,10 +477,10 @@ export function HomeView({
       <section id="story" className="py-20 lg:py-32" style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-12 gap-10 lg:gap-20 items-center">
           <div className="lg:col-span-6 lg:order-2 min-w-0">
-            <div className="aspect-[4/5] overflow-hidden">
+            <div className="aspect-[4/5] overflow-hidden relative">
               {/* Fall back to gallery[0] if Lusik hasn't uploaded a 9th photo yet —
                   prevents a broken <img> if PRODUCT.gallery has fewer than 8 entries. */}
-              <img src={product.gallery[7] ?? product.gallery[0]} alt="Detail of cross-stitched alphabet block" className="w-full h-full object-cover" style={galleryRotationStyle(7)} loading="lazy" decoding="async" />
+              <Image src={product.gallery[7] ?? product.gallery[0]} alt="Detail of cross-stitched alphabet block" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" style={galleryRotationStyle(7)} />
             </div>
           </div>
           <div className="lg:col-span-6 lg:order-1 min-w-0">
