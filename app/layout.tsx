@@ -15,7 +15,13 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { SiteChrome } from "../src/components/SiteChrome.jsx";
-import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from "../src/lib/seo.js";
+import {
+  SITE_URL,
+  SITE_NAME,
+  DEFAULT_OG_IMAGE,
+  organizationJsonLd,
+  jsonLdScript,
+} from "../src/lib/seo.js";
 
 // metadataBase lets per-route relative canonical/OpenGraph URLs resolve to the
 // production origin during SSR. The default title is a template so each route's
@@ -28,6 +34,20 @@ export const metadata: Metadata = {
   },
   description:
     "Hand cross-stitched Armenian alphabet baby blankets, made to order in Cypress, California.",
+  // Favicons, PWA icons, and the web app manifest. The files live in /public
+  // and were generated from icon.svg (the "L & Sons" monogram). Declaring them
+  // here is what actually emits the <link rel="icon"> / manifest tags — without
+  // this the site shipped with no favicon at all.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  manifest: "/manifest.webmanifest",
   // Default social-share card for pages that don't set their own OpenGraph
   // (most importantly the home page). Routes built via pageMetadata() override
   // this with their own per-page image. Relative path resolves to an absolute
@@ -53,6 +73,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           src="https://identity.netlify.com/v1/netlify-identity-widget.js"
           strategy="beforeInteractive"
         />
+        {/* Site-wide Organization structured data (brand entity for search). */}
+        <script {...jsonLdScript(organizationJsonLd())} />
         <Providers>
           <SiteChrome>{children}</SiteChrome>
         </Providers>
