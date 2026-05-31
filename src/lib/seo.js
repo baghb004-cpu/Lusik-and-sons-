@@ -13,12 +13,27 @@
 export const SITE_URL = "https://lusikandsons.com";
 export const SITE_NAME = "Lusik & Sons";
 
+// Default social-share image for pages that don't supply their own (home,
+// story, journal, etc.). Points at the flagship blanket's cover photo — a
+// real product shot makes a far better link preview than a blank card.
+// Swap to a dedicated 1200x630 branded card if Lusik provides one later.
+export const DEFAULT_OG_IMAGE = "/img/abc-blanket/cover.jpg";
+
+// OpenGraph/Twitter images must be absolute URLs. Pass through anything that
+// is already absolute; prefix site-relative paths with SITE_URL.
+function absoluteUrl(pathOrUrl) {
+  if (!pathOrUrl) return undefined;
+  return /^https?:\/\//.test(pathOrUrl) ? pathOrUrl : SITE_URL + pathOrUrl;
+}
+
 /**
- * Build a Next Metadata object with an absolute canonical + OpenGraph.
- * @param {{ title: string, description?: string, path: string, type?: string, noindex?: boolean }} opts
+ * Build a Next Metadata object with an absolute canonical + OpenGraph + a
+ * social-share image (so links unfurl with a preview instead of a blank card).
+ * @param {{ title: string, description?: string, path: string, type?: string, image?: string, noindex?: boolean }} opts
  */
-export function pageMetadata({ title, description, path, type = "website", noindex = false }) {
+export function pageMetadata({ title, description, path, type = "website", image, noindex = false }) {
   const url = SITE_URL + path;
+  const ogImage = absoluteUrl(image || DEFAULT_OG_IMAGE);
   const meta = {
     title,
     description,
@@ -29,11 +44,13 @@ export function pageMetadata({ title, description, path, type = "website", noind
       url,
       siteName: SITE_NAME,
       type,
+      images: ogImage ? [{ url: ogImage, alt: title }] : undefined,
     },
     twitter: {
-      card: "summary",
+      card: ogImage ? "summary_large_image" : "summary",
       title,
       description,
+      images: ogImage ? [ogImage] : undefined,
     },
   };
   if (noindex) meta.robots = { index: false, follow: false };
@@ -53,6 +70,9 @@ export function productJsonLd(category, product) {
     url,
     category: category.label,
   };
+  if (product.coverImage || (product.gallery && product.gallery[0])) {
+    ld.image = absoluteUrl(product.coverImage || product.gallery[0]);
+  }
   if (product.priceFrom != null) {
     ld.offers = {
       "@type": "Offer",
