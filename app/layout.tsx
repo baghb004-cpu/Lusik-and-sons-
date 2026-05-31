@@ -1,26 +1,25 @@
-// Root layout — Next.js App Router migration (Phase 3).
-// Not yet wired into production (the Vite build still serves the site via
-// netlify.toml publish = "dist"). The app-wide provider stack is mounted
-// through <Providers> (a single "use client" boundary — see providers.tsx).
+// Root layout — Next.js App Router.
+// The site is served by Next.js on Netlify via @netlify/plugin-nextjs
+// (see netlify.toml). The app-wide provider stack is mounted through
+// <Providers> (a single "use client" boundary — see providers.tsx).
 //
-// globals.css re-exports the canonical stylesheet (src/styles/index.css) so
-// Next and Vite share one source of truth during the migration.
+// globals.css re-exports the canonical stylesheet (src/styles/index.css).
 //
 // The Netlify Identity widget loads from identity.netlify.com (NOT the npm
 // package — Netlify's confirmation redirect expects window.netlifyIdentity
-// from their CDN); beforeInteractive puts it in the initial <head> like the
-// Vite index.html does, so auth.init() finds it on mount.
+// from their CDN); beforeInteractive puts it in the initial <head> so
+// auth.init() finds it on mount.
 import "./globals.css";
 import Script from "next/script";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { SiteChrome } from "../src/components/SiteChrome.jsx";
-import { SITE_URL, SITE_NAME } from "../src/lib/seo.js";
+import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from "../src/lib/seo.js";
 
 // metadataBase lets per-route relative canonical/OpenGraph URLs resolve to the
-// production origin during SSR (Phase 7). The default title is a template so
-// each route's own title reads "<page> — Lusik & Sons".
+// production origin during SSR. The default title is a template so each route's
+// own title reads "<page> — Lusik & Sons".
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -29,6 +28,19 @@ export const metadata: Metadata = {
   },
   description:
     "Hand cross-stitched Armenian alphabet baby blankets, made to order in Cypress, California.",
+  // Default social-share card for pages that don't set their own OpenGraph
+  // (most importantly the home page). Routes built via pageMetadata() override
+  // this with their own per-page image. Relative path resolves to an absolute
+  // URL via metadataBase above.
+  openGraph: {
+    siteName: SITE_NAME,
+    type: "website",
+    images: [{ url: DEFAULT_OG_IMAGE, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [DEFAULT_OG_IMAGE],
+  },
   // No global canonical — each route owns its own (a layout-level canonical
   // would wrongly propagate "/" to every non-overriding page).
 };
