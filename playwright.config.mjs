@@ -29,7 +29,7 @@ export default defineConfig({
     { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
-    command: `npx next dev --port ${PORT}`,
+    command: `npm run next:dev -- --port ${PORT}`,
     port: PORT,
     reuseExistingServer: !process.env.CI,
     stdout: "ignore",
