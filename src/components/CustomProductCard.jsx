@@ -14,6 +14,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
+import { useT, useLang } from "../i18n/LangContext.jsx";
+import { loc } from "../i18n/localize.js";
 // PHOTO_BIB_ROMEO + PHOTO_BIB_STACK imports removed -- the Romeo
 // empty-state image and the thread-range reference strip were
 // both removed at user request. They'll be replaced by a real
@@ -21,6 +23,8 @@ import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { PRODUCT } from "../data/product.js";
 
 export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback }) {
+  const t = useT();
+  const { lang } = useLang();
   const [customName, setCustomName] = useState("");
   const [size, setSize] = useState("");
   const [error, setError] = useState("");
@@ -95,9 +99,9 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
   // Validate the bib config, setting an inline error and returning false on
   // failure. Shared by Add-to-Bag and express Buy-it-now.
   const validateBib = () => {
-    if (!size) { setError("Please choose a size."); return false; }
-    if (cleanName.length === 0) { setError("Please type a name to embroider."); return false; }
-    if (cleanName.length > maxNameLength) { setError(`Name must be ${maxNameLength} letters or fewer — the bib is small.`); return false; }
+    if (!size) { setError(t("bib.errSize")); return false; }
+    if (cleanName.length === 0) { setError(t("bib.errName")); return false; }
+    if (cleanName.length > maxNameLength) { setError(t("bib.errTooLong", { n: maxNameLength })); return false; }
     return true;
   };
 
@@ -189,7 +193,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         {cleanName.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
             <div className="text-center">
-              <p className="text-xs opacity-50 italic">Type your child's name to see how Lusik will stitch it</p>
+              <p className="text-xs opacity-50 italic">{t("bib.previewHint")}</p>
             </div>
           </div>
         )}
@@ -198,14 +202,14 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
       {/* Card body */}
       <div className="p-5 lg:p-6 flex flex-col flex-1 gap-4">
         <div>
-          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{config.tagline}</p>
-          <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{config.name}</h3>
+          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{loc(config, "tagline", lang)}</p>
+          <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{loc(config, "name", lang)}</h3>
           <p className="text-sm opacity-70 leading-relaxed">{config.description}</p>
           <p className="font-display text-xl mt-3" style={{ fontWeight: 500 }}>
             ${config.price}
           </p>
           <p className="text-[0.65rem] opacity-60 mt-1.5">
-            Made to order · From Lusik's home in Southern California
+            {t("pdp.madeToOrderEyebrow")}
           </p>
           {/* Photos are samples — bibs especially may use a different neck
               closure than older example photos show. */}
@@ -215,7 +219,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         {/* Personalized name input */}
         <div>
           <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-            1. Personalized name
+            {t("bib.step1Name")}
           </label>
           <input
             type="text"
@@ -226,7 +230,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
             autoCapitalize="words"
             autoCorrect="off"
             spellCheck={false}
-            placeholder="e.g. Anna"
+            placeholder={t("bib.namePlaceholder")}
             className="w-full px-3 py-2.5 text-sm"
             style={{
               border: "1px solid var(--border-strong)",
@@ -234,13 +238,13 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
               color: "var(--text-primary)",
               fontFamily: "Fraunces, serif",
             }}
-            aria-label="Personalized name to embroider"
+            aria-label={t("bib.nameAria")}
           />
           <p className="text-[0.65rem] opacity-60 mt-1.5">
-            Up to {maxNameLength} letters · {cleanName.length}/{maxNameLength}
+            {t("bib.upToLetters", { n: maxNameLength, len: cleanName.length })}
           </p>
           <p className="text-[0.6rem] opacity-50 italic mt-1">
-            Preview only — actual embroidery font may differ slightly.
+            {t("bib.previewOnly")}
           </p>
         </div>
 
@@ -250,7 +254,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         {supportsColor && (
           <div>
             <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-              2. Thread color
+              {t("bib.step2Color")}
             </label>
 
             {/* Mode toggle: Presets vs Custom */}
@@ -262,10 +266,10 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                 style={{
                   background: colorMode === "preset" ? "var(--ink)" : "transparent",
                   color: colorMode === "preset" ? "var(--text-on-ink)" : "var(--text-primary)",
-                  border: "1px solid rgba(26,22,18,0.2)",
+                  border: "1px solid var(--border-strong)",
                 }}
               >
-                Lusik's Picks
+                {t("bib.lusiksPicks")}
               </button>
               <button
                 type="button"
@@ -274,10 +278,10 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                 style={{
                   background: colorMode === "custom" ? "var(--ink)" : "transparent",
                   color: colorMode === "custom" ? "var(--text-on-ink)" : "var(--text-primary)",
-                  border: "1px solid rgba(26,22,18,0.2)",
+                  border: "1px solid var(--border-strong)",
                 }}
               >
-                Pick your own
+                {t("bib.pickYourOwn")}
               </button>
             </div>
 
@@ -371,7 +375,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                   })}
                 </div>
                 <p className="text-[0.65rem] opacity-50 mt-1.5">
-                  Selected: <span style={{ fontWeight: 500 }}>{letterColor?.name ?? "—"}</span>
+                  {t("bib.selected")} <span style={{ fontWeight: 500 }}>{letterColor?.name ?? "—"}</span>
                 </p>
               </div>
             )}
@@ -384,7 +388,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
             so size is step 2 or 3 accordingly. */}
         <div>
           <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-            {supportsColor ? "3." : "2."} Choose a size
+            {t("bib.chooseSize", { step: supportsColor ? "3." : "2." })}
           </label>
           <div className="grid grid-cols-1 gap-1.5">
             {config.sizes.map((s) => (
@@ -407,17 +411,17 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
 
         {/* Final-sale reminder — same callout pattern used on the blanket
             PDP, sized down to fit the bib card. */}
-        <div className="mt-auto p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
-          <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
+        <div className="mt-auto p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
+          <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("bib.finalSale")}</span>
           <span className="opacity-80">
-            Embroidered specifically for you. No returns, exchanges, or refunds.{" "}
+            {t("bib.finalSaleBody")}{" "}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
               className="underline hover:opacity-60"
               style={{ color: "var(--accent)" }}
             >
-              Read the full policy
+              {t("bib.readPolicy")}
             </button>.
           </span>
         </div>
@@ -435,7 +439,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
             opacity: adding ? 0.6 : 1,
           }}
         >
-          Add to Bag — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />
+          {t("common.addToCart")} — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />
         </button>
 
         {/* Express checkout — straight to Stripe with this configured bib.
@@ -453,7 +457,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
             opacity: adding ? 0.6 : 1,
           }}
         >
-          Buy it now
+          {t("bib.buyNow")}
         </button>
       </div>
     </div>
