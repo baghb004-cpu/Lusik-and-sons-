@@ -71,10 +71,23 @@ export function SiteChrome({ children }) {
   useEffect(() => { setSearchOpen(false); setCartOpen(false); }, [pathname]);
 
   // Warm the primary nav destinations (the bottom-nav tabs + main browse) so
-  // tapping them feels instant. router.prefetch dedupes/caches, so re-running
-  // on route change is cheap; it only fetches each route's payload once.
+  // tapping them feels instant — but never at the expense of the page the
+  // visitor actually came for. Two guards aimed at slow/low-end devices:
+  //   1. Skip entirely on Save-Data or a slow link (2g/3g, e.g. rural mobile):
+  //      speculative prefetch would steal scarce bandwidth from the real load.
+  //   2. Otherwise wait for the main thread to go idle (requestIdleCallback)
+  //      so the prefetch never competes with the current page's first paint.
+  // router.prefetch dedupes/caches, so each route's payload is fetched once.
   useEffect(() => {
-    ["/", "/shop", "/journal", "/cart"].forEach((href) => nav.prefetch(href));
+    const conn = typeof navigator !== "undefined" ? navigator.connection : null;
+    if (conn && (conn.saveData || /(^|-)2g$|^3g$/.test(conn.effectiveType || ""))) return;
+    const warm = () => ["/", "/shop", "/journal", "/cart"].forEach((href) => nav.prefetch(href));
+    const ric = typeof window !== "undefined" ? window.requestIdleCallback : null;
+    const id = ric ? ric(warm, { timeout: 2500 }) : setTimeout(warm, 800);
+    return () => {
+      if (ric && window.cancelIdleCallback) window.cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
   }, [nav]);
 
   // Escape closes the cart drawer.
