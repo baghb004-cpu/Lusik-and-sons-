@@ -86,7 +86,7 @@ export function GalleryView() {
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-8">
         <p
           className="text-xs tracking-[0.3em] uppercase mb-4 text-center"
-          style={{ color: "#B08842" }}
+          style={{ color: "var(--accent)" }}
         >
           The archive
         </p>
@@ -98,7 +98,7 @@ export function GalleryView() {
         </h1>
         <p className="text-base lg:text-lg opacity-75 leading-relaxed text-center max-w-2xl mx-auto">
           A working archive of {PHOTOS.length} photographs of Lusik's hand cross-stitch and machine
-          embroidery work, taken across many years in her Cypress, California studio. Browse by
+          embroidery work, taken across many years in her Southern California studio. Browse by
           category, or just scroll.
         </p>
         <div className="gold-line mt-10 mb-12 max-w-xs mx-auto" />

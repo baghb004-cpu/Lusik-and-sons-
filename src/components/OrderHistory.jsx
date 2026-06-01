@@ -145,7 +145,7 @@ export function OrderHistory({ userId, onReorder }) {
     return (
       <div className="p-5" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.3)" }}>
         <p className="text-sm leading-relaxed">
-          <span style={{ fontWeight: 500, color: "#B08842" }}>Thank you for your order!</span> We're confirming the details with Stripe — this usually takes a few seconds. Hold tight.
+          <span style={{ fontWeight: 500, color: "var(--accent)" }}>Thank you for your order!</span> We're confirming the details with Stripe — this usually takes a few seconds. Hold tight.
         </p>
       </div>
     );

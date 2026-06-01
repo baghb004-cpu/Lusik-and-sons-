@@ -122,7 +122,7 @@ export function ContactQuickMenu({ isOpen, onClose }) {
         </button>
 
         <div className="text-center mb-6">
-          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>
+          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>
             Write to Lusik
           </p>
           <h2
@@ -147,7 +147,7 @@ export function ContactQuickMenu({ isOpen, onClose }) {
             borderRadius: "2px",
           }}
         >
-          <Mail size={20} strokeWidth={1.5} style={{ color: "#B08842", marginTop: "2px", flexShrink: 0 }} />
+          <Mail size={20} strokeWidth={1.5} style={{ color: "var(--accent)", marginTop: "2px", flexShrink: 0 }} />
           <div className="flex-1 min-w-0">
             <p className="text-base lg:text-lg" style={{ fontWeight: 500 }}>Email Lusik</p>
             <p className="text-xs opacity-70 mt-1">
@@ -168,7 +168,7 @@ export function ContactQuickMenu({ isOpen, onClose }) {
             borderRadius: "2px",
           }}
         >
-          <Phone size={20} strokeWidth={1.5} style={{ color: "#B08842", marginTop: "2px", flexShrink: 0 }} />
+          <Phone size={20} strokeWidth={1.5} style={{ color: "var(--accent)", marginTop: "2px", flexShrink: 0 }} />
           <div className="flex-1 min-w-0">
             <p className="text-base lg:text-lg" style={{ fontWeight: 500 }}>Text Lusik</p>
             <p className="text-xs opacity-70 mt-1">

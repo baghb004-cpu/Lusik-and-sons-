@@ -28,7 +28,10 @@ import { PHOTO_DATE_DETAIL } from "../images/photos.js";
 import { getDeliveryEstimate } from "../lib/deliveryEstimate";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
+import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { useToast } from "./ToastProvider.jsx";
+import { useT, useLang } from "../i18n/LangContext.jsx";
+import { loc } from "../i18n/localize.js";
 import {
   ArrowRight, Bookmark, ChevronLeft, ChevronRight,
   Instagram, Mail, Minus, Phone, Plus, Share2, X, ZoomIn,
@@ -36,6 +39,8 @@ import {
 
 export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown }) {
   const toast = useToast();
+  const t = useT();
+  const { lang } = useLang();
   // --- STICKY MOBILE ADD-TO-CART ---
   // Ref on the primary Add-to-cart button. An IntersectionObserver
   // watches it; when it scrolls out of view on mobile we slide a
@@ -424,25 +429,25 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               onClick={() => setLeftPaneMode("preview")}
               className="px-3 py-1.5 transition flex-1"
               style={{
-                background: leftPaneMode === "preview" ? "#1A1612" : "transparent",
-                color: leftPaneMode === "preview" ? "#F5EFE3" : "#1A1612",
+                background: leftPaneMode === "preview" ? "var(--ink)" : "transparent",
+                color: leftPaneMode === "preview" ? "var(--text-on-ink)" : "var(--text-primary)",
                 border: "1px solid rgba(26,22,18,0.2)",
               }}
               aria-pressed={leftPaneMode === "preview"}
             >
-              Your design
+              {t("pdp.yourDesign")}
             </button>
             <button
               onClick={() => setLeftPaneMode("photos")}
               className="px-3 py-1.5 transition flex-1"
               style={{
-                background: leftPaneMode === "photos" ? "#1A1612" : "transparent",
-                color: leftPaneMode === "photos" ? "#F5EFE3" : "#1A1612",
+                background: leftPaneMode === "photos" ? "var(--ink)" : "transparent",
+                color: leftPaneMode === "photos" ? "var(--text-on-ink)" : "var(--text-primary)",
                 border: "1px solid rgba(26,22,18,0.2)",
               }}
               aria-pressed={leftPaneMode === "photos"}
             >
-              Real photos
+              {t("pdp.realPhotos")}
             </button>
           </div>
 
@@ -469,7 +474,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 </div>
               </div>
               <p className="text-[0.65rem] opacity-60 italic text-center leading-relaxed">
-                A live preview of how your blanket will look. The real piece has the woven pomegranate texture and the fringed edges — tap "Real photos" to see the cloth Lusik works on.
+                {t("pdp.livePreviewCaption")}
               </p>
             </>
           ) : (
@@ -482,7 +487,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 className="relative aspect-[4/5] overflow-hidden mb-4"
                 style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}
                 role="button"
-                aria-label={`Zoom photo ${activeImg + 1} of ${product.gallery.length}`}
+                aria-label={t("pdp.zoomPhotoAria", { n: activeImg + 1, m: product.gallery.length })}
                 onClick={() => { if (!glide.swiped.current) setZoomOpen(true); }}
                 {...glide.handlers}
               >
@@ -511,17 +516,17 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     );
                   })}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label="Previous photo">
+                <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label={t("pdp.prevPhoto")}>
                   <ChevronLeft size={18} />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); next(); }} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label="Next photo">
+                <button onClick={(e) => { e.stopPropagation(); next(); }} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center backdrop-blur-sm z-10" style={{ background: "rgba(245,239,227,0.6)" }} aria-label={t("pdp.nextPhoto")}>
                   <ChevronRight size={18} />
                 </button>
                 <div className="absolute bottom-3 right-3 px-3 py-1 text-xs tracking-wide pointer-events-none" style={{ background: "rgba(26,22,18,0.7)", color: "#F5EFE3" }}>
                   {activeImg + 1} / {product.gallery.length}
                 </div>
                 <div className="absolute bottom-3 left-3 px-2.5 py-1 text-[0.6rem] tracking-[0.15em] uppercase pointer-events-none flex items-center gap-1.5" style={{ background: "rgba(26,22,18,0.6)", color: "#F5EFE3" }}>
-                  <ZoomIn size={11} strokeWidth={2} /> Tap to zoom
+                  <ZoomIn size={11} strokeWidth={2} /> {t("pdp.tapToZoom")}
                 </div>
               </div>
               <div className="grid grid-cols-6 gap-2">
@@ -542,7 +547,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   on a video they may not watch. */}
               {product.video?.src && (
                 <div className="mt-4">
-                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-60" style={{ color: "#B08842" }}>
+                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-60" style={{ color: "var(--accent)" }}>
                     Watch Lusik stitch
                   </p>
                   <div className="relative aspect-video overflow-hidden" style={{ background: "rgba(26,22,18,0.04)" }}>
@@ -571,23 +576,25 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
         </div>
 
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Made to order · From Lusik's home in Cypress, California</p>
-          <h2 className="font-display text-4xl lg:text-5xl mb-3 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{product.name}</h2>
-          <p className="text-base opacity-70 mb-6">{product.subtitle}</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>{t("pdp.madeToOrderEyebrow")}</p>
+          <h2 className="font-display text-4xl lg:text-5xl mb-3 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{loc(product, "name", lang)}</h2>
+          <p className="text-base opacity-70 mb-6">{loc(product, "subtitle", lang)}</p>
 
           <div className="flex items-baseline gap-3 mb-2">
             <p className="text-3xl" style={{ fontWeight: 500 }}>${(layout.priceCents / 100).toFixed(0)}</p>
           </div>
           <p className="text-xs opacity-60 mb-8">
-            {layout.letterCount === 6
-              ? "The premium layout — the alphabet stitched twice, six letter-squares across the blanket."
-              : "Hand cross-stitched by Lusik · made to order, made to last."}
+            {layout.letterCount === 6 ? t("pdp.premiumNote") : t("pdp.standardNote")}
           </p>
 
           <p className="text-base leading-relaxed mb-8 opacity-85">{product.description}</p>
 
+          {/* Photos shown are examples of past work — each handmade piece may
+              vary a little from the samples. */}
+          <ProductVariationNote className="mb-8" />
+
           <CollapsibleSection
-            title="1. Choose your alphabet"
+            title={t("pdp.step1")}
             open={isOpen("alphabet")}
             onExpand={() => setOpenSection("alphabet")}
             summary={
@@ -608,9 +615,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     onClick={() => { setAlphabet(a); advanceSection("alphabet"); }}
                     className="text-center px-4 py-7 transition flex flex-col items-center justify-center gap-2"
                     style={{
-                      background: selected ? "#1A1612" : "transparent",
-                      color: selected ? "#F5EFE3" : "#1A1612",
-                      border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+                      background: selected ? "var(--ink)" : "transparent",
+                      color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
+                      border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
                       minHeight: "140px",
                     }}
                   >
@@ -632,7 +639,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           </CollapsibleSection>
 
           <CollapsibleSection
-            title="2. Choose the layout"
+            title={t("pdp.step2")}
             open={isOpen("layout")}
             onExpand={() => setOpenSection("layout")}
             mb="mb-8"
@@ -643,7 +650,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 </div>
                 <span className="leading-tight">
                   <span className="block">{layout.shortLabel}</span>
-                  <span className="text-[0.65rem] opacity-60">{layout.letterCount} letters · ${(layout.priceCents / 100).toFixed(0)}</span>
+                  <span className="text-[0.65rem] opacity-60">{t("pdp.letters", { n: layout.letterCount })} · ${(layout.priceCents / 100).toFixed(0)}</span>
                 </span>
               </span>
             }
@@ -658,9 +665,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     onClick={() => { setLayout(l); advanceSection("layout"); }}
                     className="text-left p-3 transition"
                     style={{
-                      background: selected ? "#1A1612" : "transparent",
-                      color: selected ? "#F5EFE3" : "#1A1612",
-                      border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+                      background: selected ? "var(--ink)" : "transparent",
+                      color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
+                      border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
                     }}
                   >
                     {/* Inline mini-preview using the alphabet's letters */}
@@ -676,7 +683,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                       {l.shortLabel}
                     </p>
                     <div className="flex items-center justify-between text-[0.6rem] opacity-70">
-                      <span>{l.letterCount} letters</span>
+                      <span>{t("pdp.letters", { n: l.letterCount })}</span>
                       <span style={{ fontWeight: 500 }}>{priceLabel}</span>
                     </div>
                   </button>
@@ -684,7 +691,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               })}
             </div>
             <p className="text-xs opacity-60 mt-3 leading-relaxed">
-              {layout.description} For a different letter or a name you'd like spelled out, <a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline">write Lusik directly</a> — she always reads them herself.
+              {layout.description}{t("pdp.forDifferentLetterPre")}<a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline">{t("pdp.writeLusikDirectly")}</a>{t("pdp.forDifferentLetterPost")}
             </p>
           </CollapsibleSection>
 
@@ -693,7 +700,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               color of the letter inside it. Customer can choose a preset
               (one-tap pairing) or build a custom combination. */}
           <CollapsibleSection
-            title="3. Choose your colors"
+            title={t("pdp.step3")}
             open={isOpen("colors")}
             onExpand={() => setOpenSection("colors")}
             summary={
@@ -704,14 +711,14 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   <span style={{ width: "16px", height: "16px", background: letterColor.hex, border: "1px solid rgba(26,22,18,0.15)" }} />
                 </span>
                 <span className="leading-tight">
-                  <span className="block text-[0.7rem]">{blockColor.name} cube · {letterColor.name} letter</span>
+                  <span className="block text-[0.7rem]">{blockColor.name} {t("pdp.cube")} · {letterColor.name} {t("pdp.letter")}</span>
                   <span className="text-[0.6rem] opacity-60">{blockColor.name} & {letterColor.name}</span>
                 </span>
               </span>
             }
           >
             <p className="text-[0.65rem] opacity-50 italic mb-4">
-              Lusik picks the thread for each blanket from whatever spools she has on hand the week she stitches yours. Small variations between blankets are how you know one woman made it.
+              {t("pdp.colorIntro")}
             </p>
 
             {/* Mode toggle: Presets vs Custom */}
@@ -720,23 +727,23 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 onClick={() => setColorMode("preset")}
                 className="px-3 py-1.5 transition"
                 style={{
-                  background: colorMode === "preset" ? "#1A1612" : "transparent",
-                  color: colorMode === "preset" ? "#F5EFE3" : "#1A1612",
-                  border: "1px solid rgba(26,22,18,0.2)",
+                  background: colorMode === "preset" ? "var(--ink)" : "transparent",
+                  color: colorMode === "preset" ? "var(--text-on-ink)" : "var(--text-primary)",
+                  border: "1px solid var(--border-strong)",
                 }}
               >
-                Presets
+                {t("pdp.presets")}
               </button>
               <button
                 onClick={() => setColorMode("custom")}
                 className="px-3 py-1.5 transition"
                 style={{
-                  background: colorMode === "custom" ? "#1A1612" : "transparent",
-                  color: colorMode === "custom" ? "#F5EFE3" : "#1A1612",
-                  border: "1px solid rgba(26,22,18,0.2)",
+                  background: colorMode === "custom" ? "var(--ink)" : "transparent",
+                  color: colorMode === "custom" ? "var(--text-on-ink)" : "var(--text-primary)",
+                  border: "1px solid var(--border-strong)",
                 }}
               >
-                Pick your own
+                {t("pdp.pickYourOwn")}
               </button>
             </div>
 
@@ -769,9 +776,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                       onClick={() => { applyPreset(preset); advanceSection("colors"); }}
                       className="text-left p-3 transition flex items-center gap-3"
                       style={{
-                        background: selected ? "#1A1612" : "transparent",
-                        color: selected ? "#F5EFE3" : "#1A1612",
-                        border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+                        background: selected ? "var(--ink)" : "transparent",
+                        color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
+                        border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
                       }}
                       title={preset.description}
                     >
@@ -823,7 +830,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             {colorMode === "custom" && (
               <div className="space-y-5">
                 <div>
-                  <p className="text-[0.7rem] uppercase tracking-wider opacity-70 mb-2">Block outline color (the 3D cube)</p>
+                  <p className="text-[0.7rem] uppercase tracking-wider opacity-70 mb-2">{t("pdp.blockColorLabel")}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {product.threadColors.map((c) => {
                       const selected = blockColor.dmc === c.dmc;
@@ -846,12 +853,12 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     })}
                   </div>
                   <p className="text-[0.65rem] opacity-50 mt-1.5">
-                    Selected: <span style={{ fontWeight: 500 }}>{blockColor.name}</span>
+                    {t("pdp.selected")} <span style={{ fontWeight: 500 }}>{blockColor.name}</span>
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-[0.7rem] uppercase tracking-wider opacity-70 mb-2">Letter color (inside the cube)</p>
+                  <p className="text-[0.7rem] uppercase tracking-wider opacity-70 mb-2">{t("pdp.letterColorLabel")}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {product.threadColors.map((c) => {
                       const selected = letterColor.dmc === c.dmc;
@@ -874,7 +881,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     })}
                   </div>
                   <p className="text-[0.65rem] opacity-50 mt-1.5">
-                    Selected: <span style={{ fontWeight: 500 }}>{letterColor.name}</span>
+                    {t("pdp.selected")} <span style={{ fontWeight: 500 }}>{letterColor.name}</span>
                   </p>
                 </div>
 
@@ -888,7 +895,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     className="w-full py-3 text-sm tracking-wide"
                     style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
                   >
-                    Done — collapse this section
+                    {t("pdp.doneCollapse")}
                   </button>
                 )}
               </div>
@@ -904,7 +911,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               way. Lusik decides actual placement when she stitches the
               blanket based on what looks best for the specific text. */}
           <CollapsibleSection
-            title="4. Optional personalization"
+            title={t("pdp.step4")}
             open={isOpen("custom")}
             onExpand={() => setOpenSection("custom")}
             summary={
@@ -914,26 +921,26 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     <span className="block text-[0.75rem]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>
                       {[customLine1.trim(), customLine2.trim()].filter(Boolean).join("  ·  ")}
                     </span>
-                    <span className="text-[0.6rem] opacity-60">Will be embroidered on the blanket</span>
+                    <span className="text-[0.6rem] opacity-60">{t("pdp.willEmbroider")}</span>
                   </>
                 ) : (
                   <>
-                    <span className="block text-[0.75rem] opacity-70">No optional text</span>
-                    <span className="text-[0.6rem] opacity-50">Blanket will ship with just the alphabet</span>
+                    <span className="block text-[0.75rem] opacity-70">{t("pdp.noOptionalText")}</span>
+                    <span className="text-[0.6rem] opacity-50">{t("pdp.shipsAlphabet")}</span>
                   </>
                 )}
               </span>
             }
           >
             <p className="text-[0.65rem] opacity-60 italic mb-4 leading-relaxed">
-              Two short lines Lusik can place on a free square of the blanket — your child's name, a year, a date that mattered. Both optional. Leave them blank and the blanket ships with just the alphabet, no extra charge either way.
+              {t("pdp.personalizationIntro")}
             </p>
 
             <div className="space-y-4">
               {/* Line 1 — typically a short name, nickname, or initials */}
               <div>
                 <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-1.5">
-                  Line 1 — name, nickname, or initials
+                  {t("pdp.line1Label")}
                 </label>
                 <input
                   type="text"
@@ -944,7 +951,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   autoCapitalize="characters"
                   autoCorrect="off"
                   spellCheck={false}
-                  placeholder="e.g. ANNA"
+                  placeholder={t("pdp.line1Placeholder")}
                   className="w-full px-3 py-2.5 text-sm"
                   style={{
                     border: "1px solid var(--border-strong)",
@@ -952,17 +959,17 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     color: "var(--text-primary)",
                     fontFamily: "Fraunces, serif",
                   }}
-                  aria-label="Optional first line of personalized text"
+                  aria-label={t("pdp.line1Aria")}
                 />
                 <p className="text-[0.6rem] opacity-50 mt-1">
-                  Up to 6 characters · {customLine1.trim().length}/6
+                  {t("pdp.upToChars", { n: customLine1.trim().length })}
                 </p>
               </div>
 
               {/* Line 2 — typically birth year or date */}
               <div>
                 <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-1.5">
-                  Line 2 — birth year or date
+                  {t("pdp.line2Label")}
                 </label>
                 <input
                   type="text"
@@ -973,7 +980,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   inputMode="numeric"
                   autoCorrect="off"
                   spellCheck={false}
-                  placeholder="e.g. 2025"
+                  placeholder={t("pdp.line2Placeholder")}
                   className="w-full px-3 py-2.5 text-sm"
                   style={{
                     border: "1px solid var(--border-strong)",
@@ -981,10 +988,10 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     color: "var(--text-primary)",
                     fontFamily: "Fraunces, serif",
                   }}
-                  aria-label="Optional second line of personalized text"
+                  aria-label={t("pdp.line2Aria")}
                 />
                 <p className="text-[0.6rem] opacity-50 mt-1">
-                  Up to 6 characters · {customLine2.trim().length}/6
+                  {t("pdp.upToChars", { n: customLine2.trim().length })}
                 </p>
               </div>
             </div>
@@ -1009,7 +1016,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1" style={{ color: "#B08842" }}>Real example</p>
+                <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1" style={{ color: "var(--accent)" }}>{t("pdp.realExample")}</p>
                 <p className="text-[0.7rem] opacity-75 leading-snug italic">
                   Lusik stitches the name in the center of the blanket and the year on the empty square diagonally above — on the line that runs between the two alphabet diagonals — like the <span style={{ fontStyle: "normal", fontFamily: "Fraunces, serif", fontWeight: 500 }}>OLEN / 2026</span> blanket shown here. Final placement may shift slightly depending on the specific text length.
                 </p>
@@ -1026,8 +1033,8 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 style={{ background: "var(--ink)", color: "var(--text-on-ink)" }}
               >
                 {(customLine1.trim().length > 0 || customLine2.trim().length > 0)
-                  ? "Done — collapse this section"
-                  : "Skip — no optional text"}
+                  ? t("pdp.doneCollapse")
+                  : t("pdp.skipNoText")}
               </button>
             )}
           </CollapsibleSection>
@@ -1039,32 +1046,32 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               sheet or copies to clipboard — see handleShareDesign above. */}
           <div className="mb-6 p-5 lg:p-6" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.1)" }}>
             <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "#B08842" }}>Your blanket</p>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "var(--accent)" }}>{t("pdp.yourBlanket")}</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handleSaveDesign}
                   disabled={savingDesign}
                   className="text-xs tracking-[0.15em] uppercase transition flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-40"
                   style={{
-                    border: `1px solid ${justSavedDesign ? "#B08842" : "rgba(26,22,18,0.18)"}`,
+                    border: `1px solid ${justSavedDesign ? "var(--accent)" : "rgba(26,22,18,0.18)"}`,
                     background: justSavedDesign ? "rgba(176,136,66,0.08)" : "transparent",
-                    color: justSavedDesign ? "#B08842" : "var(--text-primary)",
+                    color: justSavedDesign ? "var(--accent)" : "var(--text-primary)",
                     fontWeight: 500,
                   }}
-                  aria-label="Save this design to your account"
-                  title={user ? "Save to your account so you can come back to it later" : "Sign in to save designs"}
+                  aria-label={t("pdp.saveAria")}
+                  title={user ? t("pdp.saveTitleUser") : t("pdp.saveTitleGuest")}
                 >
                   <Bookmark size={12} strokeWidth={1.75} />
-                  {savingDesign ? "Saving…" : justSavedDesign ? "Saved ✓" : "Save design"}
+                  {savingDesign ? t("pdp.saving") : justSavedDesign ? t("pdp.saved") : t("pdp.saveDesign")}
                 </button>
                 <button
                   onClick={handleShareDesign}
                   className="text-xs tracking-[0.15em] uppercase opacity-70 hover:opacity-100 transition flex items-center gap-1.5 px-3 py-1.5"
                   style={{ border: "1px solid rgba(26,22,18,0.18)", fontWeight: 500 }}
-                  aria-label="Share this design"
-                  title="Get a second opinion before you order"
+                  aria-label={t("pdp.shareAria")}
+                  title={t("pdp.shareTitle")}
                 >
-                  <Share2 size={12} strokeWidth={1.75} /> Share
+                  <Share2 size={12} strokeWidth={1.75} /> {t("pdp.share")}
                 </button>
               </div>
             </div>
@@ -1072,9 +1079,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 customers see a pointer to their account library so they
                 know the saved design will be retrievable later. */}
             <p className="text-[0.65rem] opacity-55 italic mb-3 leading-snug">
-              {user
-                ? "Saved designs live in your account — pick up where you left off any time."
-                : "Sign in to save your design and pick up where you left off later."}
+              {user ? t("pdp.saveHintUser") : t("pdp.saveHintGuest")}
             </p>
             <div className="flex items-center gap-5">
               <div style={{ width: "140px", flexShrink: 0 }}>
@@ -1093,13 +1098,13 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-display text-base lg:text-lg leading-tight" style={{ fontWeight: 500 }}>
-                  {alphabet.label} alphabet — {alphabet.transliteration}
+                  {t("pdp.alphabetLabel", { label: alphabet.label, translit: alphabet.transliteration })}
                 </p>
                 <p className="text-xs opacity-70 mt-1.5 leading-snug">
                   {layout.shortLabel}
                 </p>
                 <p className="text-xs opacity-70 mt-1 leading-snug">
-                  <span style={{ color: blockColor.hex, fontWeight: 600 }}>■</span> {blockColor.name} cube outline
+                  <span style={{ color: blockColor.hex, fontWeight: 600 }}>■</span> {t("pdp.cubeOutline", { name: blockColor.name })}
                 </p>
                 {letterColorList ? (
                   <p className="text-xs opacity-70 mt-0.5 leading-snug">
@@ -1109,15 +1114,15 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                         {idx < letterColorList.length - 1 ? " · " : ""}
                       </span>
                     ))}
-                    <span className="opacity-70"> letters</span>
+                    <span className="opacity-70"> {t("pdp.lettersWord")}</span>
                   </p>
                 ) : (
                   <p className="text-xs opacity-70 mt-0.5 leading-snug">
-                    <span style={{ color: letterColor.hex, fontWeight: 600 }}>■</span> {letterColor.name} letter inside
+                    <span style={{ color: letterColor.hex, fontWeight: 600 }}>■</span> {t("pdp.letterInside", { name: letterColor.name })}
                   </p>
                 )}
                 <p className="text-xs opacity-60 mt-2">
-                  {layout.letterCount} letter{layout.letterCount > 1 ? "s" : ""} · ${(layout.priceCents / 100).toFixed(0)}
+                  {t("pdp.letters", { n: layout.letterCount })} · ${(layout.priceCents / 100).toFixed(0)}
                 </p>
               </div>
             </div>
@@ -1128,13 +1133,13 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               Matches the FAQ accordion pattern used elsewhere on the site. */}
           <details className="border-t border-b mb-8 group" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
             <summary className="py-5 flex items-center justify-between cursor-pointer list-none">
-              <span className="text-xs tracking-[0.2em] uppercase opacity-70">Details · size · care</span>
+              <span className="text-xs tracking-[0.2em] uppercase opacity-70">{t("product.details")}</span>
               <Plus size={16} strokeWidth={1.5} className="open-icon opacity-60" />
             </summary>
             <ul className="space-y-2 text-sm pb-5 -mt-1">
               {product.specs.map((s, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span style={{ color: "#B08842" }}>—</span>
+                  <span style={{ color: "var(--accent)" }}>—</span>
                   <span>{s}</span>
                 </li>
               ))}
@@ -1145,23 +1150,23 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               customer cannot miss it at the decision point. Subtle gold-tinted
               callout, not alarming; links to the full Final Sale Policy
               modal so anyone who wants the detail can read it. */}
-          <div className="mb-3 p-3 text-xs leading-snug flex items-start gap-2.5" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
-            <span style={{ color: "#B08842", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
+          <div className="mb-3 p-3 text-xs leading-snug flex items-start gap-2.5" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
+            <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("pdp.finalSale")}</span>
             <span className="opacity-80">
-              This blanket is stitched specifically for you, so all sales are final. No returns, exchanges, or refunds. Please review your alphabet, colors, and any name or year before checking out.{" "}
+              {t("pdp.finalSaleBody")}{" "}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
                 className="underline hover:opacity-60"
-                style={{ color: "#B08842" }}
+                style={{ color: "var(--accent)" }}
               >
-                Read the full policy
+                {t("pdp.readPolicy")}
               </button>.
             </span>
           </div>
 
           <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center border" style={{ borderColor: "rgba(26,22,18,0.2)" }}>
+            <div className="flex items-center border" style={{ borderColor: "var(--border-strong)" }}>
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3"><Minus size={14} /></button>
               <span className="px-5 text-base">{qty}</span>
               <button onClick={() => setQty(qty + 1)} className="px-4 py-3"><Plus size={14} /></button>
@@ -1183,7 +1188,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 cursor: adding ? "wait" : "pointer",
               }}
             >
-              Add to Bag — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
+              {t("common.addToCart")} — ${((layout.priceCents / 100) * qty).toFixed(0)} <ArrowRight size={16} />
             </button>
           </div>
           {/* Express checkout — skips the bag and goes straight to Stripe with
@@ -1203,7 +1208,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               cursor: adding ? "wait" : "pointer",
             }}
           >
-            Buy it now
+            {t("pdp.buyNow")}
           </button>
           {/* Estimated delivery — concrete ship-by / arrives-by range
               instead of a vague "5–10 days" line. Computed on every
@@ -1215,22 +1220,22 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               const est = getDeliveryEstimate();
               return (
                 <>
-                  <span style={{ fontWeight: 500 }}>Ships {est.shipBy}</span>
-                  <span className="opacity-70"> · arrives {est.arrives}</span>
-                  <span className="block opacity-60 mt-0.5 text-[0.65rem]">Based on Lusik's current production time and ground shipping to a U.S. address.</span>
+                  <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: est.shipBy })}</span>
+                  <span className="opacity-70">{t("pdp.arrives", { date: est.arrives })}</span>
+                  <span className="block opacity-60 mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
                 </>
               );
             })()}
           </p>
           <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
-              <Phone size={14} /> Call
+            <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>
+              <Phone size={14} /> {t("common.call")}
             </button>
-            <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
-              <Instagram size={14} /> DM
+            <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>
+              <Instagram size={14} /> {t("common.dm")}
             </button>
-            <button onClick={() => window.open("mailto:hello@lusikandsons.com?subject=Custom order inquiry")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
-              <Mail size={14} /> Email
+            <button onClick={() => window.open("mailto:hello@lusikandsons.com?subject=Custom order inquiry")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>
+              <Mail size={14} /> {t("common.email")}
             </button>
           </div>
         </div>
@@ -1272,7 +1277,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               visible against the dark backdrop. */}
           <button
             onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
-            aria-label="Close zoomed photo"
+            aria-label={t("pdp.closeZoom")}
             className="absolute top-4 right-4 w-11 h-11 flex items-center justify-center backdrop-blur-sm"
             style={{ background: "rgba(245,239,227,0.15)", color: "#F5EFE3" }}
           >
@@ -1285,7 +1290,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); prev(); }}
-                aria-label="Previous photo"
+                aria-label={t("pdp.prevPhoto")}
                 className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center backdrop-blur-sm"
                 style={{ background: "rgba(245,239,227,0.15)", color: "#F5EFE3" }}
               >
@@ -1293,7 +1298,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); next(); }}
-                aria-label="Next photo"
+                aria-label={t("pdp.nextPhoto")}
                 className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center backdrop-blur-sm"
                 style={{ background: "rgba(245,239,227,0.15)", color: "#F5EFE3" }}
               >

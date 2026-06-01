@@ -18,12 +18,14 @@ export const CUSTOM_PRODUCTS = {
   bib: {
     key: "bib",
     name: "Baby Bib",
+    name_hy: "Մանկական կրծկալ",
     tagline: "Your child's name on the cloth they wear every morning — embroidered by Lusik, in Armenian or English.",
+    tagline_hy: "Ձեր երեխայի անունը այն կտորի վրա, որ նա կրում է ամեն առավոտ՝ ասեղնագործված Լուսիկի կողմից, հայերեն կամ անգլերեն։",
     price: 22,                    // single price — machine-only
     // handStitchedPrice removed — Lusik decided to drop the hand-cross-stitched
     // bib option. The bib is now machine-embroidery-only with a typed name.
     customMode: "name",           // machine mode accepts a short typed name
-    description: "A soft white bib with your child's name embroidered across it — in Armenian script or English, the way it will be said for the rest of their life. Lusik does this one by machine, the way a bib needs to be done: 150 wash cycles a year, formula, blueberry yogurt, the entire bowl of oatmeal a one-year-old just flipped — the name has to survive all of it without lifting from the cloth. Up to six letters fit comfortably on the bib's small surface. One size, fits most babies. Made to order from her home in Cypress, California.",
+    description: "A soft white bib with your child's name embroidered across it — in Armenian script or English, the way it will be said for the rest of their life. Lusik does this one by machine, the way a bib needs to be done: 150 wash cycles a year, formula, blueberry yogurt, the entire bowl of oatmeal a one-year-old just flipped — the name has to survive all of it without lifting from the cloth. Up to six letters fit comfortably on the bib's small surface. One size, fits most babies. Made to order from her home in Southern California.",
     sizes: [
       "One size · fits most babies · white only",
     ],

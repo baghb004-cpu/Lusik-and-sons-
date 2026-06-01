@@ -63,7 +63,7 @@ export function ThemeToggleCompact() {
           alignItems: "center",
           justifyContent: "center",
           boxShadow: "0 1px 3px rgba(26,22,18,0.18)",
-          color: isDark ? "#C9A678" : "#B08842",
+          color: isDark ? "#C9A678" : "var(--accent)",
         }}
       >
         {isDark ? <Moon size={14} strokeWidth={1.75} /> : <Sun size={14} strokeWidth={1.75} />}

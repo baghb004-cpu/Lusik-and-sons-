@@ -221,7 +221,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
 
       <div className="flex items-end justify-between mb-6 flex-wrap gap-4">
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Admin</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>Admin</p>
           <h1 className="font-display text-4xl lg:text-5xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Orders.</h1>
         </div>
         <div className="flex gap-1.5 items-center flex-wrap">
@@ -281,7 +281,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
       {Array.isArray(waitlists) && waitlists.length > 0 && (
         <div className="lg-panel lg-panel-gold mb-8 p-5">
           <div className="flex items-baseline justify-between mb-3">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#B08842", fontWeight: 600 }}>Waitlists</p>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)", fontWeight: 600 }}>Waitlists</p>
             <p className="text-[0.65rem] opacity-60 italic">Click Notify when a product goes live.</p>
           </div>
           <div className="space-y-2">

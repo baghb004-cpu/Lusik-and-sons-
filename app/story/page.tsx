@@ -5,7 +5,7 @@ import { pageMetadata } from "../../src/lib/seo.js";
 export const metadata: Metadata = pageMetadata({
   title: "Our Story",
   description:
-    "The story of Lusik & Sons — from Armenia to Cypress, California, and the hand cross-stitch craft passed down through the family.",
+    "The story of Lusik & Sons — from Armenia to Southern California, and the hand cross-stitch craft passed down through the family.",
   path: "/story",
   type: "article",
 });

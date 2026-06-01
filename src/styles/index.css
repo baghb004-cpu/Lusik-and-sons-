@@ -156,7 +156,7 @@
      only to the lg:hidden mobile page titles; desktop typography keeps
      the Fraunces serif via .font-display. */
   .font-mobile-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "DM Sans", system-ui, sans-serif; }
-  .gold-line { background: linear-gradient(90deg, transparent, #B08842, transparent); height: 1px; }
+  .gold-line { background: linear-gradient(90deg, transparent, var(--accent), transparent); height: 1px; }
   .fade-in { animation: fadeIn 0.7s ease-out; }
   .slide-up { animation: slideUp 0.6s ease-out; }
   .stagger-1 { animation-delay: 0.1s; animation-fill-mode: backwards; }
@@ -341,12 +341,12 @@
     display: block;
     padding: 4px 0;
     font-size: 0.95rem;
-    color: #1A1612;
+    color: var(--text-primary);
     text-decoration: none;
     transition: color 120ms ease, padding-left 120ms ease;
   }
   .shop-menu-item:hover {
-    color: #B08842;
+    color: var(--accent);
     padding-left: 4px;
   }
   .shop-menu-item.placeholder {
@@ -420,7 +420,7 @@
       0 6px 12px -3px rgba(26,22,18,0.15);
   }
   .back-to-top:focus-visible {
-    outline: 2px solid #B08842;
+    outline: 2px solid var(--accent);
     outline-offset: 3px;
   }
   /* Respect users who've set reduced-motion in their OS — skip the smooth
@@ -728,7 +728,7 @@
      keyboard / accessibility-tech users, never on mouse clicks.
      2px outline + 2px offset clears most element backgrounds. */
   *:focus-visible {
-    outline: 2px solid #B08842;
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
     border-radius: 1px;
   }

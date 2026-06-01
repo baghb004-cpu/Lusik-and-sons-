@@ -16,10 +16,10 @@ export function ProductTemplate({ customName, nameColor, nameColors }) {
   const paths = [
     {
       d: "M 38 22 C 38 28 44 30 50 30 C 56 30 62 28 62 22 C 70 22 80 30 80 50 C 80 78 65 88 50 88 C 35 88 20 78 20 50 C 20 30 30 22 38 22 Z",
-      fill: "#FFFFFF", stroke: "#B08842", strokeWidth: 0.4,
+      fill: "#FFFFFF", stroke: "var(--accent)", strokeWidth: 0.4,
     },
-    { d: "M 38 22 C 32 18 26 18 22 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
-    { d: "M 62 22 C 68 18 74 18 78 22", fill: "none", stroke: "#B08842", strokeWidth: 0.4 },
+    { d: "M 38 22 C 32 18 26 18 22 22", fill: "none", stroke: "var(--accent)", strokeWidth: 0.4 },
+    { d: "M 62 22 C 68 18 74 18 78 22", fill: "none", stroke: "var(--accent)", strokeWidth: 0.4 },
   ];
   const stitchZone = { x: 35, y: 45, w: 30, h: 28 };
   const trimmedName = (customName ?? "").trim();
@@ -41,7 +41,7 @@ export function ProductTemplate({ customName, nameColor, nameColors }) {
       {showZone && (
         <rect
           x={stitchZone.x} y={stitchZone.y} width={stitchZone.w} height={stitchZone.h}
-          fill="none" stroke="#B08842" strokeWidth={0.3} strokeDasharray="1 1" opacity="0.4"
+          fill="none" stroke="var(--accent)" strokeWidth={0.3} strokeDasharray="1 1" opacity="0.4"
         />
       )}
       {/* Typed-name preview — Allura cursive approximates the real

@@ -43,7 +43,7 @@ import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 // updated when Lusik adds new products or changes policies.
 // Conservative tone — never invent specs or commit to dates.
 // ============================================================
-const SYSTEM_PROMPT = `You are a warm, helpful assistant for Lusik & Sons, a small family business in Cypress, California. Lusik hand cross-stitches Armenian alphabet baby blankets and machine-embroiders baby bibs with personalized names.
+const SYSTEM_PROMPT = `You are a warm, helpful assistant for Lusik & Sons, a small family business in Southern California. Lusik hand cross-stitches Armenian alphabet baby blankets and machine-embroiders baby bibs with personalized names.
 
 VOICE:
 - Warm and conversational, like a friend who happens to work at the shop. Never corporate or salesy.

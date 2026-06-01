@@ -29,7 +29,7 @@ export function SiteFooter({ onOpenPolicy }) {
         <div className="grid md:grid-cols-12 gap-10 lg:gap-12">
           <div className="md:col-span-4">
             <p className="font-display text-2xl mb-3" style={{ fontWeight: 500 }}>
-              Lusik <span style={{ color: "#B08842" }}>&</span> Sons
+              Lusik <span style={{ color: "var(--accent)" }}>&</span> Sons
             </p>
             <p className="text-sm opacity-70 leading-relaxed mb-4">{t("footer.brand")}</p>
             <p className="text-xs opacity-50 italic font-display" style={{ fontWeight: 400 }}>{t("footer.tagline")}</p>
@@ -73,9 +73,9 @@ export function SiteFooter({ onOpenPolicy }) {
         <NewsletterSignup />
 
         <div className="grid sm:grid-cols-3 gap-4 mb-8 text-xs opacity-70">
-          <div className="flex items-center gap-2.5"><MapPin size={14} strokeWidth={1.5} style={{ color: "#B08842", flexShrink: 0 }} /><span>{t("footer.trustMade")}</span></div>
-          <div className="flex items-center gap-2.5"><Check size={14} strokeWidth={1.75} style={{ color: "#B08842", flexShrink: 0 }} /><span>{t("footer.trustSecure")}</span></div>
-          <div className="flex items-center gap-2.5"><Send size={14} strokeWidth={1.5} style={{ color: "#B08842", flexShrink: 0 }} /><span>{t("footer.trustShips")}</span></div>
+          <div className="flex items-center gap-2.5"><MapPin size={14} strokeWidth={1.5} style={{ color: "var(--accent)", flexShrink: 0 }} /><span>{t("footer.trustMade")}</span></div>
+          <div className="flex items-center gap-2.5"><Check size={14} strokeWidth={1.75} style={{ color: "var(--accent)", flexShrink: 0 }} /><span>{t("footer.trustSecure")}</span></div>
+          <div className="flex items-center gap-2.5"><Send size={14} strokeWidth={1.5} style={{ color: "var(--accent)", flexShrink: 0 }} /><span>{t("footer.trustShips")}</span></div>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs opacity-60 pt-6" style={{ borderTop: "1px solid var(--border-soft)" }}>

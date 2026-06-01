@@ -146,7 +146,7 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
 
   // Block outline color — what the customer picked, or a gold default for the
   // "no colors selected" / catalog-card preview case.
-  const outlineColor = blockColor ?? "#B08842";
+  const outlineColor = blockColor ?? "var(--accent)";
   // Default letter color when no per-letter array is provided.
   const defaultLetterFg = letterColor ?? (darkMode ? "#F5EFE3" : "#1A1612");
 

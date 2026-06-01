@@ -348,8 +348,8 @@ test.describe("section pages (promoted off the home page)", () => {
     // Open /story via the home "Our Story" Explore card. It renders on
     // both mobile and desktop, unlike the desktop-only top-nav "Story"
     // link that the mobile bottom-nav redesign dropped. The card's
-    // accessible name is "Our Story — Armenia → Cypress".
-    await page.getByRole("button", { name: /our story.*armenia.*cypress/i }).click();
+    // accessible name is "Our Story — Armenia → California".
+    await page.getByRole("button", { name: /our story.*armenia.*california/i }).click();
     await expect(page).toHaveURL(/\/story\/?$/, { timeout: 5_000 });
 
     // The promoted page renders the big "‹ For You" back control.

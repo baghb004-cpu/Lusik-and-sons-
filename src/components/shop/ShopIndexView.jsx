@@ -28,6 +28,8 @@ import { JOURNAL_POSTS } from "../../data/journalPosts.js";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
 import { ArrowRight, Heart, Home, Sparkles } from "../icons.jsx";
+import { useT, useLang } from "../../i18n/LangContext.jsx";
+import { loc } from "../../i18n/localize.js";
 
 // ------------------------------------------------------------
 // FEATURED_PIECES — the curated mobile "Featured pieces" set.
@@ -90,13 +92,16 @@ const MOBILE_CATEGORY_IMAGE = {
 // category label sits centered below in the display font.
 // ------------------------------------------------------------
 function CategoryCard({ category, onTap }) {
+  const t = useT();
+  const { lang } = useLang();
+  const label = loc(category, "label", lang);
   const image = MOBILE_CATEGORY_IMAGE[category.slug] || null;
 
   return (
     <button
       type="button"
       onClick={onTap}
-      aria-label={`Browse ${category.label}`}
+      aria-label={t("shop.browseAria", { label })}
       className="flex flex-col items-stretch text-center"
       style={{
         flexShrink: 0,
@@ -122,20 +127,20 @@ function CategoryCard({ category, onTap }) {
         {image ? (
           <img
             src={image}
-            alt={category.label}
+            alt={label}
             loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }}
           />
         ) : (
           <div
             className="flex items-center justify-center w-full h-full"
-            style={{ background: "rgba(176,136,66,0.06)", borderRadius: 12 }}
+            style={{ background: "var(--accent-soft)", borderRadius: 12 }}
           >
             <span
               className="font-display"
               style={{ fontSize: "0.95rem", fontWeight: 500, color: "var(--text-primary, #1A1612)", opacity: 0.75 }}
             >
-              {category.label}
+              {label}
             </span>
           </div>
         )}
@@ -147,7 +152,7 @@ function CategoryCard({ category, onTap }) {
           className="font-display leading-tight"
           style={{ fontSize: "0.95rem", fontWeight: 500, color: "var(--text-primary, #1A1612)" }}
         >
-          {category.label}
+          {label}
         </span>
       </div>
     </button>
@@ -162,11 +167,12 @@ function CategoryCard({ category, onTap }) {
 // product page to pick colors / name / layout before checkout.
 // ------------------------------------------------------------
 function FeaturedPieceCard({ piece, onTap }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onTap}
-      aria-label={`View ${piece.name}`}
+      aria-label={t("shop.viewAria", { name: piece.name })}
       className="block w-full text-left"
       style={{
         background: "var(--bg-surface, #FFFFFF)",
@@ -186,7 +192,7 @@ function FeaturedPieceCard({ piece, onTap }) {
       <div style={{ padding: "18px 20px 20px" }}>
         <p
           className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
-          style={{ color: "#B08842" }}
+          style={{ color: "var(--accent)" }}
         >
           {piece.eyebrow}
         </p>
@@ -210,13 +216,13 @@ function FeaturedPieceCard({ piece, onTap }) {
           <span
             className="text-sm rounded-full"
             style={{
-              background: "var(--text-primary, #1A1612)",
-              color: "#F5EFE3",
+              background: "var(--ink)",
+              color: "var(--text-on-ink)",
               padding: "10px 22px",
               fontWeight: 500,
             }}
           >
-            View
+            {t("shop.view")}
           </span>
         </div>
       </div>
@@ -232,11 +238,12 @@ function FeaturedPieceCard({ piece, onTap }) {
 // footer. Fixed width so the next card peeks at the page edge.
 // ------------------------------------------------------------
 function JournalCard({ post, onTap }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onTap}
-      aria-label={`Read ${post.title}`}
+      aria-label={t("shop.readAria", { title: post.title })}
       className="flex flex-col text-left"
       style={{
         flexShrink: 0,
@@ -252,9 +259,9 @@ function JournalCard({ post, onTap }) {
     >
       <p
         className="text-[0.6rem] tracking-[0.3em] uppercase mb-3"
-        style={{ color: "#B08842" }}
+        style={{ color: "var(--accent)" }}
       >
-        Journal
+        {t("shop.journal")}
       </p>
       <h3
         className="font-display mb-2"
@@ -286,9 +293,9 @@ function JournalCard({ post, onTap }) {
       </p>
       <p
         className="text-[0.7rem] tracking-[0.15em] uppercase"
-        style={{ color: "#B08842", marginTop: 12, fontWeight: 500 }}
+        style={{ color: "var(--accent)", marginTop: 12, fontWeight: 500 }}
       >
-        Read · {post.readMinutes} min
+        {t("shop.readMin", { min: post.readMinutes })}
       </p>
     </button>
   );
@@ -311,7 +318,7 @@ const DIFFERENCE_SLIDES = [
   },
   {
     icon: Home,
-    text: "From her home in Cypress, California — stitched for yours.",
+    text: "From her home in Southern California — stitched for yours.",
     linkLabel: "Read Lusik's journal",
     action: "journal",
   },
@@ -330,6 +337,8 @@ const DIFFERENCE_SLIDES = [
 // the scroll position so the dots stay in sync with a swipe.
 // ------------------------------------------------------------
 function DifferenceCarousel({ onSlideAction }) {
+  const t = useT();
+  const slideText = t("shop.difference"); // [{ text, linkLabel }] in active language
   const [active, setActive] = useState(0);
   const trackRef = useRef(null);
 
@@ -346,7 +355,7 @@ function DifferenceCarousel({ onSlideAction }) {
         className="font-display mb-5 px-6"
         style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
       >
-        The Lusik &amp; Sons difference
+        {t("shop.differenceHeading")}
       </h2>
       <div
         ref={trackRef}
@@ -360,6 +369,7 @@ function DifferenceCarousel({ onSlideAction }) {
       >
         {DIFFERENCE_SLIDES.map((slide, i) => {
           const Ico = slide.icon;
+          const copy = slideText?.[i] || { text: slide.text, linkLabel: slide.linkLabel };
           return (
             <div
               key={i}
@@ -368,23 +378,23 @@ function DifferenceCarousel({ onSlideAction }) {
             >
               <div
                 className="flex items-center justify-center"
-                style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(176,136,66,0.10)", marginBottom: 18 }}
+                style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent-soft)", marginBottom: 18 }}
               >
-                <Ico size={28} strokeWidth={1.5} style={{ color: "#B08842" }} />
+                <Ico size={28} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
               </div>
               <p
                 className="font-display"
                 style={{ fontSize: "1.3rem", fontWeight: 600, lineHeight: 1.3, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)", maxWidth: 320 }}
               >
-                {slide.text}
+                {copy.text}
               </p>
               <button
                 type="button"
                 onClick={() => onSlideAction?.(slide.action)}
                 className="text-sm flex items-center gap-1.5"
-                style={{ color: "#B08842", fontWeight: 500, marginTop: 16 }}
+                style={{ color: "var(--accent)", fontWeight: 500, marginTop: 16 }}
               >
-                {slide.linkLabel} <ArrowRight size={14} strokeWidth={1.75} />
+                {copy.linkLabel} <ArrowRight size={14} strokeWidth={1.75} />
               </button>
             </div>
           );
@@ -400,7 +410,7 @@ function DifferenceCarousel({ onSlideAction }) {
               width: i === active ? 20 : 7,
               borderRadius: 4,
               transition: "width 0.25s ease, background 0.25s ease",
-              background: i === active ? "var(--text-primary, #1A1612)" : "rgba(26,22,18,0.22)",
+              background: i === active ? "var(--text-primary)" : "var(--border-strong)",
             }}
           />
         ))}
@@ -425,16 +435,16 @@ function buildGridItems() {
     for (const p of category.products) {
       const image = p.coverImage || PRODUCT_IMAGE_FALLBACK[p.slug];
       if (!image) continue; // no real photo yet → leave it out
-      let priceLabel;
-      if (p.priceFrom && p.status === "live") priceLabel = `From $${p.priceFrom}`;
-      else if (p.priceFrom) priceLabel = `$${p.priceFrom} · by order`;
-      else priceLabel = "Made to order";
       items.push({
         categorySlug: category.slug,
         slug: p.slug,
+        // Carry both languages + the raw price fields so the card can localize
+        // the name and the "From $X / by order / made to order" label at render.
         name: p.name,
+        name_hy: p.name_hy,
+        priceFrom: p.priceFrom,
+        status: p.status,
         image,
-        priceLabel,
         swatches: (p.colorways || []).slice(0, 5).map((c) => c.swatch),
       });
     }
@@ -455,11 +465,18 @@ function swatchBackground(s) {
 }
 
 function ProductGridCard({ item, onTap }) {
+  const t = useT();
+  const { lang } = useLang();
+  const name = loc(item, "name", lang);
+  let priceLabel;
+  if (item.priceFrom && item.status === "live") priceLabel = t("shop.from", { price: item.priceFrom });
+  else if (item.priceFrom) priceLabel = t("shop.byOrder", { price: item.priceFrom });
+  else priceLabel = t("shop.madeToOrder");
   return (
     <button
       type="button"
       onClick={onTap}
-      aria-label={`View ${item.name}`}
+      aria-label={t("shop.viewAria", { name })}
       className="flex flex-col text-left"
     >
       <div
@@ -483,10 +500,10 @@ function ProductGridCard({ item, onTap }) {
         className="font-display"
         style={{ fontSize: "0.98rem", fontWeight: 600, lineHeight: 1.25, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)", marginTop: 12 }}
       >
-        {item.name}
+        {name}
       </h3>
       <p className="text-sm" style={{ color: "var(--text-muted, rgba(26,22,18,0.65))", marginTop: 4 }}>
-        {item.priceLabel}
+        {priceLabel}
       </p>
       {item.swatches.length > 0 && (
         <div className="flex items-center" style={{ gap: 6, marginTop: 10 }}>
@@ -511,6 +528,13 @@ function ProductGridCard({ item, onTap }) {
 }
 
 export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal }) {
+  const t = useT();
+  const { lang } = useLang();
+  // Merge the routing/image meta (FEATURED_PIECES) with the translated
+  // editorial copy (shop.featured) by index, so each featured card keeps its
+  // deep link + photo but reads in the active language.
+  const featuredCopy = t("shop.featured");
+  const featuredPieces = FEATURED_PIECES.map((meta, i) => ({ ...meta, ...(featuredCopy?.[i] || {}) }));
   // Map a DifferenceCarousel slide action to the right navigation.
   const handleDifferenceAction = (action) => {
     if (action === "blankets") onNavigateCategory?.("blankets");
@@ -535,7 +559,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             className="text-[0.65rem] tracking-[0.25em] uppercase px-6 mb-3"
             style={{ color: "var(--text-muted, rgba(26,22,18,0.5))" }}
           >
-            Browse by category
+            {t("shop.browseBy")}
           </p>
           <div
             className="flex"
@@ -574,12 +598,12 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             className="font-display mb-4"
             style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
           >
-            Discover what's new
+            {t("shop.discoverNew")}
           </h2>
           <button
             type="button"
             onClick={() => onNavigateProduct?.("bibs", "bari-akhorzhak-bib-burp-cloth-set")}
-            aria-label="View The Bari Akhorzhak Bib & Burp Cloth Set"
+            aria-label={t("shop.viewAria", { name: t("shop.newestName") })}
             className="block w-full text-left"
             style={{
               background: "var(--bg-surface, #FFFFFF)",
@@ -598,18 +622,18 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             <div style={{ padding: "18px 20px 20px" }}>
               <p
                 className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
-                style={{ color: "#B08842" }}
+                style={{ color: "var(--accent)" }}
               >
-                Newest
+                {t("shop.newest")}
               </p>
               <h3
                 className="font-display mb-1.5"
                 style={{ fontSize: "1.25rem", fontWeight: 400, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
               >
-                The Bari Akhorzhak Bib &amp; Burp Cloth Set
+                {t("shop.newestName")}
               </h3>
               <p className="text-sm opacity-70 leading-relaxed">
-                Two Armenian meal blessings, one matched set.
+                {t("shop.newestTagline")}
               </p>
             </div>
           </button>
@@ -624,9 +648,9 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             className="font-display mb-4"
             style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
           >
-            Featured pieces
+            {t("shop.featuredPieces")}
           </h2>
-          {FEATURED_PIECES.map((piece) => (
+          {featuredPieces.map((piece) => (
             <FeaturedPieceCard
               key={`${piece.categorySlug}/${piece.slug}`}
               piece={piece}
@@ -649,7 +673,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             className="font-display mb-5"
             style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
           >
-            Shop the collection
+            {t("shop.shopCollection")}
           </h2>
           <div className="grid grid-cols-2" style={{ rowGap: 22, columnGap: 16 }}>
             {GRID_ITEMS.map((item) => (
@@ -671,7 +695,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             className="font-display mb-4 px-6"
             style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
           >
-            From the Journal
+            {t("shop.fromJournal")}
           </h2>
           <div
             className="flex"
@@ -713,16 +737,16 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
       {/* ====================================================== */}
       <div className="hidden lg:block max-w-6xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
         <Breadcrumbs trail={[
-          { label: "Home", onClick: onNavigateHome },
-          { label: "Shop" },
+          { label: t("shop.breadcrumbHome"), onClick: onNavigateHome },
+          { label: t("footer.shop") },
         ]} />
 
-        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>The shop</p>
+        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>{t("shop.theShop")}</p>
         <h1 className="font-display text-4xl lg:text-6xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
-          Everything Lusik <em style={{ fontWeight: 400 }}>makes</em>.
+          {t("shop.everythingPre")}<em style={{ fontWeight: 400 }}>{t("shop.everythingEm")}</em>.
         </h1>
         <p className="text-base lg:text-lg opacity-75 max-w-2xl leading-relaxed mb-12 lg:mb-16">
-          Cross-stitched blankets for the crib. Embroidered bibs for the kitchen table. Ceremonial towels for the days that count. Small fabric objects for the very first weeks. Each piece by Lusik's own hand, from her home in Cypress, California — made to order, made to last. Pick a category to step in.
+          {t("shop.intro")}
         </p>
 
         <div className="grid sm:grid-cols-2 gap-5 lg:gap-6">
@@ -730,8 +754,9 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             const total       = category.products.length;
             const liveCount   = category.products.filter((p) => p.status === "live").length;
             const subtitleParts = [];
-            if (liveCount > 0)   subtitleParts.push(`${liveCount} available now`);
-            if (total - liveCount > 0) subtitleParts.push(`${total - liveCount} coming soon`);
+            if (liveCount > 0)   subtitleParts.push(t("shop.availableNow", { n: liveCount }));
+            if (total - liveCount > 0) subtitleParts.push(t("shop.comingSoonCount", { n: total - liveCount }));
+            const catLabel = loc(category, "label", lang);
 
             return (
               <button
@@ -739,23 +764,23 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
                 onClick={() => onNavigateCategory(category.slug)}
                 className="lg-button lg-shine text-left p-6 lg:p-8 transition stagger-reveal"
                 style={{ "--i": i }}
-                aria-label={`Browse ${category.label}`}
+                aria-label={t("shop.browseAria", { label: catLabel })}
               >
-                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>
-                  {category.eyebrow}
+                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>
+                  {loc(category, "eyebrow", lang)}
                 </p>
                 <h2 className="font-display text-2xl lg:text-3xl mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-                  {category.label}
+                  {catLabel}
                 </h2>
                 <p className="text-sm opacity-75 leading-relaxed mb-5">
-                  {category.description}
+                  {loc(category, "description", lang)}
                 </p>
-                <div className="flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
+                <div className="flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid var(--border-default)" }}>
                   <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-65">
                     {subtitleParts.join(" · ")}
                   </p>
-                  <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
-                    Step in <ArrowRight size={12} strokeWidth={1.75} />
+                  <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                    {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
                   </span>
                 </div>
               </button>

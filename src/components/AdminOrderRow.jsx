@@ -54,7 +54,7 @@ export function AdminOrderRow({ order, onOpen }) {
             <p className="font-display text-lg" style={{ fontWeight: 500 }}>{order.order_number}</p>
             <p className="text-xs opacity-60">{orderDate}</p>
             {order.gift?.is_gift && (
-              <span className="text-[0.55rem] tracking-[0.18em] uppercase px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "#B08842", fontWeight: 500 }}>
+              <span className="text-[0.55rem] tracking-[0.18em] uppercase px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "var(--accent)", fontWeight: 500 }}>
                 Gift
               </span>
             )}

@@ -42,7 +42,7 @@ export function CollapsibleSection({ title, open, summary, onExpand, children, m
             <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-50 mb-1">{title}</p>
             <div className="text-sm" style={{ fontWeight: 500 }}>{summary}</div>
           </div>
-          <span className="text-[0.65rem] tracking-wider uppercase opacity-60 ml-3 flex-shrink-0" style={{ color: "#B08842" }}>
+          <span className="text-[0.65rem] tracking-wider uppercase opacity-60 ml-3 flex-shrink-0" style={{ color: "var(--accent)" }}>
             Change
           </span>
         </button>

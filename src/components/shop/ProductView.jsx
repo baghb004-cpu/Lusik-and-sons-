@@ -33,6 +33,8 @@ import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
+import { useT, useLang } from "../../i18n/LangContext.jsx";
+import { loc } from "../../i18n/localize.js";
 
 export function ProductView({
   category,
@@ -55,11 +57,13 @@ export function ProductView({
   onNavigateShop,
   onNavigateCategory,
 }) {
+  const t = useT();
+  const { lang } = useLang();
   const trail = [
-    { label: "Home", onClick: onNavigateHome },
-    { label: "Shop", onClick: onNavigateShop },
-    { label: category.label, onClick: () => onNavigateCategory(category.slug) },
-    { label: product.name },
+    { label: t("shop.breadcrumbHome"), onClick: onNavigateHome },
+    { label: t("footer.shop"), onClick: onNavigateShop },
+    { label: loc(category, "label", lang), onClick: () => onNavigateCategory(category.slug) },
+    { label: loc(product, "name", lang) },
   ];
 
   // Record this product into the device-local "recently viewed" memory
@@ -148,22 +152,22 @@ export function ProductView({
             chevron arrows, single-row thumb strip) but without the
             color swatches since thread color is already chosen in
             the configurator above. */}
-        <section className="mt-16 lg:mt-24 pt-12 lg:pt-16" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
+        <section className="mt-16 lg:mt-24 pt-12 lg:pt-16" style={{ borderTop: "1px solid var(--border-default)" }}>
           <div className="max-w-3xl mb-8 lg:mb-10">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>
-              From other families' kitchens
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>
+              {t("bib.othersEyebrow")}
             </p>
             <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-              Real bibs Lusik has <em style={{ fontWeight: 400 }}>stitched</em> for other families.
+              {t("bib.othersTitlePre")}<em style={{ fontWeight: 400 }}>{t("bib.othersTitleEm")}</em>{t("bib.othersTitlePost")}
             </h2>
             <p className="text-sm lg:text-base opacity-75 leading-relaxed">
-              Armenian names, English names, a small motif beside each one for the milestone it marked — tulips, teddy bears, giraffes, daffodils, the things a baby will one day point at and ask the word for. Tap any photo to step closer.
+              {t("bib.othersBody")}
             </p>
           </div>
           <div className="min-w-0 w-full">
             <ProductImageGallery
               images={customerExamples}
-              alt="Past customer bibs"
+              alt={t("bib.othersAlt")}
             />
           </div>
         </section>

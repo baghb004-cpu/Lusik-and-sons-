@@ -22,7 +22,7 @@ export function FreeShippingProgress({ subtotalCents }) {
       <div className="flex justify-between items-baseline mb-2">
         <p className="text-xs leading-snug">
           {isEarned ? (
-            <span style={{ color: "#B08842", fontWeight: 500 }}>You've earned free U.S. shipping.</span>
+            <span style={{ color: "var(--accent)", fontWeight: 500 }}>You've earned free U.S. shipping.</span>
           ) : (
             <>
               <span style={{ fontWeight: 500 }}>${(remaining / 100).toFixed(2)}</span>
@@ -49,7 +49,7 @@ export function FreeShippingProgress({ subtotalCents }) {
           className="h-full transition-all duration-500"
           style={{
             width: `${pct}%`,
-            background: "#B08842",
+            background: "var(--accent)",
             borderRadius: "3px",
             minWidth: pct > 0 ? "6px" : "0",  // round end is always visible even at 1%
           }}

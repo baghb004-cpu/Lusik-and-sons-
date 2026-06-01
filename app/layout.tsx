@@ -28,11 +28,11 @@ import {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Hand-Embroidered Armenian Alphabet Blankets | Cypress, CA`,
+    default: `${SITE_NAME} — Hand-Embroidered Armenian Alphabet Blankets | Southern California`,
     template: `%s — ${SITE_NAME}`,
   },
   description:
-    "Hand cross-stitched Armenian alphabet baby blankets, made to order in Cypress, California.",
+    "Hand cross-stitched Armenian alphabet baby blankets, made to order in Southern California.",
   // Favicons, PWA icons, and the web app manifest. The files live in /public
   // and were generated from icon.svg (the "L & Sons" monogram). Declaring them
   // here is what actually emits the <link rel="icon"> / manifest tags — without

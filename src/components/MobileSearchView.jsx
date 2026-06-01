@@ -31,6 +31,7 @@ import React, { useMemo, useRef, useEffect, useState } from "react";
 import { CATALOG } from "../data/catalog.js";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { Search, ChevronRight, User } from "./icons.jsx";
+import { useT } from "../i18n/LangContext.jsx";
 import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import {
   getRecentlyViewed,
@@ -92,6 +93,7 @@ export function MobileSearchView({
   user,
   onAvatarTap,
 }) {
+  const t = useT();
   const scrollRef = useRef(null);
 
   // Device-local "recently viewed" + "recent searches" memory (read
@@ -164,6 +166,9 @@ export function MobileSearchView({
   }, [query]);
 
   const handleSuggestion = (text) => onQueryChange?.(text);
+  // Display labels are translated; the query we actually run stays English so
+  // the catalog/section matching keeps working in any language.
+  const suggestions = t("search.suggestions");
 
   const handleResultTap = (result) => {
     // Remember intentional searches — ones that actually led somewhere
@@ -212,7 +217,7 @@ export function MobileSearchView({
           className="font-mobile-title leading-tight"
           style={{ fontSize: "2.4rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}
         >
-          Search
+          {t("search.title")}
         </h1>
         {onAvatarTap && (
           <button
@@ -225,7 +230,7 @@ export function MobileSearchView({
               color: initials ? "var(--text-on-ink)" : "var(--text-muted)",
               fontFamily: "Fraunces, Georgia, serif", fontSize: "0.85rem", fontWeight: 600,
             }}
-            aria-label="Your account"
+            aria-label={t("search.yourAccount")}
           >
             {initials || <User size={18} strokeWidth={1.5} />}
           </button>
@@ -253,7 +258,7 @@ export function MobileSearchView({
               items={recentlyViewed}
               onTap={(categorySlug, slug) => onNavigateProduct?.(categorySlug, slug)}
               onClear={handleClearViewed}
-              heading="Recently Viewed"
+              heading={t("search.recentlyViewed")}
               large
             />
 
@@ -262,7 +267,7 @@ export function MobileSearchView({
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="leading-tight" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
-                    Recent Searches
+                    {t("search.recentSearches")}
                   </p>
                   <button
                     type="button"
@@ -270,7 +275,7 @@ export function MobileSearchView({
                     className="text-sm"
                     style={{ color: "var(--accent)", fontWeight: 500 }}
                   >
-                    Clear
+                    {t("search.clear")}
                   </button>
                 </div>
                 <div style={{ background: "var(--bg-surface, #FFFFFF)", borderRadius: 18, border: "1px solid var(--border-soft, rgba(26,22,18,0.08))", overflow: "hidden" }}>
@@ -295,19 +300,19 @@ export function MobileSearchView({
                 dividers, Apple Store-style. */}
             <div>
               <p className="leading-tight mb-3" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
-                Try Searching
+                {t("search.trySearching")}
               </p>
               <div style={{ background: "var(--bg-surface, #FFFFFF)", borderRadius: 18, border: "1px solid var(--border-soft, rgba(26,22,18,0.08))", overflow: "hidden" }}>
-                {SUGGESTIONS.map((text, i) => (
+                {suggestions.map((s, i) => (
                   <button
-                    key={text}
+                    key={s.query}
                     type="button"
-                    onClick={() => handleSuggestion(text)}
+                    onClick={() => handleSuggestion(s.query)}
                     className="flex items-center gap-3 px-4 py-4 text-left w-full"
-                    style={{ borderBottom: i < SUGGESTIONS.length - 1 ? "1px solid var(--border-soft, rgba(26,22,18,0.07))" : "none" }}
+                    style={{ borderBottom: i < suggestions.length - 1 ? "1px solid var(--border-soft, rgba(26,22,18,0.07))" : "none" }}
                   >
                     <Search size={17} strokeWidth={1.4} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-                    <span className="text-base" style={{ color: "var(--text-primary)" }}>{text}</span>
+                    <span className="text-base" style={{ color: "var(--text-primary)" }}>{s.label}</span>
                   </button>
                 ))}
               </div>
@@ -317,8 +322,8 @@ export function MobileSearchView({
 
         {noResults && (
           <div className="text-center py-12">
-            <p className="text-sm opacity-60 mb-1">No results for &ldquo;{query.trim()}&rdquo;</p>
-            <p className="text-xs opacity-40">Try a different search, or browse the shop.</p>
+            <p className="text-sm opacity-60 mb-1">{t("search.noResults", { q: query.trim() })}</p>
+            <p className="text-xs opacity-40">{t("search.noResultsHint")}</p>
           </div>
         )}
 
@@ -338,10 +343,10 @@ export function MobileSearchView({
                       <p className="text-sm font-display truncate" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{r.name}</p>
                       <p className="text-xs opacity-60 truncate mt-0.5">{r.tagline}</p>
                       {r.priceFrom != null && (
-                        <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>From ${r.priceFrom}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>{t("search.from", { price: r.priceFrom })}</p>
                       )}
                       {r.status === "placeholder" && !r.priceFrom && (
-                        <p className="text-xs mt-0.5 opacity-50 italic">Coming soon</p>
+                        <p className="text-xs mt-0.5 opacity-50 italic">{t("search.comingSoon")}</p>
                       )}
                     </>
                   )}
@@ -349,13 +354,13 @@ export function MobileSearchView({
                     <>
                       <p className="text-sm font-display truncate" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{r.title}</p>
                       <p className="text-xs opacity-60 truncate mt-0.5">{r.excerpt}</p>
-                      <p className="text-xs mt-0.5 opacity-40 italic">Journal</p>
+                      <p className="text-xs mt-0.5 opacity-40 italic">{t("search.journalTag")}</p>
                     </>
                   )}
                   {r.type === "section" && (
                     <>
-                      <p className="text-sm font-display" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{r.label}</p>
-                      <p className="text-xs opacity-40 italic mt-0.5">Site section</p>
+                      <p className="text-sm font-display" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{t(`search.sections.${r.id}`)}</p>
+                      <p className="text-xs opacity-40 italic mt-0.5">{t("search.sectionTag")}</p>
                     </>
                   )}
                 </div>

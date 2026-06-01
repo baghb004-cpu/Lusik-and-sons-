@@ -309,7 +309,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               omit prices from the packing slip in the box. When the
               headline checkbox is off, no gift metadata is sent. */}
           <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
-            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · gift options</legend>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "var(--accent)" }}>Optional · gift options</legend>
 
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -317,7 +317,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 checked={giftIsGift}
                 onChange={(e) => setGiftIsGift(e.target.checked)}
                 className="mt-0.5 w-4 h-4 flex-shrink-0"
-                style={{ accentColor: "#B08842" }}
+                style={{ accentColor: "var(--accent)" }}
               />
               <span className="text-sm leading-snug">
                 <span style={{ fontWeight: 500 }}>This is a gift.</span>
@@ -349,7 +349,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                     checked={giftHidePrices}
                     onChange={(e) => setGiftHidePrices(e.target.checked)}
                     className="mt-0.5 w-4 h-4 flex-shrink-0"
-                    style={{ accentColor: "#B08842" }}
+                    style={{ accentColor: "var(--accent)" }}
                   />
                   <span className="text-xs leading-snug">
                     Hide prices from the packing slip inside the box.
@@ -364,7 +364,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                     checked={giftWrap}
                     onChange={(e) => setGiftWrap(e.target.checked)}
                     className="mt-0.5 w-4 h-4 flex-shrink-0"
-                    style={{ accentColor: "#B08842" }}
+                    style={{ accentColor: "var(--accent)" }}
                   />
                   <span className="text-xs leading-snug">
                     <span style={{ fontWeight: 500 }}>Add gift wrap</span>
@@ -423,7 +423,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               and self-purchases alike. Sent at most once, ~11 months
               after the order. */}
           <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
-            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · gentle reminder</legend>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "var(--accent)" }}>Optional · gentle reminder</legend>
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -452,7 +452,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               and zeroes the submitted payload, so "unchecked" stays the
               legally-clean default. */}
           <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
-            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "#B08842" }}>Optional · share your story</legend>
+            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "var(--accent)" }}>Optional · share your story</legend>
 
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -460,7 +460,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 checked={socialAllow}
                 onChange={(e) => setSocialAllow(e.target.checked)}
                 className="mt-0.5 w-4 h-4 flex-shrink-0"
-                style={{ accentColor: "#B08842" }}
+                style={{ accentColor: "var(--accent)" }}
               />
               <span className="text-sm leading-snug">
                 <span style={{ fontWeight: 500 }}>If you'd like, Lusik can share a photo of your finished piece.</span>
@@ -482,7 +482,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                         className="flex items-center gap-2 px-3 py-2 cursor-pointer transition"
                         style={{
                           background: checked ? "rgba(176,136,66,0.12)" : "#FFFFFF",
-                          border: `1px solid ${checked ? "#B08842" : "rgba(26,22,18,0.15)"}`,
+                          border: `1px solid ${checked ? "var(--accent)" : "rgba(26,22,18,0.15)"}`,
                         }}
                       >
                         <input
@@ -490,7 +490,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                           checked={checked}
                           onChange={() => toggleSocialPlatform(p.id)}
                           className="w-3.5 h-3.5"
-                          style={{ accentColor: "#B08842" }}
+                          style={{ accentColor: "var(--accent)" }}
                         />
                         <span className="text-sm">{p.label}</span>
                       </label>
@@ -564,7 +564,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 <div className="relative shrink-0">
                   <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} loading="lazy" decoding="async" />
                   {item.isCustom && (
-                    <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
+                    <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "var(--accent)", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

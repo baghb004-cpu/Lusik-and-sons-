@@ -79,7 +79,7 @@ export function statusAccent(order) {
   const s = order.fulfillment_status;
   if (s === "shipped" || s === "delivered" || s === "ready_to_ship") return "#3D5A3D";
   if (s === "refunded") return "#8B2C2C";
-  return "#B08842";
+  return "var(--accent)";
 }
 
 // Subset filter sets used by the admin chips. Keys map to a

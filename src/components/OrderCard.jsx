@@ -33,9 +33,9 @@ export function OrderProgressTimeline({ status }) {
         const isComplete = i < current;
         const isCurrent  = i === current;
         const isLast     = i === ORDER_STAGES.length - 1;
-        const bg     = isComplete || isCurrent ? "#B08842" : "rgba(26,22,18,0.15)";
+        const bg     = isComplete || isCurrent ? "var(--accent)" : "rgba(26,22,18,0.15)";
         const fg     = isComplete || isCurrent ? "#F5EFE3" : "rgba(26,22,18,0.4)";
-        const lineBg = isComplete             ? "#B08842" : "rgba(26,22,18,0.12)";
+        const lineBg = isComplete             ? "var(--accent)" : "rgba(26,22,18,0.12)";
         return (
           <li key={stage.key} className="flex-1 flex flex-col items-center text-center" aria-current={isCurrent ? "step" : undefined}>
             <div className="relative w-full flex items-center justify-center">
@@ -49,7 +49,7 @@ export function OrderProgressTimeline({ status }) {
                 <span aria-hidden="true" className="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-px" style={{
                   // The line AFTER this stage fills if the NEXT stage
                   // is complete or current.
-                  background: i + 1 <= current ? "#B08842" : "rgba(26,22,18,0.12)"
+                  background: i + 1 <= current ? "var(--accent)" : "rgba(26,22,18,0.12)"
                 }} />
               )}
               <span
@@ -58,7 +58,7 @@ export function OrderProgressTimeline({ status }) {
                   width: 22, height: 22,
                   background: bg,
                   color: fg,
-                  border: isCurrent ? "1.5px solid #B08842" : "none",
+                  border: isCurrent ? "1.5px solid var(--accent)" : "none",
                   boxShadow: isCurrent ? "0 0 0 4px rgba(176,136,66,0.15)" : "none",
                 }}
               >
@@ -91,10 +91,10 @@ export function OrderCard({ order, onReorder }) {
       // "New" means Lusik has paid but not yet confirmed. Once she
       // clicks "Confirm order" in the admin panel, fulfillment_status
       // moves to awaiting_lusik and the label here flips to "Confirmed".
-      case "in_progress":     return { text: "New",                color: "#B08842" };
-      case "awaiting_lusik":  return { text: "Confirmed",          color: "#B08842" };
-      case "in_production":   return { text: "Lusik is stitching", color: "#B08842" };
-      case "quality_check":   return { text: "Final review",       color: "#B08842" };
+      case "in_progress":     return { text: "New",                color: "var(--accent)" };
+      case "awaiting_lusik":  return { text: "Confirmed",          color: "var(--accent)" };
+      case "in_production":   return { text: "Lusik is stitching", color: "var(--accent)" };
+      case "quality_check":   return { text: "Final review",       color: "var(--accent)" };
       case "ready_to_ship":   return { text: "Ready to ship",      color: "#3D5A3D" };
       case "shipped":         return { text: "Shipped",            color: "#3D5A3D" };
       case "delivered":       return { text: "Delivered",          color: "#3D5A3D" };
@@ -219,7 +219,7 @@ export function OrderCard({ order, onReorder }) {
             loading="lazy"
           />
           <p className="px-3 py-2 text-[0.65rem] tracking-[0.18em] uppercase opacity-70" style={{ background: "rgba(176,136,66,0.06)" }}>
-            <span style={{ color: "#B08842", fontWeight: 500 }}>From Lusik</span> · photo of your finished blanket
+            <span style={{ color: "var(--accent)", fontWeight: 500 }}>From Lusik</span> · photo of your finished blanket
           </p>
         </a>
       )}
@@ -231,7 +231,7 @@ export function OrderCard({ order, onReorder }) {
             <div className="flex-1">
               <p style={{ fontWeight: 500 }}>
                 {item.product_name}
-                {item.is_custom && <span className="ml-2 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "#B08842", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>}
+                {item.is_custom && <span className="ml-2 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "var(--accent)", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>}
               </p>
               {item.variant_label && <p className="text-xs opacity-60">{item.variant_label}</p>}
               <p className="text-xs opacity-60">Qty {item.quantity}</p>
@@ -257,7 +257,7 @@ export function OrderCard({ order, onReorder }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline hover:opacity-100"
-                      style={{ color: "#B08842", fontWeight: 500 }}
+                      style={{ color: "var(--accent)", fontWeight: 500 }}
                     >
                       Track {order.tracking_number}
                     </a>

@@ -278,7 +278,7 @@ export function ProductImageGallery({
       {colorways && colorways.length > 0 && (
         <div className="mt-6">
           <div className="flex items-baseline justify-between mb-3">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "#B08842", fontWeight: 600 }}>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)", fontWeight: 600 }}>
               Available colorways
             </p>
             {activeColorway != null && (
@@ -409,7 +409,7 @@ function ColorSwatch({ label, swatch, active, onClick, count }) {
           width: 44,
           height: 44,
           borderRadius: "999px",
-          border: active ? "2px solid #B08842" : "1px solid rgba(26,22,18,0.2)",
+          border: active ? "2px solid var(--accent)" : "1px solid rgba(26,22,18,0.2)",
           boxShadow: active
             ? "0 0 0 3px rgba(176, 136, 66, 0.2)"
             : "inset 0 0 0 1px rgba(255, 255, 255, 0.4)",

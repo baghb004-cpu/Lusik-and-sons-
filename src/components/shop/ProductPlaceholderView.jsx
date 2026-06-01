@@ -26,6 +26,8 @@ import React from "react";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Mail, Phone } from "../icons.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
+import { useT, useLang } from "../../i18n/LangContext.jsx";
+import { loc } from "../../i18n/localize.js";
 
 // Strip the "⚠️ TODO_LUSIK: ..." sentence (and any trailing whitespace)
 // from a value before showing it to a customer. The marker is always
@@ -37,6 +39,9 @@ function cleanText(text) {
 }
 
 export function ProductPlaceholderView({ category, product, trail, onOpenWaitlist }) {
+  const t = useT();
+  const { lang } = useLang();
+  const productName = loc(product, "name", lang);
   const description = cleanText(product.description);
   const hasGallery = Array.isArray(product.images) && product.images.length > 0;
   const details    = Array.isArray(product.details) ? product.details : [];
@@ -90,12 +95,12 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
         ) : (
           <div className="aspect-[4/5] lg-panel flex items-center justify-center text-center px-6">
             <div>
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>
-                Coming soon
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)", fontWeight: 600 }}>
+                {t("placeholder.comingSoon")}
               </p>
-              <p className="text-sm opacity-65 italic mb-2">Lusik's hands first</p>
+              <p className="text-sm opacity-65 italic mb-2">{t("shop.lusikHands")}</p>
               <p className="text-[0.65rem] opacity-45 leading-relaxed max-w-[14em] mx-auto">
-                Lusik is finishing the first piece of this one on her kitchen table. Photographs will go here the moment it's ready for the world to see.
+                {t("placeholder.comingSoonBody")}
               </p>
             </div>
           </div>
@@ -111,10 +116,10 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             and (b) the primary CTA is a disabled "Currently
             unavailable" bar with a real "Notify me" button below it. */}
         <div className="min-w-0 w-full">
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>
             {isPriced
-              ? "By direct order · From Lusik's home in Cypress, California"
-              : "Almost ready · Cypress, California"}
+              ? t("placeholder.byDirectOrderEyebrow")
+              : t("placeholder.almostReadyEyebrow")}
           </p>
           {/* break-words lets long compound product names ("The
               Armenian Days-of-the-Week Bib Set") wrap at the hyphens
@@ -122,11 +127,11 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
               text-3xl on mobile, stepping up on larger screens, so
               the title scales with available width. */}
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-            {product.name}
+            {productName}
           </h1>
           {product.tagline && (
             <p className="text-base opacity-70 mb-6">
-              {product.tagline}
+              {loc(product, "tagline", lang)}
             </p>
           )}
 
@@ -142,23 +147,23 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
           {isPriced ? (
             <>
               <div className="flex items-baseline gap-3 mb-2">
-                <p className="text-3xl" style={{ fontWeight: 500, color: "#1A1612" }}>
+                <p className="text-3xl" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
                   ${product.priceFrom}
                 </p>
               </div>
               <p className="text-xs opacity-60 mb-8 leading-relaxed">
-                Online checkout for this piece isn't open yet — but the price is set and Lusik takes commissions directly. Write or call to start one, and she'll write back herself within a day.
+                {t("placeholder.checkoutNotOpen")}
               </p>
             </>
           ) : (
             <>
               <div className="flex items-baseline gap-3 mb-2">
-                <p className="text-2xl lg:text-3xl italic" style={{ fontWeight: 400, color: "#B08842" }}>
-                  Price coming soon
+                <p className="text-2xl lg:text-3xl italic" style={{ fontWeight: 400, color: "var(--accent)" }}>
+                  {t("placeholder.priceComingSoon")}
                 </p>
               </div>
               <p className="text-xs opacity-60 mb-8">
-                Lusik is still settling on what to charge for this lineup — she likes to hold a piece in her hands before naming a price. Leave your email below and we'll write you the moment it's listed.
+                {t("placeholder.unpricedBody")}
               </p>
             </>
           )}
@@ -174,8 +179,8 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
               no value in hiding it behind a collapse). */}
           {details.length > 0 && (
             <div className="mb-8 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842", fontWeight: 600 }}>
-                Details · size · care
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)", fontWeight: 600 }}>
+                {t("placeholder.detailsHeading")}
               </p>
               <dl className="space-y-3">
                 {details.map((row) => (
@@ -212,7 +217,7 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
                 style={{ fontWeight: 500, letterSpacing: "0.02em" }}
               >
                 <Mail size={16} strokeWidth={1.5} />
-                Write Lusik to commission this <ArrowRight size={16} strokeWidth={1.5} />
+                {t("placeholder.writeToCommission")} <ArrowRight size={16} strokeWidth={1.5} />
               </a>
 
               {/* SECONDARY -- phone, for customers who'd rather
@@ -222,39 +227,39 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
                 href={telHref}
                 className="w-full px-6 py-3 mb-3 text-sm tracking-wide flex items-center justify-center gap-3 transition-opacity hover:opacity-70"
                 style={{
-                  border: "1px solid #1A1612",
-                  color: "#1A1612",
+                  border: "1px solid var(--border-strong)",
+                  color: "var(--text-primary)",
                   fontWeight: 500,
                   letterSpacing: "0.02em",
                   background: "transparent",
                 }}
               >
                 <Phone size={16} strokeWidth={1.5} />
-                Or call (760) 874-2333
+                {t("placeholder.orCall")}
               </a>
 
               <p className="text-[0.65rem] opacity-60 text-center mt-3 mb-6 leading-relaxed">
-                Lusik or one of her sons writes back, usually within a day. We'll talk through the colorway, the alphabet, the date you need it by, and confirm the price before stitching begins.
+                {t("placeholder.commissionNote")}
               </p>
 
               {/* TERTIARY -- waitlist. For customers who prefer
                   to wait for the eventual online listing rather
                   than commission directly. Subtler styling so it
                   doesn't compete with the commission path above. */}
-              <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
+              <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--border-default)" }}>
                 <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-65">
-                  Or wait for the listing
+                  {t("placeholder.orWaitListing")}
                 </p>
                 <p className="text-sm leading-relaxed opacity-80 mb-3">
-                  We're working toward opening online checkout for this piece. If you'd rather wait, we'll write you the day it goes live.
+                  {t("placeholder.waitListingBody")}
                 </p>
                 <button
                   onClick={() => onOpenWaitlist?.(product)}
                   className="inline-flex items-center gap-2 text-sm underline hover:opacity-70"
-                  style={{ color: "#1A1612" }}
+                  style={{ color: "var(--text-primary)" }}
                 >
                   <ArrowRight size={14} strokeWidth={1.5} />
-                  Add me to the list
+                  {t("placeholder.addToList")}
                 </button>
               </div>
             </>
@@ -266,19 +271,19 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
               <div
                 className="w-full px-6 py-4 mb-3 text-sm tracking-wide flex items-center justify-center gap-3 select-none"
                 style={{
-                  background: "rgba(26, 22, 18, 0.08)",
-                  color: "rgba(26, 22, 18, 0.45)",
-                  border: "1px solid rgba(26, 22, 18, 0.08)",
+                  background: "var(--bg-subtle)",
+                  color: "var(--text-muted)",
+                  border: "1px solid var(--border-soft)",
                   fontWeight: 500,
                   cursor: "not-allowed",
                   letterSpacing: "0.02em",
                 }}
                 role="button"
                 aria-disabled="true"
-                aria-label="Currently unavailable — see the Notify me option below"
+                aria-label={t("placeholder.currentlyUnavailableAria")}
                 tabIndex={-1}
               >
-                Currently unavailable
+                {t("placeholder.currentlyUnavailable")}
               </div>
 
               {/* NOTIFY ME -- the real action when there's no
@@ -288,25 +293,25 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
                 className="lg-button-ink lg-shine w-full px-6 py-3 text-sm tracking-wide flex items-center justify-center gap-3"
                 style={{ fontWeight: 500 }}
               >
-                Write me when it's ready <ArrowRight size={16} strokeWidth={1.5} />
+                {t("placeholder.writeWhenReady")} <ArrowRight size={16} strokeWidth={1.5} />
               </button>
               <p className="text-[0.65rem] opacity-55 text-center mt-3">
-                One note the day it lists — nothing else, ever.
+                {t("placeholder.oneNote")}
               </p>
 
               {/* CUSTOM REQUEST -- keeps the existing direct-email
                   path available even before the price is set. */}
-              <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
+              <div className="mt-10 pt-6" style={{ borderTop: "1px solid var(--border-default)" }}>
                 <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-65">
-                  Or write to Lusik
+                  {t("placeholder.orWriteLusik")}
                 </p>
                 <p className="text-sm leading-relaxed opacity-80 mb-3">
-                  If you'd rather not wait for the public listing — or you have a question Lusik should answer herself — send her a note.
+                  {t("placeholder.customRequestBody")}
                 </p>
                 <a
                   href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent("About the " + product.name)}`}
                   className="inline-flex items-center gap-2 text-sm underline hover:opacity-70"
-                  style={{ color: "#1A1612" }}
+                  style={{ color: "var(--text-primary)" }}
                 >
                   <Mail size={14} strokeWidth={1.5} />
                   hello@lusikandsons.com

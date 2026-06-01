@@ -71,7 +71,7 @@ function htmlResponse(status, message) {
     <h1>${escapeHtml(message)}</h1>
     <p>Thanks for letting us know.</p>
     <a class="button" href="${url}/">Back to the shop</a>
-    <div class="footer">Made by hand in Cypress, California.</div>
+    <div class="footer">Made by hand in Southern California.</div>
   </div>
 </body></html>`;
 
