@@ -130,7 +130,14 @@ export function HomeView({
   // Device-local "recently viewed" memory (localStorage). Read once on
   // mount — feeds the mobile-only "Your recent activity" strip below the
   // hero. Empty for first-time visitors, who just see hero + curated card.
-  const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewed());
+  // SSR-safe: localStorage is browser-only, so start empty — the server render
+  // and the client's first render then agree (no hydration mismatch on the
+  // "Recently viewed" strip). The effect loads the stored list right after
+  // mount, so the strip still appears for returning visitors.
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  useEffect(() => {
+    setRecentlyViewed(getRecentlyViewed());
+  }, []);
   return (
     <div className="fade-in">
       {/* A promoted section page renders ONLY its one section, under the big
