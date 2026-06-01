@@ -1,7 +1,8 @@
 # ============================================================
 # Decap CMS configuration
 # ============================================================
-# This file is read by /admin/index.html on every page load.
+# This file is read by /studio/index.html on every page load.
+# (The CMS lives at /studio/ — /admin is the Next.js order dashboard.)
 # Decap renders a browser editor UI based on the collections
 # defined below and commits changes to GitHub via Git Gateway.
 #
@@ -14,7 +15,7 @@
 #      (so random visitors can't sign up for editor access)
 #   4. Site → Identity → Users → Invite User → Lusik's email
 #   5. Lusik clicks the confirm link in her email, sets a
-#      password, and lands at /admin/. She can now edit posts.
+#      password, and lands at /studio/. She can now edit posts.
 #
 # When Lusik saves a post, Decap commits the markdown file
 # back to this repo on the `main` branch (or whatever
@@ -27,7 +28,7 @@ backend:
   branch: main
 
 # Where Decap-uploaded media (images for journal posts) goes.
-# Vite copies /public/* into dist/ at build time, so the URL
+# Next serves /public/* as-is at build time, so the URL
 # `/journal-media/foo.jpg` resolves correctly in production.
 media_folder: "public/journal-media"
 public_folder: "/journal-media"
