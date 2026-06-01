@@ -526,8 +526,10 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               </div>
               <div className="grid grid-cols-6 gap-2">
                 {product.gallery.map((src, i) => (
-                  <button key={i} onClick={() => setActiveImg(i)} className={`aspect-square overflow-hidden ${activeImg === i ? "" : "opacity-50 hover:opacity-100"}`} style={{ outline: activeImg === i ? "1.5px solid #1A1612" : "none", outlineOffset: "1px" }}>
-                    <img src={src} alt="" className="w-full h-full object-cover" style={galleryRotationStyle(i, "square")} loading="lazy" decoding="async" />
+                  <button key={i} onClick={() => setActiveImg(i)} className={`relative aspect-square overflow-hidden ${activeImg === i ? "" : "opacity-50 hover:opacity-100"}`} style={{ outline: activeImg === i ? "1.5px solid #1A1612" : "none", outlineOffset: "1px" }}>
+                    {/* next/image fill + tiny sizes → the CDN serves a
+                        thumbnail-sized derivative instead of the full source. */}
+                    <Image src={src} alt="" fill sizes="(max-width: 1024px) 16vw, 8vw" className="object-cover" style={galleryRotationStyle(i, "square")} draggable={false} />
                   </button>
                 ))}
               </div>
