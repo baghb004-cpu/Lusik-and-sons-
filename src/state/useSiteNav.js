@@ -18,6 +18,9 @@ export function useSiteNav() {
   const push = useCallback((href) => router.push(href), [router]);
 
   return useMemo(() => ({
+    // Warm a route's JS + RSC payload before the user taps, so the navigation
+    // feels instant. Safe no-op on failure — navigation still works via push.
+    prefetch:        (href) => { try { router.prefetch(href); } catch {} },
     goForYou:        () => push("/"),
     goHome:          () => push("/"),
     goPage:          (slug) => push(`/${slug}`),          // /story, /faq, …
