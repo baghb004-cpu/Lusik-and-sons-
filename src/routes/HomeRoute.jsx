@@ -1,10 +1,14 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { PRODUCT } from "../data/product.js";
 import { useSiteNav } from "../state/useSiteNav.js";
 
-const HomeView = dynamic(() => import("../components/HomeView.jsx").then((m) => m.HomeView), { ssr: false });
+// SSR: HomeView is imported directly (not dynamic({ ssr:false })) so the server
+// sends real "For You" content in the initial HTML instead of an empty shell
+// that waits for JavaScript — faster first paint, no pop-in. HomeView and its
+// children are SSR-safe: anything browser-only (localStorage "recently viewed",
+// matchMedia, window) runs in effects/handlers, not at render time.
+import { HomeView } from "../components/HomeView.jsx";
 
 // `/` (For You) and the promoted section pages (/story, /workshop, /faq,
 // /contact, /shipping, /newsletter) — all render HomeView; the section pages
