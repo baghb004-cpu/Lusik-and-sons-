@@ -141,8 +141,11 @@ export function SiteChrome({ children }) {
         />
       )}
 
-      {/* Route content */}
-      {children}
+      {/* Route content — wrapped in the single page <main> landmark (the nav,
+          header, footer and overlays live outside it). Satisfies the
+          landmark-one-main accessibility audit; error/404 pages render inside
+          this, so their own wrappers are plain <div>s (no nested <main>). */}
+      <main>{children}</main>
 
       {/* Footer (desktop only — lg:block inside the component) */}
       <SiteFooter onOpenPolicy={setPolicyOpen} />
