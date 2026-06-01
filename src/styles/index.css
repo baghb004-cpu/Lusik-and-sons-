@@ -56,6 +56,7 @@
      ============================================================ */
   :root {
     --bg-page:        #F5EFE3;  /* main page cream */
+    --bg-canvas:      #F5F5F7;  /* Apple-Store cool "fog" gray — the mobile page/body canvas */
     --bg-page-90:     rgba(245,239,227,0.92);  /* translucent for backdrop-blur nav */
     --bg-surface:     #FFFFFF;  /* cards, inputs, the brightest layer */
     --bg-elevated:    #EFE7D6;  /* footer, slightly darker cream for separation */
@@ -85,6 +86,7 @@
 
   :root[data-theme="dark"] {
     --bg-page:        #15110E;  /* warm dark — not stark black */
+    --bg-canvas:      #0B0B0C;  /* cool near-black — the mobile page/body canvas */
     --bg-page-90:     rgba(21,17,14,0.92);
     --bg-surface:     #1F1814;  /* one notch lighter for cards */
     --bg-elevated:    #2A2118;  /* footer / panels */
@@ -1574,14 +1576,14 @@
        reads cool-gray everywhere, including overscroll. A single very faint
        cool light field gives the glass nav something to refract. */
     body {
-      background-color: #F5F5F7;
+      background-color: var(--bg-canvas);
       background-image:
         radial-gradient(60% 40% at 90% 16%, rgba(120,140,180,0.05), transparent 70%);
       background-attachment: fixed;
       background-repeat: no-repeat;
     }
     :root[data-theme="dark"] body {
-      background-color: #0B0B0C;
+      background-color: var(--bg-canvas);
       background-image:
         radial-gradient(60% 40% at 90% 16%, rgba(120,140,180,0.06), transparent 70%);
     }
