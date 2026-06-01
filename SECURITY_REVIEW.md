@@ -62,6 +62,7 @@ None. Prior six-PR pass closed the criticals; nothing new surfaced.
 - **Where:** `vite.config.mjs` `sourcemap: "hidden"`
 - **Why it matters:** the maps are deployed alongside the JS, just without the `//# sourceMappingURL=` comment. A determined attacker could guess the URL pattern (`index-*.js.map`) and download them. Until Sentry is wired up to ingest + delete the maps post-build, they're sitting in production.
 - **Fix scope:** add a Netlify build step that deletes `dist/assets/*.map` after Sentry's upload completes (or before, if Sentry isn't configured). Or block `*.map` requests at the CDN level via a netlify.toml redirect.
+- **Update (post Next.js migration):** obsolete as written — there is no `vite.config.mjs` or `dist/assets/` anymore. Next emits sourcemaps under `.next/`; client maps are not served by default. Re-evaluate against the Next build config if/when Sentry sourcemap upload is wired in.
 
 #### L2 — No formal pentest
 - Same as previous review. Run OWASP ZAP locally for a sanity check before any real launch.

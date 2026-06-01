@@ -21,9 +21,9 @@
 // Content nodes: each post's markdown body is parsed into typed nodes
 // ({ type: "h2"|"blockquote"|"p", text }) that JournalPostView renders.
 //
-// SITEMAP NOTE: when you add or remove a post, update sitemap.xml at
-// the repo root — every post needs a <url> entry for Google to index it.
-// Don't change a slug once a post is shared.
+// SITEMAP NOTE: when you add or remove a post, run `npm run gen:sitemap` to
+// regenerate public/sitemap.xml — every post needs a <url> entry for Google
+// to index it. Don't change a slug once a post is shared.
 // ============================================================
 
 export { JOURNAL_POSTS } from "./journalPostsData.js";

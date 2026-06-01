@@ -14,7 +14,7 @@ Top-to-bottom list of every outside service the site uses, recommends, or has sc
 | | |
 |---|---|
 | **Website** | https://netlify.com |
-| **What for** | Static hosting (Vite build → `dist/`), serverless functions (`netlify/functions/`), Postgres via `@netlify/neon` (`NETLIFY_DATABASE_URL`), file uploads via `@netlify/blobs`, customer auth via Netlify Identity |
+| **What for** | Hosting (Next.js build via `@netlify/plugin-nextjs`), serverless functions (`netlify/functions/`), Postgres via `@netlify/neon` (`NETLIFY_DATABASE_URL`), file uploads via `@netlify/blobs`, customer auth via Netlify Identity |
 | **Required?** | Required (the site is built around it) |
 | **Cost** | Free tier covers small e-commerce volume. Estimated ~$0 / month at the volumes Lusik would see. |
 | **You already have** | An account + the site (`lusikandsons.netlify.app`). |
@@ -66,12 +66,12 @@ Top-to-bottom list of every outside service the site uses, recommends, or has sc
 | | |
 |---|---|
 | **Website** | https://sentry.io |
-| **What for** | Captures JS errors + React render errors (via the ErrorBoundary in `src/main.jsx`) so you find out immediately when something breaks for a real customer |
+| **What for** | Captures JS errors + React render errors so you find out immediately when something breaks for a real customer |
 | **Required?** | Optional but strongly recommended |
 | **Cost** | Free tier: 5,000 errors/month. Plenty at this volume. |
 | **Sign-up** | https://sentry.io/signup/ |
-| **Env vars** | `VITE_SENTRY_DSN` (the DSN string from your Sentry project) |
-| **Code location** | `src/lib/errorReporting.js` + `src/main.jsx` |
+| **Env vars** | `NEXT_PUBLIC_SENTRY_DSN` (the DSN string from your Sentry project; the `NEXT_PUBLIC_` prefix is required for the browser to read it) |
+| **Code location** | `src/lib/errorReporting.ts` + the DSN-gated init in `app/providers.tsx` |
 | **Dashboard settings** | Create a project (Platform: React). Copy the DSN. |
 | **Status** | 🟡 Wired but inactive — paste DSN into Netlify env |
 
@@ -84,7 +84,7 @@ Top-to-bottom list of every outside service the site uses, recommends, or has sc
 | **Cost** | Free tier: 100k events/month |
 | **Sign-up** | https://cloud.umami.is/signup |
 | **Env vars** | None (configured inline in `src/data/config.js` → `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID`) |
-| **Code location** | `src/lib/analytics.js`, `src/App.jsx:378-390` (script loader) |
+| **Code location** | `src/lib/analytics.js` (script loader wired in via the client provider/route tree) |
 | **Dashboard settings** | Create a website for `lusikandsons.com`, copy its ID. |
 | **Status** | 🟡 Wired but inactive — paste ID into `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` and redeploy |
 
@@ -133,7 +133,7 @@ Set all of these in Netlify dashboard → Site configuration → Environment var
 | `RESEND_FROM_EMAIL` | Optional | Branded sender like `orders@lusikandsons.com` (requires domain verification) | Falls back to `onboarding@resend.dev` (often spam-foldered) |
 | `REMINDER_SECRET` | Required for gift-reminder unsubscribe | HMAC key for one-year reminder unsubscribe URLs | Unsubscribe links 400 |
 | `SCHEDULED_FN_SECRET` | Optional | Lets you manually trigger `cleanup-blobs` / `gift-reminder` via curl | Only Netlify's scheduler can invoke; manual trigger 403s |
-| `VITE_SENTRY_DSN` | Optional | Activates Sentry error monitoring | Errors not reported (degrades silently) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional | Activates Sentry error monitoring | Errors not reported (degrades silently) |
 | `ANTHROPIC_API_KEY` | Optional | Chat assistant LLM | Chat widget off (feature flag also off by default) |
 | `ADMIN_EMAILS` | Optional | Comma-separated list of emails that get admin role before Identity role is assigned in dashboard | Admin panel inaccessible until role is assigned the proper way |
 
@@ -153,7 +153,7 @@ Set all of these in Netlify dashboard → Site configuration → Environment var
 
 1. Sign up at **Resend** → get API key → paste `RESEND_API_KEY` + `ADMIN_NOTIFICATION_EMAIL` into Netlify env vars.
 2. Verify `lusikandsons.com` in Resend → add their DNS records at Cloudflare → set `RESEND_FROM_EMAIL` once verified.
-3. Sign up at **Sentry** → create a React project → paste DSN into `VITE_SENTRY_DSN` env var → redeploy.
+3. Sign up at **Sentry** → create a React project → paste DSN into `NEXT_PUBLIC_SENTRY_DSN` env var → redeploy.
 4. (Optional) Sign up at **Umami Cloud** → paste website ID into `src/data/config.js` → commit + redeploy.
 5. Confirm **Cloudflare** records are proxied (orange cloud) and SSL/TLS is "Full (strict)".
 6. Apply schema migration: `netlify db query --file netlify/schema.sql` (adds the new `customer_notes` column from this round).
