@@ -16,6 +16,8 @@
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, m } from "framer-motion";
+import { backdrop, drawerRight } from "../lib/motion";
 import { MobilePageHeader } from "./MobilePageHeader.jsx";
 import { MobileBottomNav } from "./MobileBottomNav.jsx";
 import { MobileSearchView } from "./MobileSearchView.jsx";
@@ -149,31 +151,42 @@ export function SiteChrome({ children }) {
         />
       )}
 
-      {/* Desktop cart drawer */}
-      {cartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setCartOpen(false)}>
-          <div className="absolute inset-0" style={{ background: "rgba(26,22,18,0.4)" }} />
-          <div
-            className="lg-panel-tall lg-drawer relative w-full max-w-md drawer-in flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+      {/* Desktop cart drawer — frosted scrim fade + spring slide via
+          AnimatePresence (so it animates out on close too, not just in). */}
+      <AnimatePresence>
+        {cartOpen && (
+          <m.div
+            className="fixed inset-0 z-50 flex justify-end"
+            onClick={() => setCartOpen(false)}
+            initial="hidden"
+            animate="show"
+            exit="exit"
           >
-            <CartContents
-              variant="drawer"
-              cart={site.cart}
-              subtotal={site.subtotal}
-              cartEditMode={cartEditMode}
-              onToggleEdit={setCartEditMode}
-              setQtyExact={site.setQtyExact}
-              removeFromCart={site.removeFromCart}
-              onCheckout={() => { setCartOpen(false); nav.goCheckout(); }}
-              onShopBlankets={() => { setCartOpen(false); nav.goShopCategory("blankets"); }}
-              onOpenSavedDesigns={() => { setCartOpen(false); nav.goAccount(); }}
-              user={site.user}
-              onClose={() => setCartOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+            <m.div className="absolute inset-0 lg-scrim" variants={backdrop} />
+            <m.div
+              className="lg-panel-tall lg-drawer relative w-full max-w-md flex flex-col"
+              variants={drawerRight}
+              style={{ willChange: "transform" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CartContents
+                variant="drawer"
+                cart={site.cart}
+                subtotal={site.subtotal}
+                cartEditMode={cartEditMode}
+                onToggleEdit={setCartEditMode}
+                setQtyExact={site.setQtyExact}
+                removeFromCart={site.removeFromCart}
+                onCheckout={() => { setCartOpen(false); nav.goCheckout(); }}
+                onShopBlankets={() => { setCartOpen(false); nav.goShopCategory("blankets"); }}
+                onOpenSavedDesigns={() => { setCartOpen(false); nav.goAccount(); }}
+                user={site.user}
+                onClose={() => setCartOpen(false)}
+              />
+            </m.div>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       {/* Auth drawer (sign in / sign up / forgot password) */}
       {authOpen && (
