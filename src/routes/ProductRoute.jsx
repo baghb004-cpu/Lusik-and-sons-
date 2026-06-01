@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { getProductBySlugs } from "../data/catalog.js";
 import { PRODUCT } from "../data/product.js";
@@ -8,7 +7,11 @@ import { CUSTOM_PRODUCTS } from "../data/customProducts.js";
 import { useSite } from "../state/SiteProvider.jsx";
 import { useSiteNav } from "../state/useSiteNav.js";
 
-const ProductView = dynamic(() => import("../components/shop/ProductView.jsx").then((m) => m.ProductView), { ssr: false });
+// SSR: direct import (was dynamic({ ssr:false })) so the server renders
+// real shop/product content in the initial HTML. ProductView and its children are
+// SSR-safe — all browser access (localStorage, window, matchMedia, cart
+// add-to-bag, URL share-decode) runs in effects/handlers, not at render.
+import { ProductView } from "../components/shop/ProductView.jsx";
 
 export function ProductRoute() {
   const site = useSite();
