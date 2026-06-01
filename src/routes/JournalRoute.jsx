@@ -1,10 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useSiteNav } from "../state/useSiteNav.js";
 
-const JournalView = dynamic(() => import("../components/JournalView.jsx").then((m) => m.JournalView), { ssr: false });
+// SSR: direct import (was dynamic({ ssr:false })) so the server renders the
+// real journal/gallery content in the initial HTML. JournalView is SSR-safe — its
+// slug comes from a prop and all window/document access is in effects.
+import { JournalView } from "../components/JournalView.jsx";
 
 // `/journal` (list) and `/journal/[slug]` (post) — JournalView switches on slug.
 export function JournalRoute() {
