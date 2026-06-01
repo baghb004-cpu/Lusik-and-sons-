@@ -1,11 +1,14 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { getCategoryBySlug } from "../data/catalog.js";
 import { useSiteNav } from "../state/useSiteNav.js";
 
-const CategoryView = dynamic(() => import("../components/shop/CategoryView.jsx").then((m) => m.CategoryView), { ssr: false });
+// SSR: direct import (was dynamic({ ssr:false })) so the server renders
+// real shop/product content in the initial HTML. CategoryView and its children are
+// SSR-safe — all browser access (localStorage, window, matchMedia, cart
+// add-to-bag, URL share-decode) runs in effects/handlers, not at render.
+import { CategoryView } from "../components/shop/CategoryView.jsx";
 
 export function CategoryRoute() {
   const nav = useSiteNav();

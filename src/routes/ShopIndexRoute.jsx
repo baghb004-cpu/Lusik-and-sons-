@@ -1,9 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useSiteNav } from "../state/useSiteNav.js";
 
-const ShopIndexView = dynamic(() => import("../components/shop/ShopIndexView.jsx").then((m) => m.ShopIndexView), { ssr: false });
+// SSR: direct import (was dynamic({ ssr:false })) so the server renders
+// real shop/product content in the initial HTML. ShopIndexView and its children are
+// SSR-safe — all browser access (localStorage, window, matchMedia, cart
+// add-to-bag, URL share-decode) runs in effects/handlers, not at render.
+import { ShopIndexView } from "../components/shop/ShopIndexView.jsx";
 
 export function ShopIndexRoute() {
   const nav = useSiteNav();
