@@ -20,6 +20,14 @@
    `npm run build` produces a non-empty CSS file we can verify.
    ============================================================ */
 
+/* Self-hosted brand fonts (Fraunces / DM Sans / Allura). Bundled here so the
+   @font-face rules ship in the app's CSS chunk (no extra blocking request).
+   Every face is font-display: swap, so text paints immediately in the system
+   fallback and swaps in with no render-blocking and no LCP delay. The woff2
+   files stay in /public/fonts and are referenced by absolute URL. Was orphaned
+   (declared but linked nowhere) after the Vite→Next migration. */
+@import "./fonts.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
