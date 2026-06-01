@@ -60,3 +60,47 @@ collections:
       - { label: "Published",    name: "publishedAt", widget: "date",   format: "YYYY-MM-DD" }
       - { label: "Read minutes", name: "readMinutes", widget: "number", default: 3, min: 1, max: 30, valueType: "int" }
       - { label: "Body",         name: "body",        widget: "markdown", hint: "Use ## for section headings. Plain paragraphs become regular text." }
+
+  # Products — compiled at build time by scripts/gen-products.mjs into the
+  # storefront catalog (content/products/*.json → CATALOG). The fields below
+  # MUST match the schema the generator validates (content/products/README.md);
+  # the build FAILS on bad data, so it can't silently ship broken products.
+  #
+  # NOTE: "Status" intentionally omits "live" — a CMS price must not become a
+  # checkout price. New products stay "Coming soon" (placeholder) until the
+  # Stripe trusted-products reconciliation phase. "Price from" is display-only.
+  - name: "products"
+    label: "Products"
+    label_singular: "Product"
+    folder: "content/products"
+    create: true
+    delete: true
+    identifier_field: "name"
+    slug: "{{slug}}"
+    extension: "json"
+    format: "json"
+    summary: "{{name}} ({{category}}) — {{status}}"
+    fields:
+      - label: "Category"
+        name: "category"
+        widget: "select"
+        options: ["blankets", "bibs", "towels", "baby"]
+        hint: "Which shop category this product belongs to."
+      - { label: "Internal key", name: "key",  widget: "string", hint: "Stable internal id, e.g. baby-bathrobe." }
+      - { label: "Slug",         name: "slug", widget: "string", hint: "URL: /shop/<category>/<slug>. Lowercase kebab-case. NEVER change once shared." }
+      - { label: "Name",         name: "name", widget: "string" }
+      - label: "Status"
+        name: "status"
+        widget: "select"
+        default: "placeholder"
+        options:
+          - { label: "Draft (hidden from the site)", value: "draft" }
+          - { label: "Coming soon (placeholder page)", value: "placeholder" }
+        hint: "Live/buyable products are not managed here yet — keep new products Coming soon."
+      - { label: "Price from ($)", name: "priceFrom", widget: "number", required: false, default: null, valueType: "int", min: 1, hint: "DISPLAY ONLY — not the checkout price. Leave blank for 'price coming soon'." }
+      - { label: "Tagline",     name: "tagline",     widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Cover image", name: "coverImage",  widget: "image", required: false, hint: "Optional category-card thumbnail." }
+      - { label: "Gallery",     name: "images",      widget: "list", required: false, field: { label: "Image", name: "image", widget: "image" }, hint: "Optional gallery photos." }
+      # Reserved for the future Stripe reconciliation phase — NOT used for checkout yet.
+      - { label: "Stripe Price ID (reserved)", name: "stripePriceId", widget: "string", required: false, hint: "Reserved. Not connected to checkout yet." }

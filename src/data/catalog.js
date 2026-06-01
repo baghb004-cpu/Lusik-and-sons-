@@ -1,6 +1,17 @@
 // ============================================================
 // CATALOG — full product catalog with status flags + routing slugs
 // ============================================================
+//
+// CMS-managed products (edited in the Content Studio at /studio) are compiled
+// from content/products/*.json into cmsProductsData.generated.js by
+// scripts/gen-products.mjs (a prebuild step) and merged into CATALOG at the
+// bottom of this file. The storefront therefore reads ONE shape and stays fully
+// static — no runtime database. The live, configurable products (the blanket +
+// bib) stay hardcoded here for now.
+//
+import { CMS_PRODUCTS } from "./cmsProductsData.generated.js";
+//
+// ============================================================
 // Drives the shop mega-menu and the entire /shop/* route hierarchy:
 //   /shop                                 → ShopIndexView (4 category cards)
 //   /shop/<categorySlug>                  → CategoryView
@@ -561,18 +572,43 @@ export const CATALOG = {
         tagline: "The cloth a new baby is wrapped in for the going-home photograph — embroidered with their name.",
         description: "A soft swaddle for the earliest weeks — the cloth around the baby in the hospital photograph, the cloth on the first night in the crib, the cloth in the carrier walking through the front door of a house that just got fuller by one. Lusik embroiders the baby's name on it, in Armenian or English, the parents pick. A first object with a first name on it. Made to order by Lusik from her home in Cypress, California. Made to order, made to last.",
       },
-      {
-        key: "baby-bathrobe",
-        slug: "baby-bathrobe",
-        name: "The Baby Bathrobe",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
-        priceFrom: null,
-        tagline: "The hooded towel that becomes every evening's anchor — with your child's name on the hood.",
-        description: "A hooded terry bathrobe for the after-bath ritual — the wrap that comes out of the warm towel pile every evening for the first three years of a child's life, the wrap a parent's hands learn before the child can hold their own arms out. Lusik embroiders the child's name on the hood in Armenian or English. By the second year the child will be the one pointing at the letters, asking for them by sound. From Lusik's home in Cypress, California. Made to order, made to last.",
-      },
+      // NOTE: "The Baby Bathrobe" (baby-bathrobe) is now CMS-managed — it lives
+      // in content/products/baby-bathrobe.json and is merged into this category
+      // at build time (see the CMS merge block below CATALOG). It's the proof-
+      // of-concept migration for the Content Studio product pipeline.
     ],
   },
 };
+
+// ============================================================
+// CMS MERGE — fold Content-Studio products into CATALOG
+// ============================================================
+// content/products/*.json → cmsProductsData.generated.js (built by
+// scripts/gen-products.mjs, which validates every field and rejects bad data,
+// so a broken CMS file fails the build instead of shipping). Drafts are already
+// excluded by the generator. A CMS product overrides a hardcoded entry with the
+// same slug, otherwise it's appended to the category.
+//
+// IMPORTANT: priceFrom / stripePriceId on CMS products are DISPLAY-ONLY. The
+// trusted checkout price stays server-side in
+// netlify/functions/_lib/trusted-products.mjs — nothing here can change what a
+// customer is charged.
+for (const [categorySlug, products] of Object.entries(CMS_PRODUCTS)) {
+  const category = CATALOG[categorySlug];
+  if (!category) {
+    // Fails the build (this module is imported during next:build) rather than
+    // silently dropping a product the editor thinks they published.
+    throw new Error(
+      `[catalog] CMS product references unknown category "${categorySlug}". ` +
+      `Known categories: ${Object.keys(CATALOG).join(", ")}`,
+    );
+  }
+  for (const product of products) {
+    const existing = category.products.findIndex((p) => p.slug === product.slug);
+    if (existing >= 0) category.products[existing] = product;
+    else category.products.push(product);
+  }
+}
 
 // ============================================================
 // CATALOG LOOKUP HELPERS

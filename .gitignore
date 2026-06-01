@@ -19,6 +19,9 @@ dist/
 # prenext:build / pretypecheck) from src/data/journal-posts/*.md.
 src/data/journalPostsData.js
 
+# Generated at build time by scripts/gen-products.mjs from content/products/*.json.
+src/data/cmsProductsData.generated.js
+
 # Next.js (Vite→Next migration, Phase 2+). Build output, the
 # auto-generated ambient types file, and the TS incremental cache
 # (next build sets compilerOptions.incremental). Not served in
