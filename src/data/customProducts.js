@@ -18,7 +18,9 @@ export const CUSTOM_PRODUCTS = {
   bib: {
     key: "bib",
     name: "Baby Bib",
+    name_hy: "Մանկական կրծկալ",
     tagline: "Your child's name on the cloth they wear every morning — embroidered by Lusik, in Armenian or English.",
+    tagline_hy: "Ձեր երեխայի անունը այն կտորի վրա, որ նա կրում է ամեն առավոտ՝ ասեղնագործված Լուսիկի կողմից, հայերեն կամ անգլերեն։",
     price: 22,                    // single price — machine-only
     // handStitchedPrice removed — Lusik decided to drop the hand-cross-stitched
     // bib option. The bib is now machine-embroidery-only with a typed name.

@@ -26,7 +26,9 @@
 
 export const PRODUCT = {
   name: "The Armenian Alphabet Blanket",
+  name_hy: "Հայկական այբուբենով ծածկոց",
   subtitle: "Hand cross-stitched by Lusik — the first three letters a child will learn.",
+  subtitle_hy: "Ձեռքով խաչաձև կարկատված Լուսիկի կողմից՝ առաջին երեք տառերը, որ երեխան կսովորի։",
   price: 65,
   // ============================================================
   // PRODUCT VIDEO (optional)
