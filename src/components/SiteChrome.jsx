@@ -91,6 +91,22 @@ export function SiteChrome({ children }) {
     else setCartOpen(true);
   }, [site.cartOpenSignal]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Snappier taps: the app navigates with router.push (no built-in prefetch),
+  // so without this the first tap to each section waited on its route chunk.
+  // After the page is idle, warm the primary destinations — the bottom-nav
+  // tabs — so tapping between For You / Shop / Journal / Bag feels instant.
+  // Cheap + cache-friendly: Next dedupes prefetches and only fetches each once.
+  useEffect(() => {
+    const warm = () => ["/", "/shop", "/journal", "/cart"].forEach((r) => nav.prefetch(r));
+    const ric = typeof window !== "undefined" && window.requestIdleCallback;
+    if (ric) {
+      const id = window.requestIdleCallback(warm, { timeout: 2000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(warm, 1200);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const navView = searchOpen ? "search" : view;
   const showHeader = !searchOpen && view !== "cart" && !isSection && view !== "checkout" && view !== "admin";
   const showBottomNav = !["checkout", "admin"].includes(view);
