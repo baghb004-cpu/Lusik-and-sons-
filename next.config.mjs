@@ -5,6 +5,12 @@
 // has been retired and removed.
 const nextConfig = {
   reactStrictMode: true,
+  // Serve images in the smallest modern format the browser accepts. AVIF first
+  // (typically 20–30% smaller than WebP), WebP fallback, then the original.
+  // The Netlify image CDN (@netlify/plugin-nextjs) handles the negotiation.
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
 };
 
 export default nextConfig;

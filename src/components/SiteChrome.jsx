@@ -70,6 +70,13 @@ export function SiteChrome({ children }) {
   // Close transient surfaces on route change.
   useEffect(() => { setSearchOpen(false); setCartOpen(false); }, [pathname]);
 
+  // Warm the primary nav destinations (the bottom-nav tabs + main browse) so
+  // tapping them feels instant. router.prefetch dedupes/caches, so re-running
+  // on route change is cheap; it only fetches each route's payload once.
+  useEffect(() => {
+    ["/", "/shop", "/journal", "/cart"].forEach((href) => nav.prefetch(href));
+  }, [nav]);
+
   // Escape closes the cart drawer.
   useEffect(() => {
     if (!cartOpen) return undefined;
