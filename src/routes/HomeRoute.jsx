@@ -25,7 +25,13 @@ export function HomeRoute({ pageSlug = null }) {
       onNavigateProduct={nav.goShopProduct}
       onNavigateJournal={nav.goJournal}
       onOpenPolicy={() => { /* policy modal — wired in a later phase */ }}
-      simplified={false}
+      // Mobile For You collapses to the Apple-Store card layout: the brand
+      // hero (eyebrow / headline / description / slideshow) + trust badges are
+      // hidden on phones (hidden lg:block) so the page leads with the
+      // "We think you'll love" card and recent activity. Desktop keeps the
+      // full hero. Only the home feed simplifies — the promoted section pages
+      // (/story, /workshop, …) keep their current layout.
+      simplified={!pageSlug}
     />
   );
 }

@@ -195,7 +195,9 @@ export function MobileSearchView({
         left: 0,
         right: 0,
         height: vp ? vp.height : "100%",
-        background: "var(--bg-page)",
+        // Match the Bag page and the rest of the mobile app — the cool "fog"
+        // gray canvas (--bg-canvas), not the warm cream page color.
+        background: "var(--bg-canvas)",
         zIndex: 20,                 // below the bottom-nav search bar (z-30)
         display: "flex",
         flexDirection: "column",

@@ -41,7 +41,7 @@ test.beforeEach(async ({ context }) => {
 });
 
 test.describe("home page", () => {
-  test("loads without console errors and shows brand + product", async ({ page }) => {
+  test("loads without console errors and shows brand + product", async ({ page, isMobile }) => {
     const errors = [];
     watchForConsoleErrors(page, errors);
 
@@ -54,11 +54,20 @@ test.describe("home page", () => {
     await expect(
       page.getByText("Lusik & Sons").filter({ visible: true }).first()
     ).toBeVisible();
-    // The hero CTA — present on every home render, good liveness signal.
-    // Copy changed in the narrative-rewrite pass: was "Shop the blanket",
-    // now "See what Lusik makes" (and the button now navigates to /shop
-    // instead of directly into the blanket PDP).
-    await expect(page.getByRole("button", { name: /see what lusik makes/i })).toBeVisible({ timeout: 10_000 });
+    // Hero CTA liveness signal — now viewport-dependent. On desktop the brand
+    // hero shows the "See what Lusik makes" CTA. On mobile the For You page
+    // collapses to the Apple-Store card layout (the hero + its CTA are hidden
+    // via `simplified`), so assert the leading "Selected for you" product card
+    // instead — the equivalent mobile liveness signal.
+    if (isMobile) {
+      await expect(
+        page.getByRole("button", { name: /selected for you/i })
+      ).toBeVisible({ timeout: 10_000 });
+    } else {
+      await expect(
+        page.getByRole("button", { name: /see what lusik makes/i })
+      ).toBeVisible({ timeout: 10_000 });
+    }
 
     // Tailwind CDN logs a console warning ("cdn.tailwindcss.com should
     // not be used in production") that we'd see on every page. Filter
