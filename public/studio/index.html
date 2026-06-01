@@ -4,7 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Lusik &amp; Sons — Journal CMS</title>
+    <title>Lusik &amp; Sons — Content Studio</title>
+    <!-- Lives at /studio/ (NOT /admin/ — that path is the Next.js order
+         dashboard). Decap auto-loads ./config.yml from this same folder. -->
 
     <!-- Netlify Identity widget — required by Decap CMS to authenticate
          the editor via the same Identity account that has the role.
@@ -40,7 +42,7 @@
         window.netlifyIdentity.on("init", (user) => {
           if (!user) {
             window.netlifyIdentity.on("login", () => {
-              document.location.href = "/admin/";
+              document.location.href = "/studio/";
             });
           }
         });

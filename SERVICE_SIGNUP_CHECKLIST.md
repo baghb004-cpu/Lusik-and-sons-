@@ -98,11 +98,11 @@ Top-to-bottom list of every outside service the site uses, recommends, or has sc
 | **Env vars** | `ANTHROPIC_API_KEY`, optional `CHAT_DAILY_USD_CAP` (documented in the function header but not yet enforced — see SECURITY_REVIEW.md) |
 | **Status** | 🟡 Wired but off — flip `CONFIG.PAID_FEATURES.CHAT_ASSISTANT.ENABLED = true` + set the API key |
 
-### Decap CMS (browser editor for Lusik's Journal)
+### Decap CMS (browser editor — "Content Studio")
 | | |
 |---|---|
 | **Website** | https://www.decapcms.org |
-| **What for** | In-browser editor at `/admin/` that lets Lusik write new journal posts and commits them back to GitHub on save |
+| **What for** | In-browser editor at **`/studio/`** that lets Lusik write new journal posts and commits them back to GitHub on save. (Moved off `/admin/`, which is the Next.js order dashboard.) |
 | **Required?** | Optional (Journal can be edited via PRs without it) |
 | **Cost** | Free (open source). Decap script loads from unpkg with pinned SRI. |
 | **Sign-up** | None. Activated via Netlify Identity (Lusik gets invited as an editor). |

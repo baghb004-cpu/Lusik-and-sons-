@@ -224,6 +224,15 @@ A mini-blog (`/journal` list, `/journal/<slug>` posts) with starter posts about 
 - `sitemap.xml` (served from `/public/`) lists the home page, journal index, and every journal post with `<lastmod>` — update it when adding a post. A `<url>` for each `/shop/...` page exists too.
 - `robots.txt` (served from `/public/`) allows everything except `/.netlify/` and points at the sitemap.
 
+### Two admin surfaces — `/admin` vs `/studio` (don't confuse them)
+
+There are **two separate private surfaces**, on **distinct paths** so they don't collide:
+
+- **`/admin` = the order dashboard.** A Next.js route (`app/admin/page.tsx` → `AdminRoute` → `AdminView`). Where Lusik manages orders/fulfillment. Client-gated by `isAdmin`; its data comes from `admin-*` Functions that enforce `requireAdmin`.
+- **`/studio` = the Content Studio (Decap CMS).** A static SPA in `public/studio/` (`index.html` + `config.yml`), Git-Gateway backed, for editing content (journal today; products later). It gets a **looser, scoped CSP** in `netlify.toml` (`for = "/studio/*"`) because Decap loads from unpkg + commits via GitHub.
+
+> History: the Decap CMS used to live at `public/admin/`, which **collided** with the Next `/admin` route (the route shadowed the static CMS). PR #1 of the CMS handoff moved it to `/studio/`. **Keep them separate.**
+
 ### Admin view + roles
 
 Lusik manages orders through `view === "admin"`, gated three ways:

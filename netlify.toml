@@ -35,6 +35,21 @@ from = "/bib"
 to = "/shop/bibs/baby-bib"
 status = 301
 
+# ── Content Studio (Decap CMS) entry point ────────────────
+# Serve the static CMS shell (public/studio/index.html) at /studio and /studio/
+# so it's reachable regardless of CDN directory-index behavior. EXACT paths only
+# (no /studio/* wildcard) so /studio/config.yml and Decap's assets still serve
+# normally. Decap routes internally via hash (#/...), so only the shell needs a
+# rule. /admin is intentionally NOT here — that's the Next order dashboard.
+[[redirects]]
+from = "/studio"
+to = "/studio/index.html"
+status = 200
+[[redirects]]
+from = "/studio/"
+to = "/studio/index.html"
+status = 200
+
 # NOTE: every other redirect from the Vite config is intentionally REMOVED.
 # Next's file-based routing now owns /, /shop/*, /journal/*, /story,
 # /workshop, /faq, /contact, /shipping, /newsletter, /account, /admin, /gallery.
@@ -53,8 +68,13 @@ Referrer-Policy = "strict-origin-when-cross-origin"
 Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
 Cross-Origin-Opener-Policy = "same-origin"
 
+# Content Studio (Decap CMS) lives at /studio/* and needs a looser CSP than the
+# rest of the site: Decap loads its bundle from unpkg, evaluates it (unsafe-eval),
+# and commits via Git Gateway to api.github.com. Scoped to /studio/* ONLY — the
+# public storefront and the /admin order dashboard keep the strict global CSP
+# above. (Was "/admin/*" before the CMS moved off the order-dashboard path.)
 [[headers]]
-for = "/admin/*"
+for = "/studio/*"
 [headers.values]
 Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://api.github.com https://unpkg.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
 Strict-Transport-Security = "max-age=63072000; includeSubDomains"
