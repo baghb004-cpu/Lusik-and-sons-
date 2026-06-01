@@ -11,6 +11,7 @@
 // On mount it wires the Netlify Identity widget into the auth wrapper and, if a
 // Sentry DSN is configured, initializes error monitoring. Both are no-ops when
 // their dependency isn't present, so the app always renders.
+import Script from "next/script";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { LanguageProvider } from "../src/i18n/LangContext.jsx";
@@ -44,12 +45,27 @@ export function Providers({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <LanguageProvider>
-      <ToastProvider>
-        <MotionProvider>
-          <SiteProvider>{children}</SiteProvider>
-        </MotionProvider>
-      </ToastProvider>
-    </LanguageProvider>
+    <>
+      {/* Netlify Identity widget — loaded afterInteractive so it no longer
+          blocks initial render/hydration on every page (most visitors never
+          sign in). Still the CDN build (the confirmation redirect handler
+          expects window.netlifyIdentity from it — do NOT swap to the npm pkg).
+          onReady re-runs auth.init() the moment the widget is actually present,
+          so an already-signed-in user's session restores + the widget's
+          login/logout events wire up reliably despite the deferred load. The
+          mount-time auth.init() above is a harmless no-op until then. */}
+      <Script
+        src="https://identity.netlify.com/v1/netlify-identity-widget.js"
+        strategy="afterInteractive"
+        onReady={() => { try { auth.init(); } catch { /* widget unavailable */ } }}
+      />
+      <LanguageProvider>
+        <ToastProvider>
+          <MotionProvider>
+            <SiteProvider>{children}</SiteProvider>
+          </MotionProvider>
+        </ToastProvider>
+      </LanguageProvider>
+    </>
   );
 }

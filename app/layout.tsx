@@ -10,7 +10,6 @@
 // from their CDN); beforeInteractive puts it in the initial <head> so
 // auth.init() finds it on mount.
 import "./globals.css";
-import Script from "next/script";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
@@ -69,10 +68,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <Script
-          src="https://identity.netlify.com/v1/netlify-identity-widget.js"
-          strategy="beforeInteractive"
-        />
+        {/* The Netlify Identity widget is loaded by <Providers> with
+            strategy="afterInteractive" (off the critical render path) instead
+            of beforeInteractive — see app/providers.tsx. Most visitors never
+            sign in, so blocking initial render on third-party auth JS on every
+            page was pure cost. The hash-token handler (auth.js) already retries
+            for ~5s, so the email-confirmation / recovery flow is unaffected. */}
         {/* Site-wide Organization structured data (brand entity for search). */}
         <script {...jsonLdScript(organizationJsonLd())} />
         <Providers>
