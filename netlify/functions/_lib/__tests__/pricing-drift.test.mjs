@@ -5,15 +5,15 @@
 //   - Once on the server (this module) — used by Stripe checkout
 //     line items and webhook subtotal accounting.
 //   - Once in the browser, as CONFIG.FREE_SHIPPING_THRESHOLD_CENTS
-//     and CONFIG.GIFT_WRAP_PRICE_CENTS in index.html.
+//     and CONFIG.GIFT_WRAP_PRICE_CENTS in src/data/config.js.
 //
 // The browser can't import server modules, and shipping the
 // server module to the browser would mean shipping the rest of
 // netlify/functions/ with it. So we keep two literals and rely
 // on this test to catch drift.
 //
-// When this test fails: open index.html, find the CONFIG.* line
-// the error mentions, and update it to match _lib/pricing.mjs
+// When this test fails: open src/data/config.js, find the CONFIG.*
+// line the error mentions, and update it to match _lib/pricing.mjs
 // (or vice versa). Commit both files together.
 // ============================================================
 import { test } from "node:test";

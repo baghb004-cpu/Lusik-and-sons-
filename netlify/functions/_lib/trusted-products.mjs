@@ -6,12 +6,13 @@
 // map is rejected. Anything in this map ignores client-sent prices.
 //
 // Keys MUST match the productKey shape produced by mapLegacyId()
-// in the browser (CheckoutView's pre-flight). Keep this list in
-// sync with PRODUCT.layouts and CUSTOM_PRODUCTS in index.html.
+// in the browser (src/lib/cartId.ts, used by CheckoutView's
+// pre-flight). Keep this list in sync with PRODUCT.layouts
+// (src/data/product.js) and CUSTOM_PRODUCTS (src/data/customProducts.js).
 //
 // When you add a blanket layout or a new bib variant:
 //   1. Add an entry here with name, priceCents, productKey suffix.
-//   2. Update mapLegacyId in index.html if the cart-id shape
+//   2. Update mapLegacyId in src/lib/cartId.ts if the cart-id shape
 //      changes.
 //   3. Redeploy. No DB change.
 // ============================================================

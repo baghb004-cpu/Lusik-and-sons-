@@ -1,9 +1,9 @@
-/* Global stylesheet for the Next.js App Router build (Vite→Next migration).
+/* Global stylesheet for the Next.js App Router build.
  *
- * The canonical stylesheet still lives at src/styles/index.css — Vite imports
- * it via src/main.jsx, and re-importing it here means the Next build and the
- * Vite build share exactly one source of truth (the @tailwind directives, the
- * Liquid-Glass mobile nav, animations, print styles, etc.). When netlify.toml
- * flips to the Next runtime at Phase 8, the contents can move here for good.
+ * The canonical stylesheet lives at src/styles/index.css (the @tailwind
+ * directives, the Liquid-Glass mobile nav, animations, print styles, etc.);
+ * this file just re-imports it so there's exactly one source of truth. The
+ * contents could be folded in here directly, but keeping the single import
+ * avoids a large, churny move.
  */
 @import "../src/styles/index.css";

@@ -600,10 +600,10 @@ export async function sendFinishedPhotoNotification({ order }) {
   return await sendEmail({ to, subject, html, text });
 }
 
-// Mirror of the browser-side getTrackingUrl helper. Kept here
-// (rather than imported across the JS/server boundary) because
-// _lib/ functions can't reach into index.html, and the URL
-// shapes don't change often. Keep this in sync if a carrier
+// Mirror of the browser-side getTrackingUrl helper (src/lib/tracking.ts).
+// Kept here (rather than imported across the JS/server boundary)
+// because _lib/ functions can't reach into the browser bundle, and
+// the URL shapes don't change often. Keep this in sync if a carrier
 // changes their public tracking URL pattern.
 function getTrackingUrl(carrier, trackingNumber) {
   if (!trackingNumber || !carrier) return null;
