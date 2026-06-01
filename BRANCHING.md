@@ -33,7 +33,7 @@ Defined in `package.json`:
 
 ```bash
 npm ci
-npm run build
+npm run next:build
 npm run typecheck
 npm run test:unit
 npm run test:e2e

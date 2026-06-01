@@ -6,12 +6,11 @@
 // Changing the id shape here means changing _lib/trusted-products.mjs too;
 // the e2e "Pay with Stripe POSTs to create-checkout-session" guards it.
 //
-// MIGRATION NOTE (Vite→Next, Phase 5): these are copied verbatim from the
-// inline builders in src/App.jsx so the Next-side SiteProvider produces the
-// IDENTICAL cart-id shape. App.jsx is intentionally left untouched (it is the
-// live production code and is removed at the Phase 8 flip), so for now the two
-// copies must stay in sync — keep this file and the App.jsx inline versions
-// identical until App.jsx is retired, at which point this becomes the only copy.
+// These builders originated as the inline cart-item builders in the old
+// src/App.jsx. Since the Next.js migration retired App.jsx, this module is the
+// single canonical copy — the SiteProvider (src/state/SiteProvider.jsx) builds
+// cart items through it. The only sync obligation left is the server side:
+// changing the id/productKey shape here means updating _lib/trusted-products.mjs.
 // ============================================================
 
 import { PRODUCT } from "../data/product.js";

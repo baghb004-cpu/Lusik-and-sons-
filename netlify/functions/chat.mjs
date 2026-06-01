@@ -11,7 +11,7 @@
 //   2. (Optional) Set CHAT_DAILY_USD_CAP to e.g. "5" to cap
 //      daily spend per visitor at ~$5. Leave unset for no cap.
 //   3. Flip CONFIG.PAID_FEATURES.CHAT_ASSISTANT.ENABLED in
-//      index.html so the widget renders.
+//      src/data/config.js so the widget renders.
 //
 // Cost (as of 2026):
 //   * Claude Haiku 4.5 — ~$1/M input tokens, ~$5/M output. A

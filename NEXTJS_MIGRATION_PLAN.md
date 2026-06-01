@@ -1,8 +1,16 @@
 # Next.js migration plan — Lusik & Sons
 
-**Status: Phases 1–3 complete (scaffold → install → provider shell) — production is NOT affected.** See the **Progress log + handoff** section at the bottom for the live state, decision log, and the open question that blocks Phase 4.
+> **✅ STATUS: COMPLETE — all phases done and flipped to production (2026-05-31).**
+> The site now runs on Next.js (App Router): `netlify.toml` builds with
+> `npm run next:build`, publishes `.next`, and serves through `@netlify/plugin-nextjs`.
+> **Vite is fully retired** (no `vite.config`, no `dist/`, no `src/main.jsx`, no
+> `src/App.jsx`). Next was taken to **15.5.x** (past the original 14.2 plan). The
+> phase plan below is kept as a historical record; see **Progress log + handoff**
+> at the bottom for how it actually landed. Architecture going forward lives in
+> `CLAUDE.md`.
 
-Migrate the Vite + React SPA to **Next.js (App Router)** on Netlify, for true
+The text below is the **original plan** (preserved for history). It describes
+migrating the Vite + React SPA to **Next.js (App Router)** on Netlify, for true
 server rendering on product/journal pages (SEO + first paint), *without breaking
 the live store*.
 
@@ -90,6 +98,20 @@ deliberately, one green phase at a time, keeps the risk bounded.
 ---
 
 ## Progress log + handoff (for Cowork)
+
+**✅ ALL PHASES COMPLETE — the flip shipped (2026-05-31).** Production now runs on
+Next.js (App Router): `netlify.toml` → `command = "npm ci && npm run next:build"`,
+`publish = ".next"`, `@netlify/plugin-nextjs`. Vite is fully retired. The SPA-fallback
+rewrites were removed, the `/api/stripe-webhook` rewrite + `[functions]` block + the
+security/cache headers were kept (with `/assets/*` re-pointed at `/_next/static/*`),
+the env-strategy question was resolved (Option B — all `import.meta.env.*` reads moved
+to `process.env.NEXT_PUBLIC_*`), and the e2e suite now runs against
+`next build && next start`. The original stacked-PR progress notes below are retained
+for history.
+
+---
+
+_Historical (pre-flip) notes follow:_
 
 **Phases 1–3 are done and pushed — each its own PR, stacked, all green locally.
 Production is untouched (Vite still builds + serves `dist/`).**

@@ -2,61 +2,87 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Status banner — last updated 2026-05-29.** Two big things changed since the
-> original version of this doc and are now reflected below:
-> 1. **The Vite migration is COMPLETE and flipped to production.** The site is no
->    longer a single hand-edited `index.html`. The SPA now lives in a `src/` React
->    component tree, is built with Vite to `dist/`, and Netlify serves `dist/`.
+> **Status banner — last updated 2026-05-31.** Three big things to know, all now
+> reflected below:
+> 1. **The Next.js (App Router) migration is COMPLETE and flipped to production.**
+>    The site was a Vite-built React SPA; it is now a **Next.js App Router** app.
+>    `netlify.toml` builds with `next:build`, publishes `.next`, and runs through
+>    `@netlify/plugin-nextjs`. **Vite is fully retired** — no `vite.config`, no
+>    `dist/`, no `src/main.jsx`, no `src/App.jsx`. (See the bottom of this doc and
+>    `NEXTJS_MIGRATION_PLAN.md` for the phase-by-phase history.)
 > 2. **The UI went through an Apple-Store-style redesign** (mobile bottom-nav +
 >    "Liquid Glass" aesthetic, home "Explore" cards, a real `/shop/<category>/<product>`
 >    route hierarchy, and a narrative copy rewrite). The e2e smoke suite was updated
 >    to match in PR #147.
+> 3. **Launch-readiness polish landed** after the flip: a PNG icon set + favicon +
+>    maskable icon, Organization JSON-LD, branded `404`/error pages, Sentry wired
+>    into the Next provider shell (DSN-gated), and a dependency-review CI gate.
 
 ## What this is
 
 A marketing + e-commerce site for **Lusik & Sons**, a Cypress, CA maker of hand
 cross-stitched Armenian alphabet baby blankets and related goods. The frontend is
-a **Vite-built React SPA** (source under `src/`); the backend is a small
-`netlify/` directory holding the database schema and the serverless functions
-every backend interaction goes through.
+a **Next.js (App Router) app** (routes under `app/`, components/data/libs under
+`src/`); the backend is a small `netlify/` directory holding the database schema
+and the serverless functions every backend interaction goes through.
 
 ## Architecture — the one thing to know
 
-The SPA is a Vite + React app. Source lives under `src/` and is compiled by
-`vite build` into `dist/`, which Netlify serves. The repo-root `index.html` is now
-a **minimal Vite entry** — `<head>` metadata + `<div id="root">` + a
-`<script type="module" src="/src/main.jsx">`. There is no more Babel-Standalone
-runtime transpile, no Tailwind CDN at runtime, no React UMD chain; those were all
-removed at the Vite flip (the final phase of the migration described near the
-bottom of this doc).
+The site is a **Next.js App Router app**. File-based routes live under `app/`; the
+bulk of the React code (components, data, libs, i18n, state) still lives under
+`src/` and is imported by the route files. There is no more Vite, no
+Babel-Standalone runtime transpile, no Tailwind CDN, no React UMD chain — all
+removed across the migration described near the bottom of this doc.
+
+The split: `app/<segment>/page.tsx` is a thin server-component shell that imports a
+matching `src/routes/<Name>Route.jsx` client component (e.g. `app/page.tsx` →
+`HomeRoute`, `app/shop/[category]/[product]/page.tsx` → `ProductRoute`). The whole
+client tree mounts behind **one** `"use client"` boundary in `app/providers.tsx`
+(language, toasts, and the `SiteProvider` that owns cart/nav/auth state — what the
+old monolithic `src/App.jsx` used to own). `app/layout.tsx` is the root layout
+(`<head>` metadata, fonts, the Netlify Identity script, `<Providers>`).
 
 Runtime stack:
 
-- **React 18** (real npm dependency, bundled by Vite)
+- **Next.js 15** (App Router) on **React 18.3** (real npm deps)
 - **Tailwind** via PostCSS at build time (config in `tailwind.config.mjs` /
-  `postcss.config.mjs`) — not the runtime CDN anymore
+  `postcss.config.mjs`)
 - **`netlify-identity-widget`** — auth (signup, login, password reset, JWT
-  issuance), still loaded from `identity.netlify.com` via a `<script>` tag because
-  Netlify's confirmation redirect handler expects `window.netlifyIdentity` from
-  their CDN. Driven programmatically through the `auth` wrapper.
+  issuance), loaded from `identity.netlify.com` via a `next/script`
+  (`beforeInteractive`) tag because Netlify's confirmation redirect handler expects
+  `window.netlifyIdentity` from their CDN. Driven programmatically through the
+  `auth` wrapper.
+- **Sentry** (`@sentry/react`) — error monitoring, dynamically imported and off
+  until `NEXT_PUBLIC_SENTRY_DSN` is set (no bundle cost when unconfigured).
 - Google Fonts: Fraunces (display), DM Sans (body), Allura
 
-Deploy target is **Netlify**. `netlify.toml` has `command = "npm ci && npm run build"`
-and `publish = "dist"`. The `netlify/functions/` directory is its own little
-project (own `package.json`) that Netlify installs and bundles at deploy time.
-Locally, `netlify dev` runs the built site + functions + Identity together.
+Deploy target is **Netlify**. `netlify.toml` has `command = "npm ci && npm run next:build"`,
+`publish = ".next"`, and the `@netlify/plugin-nextjs` plugin (which wires SSR/ISR +
+the image CDN). The `netlify/functions/` directory is its own little project (own
+`package.json`) that Netlify installs and bundles at deploy time. Locally,
+`npm run next:dev` runs the dev server; `netlify dev` runs the built site +
+functions + Identity together.
 
-### Source layout (`src/`)
+> **Env access:** browser-visible env reads go through `process.env.NEXT_PUBLIC_*`
+> (e.g. `NEXT_PUBLIC_SENTRY_DSN`). The old Vite `import.meta.env.*` reads were all
+> migrated out — don't reintroduce them.
 
-The code is split into modules rather than one giant file. Exact paths drift as the
-tree grows; use `rg`/`grep` to locate a component. High-level shape:
+### Source layout (`app/` + `src/`)
+
+Routes are file-based under `app/`; everything else lives under `src/`. Exact paths
+drift as the tree grows; use `rg`/`grep` to locate a component. High-level shape:
 
 | Path | Contents |
 | --- | --- |
-| `src/main.jsx` | Entry — `ReactDOM.createRoot(...).render(<LanguageProvider><App/></LanguageProvider>)` |
-| `src/App.jsx` | Root component. Owns cart, view/routing, auth, the `/shop/*` + `/journal/*` + promoted-section routing, mobile bottom-nav state, analytics page-view dispatch |
-| `src/data/*.js` | Pure data: `product.js` (live Armenian Alphabet Blanket), `customProducts.js` (bib), `catalog.js` (multi-category catalog incl. priced + unpriced placeholders), `config.js` (the dial board), `socialPlatforms.js`, `shippingCarriers.ts`, `journalPosts.js` |
-| `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl` |
+| `app/layout.tsx` | Root layout — `<head>` metadata, fonts, Netlify Identity `next/script`, wraps children in `<Providers>` |
+| `app/providers.tsx` | The single `"use client"` boundary — mounts `LanguageProvider` + `ToastProvider` + `SiteProvider`, calls `auth.init()`, DSN-gated Sentry init |
+| `app/page.tsx`, `app/<segment>/page.tsx` | Thin route shells (incl. dynamic `app/shop/[category]/[product]`, `app/journal/[slug]`) that render the matching `src/routes/*Route.jsx`; export `metadata` / `generateMetadata` |
+| `app/globals.css` | `@import`s `src/styles/index.css` (one stylesheet, see below) |
+| `app/not-found.tsx`, `app/error.tsx` | Branded 404 + error boundary pages |
+| `src/routes/*.jsx` | Client route components: `HomeRoute`, `ShopIndexRoute`, `CategoryRoute`, `ProductRoute`, `JournalRoute`, `CartRoute`, `CheckoutRoute`, `AccountRoute`, `AdminRoute`, `GalleryRoute` |
+| `src/state/` | `SiteProvider.jsx` (cart + nav + auth state, the old `App.jsx` core) + `useSiteNav.js` (`next/navigation` wrapper) |
+| `src/data/*.{js,ts}` | Pure data: `product.js` (live Armenian Alphabet Blanket), `customProducts.js` (bib), `catalog.js` (multi-category catalog incl. priced + unpriced placeholders), `config.js` (the dial board), `socialPlatforms.js`, `shippingCarriers.ts`, `journalPosts.js` |
+| `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `errorReporting` (Sentry), `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl`, `seo` (`organizationJsonLd()` etc.) |
 | `src/i18n/` | `LangContext.jsx` (+ `LanguageProvider`, `useT()`), `translations.js` (en / hy / hyw) |
 | `src/images/photos.js` | `PHOTO_*` / `IMG_*` constants → `/img/*.jpg` paths |
 | `src/components/` | Leaf + widget + domain components (see below) |
@@ -177,16 +203,16 @@ Required env vars (Netlify → Site → Environment): `RESEND_API_KEY`, `ADMIN_N
 
 A mini-blog (`/journal` list, `/journal/<slug>` posts) with starter posts about Armenian craft heritage (the alphabet, cross-stitch, the pomegranate). The posts are *cultural*, not biographical.
 
-- Post data lives in `src/data/journalPosts.js`. Each entry has `slug`, `title`, `excerpt`, `publishedAt`, `readMinutes`, and a `content` array of typed nodes (`p`, `h2`, `blockquote`). Adding a post = prepending an entry **AND** adding a `<url>` block to `sitemap.xml`. **Don't change a slug** once a post is shared.
-- Components: `JournalListView`, `JournalPostView` (inline `BlogPosting` JSON-LD), `JournalView`.
-- Routing: real history-API URLs. Netlify's `[[redirects]]` block serves the SPA for `/journal*`. App effects keep URL ↔ state in sync both ways; legacy `#journal/<slug>` hash URLs are rewritten to clean pathnames on first load.
-- Per-route `<title>` + `<link rel="canonical">` are set on navigation so each post indexes as its own page.
+- Post data lives in `src/data/journalPosts.js`. Each entry has `slug`, `title`, `excerpt`, `publishedAt`, `readMinutes`, and a `content` array of typed nodes (`p`, `h2`, `blockquote`). A `prenext:build`/`gen:journal` step compiles it into `src/data/journalPostsData.js` (the search index); `npm run gen:sitemap` regenerates `public/sitemap.xml` from the same data. Adding a post = prepending an entry, then running `npm run gen:sitemap`. **Don't change a slug** once a post is shared.
+- Components: `JournalListView`, `JournalPostView` (inline `BlogPosting` JSON-LD), `JournalView`; the route shell is `src/routes/JournalRoute.jsx` behind `app/journal/page.tsx` + `app/journal/[slug]/page.tsx`.
+- Routing: file-based Next routes (`/journal`, `/journal/[slug]`) — the custom SPA router and legacy `#journal/<slug>` hash handling are gone.
+- Per-route `<title>` + canonical come from each page's `metadata`/`generateMetadata`, so every post indexes as its own page.
 - Posts carry `TODO_LUSIK_REVIEW` markers — Lusik should read each one.
 
 ### PWA (Add to Home Screen) + print styles
 
-- `manifest.webmanifest` (now served from `/public/`) declares brand name, theme colors (`#1A1612` ink, `#F5EFE3` cream), `standalone` display, icon paths. iOS Safari meta tags + a `theme-color` meta sit in `<head>`.
-- **Icon files still needed before launch** (all flagged `TODO_LUSIK`): `/favicon.ico`, `/apple-touch-icon.png` (180×180), `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png`. PWA install works without them (browser falls back to a page screenshot).
+- `manifest.webmanifest` (served from `/public/`) declares brand name, theme colors (`#1A1612` ink, `#F5EFE3` cream), `standalone` display, icon paths. iOS Safari meta tags + a `theme-color` meta sit in `app/layout.tsx`'s `<head>`.
+- **Icon set now shipped** (placeholder art, fine to replace with final brand assets): `/favicon.ico`, `/apple-touch-icon.png` (180×180), `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png` — all under `/public/`, referenced by the manifest and linked from the layout.
 - Print styles live in the main stylesheet (`@media print`): hide fixed UI, grayscale photos, append `(URL)` after external links, `page-break-inside: avoid` on `article`/`section`/order cards.
 
 ### Analytics (privacy-first, opt-in)
@@ -239,8 +265,8 @@ Cart-ID shape is load-bearing: `mapLegacyId()` (in `src/lib/cartId.ts`, used by 
 
 ## Local development
 
-- `npm ci` once. Then `npm run dev` (Vite dev server) for fast iteration, or `netlify dev` to run the built site + Functions + Identity together (proxies `/.netlify/functions/*`).
-- `npm run build` produces `dist/`. `npm run preview` (or `npx vite preview`) serves the build — this is what the e2e tests run against.
+- `npm ci` once. Then `npm run next:dev` (Next dev server) for fast iteration, or `netlify dev` to run the built site + Functions + Identity together (proxies `/.netlify/functions/*`).
+- `npm run next:build` produces `.next/`. `npm run next:start` serves that production build — this is what the e2e tests run against. (`next:build`/`next:dev`/`typecheck` all run a `pre*` hook that regenerates the journal data first.)
 
 ### Test suite
 
@@ -248,7 +274,7 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
 
 1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`) — Node's built-in test runner, no extra install. Covers the security-critical helpers: `requireUser`/`requireAdmin` + `ADMIN_EMAILS` fallback, the HMAC token roundtrip, the `TRUSTED_PRODUCTS` price-map shape. `npm run test:unit`.
 
-2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a `vite preview` build of the site, configured in `playwright.config.mjs` with **two projects**: `desktop-chromium` and `mobile-chromium` (Pixel 7, so `isMobile` is true). The `webServer` block runs `npm run build && npx vite preview`. Backend calls are stubbed via `page.route()`. `npm run test:e2e` (first time: `npm run test:install`).
+2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a production Next build of the site, configured in `playwright.config.mjs` with **two projects**: `desktop-chromium` and `mobile-chromium` (Pixel 5, so `isMobile` is true). The `webServer` block runs `npm run next:build && npx next start --port 4173`. Backend calls are stubbed via `page.route()`. `npm run test:e2e` (first time: `npm run test:install`).
 
    The suite is written against the post-redesign UI (PR #147): it routes home→shop and home→story through the **Explore cards** (which render on both viewports), asserts the **"Almost in Lusik's hands"** checkout heading, asserts the priced-placeholder **"Write Lusik to commission this"** link, and **skips the cart-drawer tests on `mobile-chromium`** (the drawer is desktop-only). When the UI copy or nav changes again, these selectors are the first thing to update.
 
@@ -290,16 +316,21 @@ A condensed list of things wired up that aren't obvious from the architecture ov
 - `avatar.mjs` keys blobs with a `<user_id>/avatar-<ts>-<nonce>.<ext>` (8-byte hex nonce).
 - `avatar-get.mjs` + `order-photo-get.mjs` UUID-shape-gate keys before any blob lookup and set `X-Content-Type-Options: nosniff`.
 
-## Vite migration — COMPLETE
+## Migration history — Vite SPA → Next.js, both COMPLETE
 
-The single-file SPA migration to a Vite-built `src/` tree is **done and flipped to
-production**. `netlify.toml` now has `command = "npm ci && npm run build"` and
-`publish = "dist"`; the runtime Babel-Standalone + Tailwind CDN + React UMD chain is
-gone. The historical 10-phase plan (scaffold → static assets → data modules → lib
-modules → i18n → leaf components → widgets → domain components → App/entry flip →
-the netlify.toml flip) has been fully executed.
+The frontend has been through two completed migrations, in order:
 
-A few **durable invariants** survived the migration and still bite if ignored:
+1. **Single-file SPA → Vite + `src/` tree** — done long ago.
+2. **Vite → Next.js (App Router)** — **done and flipped to production.**
+   `netlify.toml` now builds with `command = "npm ci && npm run next:build"`,
+   `publish = ".next"`, and `@netlify/plugin-nextjs`. Vite is fully retired
+   (no `vite.config`, no `dist/`, no `src/main.jsx`, no `src/App.jsx`); routing
+   moved from the custom history-API router inside `App.jsx` to file-based `app/`
+   routes + `next/navigation` (the cart/nav/auth state that lived in `App.jsx`
+   now lives in `src/state/SiteProvider.jsx`). The phase-by-phase log lives in
+   **`NEXTJS_MIGRATION_PLAN.md`**.
+
+A few **durable invariants** survived both migrations and still bite if ignored:
 
 - **Photos live in `/public/img/`**, referenced as URL strings (`<img src={...}>`).
   The `CONFIG.ROTATED_GALLERY_INDEXES` rotation band-aid is unchanged.
@@ -308,10 +339,12 @@ A few **durable invariants** survived the migration and still bite if ignored:
   values like DMC palette colors).
 - **The cart-ID shape is load-bearing for Stripe** — `mapLegacyId` must match
   `_lib/trusted-products.mjs`; the smoke test is the safety net.
-- **`netlify-identity-widget` stays loaded from `identity.netlify.com`** via a
-  `<script>` tag — do NOT switch to the npm package.
-- **`netlify/functions/` was never touched by the migration** and keeps its own
+- **`netlify-identity-widget` stays loaded from `identity.netlify.com`** (now via
+  `next/script` `beforeInteractive`) — do NOT switch to the npm package.
+- **`netlify/functions/` was never touched by either migration** and keeps its own
   `package.json`. Don't merge it with the root one.
+- **Browser env reads go through `process.env.NEXT_PUBLIC_*`**, not
+  `import.meta.env.*` (which is undefined under Next).
 
 ## TypeScript migration (in progress, gradual)
 
@@ -319,7 +352,7 @@ The repo has a `tsconfig.json` and `npm run typecheck`. New code should be `.ts`
 
 Already migrated (foundation layer): `src/data/languages.ts`, `src/data/shippingCarriers.ts`, `src/data/socialConsentPlatforms.ts`, `src/lib/cartId.ts`, `src/lib/tracking.ts`, `src/lib/galleryRotation.ts`, `src/lib/designUrl.ts`.
 
-Recommended continuation order: remaining data modules → `auth`/`db` (define `User`/`Order`/`Profile`/… interfaces) → `analytics`/`errorReporting` → `translations` (dotted-path key union) → `icons` → leaf components → widget components → domain components → `App`/`main` → flip `checkJs: true`. Each file is independent; run `npm run typecheck` after each. If a type mismatch surfaces a real bug, fix it — don't widen to `any`.
+Recommended continuation order: remaining data modules → `auth`/`db` (define `User`/`Order`/`Profile`/… interfaces) → `analytics`/`errorReporting` → `translations` (dotted-path key union) → `icons` → leaf components → widget components → domain components → `src/routes/*` + `src/state/*` → flip `checkJs: true`. Each file is independent; run `npm run typecheck` after each. If a type mismatch surfaces a real bug, fix it — don't widen to `any`.
 
 ## Working in this repo
 

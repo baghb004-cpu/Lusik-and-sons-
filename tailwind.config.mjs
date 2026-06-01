@@ -1,19 +1,17 @@
 // ============================================================
 // Tailwind PostCSS configuration
 // ============================================================
-// Replaces the runtime CDN (https://cdn.tailwindcss.com) that
-// index.html currently loads in <head>. PostCSS Tailwind only
-// emits classes it can statically see in the `content` files,
-// so this config gets pointed at both index.html (for now) and
-// the eventual src/**/* tree (post-migration).
+// PostCSS Tailwind only emits classes it can statically see in
+// the `content` files, so this config is pointed at the whole
+// app/ + src/ tree.
 //
 // IMPORTANT GOTCHA — dynamic class names:
 // PostCSS Tailwind statically scans for class strings. Anything
 // like `` `bg-${color}` `` is invisible to the scanner and will
-// be silently dropped from the build. During the migration,
-// grep for template-literal classes:
+// be silently dropped from the build. Grep for template-literal
+// classes:
 //
-//   rg '\\\`[^\\\`]*\\\$\\{[^}]*\\}[^\\\`]*\\\`' index.html src/
+//   rg '\\\`[^\\\`]*\\\$\\{[^}]*\\}[^\\\`]*\\\`' app/ src/
 //
 // Each match needs either:
 //   (a) refactor to inline `style={{ background: color }}` (the
@@ -24,12 +22,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}",
-    // Next.js App Router tree (Vite→Next migration, Phase 2+). Both build
-    // pipelines share this one Tailwind config + the same stylesheet, so a
-    // class used only in app/ still gets emitted.
     "./app/**/*.{js,jsx,ts,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
@@ -41,7 +35,7 @@ export default {
         script:  ['"Allura"', "cursive"],
       },
       colors: {
-        // Brand palette mirrored from index.html's CSS custom
+        // Brand palette mirrored from the stylesheet's CSS custom
         // properties. Keep these names stable — utility classes
         // like `bg-cream` are referenced throughout the JSX.
         ink:    "#1A1612",

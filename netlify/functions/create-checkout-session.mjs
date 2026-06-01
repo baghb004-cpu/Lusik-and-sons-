@@ -49,11 +49,11 @@ function getStripe() {
 // (imported from _lib/pricing.mjs). The cart-drawer progress bar
 // promises it; this is where we make it real on the Stripe side.
 // The browser's matching constant lives in CONFIG.FREE_SHIPPING_*
-// in index.html and is guarded against drift by pricing-drift.test.mjs.
+// in src/data/config.js and is guarded against drift by pricing-drift.test.mjs.
 // ============================================================
 
 // Paid shipping options offered below the threshold. Mirrors
-// SHIPPING_CARRIERS in index.html. Stripe shows these on its
+// SHIPPING_CARRIERS in src/data/shippingCarriers.ts. Stripe shows these on its
 // hosted checkout page; the customer picks one.
 const SHIPPING_CARRIERS = [
   { name: "USPS Ground Advantage", amountCents:  999, daysMin: 3, daysMax: 5 },
@@ -93,7 +93,7 @@ function buildShippingOptions(subtotalCents) {
 }
 
 // Where Stripe sends the customer after pay/cancel. We append the
-// ?order=success|cancelled flag that index.html's post-checkout
+// ?order=success|cancelled flag that the app's post-checkout
 // handler already understands.
 //
 // Origin VALIDATION is load-bearing for security here: an attacker
