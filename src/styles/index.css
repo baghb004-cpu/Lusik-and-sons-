@@ -847,11 +847,15 @@
     --lg-border-strong: rgba(255, 255, 255, 0.85);
     --lg-edge-dark:     rgba(26, 22, 18, 0.06);
     --lg-highlight:     rgba(255, 255, 255, 0.6);
+    /* Specular sheen across the top of every glass surface. A crisper
+       bright lip at the very top easing through a soft mid-falloff reads
+       as a more "liquid", domed pane than a single linear wash. */
     --lg-shine:         linear-gradient(
                           180deg,
-                          rgba(255, 255, 255, 0.35) 0%,
-                          rgba(255, 255, 255, 0.10) 32%,
-                          rgba(255, 255, 255, 0) 60%
+                          rgba(255, 255, 255, 0.42) 0%,
+                          rgba(255, 255, 255, 0.16) 22%,
+                          rgba(255, 255, 255, 0.04) 50%,
+                          rgba(255, 255, 255, 0) 72%
                         );
     --lg-shadow:        0 14px 40px -12px rgba(26, 22, 18, 0.18),
                         0 4px 12px -2px rgba(26, 22, 18, 0.08);
@@ -880,9 +884,10 @@
     --lg-highlight:     rgba(245, 239, 227, 0.18);
     --lg-shine:         linear-gradient(
                           180deg,
-                          rgba(245, 239, 227, 0.10) 0%,
-                          rgba(245, 239, 227, 0.04) 32%,
-                          rgba(245, 239, 227, 0) 60%
+                          rgba(245, 239, 227, 0.14) 0%,
+                          rgba(245, 239, 227, 0.06) 22%,
+                          rgba(245, 239, 227, 0.02) 50%,
+                          rgba(245, 239, 227, 0) 72%
                         );
     --lg-shadow:        0 18px 48px -12px rgba(0, 0, 0, 0.55),
                         0 6px 14px -2px rgba(0, 0, 0, 0.35);

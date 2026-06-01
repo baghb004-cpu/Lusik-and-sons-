@@ -30,8 +30,10 @@
 // ============================================================
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { m } from "framer-motion";
 import { Home, Store, BookOpen, ShoppingBag, Search, Mic, X } from "./icons.jsx";
 import { useKeyboardOffset } from "../lib/useKeyboardOffset";
+import { tapScale, springSnappy } from "../lib/motion";
 
 const SR = typeof window !== "undefined"
   ? (window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -336,10 +338,11 @@ export function MobileBottomNav({
               affordance is obvious — tapping it lands on the For You page.
               Because the icon keys off cartCount, it flips back to the home
               glyph the moment the bag is emptied; it can't stay stuck on Bag. */}
-          <button
+          <m.button
             type="button"
             className="lg-nav-orb"
             style={{ order: isFullSearch ? 1 : -1 }}
+            whileTap={tapScale}
             onClick={isFullSearch ? closeSearch : (cartCount > 0 ? onCart : onHome)}
             aria-label={isFullSearch ? "Dismiss keyboard" : (cartCount > 0 ? "Open bag" : "Go to the For You page")}
           >
@@ -350,8 +353,12 @@ export function MobileBottomNav({
             ) : cartCount > 0 ? (
               <span style={{ position: "relative", color: "var(--text-primary)" }}>
                 <ShoppingBag size={22} strokeWidth={1.7} />
-                <span
+                <m.span
+                  key={cartCount}
                   aria-hidden="true"
+                  initial={{ scale: 0.5 }}
+                  animate={{ scale: 1 }}
+                  transition={springSnappy}
                   style={{
                     position: "absolute", top: -8, right: -10,
                     minWidth: 18, height: 18, padding: "0 5px",
@@ -361,14 +368,14 @@ export function MobileBottomNav({
                   }}
                 >
                   {cartCount}
-                </span>
+                </m.span>
               </span>
             ) : (
               <span style={{ color: "var(--text-primary)" }}>
                 <Home size={22} strokeWidth={1.7} />
               </span>
             )}
-          </button>
+          </m.button>
           {searchPill}
         </>
       ) : (
@@ -409,7 +416,18 @@ export function MobileBottomNav({
                   }}>
                     <t.Icon size={22} strokeWidth={active ? 2.1 : 1.6}
                       style={{ color: active ? "var(--accent)" : "var(--text-muted)" }} />
-                    {t.badge > 0 && <span className="lg-tab-badge" aria-hidden="true">{t.badge}</span>}
+                    {t.badge > 0 && (
+                      <m.span
+                        key={t.badge}
+                        className="lg-tab-badge"
+                        aria-hidden="true"
+                        initial={{ scale: 0.5 }}
+                        animate={{ scale: 1 }}
+                        transition={springSnappy}
+                      >
+                        {t.badge}
+                      </m.span>
+                    )}
                   </span>
                   <span className="lg-tab-label" style={{
                     color: active ? "var(--accent)" : "var(--text-muted)",
@@ -421,16 +439,17 @@ export function MobileBottomNav({
           </div>
 
           {/* Detached Search orb */}
-          <button
+          <m.button
             type="button"
             className="lg-nav-orb"
+            whileTap={tapScale}
             onClick={onSearch}
             aria-label="Search"
           >
             <span style={{ color: "var(--text-primary)" }}>
               <Search size={22} strokeWidth={1.8} />
             </span>
-          </button>
+          </m.button>
         </>
       )}
     </nav>

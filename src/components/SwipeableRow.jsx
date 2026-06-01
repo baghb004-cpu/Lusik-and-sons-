@@ -10,11 +10,18 @@
 // a full swipe can't accidentally destroy a line item; deletion is
 // always a deliberate second tap.
 //
+// Motion: the finger position and the snap-open/closed settle are a
+// Framer Motion value (`x`) animated with a spring — that's the only
+// thing Framer does here. The gesture DETECTION stays hand-rolled on
+// touch events (axis-claim, multi-touch cancel, rubber-band, tap-to-
+// close) because it's tuned for touch reliability; Framer just makes
+// the release settle springy instead of a CSS ease.
+//
 // Gesture machine highlights:
 //   - Axis claim: doesn't decide between horizontal/vertical intent
 //     until movement exceeds CLAIM_DIST_PX; before that a tap doesn't
 //     get misclassified as a tiny drag.
-//   - Snap, don't commit: on release we snap to OPEN (revealing the
+//   - Snap, don't commit: on release we spring to OPEN (revealing the
 //     button) or CLOSED based on DELETE_THRESHOLD_PX. The off-screen
 //     slide + onSwipeDelete callback only fire from the Delete tap.
 //   - Tap-to-close: while open, tapping the row content (or swiping
@@ -29,31 +36,39 @@
 // Tunables live in CONFIG.SWIPE.
 // ============================================================
 
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
+import { m, useMotionValue, animate, useReducedMotion } from "framer-motion";
 import { CONFIG } from "../data/config.js";
+import { springSnappy, EASE_OUT } from "../lib/motion";
 
 export function SwipeableRow({ onSwipeDelete, children }) {
-  const [dragX, setDragX] = useState(0);
+  // Hooks first, unconditionally — the reduced-motion bypass returns AFTER
+  // them so hook order stays stable if the OS setting flips at runtime.
+  const reduced = useReducedMotion();
+  const x = useMotionValue(0);
   const [open, setOpen] = useState(false);
-  const [animating, setAnimating] = useState(false);
   const startRef = useRef(null);
   const baseRef = useRef(0);        // offset the gesture started from (0 closed, -REVEAL open)
   const intentRef = useRef(null);   // null | "horizontal" | "vertical"
 
-  const reducedMotion = typeof window !== "undefined"
-    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  if (reducedMotion) return <>{children}</>;
+  if (reduced) return <>{children}</>;
 
   const REVEAL = CONFIG.SWIPE.REVEAL_WIDTH_PX;      // width the row snaps open to
   const SNAP   = CONFIG.SWIPE.DELETE_THRESHOLD_PX;  // drag past this from base → snap open
   const CLAIM  = CONFIG.SWIPE.CLAIM_DIST_PX;
+
+  // Spring the row to a stable resting state (open = button revealed, or closed).
+  const settle = (toOpen) => {
+    setOpen(toOpen);
+    animate(x, toOpen ? -REVEAL : 0, springSnappy);
+  };
 
   const onTouchStart = (e) => {
     const t = e.touches[0];
     startRef.current = { x: t.clientX, y: t.clientY };
     baseRef.current = open ? -REVEAL : 0;
     intentRef.current = null;
-    setAnimating(false);
+    x.stop();   // interrupt any in-flight settle so the finger takes over cleanly
   };
 
   const onTouchMove = (e) => {
@@ -80,14 +95,7 @@ export function SwipeableRow({ onSwipeDelete, children }) {
     let next = baseRef.current + dx;
     if (next > 0) next = 0;
     if (next < -REVEAL) next = -REVEAL - (Math.abs(next) - REVEAL) * 0.3;
-    setDragX(next);
-  };
-
-  // Animate to a stable resting state (open = button revealed, or closed).
-  const settle = (toOpen) => {
-    setAnimating(true);
-    setOpen(toOpen);
-    setDragX(toOpen ? -REVEAL : 0);
+    x.set(next);
   };
 
   // Return to whatever stable state we were in. Used for interrupted
@@ -102,7 +110,8 @@ export function SwipeableRow({ onSwipeDelete, children }) {
     if (intentRef.current === "horizontal") {
       // Snap open only if dragged decisively left; otherwise snap shut.
       // When already open, require a real rightward pull-back to close.
-      const shouldOpen = open ? dragX < -REVEAL * 0.5 : dragX <= -SNAP;
+      const at = x.get();
+      const shouldOpen = open ? at < -REVEAL * 0.5 : at <= -SNAP;
       settle(shouldOpen);
     }
     startRef.current = null;
@@ -110,10 +119,13 @@ export function SwipeableRow({ onSwipeDelete, children }) {
   };
 
   // The deliberate, explicit delete — the only path that removes the row.
+  // Slides fully off, then hands off to removeFromCart + undo toast.
   const handleDelete = () => {
-    setAnimating(true);
-    setDragX(-9999);   // slide fully off, then hand off to removeFromCart + undo toast
-    setTimeout(() => onSwipeDelete?.(), CONFIG.SWIPE.COMMIT_ANIM_MS);
+    animate(x, -window.innerWidth, {
+      duration: CONFIG.SWIPE.COMMIT_ANIM_MS / 1000,
+      ease: EASE_OUT,
+      onComplete: () => onSwipeDelete?.(),
+    });
   };
 
   return (
@@ -135,7 +147,7 @@ export function SwipeableRow({ onSwipeDelete, children }) {
           </span>
         </button>
       </div>
-      <div
+      <m.div
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -147,14 +159,13 @@ export function SwipeableRow({ onSwipeDelete, children }) {
         }}
         style={{
           position: "relative",
-          transform: `translateX(${dragX}px)`,
-          transition: animating ? "transform 0.22s cubic-bezier(0.2,0.9,0.2,1)" : "none",
+          x,
           background: "var(--bg-page)",
           touchAction: "pan-y",
         }}
       >
         {children}
-      </div>
+      </m.div>
     </div>
   );
 }

@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { LanguageProvider } from "../src/i18n/LangContext.jsx";
 import { ToastProvider } from "../src/components/ToastProvider.jsx";
 import { SiteProvider } from "../src/state/SiteProvider.jsx";
+import { MotionProvider } from "../src/components/MotionProvider.jsx";
 import { auth } from "../src/lib/auth.js";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -45,7 +46,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <LanguageProvider>
       <ToastProvider>
-        <SiteProvider>{children}</SiteProvider>
+        <MotionProvider>
+          <SiteProvider>{children}</SiteProvider>
+        </MotionProvider>
       </ToastProvider>
     </LanguageProvider>
   );
