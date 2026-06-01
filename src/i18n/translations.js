@@ -36,7 +36,7 @@ export const TRANSLATIONS = {
       signIn: "Sign in",
       connect: "Connect",
     },
-    announce: "Hand cross-stitched in Cypress, California — by Lusik, for the families who'll keep it",
+    announce: "Hand cross-stitched in Southern California — by Lusik, for the families who'll keep it",
 
     // Hero / homepage
     hero: {
@@ -54,10 +54,10 @@ export const TRANSLATIONS = {
       // are handled by the dedicated Custom Requests trust badge
       // popover below the hero, so we don't need an inline email
       // link in the body anymore.
-      body: "From her home in Cypress, California, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made for one specific child. Her sons run the website. Mom does the stitching. We do the typing.",
-      // Mobile-only variant — the hero eyebrow already says "Cypress,
-      // California", so the phone body drops the city to avoid repeating
-      // it. Desktop keeps the full `body` above.
+      body: "From her home in Southern California, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made for one specific child. Her sons run the website. Mom does the stitching. We do the typing.",
+      // Mobile-only variant — the hero eyebrow already names the region, so
+      // the phone body drops the location clause to avoid repeating it.
+      // Desktop keeps the full `body` above.
       bodyShort: "From her home, Lusik cross-stitches blankets, bibs, and blessings — every piece by hand, every piece made for one specific child. Her sons run the website. Mom does the stitching. We do the typing.",
       shopCta: "See what Lusik makes",
       storyCta: "Meet Lusik",
@@ -121,7 +121,7 @@ export const TRANSLATIONS = {
 
     // Product page (blanket)
     product: {
-      madeToOrder: "Made to order · Cypress, CA",
+      madeToOrder: "Made to order · Southern California",
       limited: "Limited to first {n} orders.",
       premium: "Premium variant — alphabet stitched twice (six letter squares).",
       step1: "1. Choose your alphabet",
@@ -166,7 +166,7 @@ export const TRANSLATIONS = {
 
     // Footer
     footer: {
-      brand: "Hand cross-stitched baby blankets with the Armenian alphabet — Ա Բ Գ — or English A B C. By Lusik herself, from her home in Cypress, California. Made to order, made to last.",
+      brand: "Hand cross-stitched baby blankets with the Armenian alphabet — Ա Բ Գ — or English A B C. By Lusik herself, from her home in Southern California. Made to order, made to last.",
       tagline: "Mom does the stitching. We do the typing.",
       shop: "Shop",
       help: "Help & Policies",
@@ -177,13 +177,13 @@ export const TRANSLATIONS = {
       termsOfService: "Terms of Service",
       contactUs: "Contact Us",
       repliesNote: "Lusik writes back herself, usually within a day.",
-      trustMade: "Made by Lusik in Cypress, California",
+      trustMade: "Made by Lusik in Southern California",
       trustSecure: "Secure checkout powered by Stripe",
       trustShips: "Ships within the United States",
       copyright: "© {year} Lusik & Sons. All rights reserved.",
       thanks: "Շնորհակալություն",
       thanksEn: "Thank you",
-      madeWith: "Made with patience in Cypress, California",
+      madeWith: "Made with patience in Southern California",
     },
 
     // Text-us widget
@@ -258,6 +258,147 @@ export const TRANSLATIONS = {
       noFile: "No file chosen",
       pickLetter: "Pick a letter",
     },
+
+    // Product-variation disclaimer — shown on product/bib pages, in the
+    // bag, and in the FAQ. Protects the business: the photos are samples,
+    // and a handmade piece (especially the bib's neck closure) may differ.
+    disclaimer: {
+      heading: "About these photos",
+      short: "Photos show examples of past work — your handmade piece may vary a little.",
+      full: "Photos shown are examples of past work. Because each piece is handmade and materials may change over time, the exact fabric, trim, closure style, colors, and details may vary from the photos shown. Each order is made with care, but it may not be an exact copy of the sample photo.",
+      bibClosure: "Current bibs may use a different neck closure than the examples pictured.",
+    },
+
+    // Mobile bottom-nav tabs + the floating search orb/pill (lg:hidden).
+    mobileNav: {
+      forYou: "For You",
+      products: "Products",
+      journal: "Journal",
+      bag: "Bag",
+      search: "Search",
+      searchPlaceholder: "What are you looking for?",
+      clearSearch: "Clear search text",
+      voiceSearch: "Search by voice",
+      stopListening: "Stop listening",
+      dismissKeyboard: "Dismiss keyboard",
+      openBag: "Open bag",
+      goForYou: "Go to the For You page",
+      backToForYou: "Back to the For You page",
+    },
+
+    // Mobile full-screen search page.
+    search: {
+      title: "Search",
+      recentlyViewed: "Recently Viewed",
+      recentSearches: "Recent Searches",
+      trySearching: "Try Searching",
+      clear: "Clear",
+      noResults: "No results for “{q}”",
+      noResultsHint: "Try a different search, or browse the shop.",
+      from: "From ${price}",
+      comingSoon: "Coming soon",
+      journalTag: "Journal",
+      sectionTag: "Site section",
+      yourAccount: "Your account",
+      sections: {
+        faq: "FAQ",
+        shipping: "Shipping & Returns",
+        contact: "Contact Us",
+        story: "Our Story",
+      },
+      // `label` is displayed (translatable); `query` is the English search
+      // term we actually run against the catalog, so matching keeps working.
+      suggestions: [
+        { label: "Armenian alphabet blanket", query: "Armenian alphabet blanket" },
+        { label: "Baptism towel", query: "Baptism towel" },
+        { label: "Bari akhorzhak", query: "Bari akhorzhak" },
+        { label: "Alphabet crib blanket", query: "Alphabet crib blanket" },
+        { label: "Shipping", query: "Shipping" },
+        { label: "Refund policy", query: "Refund policy" },
+      ],
+    },
+
+    // Bag / cart page + drawer (extends the shorter `cart` block above).
+    bag: {
+      title: "Bag",
+      emptyPage: "Your bag is empty.",
+      emptyDrawer: "Your cart is empty.",
+      emptyUser: "Continue browsing Lusik & Sons or open a design you’ve previously saved.",
+      emptyGuest: "Continue browsing Lusik & Sons to start your blanket.",
+      shopBlanket: "Shop the blanket",
+      openSaved: "Or open a saved design →",
+      custom: "Custom",
+      qty: "Qty:",
+      removeItem: "Remove from cart",
+      edit: "Edit",
+      doneEditing: "Done editing cart",
+      closeCart: "Close cart",
+      customOrders: "Custom orders:",
+      customOrdersBody: "Your uploaded designs are saved with your order. We'll email you a proof of your stitched design before running it through the embroidery machine.",
+      madeToOrderNote: "Made to order — every blanket starts after Lusik receives your order.",
+      checkout: "Checkout",
+      orderDetails: "Order details & policies",
+      dmInstagram: "DM us on Instagram",
+      orderViaPre: "Or ",
+      orderViaPost: " to order",
+      agreePre: "By placing your order you agree to our ",
+      terms: "Terms",
+      privacy: "Privacy",
+      finalSale: "Final Sale",
+      agreePost: " policies.",
+    },
+
+    // Mobile "Need help deciding?" / "Still have questions?" contact block + FAQ.
+    help: {
+      stillQuestions: "Still have questions?",
+      stillSubline: "Lusik or one of her sons will help.",
+      needHelp: "Need help deciding?",
+      textUs: "Text us",
+      callUs: "Call us",
+      emailUs: "Email us",
+      videoCall: "Video call",
+      lede: "Have a question about a piece? Lusik or one of her sons will be with you shortly.",
+      frequentlyAsked: "Frequently asked",
+      faq: [
+        { q: "What happens on a video call?", a: "You book a time and Lusik (or one of her sons) hops on a quick video call. She'll walk you through the blankets, show you thread colors and fabric up close, and help you decide on an alphabet, a name, and a layout. You don't have to be on camera if you'd rather not." },
+        { q: "Can you help me pick colors and a name?", a: "That's exactly what these chats are for. Bring the nursery palette, a sibling's blanket, or just a feeling — Lusik will help you land on a combination that looks right and stitches well. Nothing is ordered until you're happy with it." },
+        { q: "What if I'd rather just text or email?", a: "Totally fine — most people do. Tap Text us or Email us above and write in whatever's on your mind. Lusik writes back herself when she can, otherwise one of her sons does, usually within a day." },
+        { q: "How long does a finished piece take?", a: "Each blanket is hand cross-stitched to order, so most take about 5–10 business days once the design is set. You'll get a photo before it ships and a tracking link when it's on its way." },
+        { q: "Will my piece look exactly like the photos?", a: "The photos are examples of past work. Because every piece is made by hand and materials change over time, the exact fabric, trim, closure style, and colors may vary a little — current bibs may even use a different neck closure than older photos show. Each order is made with the same care, but it isn't an exact copy of the sample photo." },
+      ],
+    },
+
+    // Mobile per-page large titles (MobilePageHeader, keyed by view).
+    pageTitles: {
+      home: "For You",
+      shop: "Shop",
+      journal: "Journal",
+      account: "Your Account",
+      gallery: "Gallery",
+      checkout: "Checkout",
+    },
+
+    // Mobile "For You" home feed (the curated card + section headings).
+    forYou: {
+      weThink: "We think you'll love",
+      selectedForYou: "Selected for you",
+      featuredName: "The Armenian Alphabet Blanket",
+      exploreRest: "Explore the rest",
+      recentActivity: "Your recent activity",
+      more: "More",
+    },
+
+    // Home "Explore" cards — the entry points to each section page.
+    explore: {
+      shop: { title: "Shop", blurb: "Blankets, bibs & towels" },
+      story: { title: "Our Story", blurb: "Armenia → California" },
+      workshop: { title: "From Lusik's Workshop", blurb: "Past blankets, real families" },
+      journal: { title: "The Journal", blurb: "On Armenian craft" },
+      faq: { title: "Good Questions", blurb: "How it's made & sent" },
+      shipping: { title: "Shipping & Tracking", blurb: "How your piece gets home" },
+      contact: { title: "Contact Lusik", blurb: "Four ways to reach us" },
+      newsletter: { title: "Stay Connected", blurb: "The occasional note" },
+    },
   },
 
   // ============================================================
@@ -287,12 +428,12 @@ export const TRANSLATIONS = {
       signIn: "Մուտք",
       connect: "Կապ",
     },
-    announce: "Ձեռագործ խաչաձեւ կարկատանով՝ Սայփրըսի մէջ, Քալիֆորնիա",
+    announce: "Ձեռագործ խաչաձեւ կարկատանով՝ Հարաւային Քալիֆորնիոյ մէջ",
     hero: {
       // TODO_LUSIK_REVIEW — auto-translated, please refine
       headline: "Կարուած Լուսիկին ձեռքով։",
       headlineEm: "Կը մնայ սերունդէ սերունդ",
-      body: "Կիպրեսի (Քալիֆորնիա) իր տունէն, Լուսիկ ձեռքով խաչաձեւ կարկատանով կը պատրաստէ ծածկոցներ, թիկնոցներ եւ օրհնութիւններ — իւրաքանչիւր կտոր ձեռագործ, իւրաքանչիւր կտոր պատուէրով։ Իր տղաքը կ՚օգնեն խանութը վարելու։",
+      body: "Հարաւային Քալիֆորնիոյ իր տունէն, Լուսիկ ձեռքով խաչաձեւ կարկատանով կը պատրաստէ ծածկոցներ, թիկնոցներ եւ օրհնութիւններ — իւրաքանչիւր կտոր ձեռագործ, իւրաքանչիւր կտոր պատուէրով։ Իր տղաքը կ՚օգնեն խանութը վարելու։",
       // TODO_LUSIK_REVIEW — mobile-only variant, city removed (hero eyebrow already shows it)
       bodyShort: "Իր տունէն, Լուսիկ ձեռքով խաչաձեւ կարկատանով կը պատրաստէ ծածկոցներ, թիկնոցներ եւ օրհնութիւններ — իւրաքանչիւր կտոր ձեռագործ, իւրաքանչիւր կտոր պատուէրով։ Իր տղաքը կ՚օգնեն խանութը վարելու։",
       shopCta: "Տեսնել Լուսիկին գործերը",
@@ -334,7 +475,7 @@ export const TRANSLATIONS = {
       cancel: "Չեղարկել",
     },
     product: {
-      madeToOrder: "Պատուէրով կը պատրաստուի · Սայփրըս, Քալիֆորնիա",
+      madeToOrder: "Պատուէրով կը պատրաստուի · Հարաւային Քալիֆորնիա",
       limited: "Սահմանուած է առաջին {n} պատուէրներուն։",
       premium: "Բարձր տարբերակ — այբուբենը երկու անգամ կարկատուած (վեց տառ)։",
       step1: "1. Ընտրեցէք ձեր այբուբենը",
@@ -351,7 +492,7 @@ export const TRANSLATIONS = {
       emailLink: "գրեցէք Լուսիկին",
     },
     footer: {
-      brand: "Ձեռագործ խաչաձեւ կարկատանով մանկական ծածկոցներ՝ հայկական այբուբենով — Ա Բ Գ — կամ անգլերէն A B C։ Կը պատրաստէ Լուսիկը Սայփրըսի մէջ, Քալիֆորնիա։",
+      brand: "Ձեռագործ խաչաձեւ կարկատանով մանկական ծածկոցներ՝ հայկական այբուբենով — Ա Բ Գ — կամ անգլերէն A B C։ Կը պատրաստէ Լուսիկը Հարաւային Քալիֆորնիոյ մէջ։",
       tagline: "Մայրիկը կը կարկատէ։ Մենք կը գրենք։",
       shop: "Խանութ",
       help: "Օգնութիւն եւ կանոններ",
@@ -362,13 +503,13 @@ export const TRANSLATIONS = {
       termsOfService: "Ծառայութեան պայմաններ",
       contactUs: "Կապուիլ մեզի",
       repliesNote: "Լուսիկը սովորաբար մէկ օրուայ ընթացքին կը պատասխանէ։",
-      trustMade: "Պատրաստուած է Սայփրըսի մէջ, Քալիֆորնիա",
+      trustMade: "Պատրաստուած է Հարաւային Քալիֆորնիոյ մէջ",
       trustSecure: "Ապահով վճարում՝ Stripe-ի միջոցով",
       trustShips: "Կ՛առաքենք Միացեալ Նահանգներու ներսը",
       copyright: "© {year} Լուսիկ եւ Որդիներ։ Բոլոր իրաւունքները վերապահուած են։",
       thanks: "Շնորհակալութիւն",
       thanksEn: "Thank you",
-      madeWith: "Համբերութեամբ պատրաստուած Սայփրըսի մէջ, Քալիֆորնիա",
+      madeWith: "Համբերութեամբ պատրաստուած Հարաւային Քալիֆորնիոյ մէջ",
     },
     textUs: {
       directLine: "Ուղիղ գիծ",
@@ -412,13 +553,13 @@ export const TRANSLATIONS = {
       signIn: "Մուտք",
       connect: "Կապվել",
     },
-    announce: "Ձեռագործ խաչաձև կարկատանով՝ Սայփրեսսում, Քալիֆորնիա",
+    announce: "Ձեռագործ խաչաձև կարկատանով՝ Հարավային Կալիֆորնիայում",
 
     hero: {
       // TODO_LUSIK_REVIEW — auto-translated, please refine
       headline: "Կարված Լուսիկի ձեռքով։",
       headlineEm: "Մնում է սերնդեսերունդ",
-      body: "Կիպրեսի (Կալիֆոռնիա) իր տնից, Լուսիկը ձեռքով խաչաձև կարկատանով պատրաստում է ծածկոցներ, թիկնոցներ և օրհնություններ — յուրաքանչյուր կտոր ձեռագործ, յուրաքանչյուր կտոր պատվերով։ Նրա տղաները օգնում են խանութը վարել։",
+      body: "Հարավային Կալիֆորնիայի իր տնից, Լուսիկը ձեռքով խաչաձև կարկատանով պատրաստում է ծածկոցներ, թիկնոցներ և օրհնություններ — յուրաքանչյուր կտոր ձեռագործ, յուրաքանչյուր կտոր պատվերով։ Նրա տղաները օգնում են խանութը վարել։",
       // TODO_LUSIK_REVIEW — mobile-only variant, city removed (hero eyebrow already shows it)
       bodyShort: "Իր տնից, Լուսիկը ձեռքով խաչաձև կարկատանով պատրաստում է ծածկոցներ, թիկնոցներ և օրհնություններ — յուրաքանչյուր կտոր ձեռագործ, յուրաքանչյուր կտոր պատվերով։ Նրա տղաները օգնում են խանութը վարել։",
       shopCta: "Տեսնել Լուսիկի գործերը",
@@ -474,7 +615,7 @@ export const TRANSLATIONS = {
     },
 
     product: {
-      madeToOrder: "Պատվերով է պատրաստվում · Սայփրեսս, Քալիֆորնիա",
+      madeToOrder: "Պատվերով է պատրաստվում · Հարավային Կալիֆորնիա",
       limited: "Սահմանափակված է առաջին {n} պատվերներով։",
       premium: "Բարձր տարբերակ — այբուբենը կարկատված է երկու անգամ (վեց տառի վանդակ)։",
       step1: "1. Ընտրեք ձեր այբուբենը",
@@ -516,7 +657,7 @@ export const TRANSLATIONS = {
     },
 
     footer: {
-      brand: "Ձեռագործ խաչաձև կարկատանով մանկական ծածկոցներ՝ հայկական այբուբենով — Ա Բ Գ — կամ անգլերեն A B C։ Պատրաստում է Լուսիկը Սայփրեսսում, Քալիֆորնիա։",
+      brand: "Ձեռագործ խաչաձև կարկատանով մանկական ծածկոցներ՝ հայկական այբուբենով — Ա Բ Գ — կամ անգլերեն A B C։ Պատրաստում է Լուսիկը Հարավային Կալիֆորնիայում։",
       tagline: "Մայրիկը կարկատում է։ Մենք գրում ենք։",
       shop: "Խանութ",
       help: "Օգնություն և կանոններ",
@@ -527,13 +668,13 @@ export const TRANSLATIONS = {
       termsOfService: "Ծառայության պայմաններ",
       contactUs: "Կապվել մեզ հետ",
       repliesNote: "Լուսիկը սովորաբար մեկ օրվա ընթացքում է պատասխանում։",
-      trustMade: "Պատրաստված է Սայփրեսսում, Քալիֆորնիա",
+      trustMade: "Պատրաստված է Հարավային Կալիֆորնիայում",
       trustSecure: "Անվտանգ վճարում՝ Stripe-ի միջոցով",
       trustShips: "Առաքում ենք Միացյալ Նահանգների ներսում",
       copyright: "© {year} Լուսիկ և Որդիներ։ Բոլոր իրավունքները պաշտպանված են։",
       thanks: "Շնորհակալություն",
       thanksEn: "Thank you",
-      madeWith: "Համբերությամբ պատրաստված Սայփրեսսում, Քալիֆորնիա",
+      madeWith: "Համբերությամբ պատրաստված Հարավային Կալիֆորնիայում",
     },
 
     textUs: {
@@ -604,6 +745,143 @@ export const TRANSLATIONS = {
       chooseFile: "Ընտրել ֆայլ",
       noFile: "Ֆայլ ընտրված չէ",
       pickLetter: "Ընտրեք տառ",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    disclaimer: {
+      heading: "Այս լուսանկարների մասին",
+      short: "Լուսանկարները ցույց են տալիս նախկին աշխատանքների օրինակներ — ձեր ձեռագործ կտորը կարող է փոքր-ինչ տարբերվել։",
+      full: "Ցուցադրված լուսանկարները նախկին աշխատանքների օրինակներ են։ Քանի որ յուրաքանչյուր կտոր ձեռագործ է, և նյութերը ժամանակի ընթացքում կարող են փոխվել, գործվածքը, եզրագիծը, ամրակման ոճը, գույները և մանրամասները կարող են տարբերվել ցուցադրված լուսանկարներից։ Յուրաքանչյուր պատվեր պատրաստվում է խնամքով, բայց այն կարող է ճշգրիտ պատճենը չլինել նմուշային լուսանկարի։",
+      bibClosure: "Ընթացիկ կրծկալները կարող են ունենալ վզի ամրակման այլ համակարգ՝ քան ցուցադրված օրինակները։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    mobileNav: {
+      forYou: "Ձեզ համար",
+      products: "Ապրանքներ",
+      journal: "Օրագիր",
+      bag: "Պայուսակ",
+      search: "Որոնում",
+      searchPlaceholder: "Ի՞նչ եք փնտրում։",
+      clearSearch: "Մաքրել որոնման տեքստը",
+      voiceSearch: "Որոնել ձայնով",
+      stopListening: "Դադարեցնել լսելը",
+      dismissKeyboard: "Փակել ստեղնաշարը",
+      openBag: "Բացել պայուսակը",
+      goForYou: "Անցնել «Ձեզ համար» էջ",
+      backToForYou: "Վերադառնալ «Ձեզ համար» էջ",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    search: {
+      title: "Որոնում",
+      recentlyViewed: "Վերջերս դիտված",
+      recentSearches: "Վերջին որոնումները",
+      trySearching: "Փորձեք որոնել",
+      clear: "Մաքրել",
+      noResults: "Արդյունք չկա «{q}»-ի համար",
+      noResultsHint: "Փորձեք այլ որոնում կամ դիտեք խանութը։",
+      from: "{price}$-ից",
+      comingSoon: "Շուտով",
+      journalTag: "Օրագիր",
+      sectionTag: "Կայքի բաժին",
+      yourAccount: "Ձեր հաշիվը",
+      sections: {
+        faq: "Հաճախ տրվող հարցեր",
+        shipping: "Առաքում և վերադարձ",
+        contact: "Կապ մեզ հետ",
+        story: "Մեր պատմությունը",
+      },
+      suggestions: [
+        { label: "Հայկական այբուբենով ծածկոց", query: "Armenian alphabet blanket" },
+        { label: "Մկրտության սրբիչ", query: "Baptism towel" },
+        { label: "Բարի ախորժակ", query: "Bari akhorzhak" },
+        { label: "Այբուբենով օրորոցի ծածկոց", query: "Alphabet crib blanket" },
+        { label: "Առաքում", query: "Shipping" },
+        { label: "Վերադարձի կանոն", query: "Refund policy" },
+      ],
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    bag: {
+      title: "Պայուսակ",
+      emptyPage: "Ձեր պայուսակը դատարկ է։",
+      emptyDrawer: "Ձեր զամբյուղը դատարկ է։",
+      emptyUser: "Շարունակեք դիտել Լուսիկ և Որդիներ խանութը կամ բացեք նախկինում պահպանված ձևավորում։",
+      emptyGuest: "Շարունակեք դիտել Լուսիկ և Որդիներ խանութը՝ ձեր ծածկոցը սկսելու համար։",
+      shopBlanket: "Տեսնել ծածկոցը",
+      openSaved: "Կամ բացել պահպանված ձևավորում →",
+      custom: "Հատուկ",
+      qty: "Քանակ՝",
+      removeItem: "Հեռացնել զամբյուղից",
+      edit: "Խմբագրել",
+      doneEditing: "Ավարտել խմբագրումը",
+      closeCart: "Փակել զամբյուղը",
+      customOrders: "Հատուկ պատվերներ՝",
+      customOrdersBody: "Ձեր վերբեռնած ձևավորումները պահպանվում են ձեր պատվերի հետ։ Մենք ձեզ կուղարկենք ձեր ասեղնագործ ձևավորման նմուշը նախքան մեքենայով կարկատելը։",
+      madeToOrderNote: "Պատվերով է պատրաստվում — յուրաքանչյուր ծածկոց սկսվում է այն բանից հետո, երբ Լուսիկը ստանա ձեր պատվերը։",
+      checkout: "Վճարել",
+      orderDetails: "Պատվերի մանրամասներ և կանոններ",
+      dmInstagram: "Գրել մեզ Instagram-ով",
+      orderViaPre: "Կամ ",
+      orderViaPost: "՝ պատվիրելու համար",
+      agreePre: "Պատվեր կատարելով՝ դուք համաձայնում եք մեր ",
+      terms: "Պայմաններին",
+      privacy: "Գաղտնիության կանոնին",
+      finalSale: "Վերջնական վաճառքի կանոնին",
+      agreePost: "։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    help: {
+      stillQuestions: "Հարցե՞ր ունեք դեռ։",
+      stillSubline: "Լուսիկը կամ իր որդիներից մեկը կօգնի։",
+      needHelp: "Օգնության կարիք ունե՞ք ընտրելու հարցում։",
+      textUs: "Գրեք մեզ",
+      callUs: "Զանգահարեք մեզ",
+      emailUs: "Էլ. փոստ գրեք",
+      videoCall: "Տեսազանգ",
+      lede: "Հարց ունե՞ք որևէ կտորի մասին։ Լուսիկը կամ իր որդիներից մեկը շուտով կպատասխանի։",
+      frequentlyAsked: "Հաճախ տրվող հարցեր",
+      faq: [
+        { q: "Ի՞նչ է լինում տեսազանգի ժամանակ։", a: "Դուք ընտրում եք ժամ, և Լուսիկը (կամ իր որդիներից մեկը) միանում է կարճ տեսազանգի։ Նա ձեզ ցույց կտա ծածկոցները, թելերի գույներն ու գործվածքը մոտիկից, և կօգնի ընտրել այբուբեն, անուն ու դասավորություն։ Կարիք չկա տեսախցիկը միացնելու, եթե չեք ցանկանում։" },
+        { q: "Կարո՞ղ եք օգնել ընտրել գույներ ու անուն։", a: "Հենց դրա համար են այս զրույցները։ Բերեք մանկական սենյակի գունապնակը, քրոջ կամ եղբոր ծածկոցը կամ պարզապես մի զգացողություն — Լուսիկը կօգնի ընտրել համադրություն, որը և՛ լավ տեսք ունի, և՛ լավ է կարկատվում։ Ոչինչ չի պատվիրվում, մինչև դուք գոհ չլինեք։" },
+        { q: "Իսկ եթե նախընտրեմ պարզապես գրել կամ էլ. փոստ ուղարկել։", a: "Միանգամայն ընդունելի է — մարդկանց մեծ մասն այդպես է անում։ Սեղմեք վերևի «Գրեք մեզ» կամ «Էլ. փոստ գրեք» կոճակը և գրեք այն, ինչ մտքիդ կա։ Լուսիկն ինքն է պատասխանում, երբ կարող է, այլապես՝ իր որդիներից մեկը, սովորաբար մեկ օրվա ընթացքում։" },
+        { q: "Որքա՞ն ժամանակ է պահանջում մի կտոր պատրաստելը։", a: "Յուրաքանչյուր ծածկոց ձեռքով խաչաձև կարկատվում է պատվերով, ուստի մեծ մասը պահանջում է մոտ 5–10 աշխատանքային օր, երբ ձևավորումը հաստատված է։ Դուք կստանաք լուսանկար նախքան առաքելը և հետևման հղում, երբ այն ճանապարհին լինի։" },
+        { q: "Իմ կտորը ճի՞շտ նույն տեսքը կունենա, ինչ լուսանկարներում։", a: "Լուսանկարները նախկին աշխատանքների օրինակներ են։ Քանի որ յուրաքանչյուր կտոր ձեռագործ է, և նյութերը ժամանակի ընթացքում փոխվում են, գործվածքը, եզրագիծը, ամրակման ոճը և գույները կարող են փոքր-ինչ տարբերվել — ընթացիկ կրծկալները կարող են նույնիսկ ունենալ վզի այլ ամրակում, քան ցույց են տալիս հին լուսանկարները։ Յուրաքանչյուր պատվեր պատրաստվում է նույն խնամքով, բայց այն նմուշային լուսանկարի ճշգրիտ պատճենը չէ։" },
+      ],
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    pageTitles: {
+      home: "Ձեզ համար",
+      shop: "Խանութ",
+      journal: "Օրագիր",
+      account: "Ձեր հաշիվը",
+      gallery: "Պատկերասրահ",
+      checkout: "Վճարում",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    forYou: {
+      weThink: "Կարծում ենք՝ ձեզ դուր կգա",
+      selectedForYou: "Ընտրված ձեզ համար",
+      featuredName: "Հայկական այբուբենով ծածկոց",
+      exploreRest: "Տեսնել մնացածը",
+      recentActivity: "Ձեր վերջին ակտիվությունը",
+      more: "Ավելին",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
+    explore: {
+      shop: { title: "Խանութ", blurb: "Ծածկոցներ, կրծկալներ և սրբիչներ" },
+      story: { title: "Մեր պատմությունը", blurb: "Հայաստան → Կալիֆորնիա" },
+      workshop: { title: "Լուսիկի արհեստանոցից", blurb: "Նախկին ծածկոցներ, իրական ընտանիքներ" },
+      journal: { title: "Օրագիրը", blurb: "Հայկական արհեստի մասին" },
+      faq: { title: "Լավ հարցեր", blurb: "Ինչպես է պատրաստվում և առաքվում" },
+      shipping: { title: "Առաքում և հետևում", blurb: "Ինչպես է ձեր կտորը հասնում տուն" },
+      contact: { title: "Կապ Լուսիկի հետ", blurb: "Մեզ հասնելու չորս եղանակ" },
+      newsletter: { title: "Մնացեք կապի մեջ", blurb: "Երբեմն մի նամակ" },
     },
   },
 };

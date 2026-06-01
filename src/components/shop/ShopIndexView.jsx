@@ -186,7 +186,7 @@ function FeaturedPieceCard({ piece, onTap }) {
       <div style={{ padding: "18px 20px 20px" }}>
         <p
           className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
-          style={{ color: "#B08842" }}
+          style={{ color: "var(--accent)" }}
         >
           {piece.eyebrow}
         </p>
@@ -252,7 +252,7 @@ function JournalCard({ post, onTap }) {
     >
       <p
         className="text-[0.6rem] tracking-[0.3em] uppercase mb-3"
-        style={{ color: "#B08842" }}
+        style={{ color: "var(--accent)" }}
       >
         Journal
       </p>
@@ -286,7 +286,7 @@ function JournalCard({ post, onTap }) {
       </p>
       <p
         className="text-[0.7rem] tracking-[0.15em] uppercase"
-        style={{ color: "#B08842", marginTop: 12, fontWeight: 500 }}
+        style={{ color: "var(--accent)", marginTop: 12, fontWeight: 500 }}
       >
         Read · {post.readMinutes} min
       </p>
@@ -311,7 +311,7 @@ const DIFFERENCE_SLIDES = [
   },
   {
     icon: Home,
-    text: "From her home in Cypress, California — stitched for yours.",
+    text: "From her home in Southern California — stitched for yours.",
     linkLabel: "Read Lusik's journal",
     action: "journal",
   },
@@ -370,7 +370,7 @@ function DifferenceCarousel({ onSlideAction }) {
                 className="flex items-center justify-center"
                 style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(176,136,66,0.10)", marginBottom: 18 }}
               >
-                <Ico size={28} strokeWidth={1.5} style={{ color: "#B08842" }} />
+                <Ico size={28} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
               </div>
               <p
                 className="font-display"
@@ -382,7 +382,7 @@ function DifferenceCarousel({ onSlideAction }) {
                 type="button"
                 onClick={() => onSlideAction?.(slide.action)}
                 className="text-sm flex items-center gap-1.5"
-                style={{ color: "#B08842", fontWeight: 500, marginTop: 16 }}
+                style={{ color: "var(--accent)", fontWeight: 500, marginTop: 16 }}
               >
                 {slide.linkLabel} <ArrowRight size={14} strokeWidth={1.75} />
               </button>
@@ -598,7 +598,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             <div style={{ padding: "18px 20px 20px" }}>
               <p
                 className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
-                style={{ color: "#B08842" }}
+                style={{ color: "var(--accent)" }}
               >
                 Newest
               </p>
@@ -717,12 +717,12 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           { label: "Shop" },
         ]} />
 
-        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>The shop</p>
+        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>The shop</p>
         <h1 className="font-display text-4xl lg:text-6xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
           Everything Lusik <em style={{ fontWeight: 400 }}>makes</em>.
         </h1>
         <p className="text-base lg:text-lg opacity-75 max-w-2xl leading-relaxed mb-12 lg:mb-16">
-          Cross-stitched blankets for the crib. Embroidered bibs for the kitchen table. Ceremonial towels for the days that count. Small fabric objects for the very first weeks. Each piece by Lusik's own hand, from her home in Cypress, California — made to order, made to last. Pick a category to step in.
+          Cross-stitched blankets for the crib. Embroidered bibs for the kitchen table. Ceremonial towels for the days that count. Small fabric objects for the very first weeks. Each piece by Lusik's own hand, from her home in Southern California — made to order, made to last. Pick a category to step in.
         </p>
 
         <div className="grid sm:grid-cols-2 gap-5 lg:gap-6">
@@ -741,7 +741,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
                 style={{ "--i": i }}
                 aria-label={`Browse ${category.label}`}
               >
-                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>
+                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>
                   {category.eyebrow}
                 </p>
                 <h2 className="font-display text-2xl lg:text-3xl mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
@@ -754,7 +754,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
                   <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-65">
                     {subtitleParts.join(" · ")}
                   </p>
-                  <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
+                  <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
                     Step in <ArrowRight size={12} strokeWidth={1.75} />
                   </span>
                 </div>

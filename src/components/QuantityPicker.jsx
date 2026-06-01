@@ -323,7 +323,7 @@ export function QuantityPicker({
                 fontFamily: "'DM Sans', system-ui, sans-serif",
                 fontSize: "0.7rem",
                 letterSpacing: "0.05em",
-                color: "#B08842",
+                color: "var(--accent)",
                 fontWeight: 500,
                 textDecoration: "none",
               }}

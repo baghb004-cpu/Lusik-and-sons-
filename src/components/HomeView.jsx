@@ -61,6 +61,7 @@ import {
 // the always-present bottom-nav "For You" tab is the persistent second way
 // back, so a top-of-page control is plenty.
 function SectionBackHeader({ onBack }) {
+  const t = useT();
   return (
     <div
       className="border-b"
@@ -71,11 +72,11 @@ function SectionBackHeader({ onBack }) {
           type="button"
           onClick={() => onBack?.()}
           className="flex items-center gap-1 -ml-1 pr-4 py-1.5 active:opacity-60 transition-opacity"
-          style={{ color: "#B08842", fontWeight: 600 }}
-          aria-label="Back to the For You page"
+          style={{ color: "var(--accent)", fontWeight: 600 }}
+          aria-label={t("mobileNav.backToForYou")}
         >
           <ChevronLeft size={30} strokeWidth={2} />
-          <span className="text-lg lg:text-xl">For You</span>
+          <span className="text-lg lg:text-xl">{t("mobileNav.forYou")}</span>
         </button>
       </div>
     </div>
@@ -111,20 +112,21 @@ export function HomeView({
   // ignores this entirely (the hero is always shown on lg+).
   simplified = false,
 }) {
+  const t = useT();
   // The Explore cards — the swipeable (mobile) / grid (desktop) entry points
   // to everything that used to live further down the home page. Each routes
-  // to a real page so it's shareable + crawlable.
+  // to a real page so it's shareable + crawlable. Title/blurb come from i18n
+  // so the cards translate with the rest of the site.
   const exploreCards = [
-    { key: "shop",       title: "Shop",                  blurb: "Blankets, bibs & towels", Icon: Store,       go: () => onNavigateShop?.() },
-    { key: "story",      title: "Our Story",             blurb: "Armenia → Cypress",        Icon: Heart,       go: () => onNavigatePage?.("story") },
-    { key: "workshop",   title: "From Lusik's Workshop", blurb: "Past blankets, real families", Icon: Sparkles, go: () => onNavigatePage?.("workshop") },
-    { key: "journal",    title: "The Journal",           blurb: "On Armenian craft",        Icon: BookOpen,    go: () => onNavigateJournal?.() },
-    { key: "faq",        title: "Good Questions",        blurb: "How it's made & sent",     Icon: Plus,        go: () => onNavigatePage?.("faq") },
-    { key: "shipping",   title: "Shipping & Tracking",   blurb: "How your piece gets home", Icon: Truck,       go: () => onNavigatePage?.("shipping") },
-    { key: "contact",    title: "Contact Lusik",         blurb: "Four ways to reach us",    Icon: Mail,        go: () => onNavigatePage?.("contact") },
-    { key: "newsletter", title: "Stay Connected",        blurb: "The occasional note",      Icon: Send,        go: () => onNavigatePage?.("newsletter") },
+    { key: "shop",       title: t("explore.shop.title"),       blurb: t("explore.shop.blurb"),       Icon: Store,    go: () => onNavigateShop?.() },
+    { key: "story",      title: t("explore.story.title"),      blurb: t("explore.story.blurb"),      Icon: Heart,    go: () => onNavigatePage?.("story") },
+    { key: "workshop",   title: t("explore.workshop.title"),   blurb: t("explore.workshop.blurb"),   Icon: Sparkles, go: () => onNavigatePage?.("workshop") },
+    { key: "journal",    title: t("explore.journal.title"),    blurb: t("explore.journal.blurb"),    Icon: BookOpen, go: () => onNavigateJournal?.() },
+    { key: "faq",        title: t("explore.faq.title"),        blurb: t("explore.faq.blurb"),        Icon: Plus,     go: () => onNavigatePage?.("faq") },
+    { key: "shipping",   title: t("explore.shipping.title"),   blurb: t("explore.shipping.blurb"),   Icon: Truck,    go: () => onNavigatePage?.("shipping") },
+    { key: "contact",    title: t("explore.contact.title"),    blurb: t("explore.contact.blurb"),    Icon: Mail,     go: () => onNavigatePage?.("contact") },
+    { key: "newsletter", title: t("explore.newsletter.title"), blurb: t("explore.newsletter.blurb"), Icon: Send,     go: () => onNavigatePage?.("newsletter") },
   ];
-  const t = useT();
   const [contactMenuOpen, setContactMenuOpen] = useState(false);
   // Mirrors HeroSlideshow's activeIdx so the rotating caption in
   // the left-column text block stays in sync with the photo on
@@ -156,7 +158,7 @@ export function HomeView({
       <section className={`${simplified ? "hidden lg:block " : ""}max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24`}>
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
           <div className="lg:col-span-5 slide-up min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#B08842" }}>Cypress, California</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--accent)" }}>Southern California</p>
             <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-6" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
               {t("hero.headline")} <em style={{ fontWeight: 400 }}>{t("hero.headlineEm")}</em>.
             </h1>
@@ -177,14 +179,14 @@ export function HomeView({
                 <p
                   key={heroIndex}
                   className="fade-in text-base lg:text-lg italic mb-8 max-w-md"
-                  style={{ color: "#B08842", fontWeight: 400, letterSpacing: "0.005em" }}
+                  style={{ color: "var(--accent)", fontWeight: 400, letterSpacing: "0.005em" }}
                   aria-live="polite"
                 >
                   — {caption} —
                 </p>
               );
             })()}
-            {/* Body copy. Mobile drops the "Cypress, California" clause
+            {/* Body copy. Mobile drops the "Southern California" clause
                 (the hero eyebrow above already carries it) via bodyShort;
                 desktop keeps the full body unchanged. */}
             <p className="lg:hidden text-base leading-relaxed mb-10 max-w-md" style={{ color: "#3D332A" }}>
@@ -210,7 +212,7 @@ export function HomeView({
                 <HeroSlideshow className="w-full h-full" onIndexChange={setHeroIndex} />
               </div>
               <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
-                <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "#B08842" }}>{t("hero.callout1")}</p>
+                <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "var(--accent)" }}>{t("hero.callout1")}</p>
                 <p className="font-display text-lg" style={{ fontWeight: 400 }}>{t("hero.callout2")}</p>
               </div>
             </div>
@@ -235,7 +237,7 @@ export function HomeView({
             bold, ink-colored, left-aligned (not the small gold eyebrow). */}
         <div className="mb-4">
           <p className="leading-tight" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
-            We think you'll love
+            {t("forYou.weThink")}
           </p>
         </div>
         <button
@@ -243,7 +245,7 @@ export function HomeView({
           onClick={() => onNavigateProduct?.("blankets", "armenian-alphabet-blanket")}
           className="w-full flex items-center gap-4 text-left rounded-2xl p-3"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 10px 26px -14px rgba(26,22,18,0.24)" }}
-          aria-label="The Armenian Alphabet Blanket — selected for you"
+          aria-label={`${t("forYou.featuredName")} — ${t("forYou.selectedForYou")}`}
         >
           <div
             className="flex-shrink-0 overflow-hidden rounded-xl"
@@ -258,13 +260,13 @@ export function HomeView({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[0.6rem] tracking-[0.2em] uppercase mb-1" style={{ color: "#B08842", fontWeight: 600 }}>
-              ✦ Selected for you
+            <p className="text-[0.6rem] tracking-[0.2em] uppercase mb-1" style={{ color: "var(--accent)", fontWeight: 600 }}>
+              ✦ {t("forYou.selectedForYou")}
             </p>
             <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
-              The Armenian Alphabet Blanket
+              {t("forYou.featuredName")}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>From $65</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>{t("search.from", { price: 65 })}</p>
           </div>
           <ChevronRight size={18} strokeWidth={1.5} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
         </button>
@@ -275,7 +277,7 @@ export function HomeView({
             <RecentlyViewedStrip
               items={recentlyViewed}
               onTap={(categorySlug, slug) => onNavigateProduct?.(categorySlug, slug)}
-              heading="Your recent activity"
+              heading={t("forYou.recentActivity")}
               large
             />
           </div>
@@ -295,7 +297,7 @@ export function HomeView({
           className="leading-tight mb-5 lg:mb-8"
           style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}
         >
-          Explore the rest
+          {t("forYou.exploreRest")}
         </p>
 
         {/* Mobile: horizontal snap carousel. Left edge sits flush to the page
@@ -312,7 +314,7 @@ export function HomeView({
               style={{ width: 156, height: 156, background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${title} — ${blurb}`}
             >
-              <Icon size={24} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              <Icon size={24} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
               {/* Title reserves two lines so 1- and 2-line titles align the
                   same across the whole row (no more random heights). */}
               <div>
@@ -334,11 +336,11 @@ export function HomeView({
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
               aria-label={`${title} — ${blurb}`}
             >
-              <Icon size={26} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              <Icon size={26} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
               <div>
                 <p className="font-display text-xl leading-tight mb-1" style={{ fontWeight: 400, color: "var(--text-primary)" }}>{title}</p>
                 <p className="text-sm opacity-70 leading-relaxed">{blurb}</p>
-                <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5 mt-3" style={{ color: "#B08842", fontWeight: 500 }}>
+                <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5 mt-3" style={{ color: "var(--accent)", fontWeight: 500 }}>
                   Open <ArrowRight size={12} strokeWidth={1.75} />
                 </p>
               </div>
@@ -378,7 +380,7 @@ export function HomeView({
               : { className: "flex items-center gap-3" };
             return (
               <Wrapper key={i} {...wrapperProps}>
-                <item.Icon size={20} strokeWidth={1.25} style={{ color: "#B08842" }} />
+                <item.Icon size={20} strokeWidth={1.25} style={{ color: "var(--accent)" }} />
                 <div>
                   <p
                     className="text-sm flex items-center gap-1.5"
@@ -389,7 +391,7 @@ export function HomeView({
                       <ArrowRight
                         size={12}
                         strokeWidth={1.75}
-                        style={{ color: "#B08842" }}
+                        style={{ color: "var(--accent)" }}
                         aria-hidden="true"
                       />
                     )}
@@ -411,7 +413,7 @@ export function HomeView({
           the toggles are in the top header and every other destination
           is a card above. Desktop keeps the full footer. */}
       <section className="lg:hidden px-6 pb-12 pt-2 max-w-7xl mx-auto">
-        <p className="text-xs tracking-[0.25em] uppercase opacity-50 mb-3">More</p>
+        <p className="text-xs tracking-[0.25em] uppercase opacity-50 mb-3">{t("forYou.more")}</p>
         <div className="grid grid-cols-3 gap-3">
           {[
             { key: "finalSale", label: "Final Sale", Icon: ShoppingBag },
@@ -426,13 +428,13 @@ export function HomeView({
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${label} policy`}
             >
-              <Icon size={20} strokeWidth={1.5} style={{ color: "#B08842" }} />
+              <Icon size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
               <p className="text-sm mt-2 leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{label}</p>
             </button>
           ))}
         </div>
         <p className="text-[0.7rem] opacity-45 text-center mt-8 leading-relaxed">
-          © {new Date().getFullYear()} Lusik &amp; Sons · Made in Cypress, CA
+          © {new Date().getFullYear()} Lusik &amp; Sons · Made in Southern California
         </p>
       </section>
 
@@ -455,7 +457,7 @@ export function HomeView({
           builds trust by showing real outcomes from past orders. */}
       <section className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">
         <div className="text-center mb-10 max-w-2xl mx-auto">
-          <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>From Lusik's workshop</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>From Lusik's workshop</p>
           <h2 className="font-display text-3xl lg:text-4xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
             Past blankets, <em style={{ fontWeight: 400 }}>real families</em>.
           </h2>
@@ -494,16 +496,16 @@ export function HomeView({
             </div>
           </div>
           <div className="lg:col-span-6 lg:order-1 min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "#C9A678" }}>Our Story</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--accent)" }}>Our Story</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-8 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-              From Armenia, to Little Armenia, to a quiet house in Cypress.
+              From Armenia, to Little Armenia, to a quiet house in Southern California.
             </h2>
             <div className="space-y-5 text-base lg:text-lg leading-relaxed opacity-90">
               <p>
                 Lusik came to Los Angeles from Armenia in the late 1970s, with a cross-stitch hoop and the way of working her own grandmother had taught her. She lived in East Hollywood — what people there call Little Armenia — and later moved south to Orange County, where she lives and stitches today.
               </p>
               <p>
-                What she does is cross-stitch by hand. On every blanket, the first three letters of the alphabet — <span style={{ fontWeight: 500, color: "#B08842" }}>Ա, Բ, Գ</span> in Armenian, or <span style={{ fontWeight: 500, color: "#B08842" }}>A, B, C</span> in English — placed one tiny X at a time onto soft cloth woven through with the Armenian pomegranate. For other letters, or a name you'd like spelled out, please write her directly. She always says yes.
+                What she does is cross-stitch by hand. On every blanket, the first three letters of the alphabet — <span style={{ fontWeight: 500, color: "var(--accent)" }}>Ա, Բ, Գ</span> in Armenian, or <span style={{ fontWeight: 500, color: "var(--accent)" }}>A, B, C</span> in English — placed one tiny X at a time onto soft cloth woven through with the Armenian pomegranate. For other letters, or a name you'd like spelled out, please write her directly. She always says yes.
               </p>
               <p>
                 The bib is different. The bib is machine-embroidered with a personalized name — five or six letters, no more — because a bib lives in the washing machine three times a week and the name has to survive. The blanket goes in the crib. The bib goes to the table. Each piece gets the technique that fits the life it's going to have.
@@ -553,7 +555,7 @@ export function HomeView({
       {/* ── PAGE: Good Questions (FAQ) ─────────────────────────── */}
       {pageSlug === "faq" && (
       <section id="faq" className="max-w-4xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
-        <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "#B08842" }}>{CMS_PAGES.faq.eyebrow}</p>
+        <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "var(--accent)" }}>{CMS_PAGES.faq.eyebrow}</p>
         <h2 className="font-display text-4xl lg:text-5xl mb-12 text-center" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{CMS_PAGES.faq.title}</h2>
         <div className="space-y-1">
           {CMS_PAGES.faq.items.map((item, i) => (
@@ -574,7 +576,7 @@ export function HomeView({
       <section id="contact" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Get in Touch</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>Get in Touch</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Four ways to reach Lusik.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
               Check out directly on this site, give us a call, send a message on Instagram, or write an email — for custom commissions, family-name requests, bulk gift orders, or simply to ask Lusik a question. She or one of her sons writes back, usually within a day.
@@ -588,7 +590,7 @@ export function HomeView({
               { Icon: Mail, label: "Write Lusik directly", detail: "hello@lusikandsons.com", action: () => window.open("mailto:hello@lusikandsons.com") },
             ].map((c, i) => (
               <button key={i} onClick={c.action} className="w-full flex items-center gap-5 p-5 group hover:bg-[rgba(26,22,18,0.04)]" style={{ borderTop: i === 0 ? "1px solid rgba(26,22,18,0.1)" : "none", borderBottom: "1px solid rgba(26,22,18,0.1)" }}>
-                <c.Icon size={22} strokeWidth={1.25} style={{ color: "#B08842" }} />
+                <c.Icon size={22} strokeWidth={1.25} style={{ color: "var(--accent)" }} />
                 <div className="flex-1 text-left">
                   <p className="font-display text-xl" style={{ fontWeight: 400 }}>{c.label}</p>
                   <p className="text-sm opacity-70">{c.detail}</p>
@@ -603,7 +605,7 @@ export function HomeView({
         <div className="mt-20 lg:mt-24">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
             <div className="min-w-0">
-              <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>By Post</p>
+              <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>By Post</p>
               <h3 className="font-display text-3xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
                 Send a <em style={{ fontWeight: 400 }}>letter</em>.
               </h3>
@@ -616,10 +618,10 @@ export function HomeView({
             </div>
             <div className="p-6 lg:p-8" style={{ border: "1px solid rgba(26,22,18,0.15)", background: "rgba(255,255,255,0.35)" }}>
               <div className="flex items-start gap-3 mb-6">
-                <MapPin size={20} strokeWidth={1.25} style={{ color: "#B08842", marginTop: "4px", flexShrink: 0 }} />
+                <MapPin size={20} strokeWidth={1.25} style={{ color: "var(--accent)", marginTop: "4px", flexShrink: 0 }} />
                 <div>
                   <p className="font-display text-xl lg:text-2xl leading-tight" style={{ fontWeight: 500 }}>
-                    Lusik <span style={{ color: "#B08842" }}>&</span> Sons
+                    Lusik <span style={{ color: "var(--accent)" }}>&</span> Sons
                   </p>
                   <p className="text-sm opacity-60 mt-0.5 mb-2">c/o The UPS Store</p>
                   <p className="text-base leading-relaxed">
@@ -660,7 +662,7 @@ export function HomeView({
       <section id="shipping" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28 border-t" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Shipping & Tracking</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>Shipping & Tracking</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>How your piece gets home.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
               Find the carrier office closest to you, or follow a piece already on its way. Direct links to USPS, UPS, and FedEx — no account required, no extra clicks.
@@ -670,15 +672,15 @@ export function HomeView({
             <div>
               <p className="text-xs tracking-[0.2em] uppercase opacity-70 mb-4">Find a carrier near you</p>
               <div className="grid grid-cols-3 gap-2">
-                <button onClick={() => window.open("https://www.google.com/maps/search/USPS+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
+                <button onClick={() => window.open("https://www.google.com/maps/search/USPS+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "var(--text-primary)" }}>
                   <MapPin size={18} />
                   <span style={{ fontWeight: 500 }}>USPS</span>
                 </button>
-                <button onClick={() => window.open("https://www.google.com/maps/search/UPS+Store+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
+                <button onClick={() => window.open("https://www.google.com/maps/search/UPS+Store+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "var(--text-primary)" }}>
                   <MapPin size={18} />
                   <span style={{ fontWeight: 500 }}>UPS</span>
                 </button>
-                <button onClick={() => window.open("https://www.google.com/maps/search/FedEx+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "#1A1612" }}>
+                <button onClick={() => window.open("https://www.google.com/maps/search/FedEx+near+me/", "_blank", "noopener,noreferrer")} className="py-5 px-3 text-sm border hover:bg-[rgba(26,22,18,0.04)] flex flex-col items-center gap-2" style={{ borderColor: "var(--text-primary)" }}>
                   <MapPin size={18} />
                   <span style={{ fontWeight: 500 }}>FedEx</span>
                 </button>
@@ -695,7 +697,7 @@ export function HomeView({
       {pageSlug === "newsletter" && (
       <section className="py-20 lg:py-28" style={{ background: "rgba(176,136,66,0.08)" }}>
         <div className="max-w-3xl mx-auto px-6 lg:px-12 text-center">
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Stay Connected</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>Stay Connected</p>
           <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>The occasional note.</h2>
           <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-10 max-w-xl mx-auto">
             When Lusik adds a new alphabet, a seasonal piece, or one of the placeholders finally goes live — we'll write you a short note. About one email a month. Never more, never anything we wouldn't send to our own mother.

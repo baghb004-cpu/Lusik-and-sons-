@@ -13,6 +13,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
+import { ProductVariationNote } from "./ProductVariationNote.jsx";
 // PHOTO_BIB_ROMEO + PHOTO_BIB_STACK imports removed -- the Romeo
 // empty-state image and the thread-range reference strip were
 // both removed at user request. They'll be replaced by a real
@@ -197,15 +198,18 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
       {/* Card body */}
       <div className="p-5 lg:p-6 flex flex-col flex-1 gap-4">
         <div>
-          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>{config.tagline}</p>
+          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{config.tagline}</p>
           <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{config.name}</h3>
           <p className="text-sm opacity-70 leading-relaxed">{config.description}</p>
           <p className="font-display text-xl mt-3" style={{ fontWeight: 500 }}>
             ${config.price}
           </p>
           <p className="text-[0.65rem] opacity-60 mt-1.5">
-            Made to order · From Lusik's home in Cypress, California
+            Made to order · From Lusik's home in Southern California
           </p>
+          {/* Photos are samples — bibs especially may use a different neck
+              closure than older example photos show. */}
+          <ProductVariationNote bib className="mt-4" />
         </div>
 
         {/* Personalized name input */}
@@ -256,8 +260,8 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                 onClick={() => setColorMode("preset")}
                 className="px-3 py-1.5 transition"
                 style={{
-                  background: colorMode === "preset" ? "#1A1612" : "transparent",
-                  color: colorMode === "preset" ? "#F5EFE3" : "#1A1612",
+                  background: colorMode === "preset" ? "var(--ink)" : "transparent",
+                  color: colorMode === "preset" ? "var(--text-on-ink)" : "var(--text-primary)",
                   border: "1px solid rgba(26,22,18,0.2)",
                 }}
               >
@@ -268,8 +272,8 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                 onClick={() => setColorMode("custom")}
                 className="px-3 py-1.5 transition"
                 style={{
-                  background: colorMode === "custom" ? "#1A1612" : "transparent",
-                  color: colorMode === "custom" ? "#F5EFE3" : "#1A1612",
+                  background: colorMode === "custom" ? "var(--ink)" : "transparent",
+                  color: colorMode === "custom" ? "var(--text-on-ink)" : "var(--text-primary)",
                   border: "1px solid rgba(26,22,18,0.2)",
                 }}
               >
@@ -301,9 +305,9 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                       onClick={() => applyBibPreset(preset)}
                       className="text-left p-2 transition flex items-center gap-2"
                       style={{
-                        background: selected ? "#1A1612" : "transparent",
-                        color: selected ? "#F5EFE3" : "#1A1612",
-                        border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+                        background: selected ? "var(--ink)" : "transparent",
+                        color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
+                        border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
                       }}
                       title={preset.description}
                       aria-pressed={selected}
@@ -374,7 +378,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           </div>
         )}
 
-        {error && <p className="text-xs" style={{ color: "#8B2C2C" }}>{error}</p>}
+        {error && <p className="text-xs" style={{ color: "var(--error)" }}>{error}</p>}
 
         {/* Size picker — name input is step 1, color (if present) is step 2,
             so size is step 2 or 3 accordingly. */}
@@ -390,9 +394,9 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                 onClick={() => setSize(s)}
                 className="text-left px-3 py-2 text-xs transition"
                 style={{
-                  border: `1px solid ${size === s ? "#1A1612" : "rgba(26,22,18,0.12)"}`,
-                  background: size === s ? "#1A1612" : "transparent",
-                  color: size === s ? "#F5EFE3" : "#1A1612",
+                  border: `1px solid ${size === s ? "var(--ink)" : "var(--border-default)"}`,
+                  background: size === s ? "var(--ink)" : "transparent",
+                  color: size === s ? "var(--text-on-ink)" : "var(--text-primary)",
                 }}
               >
                 {s}
@@ -404,14 +408,14 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         {/* Final-sale reminder — same callout pattern used on the blanket
             PDP, sized down to fit the bib card. */}
         <div className="mt-auto p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
-          <span style={{ color: "#B08842", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
+          <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
           <span className="opacity-80">
             Embroidered specifically for you. No returns, exchanges, or refunds.{" "}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
               className="underline hover:opacity-60"
-              style={{ color: "#B08842" }}
+              style={{ color: "var(--accent)" }}
             >
               Read the full policy
             </button>.
@@ -425,8 +429,8 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           aria-busy={adding}
           className="mt-2 w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
           style={{
-            background: canAdd ? "#1A1612" : "rgba(26,22,18,0.15)",
-            color: canAdd ? "#F5EFE3" : "rgba(26,22,18,0.5)",
+            background: canAdd ? "var(--ink)" : "var(--bg-subtle)",
+            color: canAdd ? "var(--text-on-ink)" : "var(--text-muted)",
             cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
             opacity: adding ? 0.6 : 1,
           }}
@@ -443,8 +447,8 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           className="mt-2 w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
           style={{
             background: "transparent",
-            color: canAdd ? "#1A1612" : "rgba(26,22,18,0.4)",
-            border: `1px solid ${canAdd ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+            color: canAdd ? "var(--text-primary)" : "var(--text-muted)",
+            border: `1px solid ${canAdd ? "var(--ink)" : "var(--border-strong)"}`,
             cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
             opacity: adding ? 0.6 : 1,
           }}

@@ -234,7 +234,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
       )}
 
       <div className={inSheet ? "mb-8" : "mb-12"}>
-        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>My Account</p>
+        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>My Account</p>
         <h1 className="font-display text-4xl lg:text-5xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
           Welcome{profile?.full_name ? <>, <em style={{ fontWeight: 400 }}>{profile.full_name.split(" ")[0]}</em></> : ""}.
         </h1>
@@ -256,7 +256,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
-                <User size={32} strokeWidth={1.25} style={{ color: "#B08842" }} />
+                <User size={32} strokeWidth={1.25} style={{ color: "var(--accent)" }} />
               )}
             </div>
             <button
@@ -326,7 +326,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
             On success, the form collapses and a toast confirms. */}
         {changingPassword && (
           <div className="mt-6 p-4 max-w-md" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.2)" }}>
-            <p className="text-[0.65rem] tracking-[0.25em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>Change password</p>
+            <p className="text-[0.65rem] tracking-[0.25em] uppercase mb-3" style={{ color: "var(--accent)", fontWeight: 600 }}>Change password</p>
             <div className="space-y-3">
               <div>
                 <label className="text-[0.6rem] tracking-[0.2em] uppercase opacity-70 block mb-1.5">New password</label>
@@ -514,7 +514,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
           <button
             onClick={onOpenAdmin}
             className="text-xs tracking-[0.2em] uppercase flex items-center gap-2 transition"
-            style={{ color: "#B08842", fontWeight: 500 }}
+            style={{ color: "var(--accent)", fontWeight: 500 }}
           >
             Open admin panel →
           </button>

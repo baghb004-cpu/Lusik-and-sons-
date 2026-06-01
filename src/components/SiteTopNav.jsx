@@ -26,7 +26,7 @@ export function SiteTopNav({ onOpenCart, onSignIn }) {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
         <button onClick={nav.goForYou}>
           <span className="font-display text-2xl lg:text-3xl tracking-tight" style={{ fontWeight: 500 }}>
-            Lusik <span style={{ color: "#B08842" }}>&</span> Sons
+            Lusik <span style={{ color: "var(--accent)" }}>&</span> Sons
           </span>
         </button>
         <div className="hidden md:flex items-center gap-10 text-sm tracking-wide">
@@ -47,7 +47,7 @@ export function SiteTopNav({ onOpenCart, onSignIn }) {
             <button
               onClick={nav.goAdmin}
               className="hover:opacity-60 flex items-center gap-2"
-              style={{ color: "#B08842", fontWeight: 500 }}
+              style={{ color: "var(--accent)", fontWeight: 500 }}
               aria-label="Open admin dashboard"
               data-testid="nav-admin"
             >

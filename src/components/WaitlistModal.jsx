@@ -74,7 +74,7 @@ export function WaitlistModal({ product, onClose }) {
         <button onClick={onClose} aria-label="Close" className="absolute top-3 right-3 opacity-50 hover:opacity-100 transition">
           <X size={18} />
         </button>
-        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Almost ready</p>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>Almost ready</p>
         <h3 className="font-display text-2xl lg:text-3xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
           {product.name}
         </h3>

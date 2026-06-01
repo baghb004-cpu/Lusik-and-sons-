@@ -28,7 +28,7 @@ export function LangToggleCompact() {
         fontSize: "0.8rem",
         fontWeight: 600,
         letterSpacing: "0.05em",
-        color: "#B08842",
+        color: "var(--accent)",
         background: "transparent",
         border: "none",
         cursor: "pointer",

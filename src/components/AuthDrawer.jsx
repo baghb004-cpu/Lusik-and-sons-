@@ -256,7 +256,7 @@ export function AuthDrawer({ onClose, onAuthed }) {
         {/* Header */}
         <div className="flex items-start justify-between p-6 lg:p-8 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
           <div>
-            <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>{t.eyebrow}</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{t.eyebrow}</p>
             <h2 className="font-display text-3xl lg:text-4xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               {t.heading[0]} <em style={{ fontWeight: 400 }}>{t.heading[1]}</em>.
             </h2>

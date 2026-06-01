@@ -121,10 +121,13 @@ export function organizationJsonLd() {
     url: SITE_URL,
     logo: absoluteUrl("/icon-512.png"),
     description:
-      "Hand cross-stitched Armenian alphabet baby blankets and embroidered baby goods, made to order in Cypress, California.",
+      "Hand cross-stitched Armenian alphabet baby blankets and embroidered baby goods, made to order in Southern California.",
+    // Region-level only on purpose — we deliberately do NOT publish the exact
+    // city in structured data so search engines don't tie the maker's full
+    // name to a precise locality.
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Cypress",
+      addressLocality: "Orange County",
       addressRegion: "CA",
       addressCountry: "US",
     },

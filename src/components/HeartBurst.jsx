@@ -28,7 +28,7 @@ export function HeartBurst({ x, y }) {
       rot: (Math.random() - 0.5) * 70,           // -35 to +35 deg
       delay: Math.random() * 90,                 // 0–90 ms stagger
       // Mostly gold, with one in three trending warm-red — matches site palette.
-      color: i % 3 === 0 ? "#8B2C2C" : "#B08842",
+      color: i % 3 === 0 ? "#8B2C2C" : "var(--accent)",
     }))
   );
 

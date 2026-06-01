@@ -436,7 +436,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
-      <em>Made by hand in Cypress, California.</em><br>
+      <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
@@ -475,7 +475,7 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     `  ${CONTACT.email}`,
     `  ${CONTACT.phoneDisplay}`,
     "",
-    `Made by hand in Cypress, California.`,
+    `Made by hand in Southern California.`,
     `${url}`,
   ].filter(Boolean).join("\n");
 
@@ -566,7 +566,7 @@ export async function sendFinishedPhotoNotification({ order }) {
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
-      <em>Made by hand in Cypress, California.</em><br>
+      <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
@@ -593,7 +593,7 @@ export async function sendFinishedPhotoNotification({ order }) {
     `  ${CONTACT.email}`,
     `  ${CONTACT.phoneDisplay}`,
     "",
-    `Made by hand in Cypress, California.`,
+    `Made by hand in Southern California.`,
     `${url}`,
   ].join("\n");
 
@@ -710,7 +710,7 @@ export async function sendShippedNotification({ order }) {
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
-      <em>Made by hand in Cypress, California.</em><br>
+      <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
@@ -739,7 +739,7 @@ export async function sendShippedNotification({ order }) {
     `  ${CONTACT.email}`,
     `  ${CONTACT.phoneDisplay}`,
     "",
-    `Made by hand in Cypress, California.`,
+    `Made by hand in Southern California.`,
     `${url}`,
   ].filter(Boolean).join("\n");
 
@@ -818,7 +818,7 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
-      <em>Made by hand in Cypress, California.</em><br>
+      <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
@@ -848,7 +848,7 @@ export async function sendRefundNotification({ order, refundedCents, isFullRefun
     `  ${CONTACT.email}`,
     `  ${CONTACT.phoneDisplay}`,
     "",
-    `Made by hand in Cypress, California.`,
+    `Made by hand in Southern California.`,
     `${url}`,
   ].filter(Boolean).join("\n");
 
@@ -914,7 +914,7 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
     </div>
 
     <div style="margin-top:36px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
-      <em>Made by hand in Cypress, California.</em><br>
+      <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
@@ -937,7 +937,7 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
     "",
     `Visit the shop: ${url}/`,
     "",
-    `Made by hand in Cypress, California.`,
+    `Made by hand in Southern California.`,
     `${url}`,
     "",
     `You're getting this one email because you ticked the box at checkout last year. We won't send another.`,
@@ -1055,7 +1055,7 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
-      <em>Made by hand in Cypress, California.</em><br>
+      <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 
@@ -1166,7 +1166,7 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
-      <em>Made by hand in Cypress, California.</em><br>
+      <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
     </div>
 

@@ -29,7 +29,7 @@ export function FirstVisitLangBanner() {
       >
         {/* Header */}
         <div className="p-6 lg:p-8 text-center" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
-          <p className="text-[0.6rem] tracking-[0.4em] uppercase mb-3" style={{ color: "#B08842" }}>
+          <p className="text-[0.6rem] tracking-[0.4em] uppercase mb-3" style={{ color: "var(--accent)" }}>
             Բարի եկաք · Welcome
           </p>
           <h2

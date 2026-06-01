@@ -16,6 +16,7 @@
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useT } from "../i18n/LangContext.jsx";
 import { AnimatePresence, m } from "framer-motion";
 import { backdrop, drawerRight } from "../lib/motion";
 import { MobilePageHeader } from "./MobilePageHeader.jsx";
@@ -44,12 +45,15 @@ function viewFromPath(pathname) {
   return "home"; // "/" and the section pages
 }
 
-const TITLES = {
-  home: "For You", shop: "Shop", journal: "Journal",
-  account: "Your Account", gallery: "Gallery", checkout: "Checkout",
+// Mobile per-page titles, keyed by view. Resolved through i18n at render
+// time (see `titleFor` below) so the large mobile headers translate.
+const TITLE_KEYS = {
+  home: "pageTitles.home", shop: "pageTitles.shop", journal: "pageTitles.journal",
+  account: "pageTitles.account", gallery: "pageTitles.gallery", checkout: "pageTitles.checkout",
 };
 
 export function SiteChrome({ children }) {
+  const t = useT();
   const pathname = usePathname() || "/";
   const site = useSite();
   const nav = useSiteNav();
@@ -125,7 +129,7 @@ export function SiteChrome({ children }) {
       {/* Mobile per-page header */}
       {showHeader && (
         <MobilePageHeader
-          title={TITLES[view] || "Lusik & Sons"}
+          title={TITLE_KEYS[view] ? t(TITLE_KEYS[view]) : "Lusik & Sons"}
           subtitle={view === "checkout" ? "Almost in Lusik's hands" : null}
           user={site.user}
           onAvatarTap={onAvatarTap}

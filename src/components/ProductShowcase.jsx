@@ -28,6 +28,7 @@ import { PHOTO_DATE_DETAIL } from "../images/photos.js";
 import { getDeliveryEstimate } from "../lib/deliveryEstimate";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
+import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import {
   ArrowRight, Bookmark, ChevronLeft, ChevronRight,
@@ -424,8 +425,8 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               onClick={() => setLeftPaneMode("preview")}
               className="px-3 py-1.5 transition flex-1"
               style={{
-                background: leftPaneMode === "preview" ? "#1A1612" : "transparent",
-                color: leftPaneMode === "preview" ? "#F5EFE3" : "#1A1612",
+                background: leftPaneMode === "preview" ? "var(--ink)" : "transparent",
+                color: leftPaneMode === "preview" ? "var(--text-on-ink)" : "var(--text-primary)",
                 border: "1px solid rgba(26,22,18,0.2)",
               }}
               aria-pressed={leftPaneMode === "preview"}
@@ -436,8 +437,8 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               onClick={() => setLeftPaneMode("photos")}
               className="px-3 py-1.5 transition flex-1"
               style={{
-                background: leftPaneMode === "photos" ? "#1A1612" : "transparent",
-                color: leftPaneMode === "photos" ? "#F5EFE3" : "#1A1612",
+                background: leftPaneMode === "photos" ? "var(--ink)" : "transparent",
+                color: leftPaneMode === "photos" ? "var(--text-on-ink)" : "var(--text-primary)",
                 border: "1px solid rgba(26,22,18,0.2)",
               }}
               aria-pressed={leftPaneMode === "photos"}
@@ -542,7 +543,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   on a video they may not watch. */}
               {product.video?.src && (
                 <div className="mt-4">
-                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-60" style={{ color: "#B08842" }}>
+                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-60" style={{ color: "var(--accent)" }}>
                     Watch Lusik stitch
                   </p>
                   <div className="relative aspect-video overflow-hidden" style={{ background: "rgba(26,22,18,0.04)" }}>
@@ -571,7 +572,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
         </div>
 
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>Made to order · From Lusik's home in Cypress, California</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>Made to order · From Lusik's home in Southern California</p>
           <h2 className="font-display text-4xl lg:text-5xl mb-3 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{product.name}</h2>
           <p className="text-base opacity-70 mb-6">{product.subtitle}</p>
 
@@ -585,6 +586,10 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           </p>
 
           <p className="text-base leading-relaxed mb-8 opacity-85">{product.description}</p>
+
+          {/* Photos shown are examples of past work — each handmade piece may
+              vary a little from the samples. */}
+          <ProductVariationNote className="mb-8" />
 
           <CollapsibleSection
             title="1. Choose your alphabet"
@@ -608,9 +613,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     onClick={() => { setAlphabet(a); advanceSection("alphabet"); }}
                     className="text-center px-4 py-7 transition flex flex-col items-center justify-center gap-2"
                     style={{
-                      background: selected ? "#1A1612" : "transparent",
-                      color: selected ? "#F5EFE3" : "#1A1612",
-                      border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+                      background: selected ? "var(--ink)" : "transparent",
+                      color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
+                      border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
                       minHeight: "140px",
                     }}
                   >
@@ -658,9 +663,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     onClick={() => { setLayout(l); advanceSection("layout"); }}
                     className="text-left p-3 transition"
                     style={{
-                      background: selected ? "#1A1612" : "transparent",
-                      color: selected ? "#F5EFE3" : "#1A1612",
-                      border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+                      background: selected ? "var(--ink)" : "transparent",
+                      color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
+                      border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
                     }}
                   >
                     {/* Inline mini-preview using the alphabet's letters */}
@@ -720,8 +725,8 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 onClick={() => setColorMode("preset")}
                 className="px-3 py-1.5 transition"
                 style={{
-                  background: colorMode === "preset" ? "#1A1612" : "transparent",
-                  color: colorMode === "preset" ? "#F5EFE3" : "#1A1612",
+                  background: colorMode === "preset" ? "var(--ink)" : "transparent",
+                  color: colorMode === "preset" ? "var(--text-on-ink)" : "var(--text-primary)",
                   border: "1px solid rgba(26,22,18,0.2)",
                 }}
               >
@@ -731,8 +736,8 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 onClick={() => setColorMode("custom")}
                 className="px-3 py-1.5 transition"
                 style={{
-                  background: colorMode === "custom" ? "#1A1612" : "transparent",
-                  color: colorMode === "custom" ? "#F5EFE3" : "#1A1612",
+                  background: colorMode === "custom" ? "var(--ink)" : "transparent",
+                  color: colorMode === "custom" ? "var(--text-on-ink)" : "var(--text-primary)",
                   border: "1px solid rgba(26,22,18,0.2)",
                 }}
               >
@@ -769,9 +774,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                       onClick={() => { applyPreset(preset); advanceSection("colors"); }}
                       className="text-left p-3 transition flex items-center gap-3"
                       style={{
-                        background: selected ? "#1A1612" : "transparent",
-                        color: selected ? "#F5EFE3" : "#1A1612",
-                        border: `1px solid ${selected ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
+                        background: selected ? "var(--ink)" : "transparent",
+                        color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
+                        border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
                       }}
                       title={preset.description}
                     >
@@ -1009,7 +1014,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1" style={{ color: "#B08842" }}>Real example</p>
+                <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1" style={{ color: "var(--accent)" }}>Real example</p>
                 <p className="text-[0.7rem] opacity-75 leading-snug italic">
                   Lusik stitches the name in the center of the blanket and the year on the empty square diagonally above — on the line that runs between the two alphabet diagonals — like the <span style={{ fontStyle: "normal", fontFamily: "Fraunces, serif", fontWeight: 500 }}>OLEN / 2026</span> blanket shown here. Final placement may shift slightly depending on the specific text length.
                 </p>
@@ -1039,16 +1044,16 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               sheet or copies to clipboard — see handleShareDesign above. */}
           <div className="mb-6 p-5 lg:p-6" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.1)" }}>
             <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "#B08842" }}>Your blanket</p>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "var(--accent)" }}>Your blanket</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handleSaveDesign}
                   disabled={savingDesign}
                   className="text-xs tracking-[0.15em] uppercase transition flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-40"
                   style={{
-                    border: `1px solid ${justSavedDesign ? "#B08842" : "rgba(26,22,18,0.18)"}`,
+                    border: `1px solid ${justSavedDesign ? "var(--accent)" : "rgba(26,22,18,0.18)"}`,
                     background: justSavedDesign ? "rgba(176,136,66,0.08)" : "transparent",
-                    color: justSavedDesign ? "#B08842" : "var(--text-primary)",
+                    color: justSavedDesign ? "var(--accent)" : "var(--text-primary)",
                     fontWeight: 500,
                   }}
                   aria-label="Save this design to your account"
@@ -1134,7 +1139,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             <ul className="space-y-2 text-sm pb-5 -mt-1">
               {product.specs.map((s, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span style={{ color: "#B08842" }}>—</span>
+                  <span style={{ color: "var(--accent)" }}>—</span>
                   <span>{s}</span>
                 </li>
               ))}
@@ -1146,14 +1151,14 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               callout, not alarming; links to the full Final Sale Policy
               modal so anyone who wants the detail can read it. */}
           <div className="mb-3 p-3 text-xs leading-snug flex items-start gap-2.5" style={{ background: "rgba(176,136,66,0.08)", border: "1px solid rgba(176,136,66,0.25)" }}>
-            <span style={{ color: "#B08842", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
+            <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>FINAL SALE —</span>
             <span className="opacity-80">
               This blanket is stitched specifically for you, so all sales are final. No returns, exchanges, or refunds. Please review your alphabet, colors, and any name or year before checking out.{" "}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
                 className="underline hover:opacity-60"
-                style={{ color: "#B08842" }}
+                style={{ color: "var(--accent)" }}
               >
                 Read the full policy
               </button>.
@@ -1223,13 +1228,13 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             })()}
           </p>
           <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
+            <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>
               <Phone size={14} /> Call
             </button>
-            <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
+            <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>
               <Instagram size={14} /> DM
             </button>
-            <button onClick={() => window.open("mailto:hello@lusikandsons.com?subject=Custom order inquiry")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "#1A1612" }}>
+            <button onClick={() => window.open("mailto:hello@lusikandsons.com?subject=Custom order inquiry")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>
               <Mail size={14} /> Email
             </button>
           </div>

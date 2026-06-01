@@ -19,7 +19,7 @@ export function ShippingEstimator({ subtotalCents }) {
   if (earnsFreeShipping) {
     return (
       <p className="text-xs leading-relaxed mb-3">
-        <span style={{ color: "#B08842", fontWeight: 500 }}>Shipping:</span>{" "}
+        <span style={{ color: "var(--accent)", fontWeight: 500 }}>Shipping:</span>{" "}
         <span className="opacity-80">Free U.S. shipping. Lusik picks the carrier at checkout.</span>
       </p>
     );

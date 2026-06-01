@@ -95,7 +95,7 @@ function ToastViewport({ toasts, onDismiss }) {
   // accent comes from a 3px left border in the kind's color.
   const styleFor = (kind) => {
     if (kind === "error")   return { borderLeftColor: "#8B2C2C", iconColor: "#8B2C2C", role: "alert"  };
-    if (kind === "success") return { borderLeftColor: "#B08842", iconColor: "#B08842", role: "status" };
+    if (kind === "success") return { borderLeftColor: "var(--accent)", iconColor: "var(--accent)", role: "status" };
     return                         { borderLeftColor: "rgba(26,22,18,0.35)", iconColor: "#1A1612", role: "status" };
   };
 

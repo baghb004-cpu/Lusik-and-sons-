@@ -80,7 +80,7 @@ export function PolicyModal({ policyKey, onClose }) {
       sections: [
         {
           heading: "Who we are",
-          body: "Lusik & Sons is a small family business based in Cypress, California. Lusik hand cross-stitches Armenian-alphabet baby blankets, and machine-embroiders personalized baby bibs. Her sons run this website."
+          body: "Lusik & Sons is a small family business based in Southern California. Lusik hand cross-stitches Armenian-alphabet baby blankets, and machine-embroiders personalized baby bibs. Her sons run this website."
         },
         {
           heading: "Placing an order",
@@ -182,7 +182,7 @@ export function PolicyModal({ policyKey, onClose }) {
         {/* Header */}
         <div className="flex items-start justify-between p-6 lg:p-8 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
           <div>
-            <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>{policy.eyebrow}</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{policy.eyebrow}</p>
             <h2 id={`policy-${policyKey}-title`} className="font-display text-2xl lg:text-3xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               {policy.title}
             </h2>

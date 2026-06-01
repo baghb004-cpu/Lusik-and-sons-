@@ -90,7 +90,7 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
         ) : (
           <div className="aspect-[4/5] lg-panel flex items-center justify-center text-center px-6">
             <div>
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)", fontWeight: 600 }}>
                 Coming soon
               </p>
               <p className="text-sm opacity-65 italic mb-2">Lusik's hands first</p>
@@ -111,10 +111,10 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
             and (b) the primary CTA is a disabled "Currently
             unavailable" bar with a real "Notify me" button below it. */}
         <div className="min-w-0 w-full">
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842" }}>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>
             {isPriced
-              ? "By direct order · From Lusik's home in Cypress, California"
-              : "Almost ready · Cypress, California"}
+              ? "By direct order · From Lusik's home in Southern California"
+              : "Almost ready · Southern California"}
           </p>
           {/* break-words lets long compound product names ("The
               Armenian Days-of-the-Week Bib Set") wrap at the hyphens
@@ -153,7 +153,7 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
           ) : (
             <>
               <div className="flex items-baseline gap-3 mb-2">
-                <p className="text-2xl lg:text-3xl italic" style={{ fontWeight: 400, color: "#B08842" }}>
+                <p className="text-2xl lg:text-3xl italic" style={{ fontWeight: 400, color: "var(--accent)" }}>
                   Price coming soon
                 </p>
               </div>
@@ -174,7 +174,7 @@ export function ProductPlaceholderView({ category, product, trail, onOpenWaitlis
               no value in hiding it behind a collapse). */}
           {details.length > 0 && (
             <div className="mb-8 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-4" style={{ color: "#B08842", fontWeight: 600 }}>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)", fontWeight: 600 }}>
                 Details · size · care
               </p>
               <dl className="space-y-3">

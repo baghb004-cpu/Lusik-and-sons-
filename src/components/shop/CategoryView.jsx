@@ -67,7 +67,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
         { label: category.label },
       ]} />
 
-      <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842" }}>{category.eyebrow}</p>
+      <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>{category.eyebrow}</p>
       <h1 className="font-display text-4xl lg:text-6xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
         {category.label}.
       </h1>
@@ -102,7 +102,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                     style={{ background: "rgba(176,136,66,0.06)" }}
                   >
                     <div>
-                      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "#B08842", fontWeight: 600 }}>
+                      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "var(--accent)", fontWeight: 600 }}>
                         Almost ready
                       </p>
                       <p className="text-xs opacity-55 italic">Lusik's hands first</p>
@@ -130,27 +130,27 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                   {isLive ? (
                     <>
                       <p className="text-sm" style={{ fontWeight: 500 }}>
-                        From <span style={{ color: "#B08842" }}>${p.priceFrom}</span>
+                        From <span style={{ color: "var(--accent)" }}>${p.priceFrom}</span>
                       </p>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
+                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
                         Step in <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>
                   ) : typeof p.priceFrom === "number" && p.priceFrom > 0 ? (
                     <>
                       <p className="text-sm" style={{ fontWeight: 500 }}>
-                        From <span style={{ color: "#B08842" }}>${p.priceFrom}</span>
+                        From <span style={{ color: "var(--accent)" }}>${p.priceFrom}</span>
                       </p>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
+                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
                         By direct order <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "rgba(176,136,66,0.12)", color: "#B08842", fontWeight: 600 }}>
+                      <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "rgba(176,136,66,0.12)", color: "var(--accent)", fontWeight: 600 }}>
                         Almost ready
                       </span>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "#B08842", fontWeight: 500 }}>
+                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
                         Write me <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>

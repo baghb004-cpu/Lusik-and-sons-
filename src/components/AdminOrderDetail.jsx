@@ -189,26 +189,26 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
       </div>
 
       {/* HEADER */}
-      <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "#B08842" }}>Order</p>
+      <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>Order</p>
       <h1 className="font-display text-3xl lg:text-4xl mb-1" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{order.order_number}</h1>
       <p className="text-sm opacity-70">{orderDate}</p>
       <div className="mt-3 flex items-center gap-3 flex-wrap text-[0.65rem] tracking-[0.2em] uppercase">
         <span style={{ color: accent, fontWeight: 600 }}>{STATUS_LABEL[status] ?? status}</span>
         <span className="opacity-50">·</span>
         <span style={{ fontWeight: 500 }}>${(order.total_cents / 100).toFixed(2)}</span>
-        {order.gift?.is_gift && <span className="px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "#B08842", fontWeight: 500 }}>Gift</span>}
+        {order.gift?.is_gift && <span className="px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "var(--accent)", fontWeight: 500 }}>Gift</span>}
         {order.status === "refunded" && <span className="px-2 py-0.5" style={{ background: "rgba(139,44,44,0.10)", color: "#8B2C2C", fontWeight: 500 }}>Refunded</span>}
         {order.status === "partially_refunded" && <span className="px-2 py-0.5" style={{ background: "rgba(139,44,44,0.10)", color: "#8B2C2C", fontWeight: 500 }}>Partial refund</span>}
       </div>
 
       {/* PIPELINE STEPS — the Domino's-tracker control surface */}
       <section className="lg-panel lg-panel-gold mt-8 mb-10 p-5">
-        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#B08842", fontWeight: 600 }}>Status</p>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)", fontWeight: 600 }}>Status</p>
         <ol className="flex items-center gap-1 sm:gap-2 mb-4 overflow-x-auto pb-1">
           {STAGES.map((s, i) => {
             const done   = i < stageIndex;
             const here   = i === stageIndex;
-            const dotBg  = done || here ? "#B08842" : "rgba(26,22,18,0.18)";
+            const dotBg  = done || here ? "var(--accent)" : "rgba(26,22,18,0.18)";
             const labelC = done || here ? "#1A1612" : "rgba(26,22,18,0.5)";
             return (
               <li key={s.key} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -318,7 +318,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
       {/* GIFT OPTIONS — show prominently because they affect packing */}
       {order.gift?.is_gift && (
         <section className="lg-panel lg-panel-gold mb-8 p-4">
-          <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-2" style={{ color: "#B08842" }}>This is a gift</p>
+          <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-2" style={{ color: "var(--accent)" }}>This is a gift</p>
           {order.gift.message && (
             <p className="text-sm leading-relaxed italic mb-2" style={{ background: "var(--bg-surface)", padding: "0.5rem 0.75rem", border: "1px solid var(--border-default)" }}>
               "{order.gift.message}"
@@ -359,7 +359,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
                   </dl>
                 )}
                 {it.custom_image_url && /^https?:\/\//i.test(it.custom_image_url) && (
-                  <a href={it.custom_image_url} target="_blank" rel="noopener noreferrer" className="text-xs underline mt-2 inline-block" style={{ color: "#B08842" }}>
+                  <a href={it.custom_image_url} target="_blank" rel="noopener noreferrer" className="text-xs underline mt-2 inline-block" style={{ color: "var(--accent)" }}>
                     Customer reference image →
                   </a>
                 )}

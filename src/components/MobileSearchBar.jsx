@@ -184,7 +184,7 @@ export function MobileSearchBar({ query, onChange, visible }) {
               border: "none",
               cursor: "pointer",
               color: listening
-                ? "#B08842"
+                ? "var(--accent)"
                 : "rgba(26, 22, 18, 0.35)",
               transition: "color 0.2s ease, background 0.2s ease",
             }}

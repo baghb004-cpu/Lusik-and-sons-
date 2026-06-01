@@ -34,6 +34,7 @@ import { m } from "framer-motion";
 import { Home, Store, BookOpen, ShoppingBag, Search, Mic, X } from "./icons.jsx";
 import { useKeyboardOffset } from "../lib/useKeyboardOffset";
 import { tapScale, springSnappy } from "../lib/motion";
+import { useT } from "../i18n/LangContext.jsx";
 
 const SR = typeof window !== "undefined"
   ? (window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -50,6 +51,7 @@ export function MobileBottomNav({
   searchQuery = "",
   onSearchQueryChange,
 }) {
+  const t = useT();
   const isSearch = view === "search";
   const [inputFocused, setInputFocused] = useState(false);
   const [listening, setListening] = useState(false);
@@ -108,11 +110,11 @@ export function MobileBottomNav({
   // (home) and "Products" (shop). This component is lg:hidden, so the
   // desktop top-nav labels ("Home"/"Shop") are unaffected.
   const tabs = useMemo(() => ([
-    { key: "home",    label: "For You",  Icon: Home,        action: onHome,    activeWhen: view === "home" },
-    { key: "shop",    label: "Products", Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
-    { key: "journal", label: "Journal", Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
-    { key: "cart",    label: "Bag",     Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
-  ]), [view, cartCount, onHome, onShop, onJournal, onCart]);
+    { key: "home",    label: t("mobileNav.forYou"),   Icon: Home,        action: onHome,    activeWhen: view === "home" },
+    { key: "shop",    label: t("mobileNav.products"), Icon: Store,       action: onShop,    activeWhen: view === "shop" || view === "shop-category" || view === "shop-product" },
+    { key: "journal", label: t("mobileNav.journal"),  Icon: BookOpen,    action: onJournal, activeWhen: view === "journal" },
+    { key: "cart",    label: t("mobileNav.bag"),      Icon: ShoppingBag, action: onCart,    activeWhen: view === "cart", badge: cartCount },
+  ]), [t, view, cartCount, onHome, onShop, onJournal, onCart]);
 
   const baseIndex = useMemo(() => {
     const i = tabs.findIndex((t) => t.activeWhen);
@@ -258,7 +260,7 @@ export function MobileBottomNav({
   // ── Shared search-pill markup (Stage 1 + Stage 2) ────────
   const searchPill = (
     <div className="lg-nav-pill" style={{ order: 0, alignItems: "center", padding: "0 6px 0 16px" }}>
-      <span style={{ flexShrink: 0, color: "rgba(26,22,18,0.4)" }}>
+      <span style={{ flexShrink: 0, color: "var(--text-muted)" }}>
         <Search size={18} strokeWidth={1.6} />
       </span>
       <input
@@ -268,7 +270,7 @@ export function MobileBottomNav({
         onChange={(e) => onSearchQueryChange?.(e.target.value)}
         onFocus={() => setInputFocused(true)}
         onBlur={() => setTimeout(() => setInputFocused(false), 150)}
-        placeholder="What are you looking for?"
+        placeholder={t("mobileNav.searchPlaceholder")}
         autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
         tabIndex={isSearch ? 0 : -1}
         style={{
@@ -286,11 +288,11 @@ export function MobileBottomNav({
         <button
           type="button"
           onClick={() => { onSearchQueryChange?.(""); inputRef.current?.focus(); }}
-          aria-label="Clear search text"
+          aria-label={t("mobileNav.clearSearch")}
           style={{
             flexShrink: 0, width: 26, height: 26, display: "flex",
             alignItems: "center", justifyContent: "center",
-            color: "rgba(26,22,18,0.4)", background: "transparent", border: "none",
+            color: "var(--text-muted)", background: "transparent", border: "none",
           }}
         >
           <span style={{ fontSize: "1.2rem", fontWeight: 300, lineHeight: 1 }}>&times;</span>
@@ -300,13 +302,13 @@ export function MobileBottomNav({
         <button
           type="button"
           onClick={listening ? () => { try { recognitionRef.current?.stop(); } catch {} setListening(false); } : startVoice}
-          aria-label={listening ? "Stop listening" : "Search by voice"}
+          aria-label={listening ? t("mobileNav.stopListening") : t("mobileNav.voiceSearch")}
           style={{
             flexShrink: 0, width: 38, height: 38, display: "flex",
             alignItems: "center", justifyContent: "center", borderRadius: "50%",
-            background: listening ? "rgba(176,136,66,0.15)" : "transparent",
+            background: listening ? "var(--accent-soft)" : "transparent",
             border: "none", cursor: "pointer",
-            color: listening ? "#B08842" : "rgba(26,22,18,0.4)",
+            color: listening ? "var(--accent)" : "var(--text-muted)",
             transition: "color 0.2s, background 0.2s",
           }}
         >
@@ -344,7 +346,7 @@ export function MobileBottomNav({
             style={{ order: isFullSearch ? 1 : -1 }}
             whileTap={tapScale}
             onClick={isFullSearch ? closeSearch : (cartCount > 0 ? onCart : onHome)}
-            aria-label={isFullSearch ? "Dismiss keyboard" : (cartCount > 0 ? "Open bag" : "Go to the For You page")}
+            aria-label={isFullSearch ? t("mobileNav.dismissKeyboard") : (cartCount > 0 ? t("mobileNav.openBag") : t("mobileNav.goForYou"))}
           >
             {isFullSearch ? (
               <span style={{ color: "var(--text-primary)" }}>
@@ -362,7 +364,7 @@ export function MobileBottomNav({
                   style={{
                     position: "absolute", top: -8, right: -10,
                     minWidth: 18, height: 18, padding: "0 5px",
-                    borderRadius: 999, background: "#B08842", color: "#fff",
+                    borderRadius: 999, background: "var(--accent)", color: "#fff",
                     fontSize: "0.65rem", fontWeight: 700, lineHeight: "18px",
                     textAlign: "center",
                   }}
@@ -444,7 +446,7 @@ export function MobileBottomNav({
             className="lg-nav-orb"
             whileTap={tapScale}
             onClick={onSearch}
-            aria-label="Search"
+            aria-label={t("mobileNav.search")}
           >
             <span style={{ color: "var(--text-primary)" }}>
               <Search size={22} strokeWidth={1.8} />
