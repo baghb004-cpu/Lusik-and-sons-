@@ -149,38 +149,6 @@ export const TRANSLATIONS = {
       meetLusik: "Meet Lusik",
     },
 
-    // FAQ — each entry is a Q/A pair
-    faq: {
-      eyebrow: "Common Questions",
-      title: "Things people ask us",
-      q1: { q: "How long does a blanket take to make?",
-            a: "Anywhere from one to three weeks, depending on how many orders are ahead of yours. Lusik works on one blanket at a time. If you need it by a specific date, please tell us at checkout or email — we'll let you know honestly whether we can meet it." },
-      q2: { q: "Which letters come on the blanket?",
-            a: "Each blanket has three letters — Armenian (Ա, Բ, Գ) or English (A, B, C). The alphabet is stitched twice, along two parallel diagonals that run top-left to bottom-right, so six letter-squares appear across the blanket in total — three letters in one diagonal, the same three again in the other. You pick the alphabet on the product page. For other letters or special requests, please email Lusik at hello@lusikandsons.com." },
-      q3: { q: "Which way do the letters run?",
-            a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter is always in the center." },
-      q4: { q: "What is the blanket made of?",
-            a: "A soft acrylic baby blanket with a woven pomegranate pattern, finished with fringe edges and a satin backing matched to the body color. The fabric is gentle enough for newborns. Lusik picks each blanket personally before stitching." },
-      q5: { q: "How do I clean it?",
-            a: "We recommend professional dry cleaning for every piece. The dry cleaner gives consistent gentle treatment that preserves the cross-stitching, satin backing, and crochet edging — washing machines wear handmade textiles down quickly, and cycle / temperature mistakes are easy to make. If you'd rather launder at home, follow the yarn's label exactly (cool wash, no bleach, no iron, tumble dry low on delicate). We can't guarantee against wear from washing-machine cycles." },
-      q6: { q: "Do you ship internationally?",
-            a: "Not yet. Right now we ship only within the United States. We'll add more countries as the business grows." },
-      q7: { q: "Is this a final sale?",
-            a: "Yes — every blanket and bib is made specifically for you, so all sales are final. We don't accept exchanges, refunds, or returns once an order is placed. Please use the live preview to confirm your alphabet, colors, and any name or year before checking out. If anything is unclear, email or text us before you buy and we'll talk it through. If your item arrives damaged in transit or has a clear defect, we stand behind the work — email us within 14 days with photos and Lusik will repair or remake it." },
-    },
-
-    // Shipping section
-    shipping: {
-      eyebrow: "Shipping",
-      title: "How your blanket gets to you",
-      p1: "Once Lusik finishes the last stitch, she folds the blanket between layers of tissue, places it in the box herself, and walks it to the carrier from her home in Cypress, California.",
-      p2: "USPS, UPS, or FedEx — you pick at checkout. Free U.S. shipping on orders over $150.",
-      tracking: "Tracking",
-      trackingBody: "A tracking number arrives in your inbox the moment the package leaves Lusik's hands.",
-      times: "Delivery times",
-      timesBody: "Most orders arrive within 3–5 business days after they ship — and Lusik usually emails you a photograph of the finished piece a day or two before that.",
-    },
-
     // Contact / Reach Us drawer
     contact: {
       eyebrow: "Reach Us",
@@ -531,40 +499,6 @@ export const TRANSLATIONS = {
       p2: "Այդ ժամանակից ի վեր նա պատրաստում է այս ծածկոցները՝ ձեռքով։ Իր որդիները կայքը կառավարում են։ Նա կարկատում է։",
       p3: "Յուրաքանչյուր ծածկոց պատվերով է պատրաստվում։ Լուսիկը անձամբ վերցնում է յուրաքանչյուրը, երբ պատրաստ է, և ստուգում այն մինչև առաքելը։",
       meetLusik: "Ծանոթացեք Լուսիկի հետ",
-    },
-
-    faq: {
-      eyebrow: "Հաճախ Տրվող Հարցեր",
-      title: "Ինչ են մարդիկ հարցնում մեզ",
-      q1: { q: "Որքա՞ն ժամանակ է տևում ծածկոցի պատրաստումը։",
-            a: "Մեկ-երեք շաբաթ, կախված նրանից, թե քանի պատվեր կա ձեր առջևից։ Լուսիկը միաժամանակ աշխատում է մեկ ծածկոցի վրա։ Եթե այն ձեզ անհրաժեշտ է որոշակի օրվա համար, խնդրում ենք գրել պատվեր տալիս կամ էլ. փոստով — մենք ազնվորեն կասենք՝ կարո՞ղ ենք հասցնել։" },
-      q2: { q: "Որ տառերն են դրվում ծածկոցի վրա։",
-            // ⚠️ TODO_LUSIK_REVIEW — auto-translated to match the corrected English; please confirm.
-            a: "Յուրաքանչյուր ծածկոցի վրա երեք տառ կա՝ հայերեն (Ա, Բ, Գ) կամ անգլերեն (A, B, C)։ Այբուբենը կարկատվում է երկու անգամ՝ երկու զուգահեռ անկյունագծերի վրա, որոնք ընթանում են վերին ձախից դեպի ներքին աջ — ընդհանուր առմամբ վեց տառի վանդակ ծածկոցի վրա, երեքը մի անկյունագծի, երեքն էլ՝ մյուսի։ Դուք ընտրում եք այբուբենը արտադրանքի էջում։ Այլ տառերի կամ հատուկ պատվերների համար գրեք Լուսիկին՝ hello@lusikandsons.com։" },
-      q3: { q: "Ի՞նչ ուղղությամբ են ընթանում տառերը։",
-            // ⚠️ TODO_LUSIK_REVIEW — auto-translated; please confirm with Lusik.
-            a: "Վերին ձախից ներքին աջ։ Լուսիկը կարկատում է այբուբենը այդ մեկ անկյունագծի վրա — հակառակ ուղղությունը նա չի առաջարկում։ Միջին տառը միշտ կենտրոնում է։" },
-      q4: { q: "Ինչից է պատրաստված ծածկոցը։",
-            // TODO_LUSIK_REVIEW — added satin backing mention
-            a: "Փափուկ ակրիլային մանկական ծածկոցից՝ նռան նախշով գործվածքով, ծոպավոր եզրերով և գույնին համապատասխան ատլասե աստառով։ Գործվածքը բավականաչափ նուրբ է նորածինների համար։ Լուսիկը անձամբ ընտրում է յուրաքանչյուր ծածկոց՝ կարկատելուց առաջ։" },
-      q5: { q: "Ինչպե՞ս մաքրել։",
-            // TODO_LUSIK_REVIEW — rewritten to recommend dry cleaning
-            a: "Խորհուրդ ենք տալիս չոր մաքրում յուրաքանչյուր կտորի համար։ Չոր մաքրողը հետևողականորեն մեղմ մշակում է խաչաձև կարկատանը, ատլասե աստառը և կեռիկ եզրերը — լվացքի մեքենաները արագ մաշում են ձեռագործ կտորները։ Եթե նախընտրում եք տանը լվանալ, հետևեք թելի պիտակին (սառը ջուր, ոչ սպիտակեցուցիչ, ոչ արդուկ, չորանոցով ցածր ջերմությամբ՝ նուրբ ռեժիմով)։ Մեքենայի լվացման մաշվածության դեմ երաշխիք չենք տալիս։" },
-      q6: { q: "Միջազգային առաքում կատարու՞մ եք։",
-            a: "Դեռ ոչ։ Այս պահին միայն ԱՄՆ-ի սահմաններում ենք առաքում։ Բիզնեսի աճի հետ կավելացնենք այլ երկրներ։" },
-      q7: { q: "Կարո՞ղ եմ վերադարձնել։",
-            a: "Քանի որ յուրաքանչյուր ծածկոց հատուկ ձեզ համար է պատրաստված, մտքի փոփոխության դեպքում վերադարձ չենք ընդունում։ Եթե թերություն կա կամ առաքման ընթացքում վնասվել է, գրեք մեզ 7 օրվա ընթացքում և մենք կուղղենք։" },
-    },
-
-    shipping: {
-      eyebrow: "Առաքում",
-      title: "Ինչպես է ձեր ծածկոցը հասնում ձեզ",
-      p1: "Երբ Լուսիկը ավարտում է ձեր ծածկոցը, մենք այն խնամքով փաթեթավորում ենք և առաքում Սայփրեսսից, Քալիֆորնիա։",
-      p2: "Մենք օգտագործում ենք USPS, UPS կամ FedEx — ընտրությունը ձերն է պատվեր տալիս։ Անվճար ԱՄՆ առաքում 150 դոլարից բարձր պատվերների համար։",
-      tracking: "Հետևում",
-      trackingBody: "Հենց որ ձեր պատվերն առաքվի, էլ. փոստով կստանաք հետևման համարը։",
-      times: "Առաքման ժամկետներ",
-      timesBody: "Պատվերների մեծ մասը հասնում է 3–5 աշխատանքային օրվա ընթացքում՝ առաքվելուց հետո։",
     },
 
     contact: {
