@@ -42,6 +42,9 @@ import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Plus, Heart, Instagram, 
 import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import { getRecentlyViewed } from "../lib/recentActivity.js";
 import { galleryRotationStyle } from "../lib/galleryRotation";
+// FAQ copy is CMS-managed (Content Studio /studio → "Site Content"), compiled
+// from content/pages/faq.json by scripts/gen-pages.mjs. Static at build time.
+import { CMS_PAGES } from "../data/pagesData.generated.js";
 import {
   PHOTO_BIB_PILE,
   PHOTO_BIB_ROMEO,
@@ -550,18 +553,10 @@ export function HomeView({
       {/* ── PAGE: Good Questions (FAQ) ─────────────────────────── */}
       {pageSlug === "faq" && (
       <section id="faq" className="max-w-4xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
-        <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "#B08842" }}>Frequently Asked</p>
-        <h2 className="font-display text-4xl lg:text-5xl mb-12 text-center" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Good questions.</h2>
+        <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "#B08842" }}>{CMS_PAGES.faq.eyebrow}</p>
+        <h2 className="font-display text-4xl lg:text-5xl mb-12 text-center" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{CMS_PAGES.faq.title}</h2>
         <div className="space-y-1">
-          {[
-            { q: "How long does it take to make my blanket?", a: "Each blanket is made to order — Lusik works on one at a time, the way her grandmother did. Plan on 5–10 business days from the day you order to the day it leaves her hands. If a specific date matters (a christening, a baby shower, a flight home to see family), tell us at checkout and we'll write back honestly about whether we can meet it." },
-            { q: "Which letters come on the blanket?", a: "Three letters — Armenian (Ա, Բ, Գ) or English (A, B, C), you choose on the product page. The alphabet is stitched twice along two parallel diagonals running corner to corner, so six letter-squares cross the surface in total — three letters in one diagonal, the same three again in the other. For a different letter, an unusual combination, or a name you'd like spelled out in full, write Lusik directly at hello@lusikandsons.com. She always reads them herself." },
-            { q: "Which way do the letters run?", a: "Top-left to bottom-right. Lusik stitches the alphabet along that one diagonal — she doesn't offer the mirrored direction. The middle letter sits at the heart of the blanket." },
-            { q: "How do I tell you which alphabet I picked?", a: "Your choice travels through with the order. If anything needs to change after you've checked out, message us on Instagram (@lusikandsons), call or text (760) 874-2333, or reply to your order confirmation email — Lusik or one of her sons will read it." },
-            { q: "Is this safe for babies?", a: "Yes. The blanket is soft acrylic, gentle enough for a newborn. Machine-washable on cold, gentle cycle, laid flat to dry — though for a piece you're hoping to keep for the next baby in the family, we'd recommend dry cleaning instead." },
-            { q: "What's the difference between the blanket and the bib?", a: "The blanket is hand cross-stitched by Lusik. The bib is machine-embroidered with a personalized name — its surface is too small for counted cross-stitch to read well, and bibs live a harder life than blankets do (formula, oatmeal, the washing machine three times a week). Each piece gets the technique that fits the life it's going to have. There's a journal post explaining the difference if you'd like to read it." },
-            { q: "Do you ship internationally?", a: "Not yet — only within the United States. We'll add more countries as the shop grows. If you have family abroad and want to send a piece, write us and we'll see what we can arrange." },
-          ].map((item, i) => (
+          {CMS_PAGES.faq.items.map((item, i) => (
             <details key={i} className="border-b group" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
               <summary className="py-5 flex items-center justify-between cursor-pointer">
                 <span className="font-display text-lg lg:text-xl" style={{ fontWeight: 400 }}>{item.q}</span>
