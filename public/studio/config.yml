@@ -104,3 +104,24 @@ collections:
       - { label: "Gallery",     name: "images",      widget: "list", required: false, field: { label: "Image", name: "image", widget: "image" }, hint: "Optional gallery photos." }
       # Reserved for the future Stripe reconciliation phase — NOT used for checkout yet.
       - { label: "Stripe Price ID (reserved)", name: "stripePriceId", widget: "string", required: false, hint: "Reserved. Not connected to checkout yet." }
+
+  # Site content — editable copy for specific pages, compiled by
+  # scripts/gen-pages.mjs (content/pages/*.json → what the storefront renders).
+  # A FILES collection (a fixed set of pages; you edit, not create/delete).
+  # The build FAILS on bad data, so a broken edit can't silently ship.
+  - name: "site-content"
+    label: "Site Content"
+    files:
+      - name: "faq"
+        label: "FAQ page"
+        file: "content/pages/faq.json"
+        fields:
+          - { label: "Eyebrow", name: "eyebrow", widget: "string", hint: "Small label above the heading." }
+          - { label: "Heading", name: "title",   widget: "string" }
+          - label: "Questions"
+            name: "items"
+            widget: "list"
+            summary: "{{fields.q}}"
+            fields:
+              - { label: "Question", name: "q", widget: "string" }
+              - { label: "Answer",   name: "a", widget: "text" }
