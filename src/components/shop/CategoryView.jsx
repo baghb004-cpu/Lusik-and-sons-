@@ -59,7 +59,7 @@ function productHeroImages(product) {
   return null;
 }
 
-export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct }) {
+export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   return (
@@ -87,6 +87,8 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
             <button
               key={p.slug}
               onClick={() => onNavigateProduct(category.slug, p.slug)}
+              onPointerEnter={() => onPrefetch?.(`/shop/${category.slug}/${p.slug}`)}
+              onFocus={() => onPrefetch?.(`/shop/${category.slug}/${p.slug}`)}
               className="lg-button lg-shine text-left flex flex-col stagger-reveal"
               style={{ "--i": i }}
               aria-label={isLive ? t("shop.viewAria", { name: loc(p, "name", lang) }) : t("shop.comingSoonAria", { name: loc(p, "name", lang) })}

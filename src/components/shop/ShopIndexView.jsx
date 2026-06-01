@@ -91,7 +91,7 @@ const MOBILE_CATEGORY_IMAGE = {
 // border + shadow; product image fills the upper portion, the
 // category label sits centered below in the display font.
 // ------------------------------------------------------------
-function CategoryCard({ category, onTap }) {
+function CategoryCard({ category, onTap, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const label = loc(category, "label", lang);
@@ -101,6 +101,8 @@ function CategoryCard({ category, onTap }) {
     <button
       type="button"
       onClick={onTap}
+      onPointerEnter={onPrefetch}
+      onFocus={onPrefetch}
       aria-label={t("shop.browseAria", { label })}
       className="flex flex-col items-stretch text-center"
       style={{
@@ -166,12 +168,14 @@ function CategoryCard({ category, onTap }) {
 // a "View" pill. "View" (not "Buy") because every piece needs the
 // product page to pick colors / name / layout before checkout.
 // ------------------------------------------------------------
-function FeaturedPieceCard({ piece, onTap }) {
+function FeaturedPieceCard({ piece, onTap, onPrefetch }) {
   const t = useT();
   return (
     <button
       type="button"
       onClick={onTap}
+      onPointerEnter={onPrefetch}
+      onFocus={onPrefetch}
       aria-label={t("shop.viewAria", { name: piece.name })}
       className="block w-full text-left"
       style={{
@@ -464,7 +468,7 @@ function swatchBackground(s) {
   return "transparent";
 }
 
-function ProductGridCard({ item, onTap }) {
+function ProductGridCard({ item, onTap, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const name = loc(item, "name", lang);
@@ -476,6 +480,8 @@ function ProductGridCard({ item, onTap }) {
     <button
       type="button"
       onClick={onTap}
+      onPointerEnter={onPrefetch}
+      onFocus={onPrefetch}
       aria-label={t("shop.viewAria", { name })}
       className="flex flex-col text-left"
     >
@@ -527,7 +533,7 @@ function ProductGridCard({ item, onTap }) {
   );
 }
 
-export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal }) {
+export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   // Merge the routing/image meta (FEATURED_PIECES) with the translated
@@ -583,6 +589,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
                 key={category.slug}
                 category={category}
                 onTap={() => onNavigateCategory(category.slug)}
+                onPrefetch={() => onPrefetch?.(`/shop/${category.slug}`)}
               />
             ))}
           </div>
@@ -603,6 +610,8 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           <button
             type="button"
             onClick={() => onNavigateProduct?.("bibs", "bari-akhorzhak-bib-burp-cloth-set")}
+            onPointerEnter={() => onPrefetch?.("/shop/bibs/bari-akhorzhak-bib-burp-cloth-set")}
+            onFocus={() => onPrefetch?.("/shop/bibs/bari-akhorzhak-bib-burp-cloth-set")}
             aria-label={t("shop.viewAria", { name: t("shop.newestName") })}
             className="block w-full text-left"
             style={{
@@ -655,6 +664,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
               key={`${piece.categorySlug}/${piece.slug}`}
               piece={piece}
               onTap={() => onNavigateProduct?.(piece.categorySlug, piece.slug)}
+              onPrefetch={() => onPrefetch?.(`/shop/${piece.categorySlug}/${piece.slug}`)}
             />
           ))}
         </section>
@@ -681,6 +691,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
                 key={`${item.categorySlug}/${item.slug}`}
                 item={item}
                 onTap={() => onNavigateProduct?.(item.categorySlug, item.slug)}
+                onPrefetch={() => onPrefetch?.(`/shop/${item.categorySlug}/${item.slug}`)}
               />
             ))}
           </div>
@@ -762,6 +773,8 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
               <button
                 key={category.slug}
                 onClick={() => onNavigateCategory(category.slug)}
+                onPointerEnter={() => onPrefetch?.(`/shop/${category.slug}`)}
+                onFocus={() => onPrefetch?.(`/shop/${category.slug}`)}
                 className="lg-button lg-shine text-left p-6 lg:p-8 transition stagger-reveal"
                 style={{ "--i": i }}
                 aria-label={t("shop.browseAria", { label: catLabel })}

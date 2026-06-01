@@ -11,6 +11,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import { prefetchAllowed } from "../lib/connection";
 
 export function useSiteNav() {
   const router = useRouter();
@@ -19,8 +20,10 @@ export function useSiteNav() {
 
   return useMemo(() => ({
     // Warm a route's JS + RSC payload before the user taps, so the navigation
-    // feels instant. Safe no-op on failure — navigation still works via push.
-    prefetch:        (href) => { try { router.prefetch(href); } catch {} },
+    // feels instant. Gated by prefetchAllowed() so a data-saver / slow link is
+    // never charged for speculative fetches. Safe no-op on failure — navigation
+    // still works via push.
+    prefetch:        (href) => { try { if (prefetchAllowed()) router.prefetch(href); } catch {} },
     goForYou:        () => push("/"),
     goHome:          () => push("/"),
     goPage:          (slug) => push(`/${slug}`),          // /story, /faq, …
