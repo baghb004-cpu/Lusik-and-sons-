@@ -98,7 +98,8 @@ function toProduct(p) {
   if (p.coverImage !== undefined) out.coverImage = p.coverImage;
   if (p.images !== undefined) out.images = p.images;
   if (p.stripePriceId !== undefined) out.stripePriceId = p.stripePriceId;
-  if (p.displayOrder !== undefined) out.displayOrder = p.displayOrder;
+  // displayOrder is intentionally NOT copied onto the product — it's sort-only
+  // metadata (see the sort in main()), so a migrated product stays shape-clean.
   return out;
 }
 
@@ -107,7 +108,7 @@ function main() {
     ? readdirSync(PRODUCTS_DIR).filter((f) => f.endsWith(".json")).sort()
     : [];
 
-  const byCategory = {};
+  const rawByCategory = {};
   const seen = new Set(); // `${category}/${slug}` uniqueness
 
   for (const file of files) {
@@ -127,7 +128,19 @@ function main() {
     if (seen.has(uniq)) fail(file, `duplicate product ${uniq} (already defined in another file)`);
     seen.add(uniq);
 
-    (byCategory[data.category] ||= []).push(toProduct(data));
+    (rawByCategory[data.category] ||= []).push(data);
+  }
+
+  // Deterministic order within each category: by displayOrder (ascending;
+  // missing = last), tie-broken by slug. Then strip to the storefront shape.
+  const byCategory = {};
+  for (const [category, items] of Object.entries(rawByCategory)) {
+    items.sort((a, b) => {
+      const ao = a.displayOrder ?? Infinity;
+      const bo = b.displayOrder ?? Infinity;
+      return ao - bo || a.slug.localeCompare(b.slug);
+    });
+    byCategory[category] = items.map(toProduct);
   }
 
   const banner =

@@ -24,7 +24,7 @@ no extra JavaScript for shoppers. A file that fails validation **fails the build
 | `coverImage` | – | string | Absolute path (`/img/...`). Category-card thumbnail. |
 | `images` | – | string[] | Gallery paths. |
 | `stripePriceId` | – | string | **Reserved / unused today.** Placeholder for the future Stripe reconciliation phase. |
-| `displayOrder` | – | number | Reserved for explicit ordering (today products append in filename order). |
+| `displayOrder` | – | number | Sort order within the category (ascending; missing = last, tie-broken by slug). Sort-only — not stored on the product object. |
 
 ## Important guardrails
 

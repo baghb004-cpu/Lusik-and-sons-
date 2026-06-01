@@ -528,30 +528,10 @@ export const CATALOG = {
     label: "Towels",
     description: "The Armenian textiles a family pulls out for the days that count. A hand towel for the guest bath, a powder room, the table set for a holiday meal. And the white baptism towel — the one canon asks the godparents to bring, the one the priest lifts the child onto, the one the family keeps folded in a chest for the rest of their lives.",
     eyebrow: "For the days that count",
-    products: [
-      {
-        key: "towel-hand",
-        slug: "embroidered-hand-towel",
-        name: "The Embroidered Hand Towel",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
-        priceFrom: null,
-        tagline: "Small enough to fit in a gift bag, made to outlive the wedding it was given at.",
-        description: "A hand-sized soft towel with one of Lusik's hand-embroidered Armenian motifs — the pomegranate, the cross-hatch border, the small bird-and-tree pattern that has lived on Armenian linens for centuries. Folds into a gift bag for a housewarming, a hostess thank-you, a wedding. Sits in a guest bath the way an Armenian grandmother's linens always did — the small good thing on the shelf, waiting for the day someone notices it. Hand-embroidered by Lusik from her home in Cypress, California. Made to order, made to last.",
-      },
-      {
-        key: "towel-baptism",
-        slug: "armenian-baptism-towel",
-        name: "The Armenian Baptism Towel",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
-        priceFrom: null,
-        // Tagline = the single most important thing — this is the
-        // canonically-required towel for the Armenian Apostolic
-        // baptism. Godparents Google for this; the tagline should
-        // land directly.
-        tagline: "The white towel godparents bring to the font — embroidered with your child's name, in Armenian, and the date of their baptism.",
-        description: "By Armenian Apostolic Church canon, the godparents bring one large new white towel to the baptism. The priest uses it once — to lift the child out of the font — and from that day forward it belongs to the family. It goes into the chest with the christening dress, the cross from the priest, the photograph from the church steps. It comes out again at the next baptism, the wedding, sometimes the funeral, sometimes simply when the grandchildren ask to see it. Lusik embroiders the child's name in Armenian script, the baptism date, and an Armenian-style cross — by hand, the same way the towel her own godmother brought to her christening was made. From her home in Cypress, California. Made to order, made to last.",
-      },
-    ],
+    // CMS-managed (Content Studio /studio): both towels live in
+    // content/products/{embroidered-hand-towel,armenian-baptism-towel}.json
+    // and are merged into this category at build (see the CMS merge below).
+    products: [],
   },
   baby: {
     slug: "baby",
@@ -562,21 +542,11 @@ export const CATALOG = {
     // hospital, the bath ritual that becomes the day's anchor).
     description: "Soft pieces for the days before the rest of the world meets a new baby. A swaddle for the going-home photograph from the hospital. A hooded bathrobe for the bath ritual that becomes the day's anchor. Small fabric objects that are around for the first weeks of a life, and that — if they're made the right way, by the right hands — get folded into a drawer to wait for the next one.",
     eyebrow: "From the very first day",
-    products: [
-      {
-        key: "baby-swaddle",
-        slug: "baby-swaddle",
-        name: "The Baby Swaddle",
-        status: "placeholder",         // ⚠️ TODO_LUSIK: flip to "live" per the flip-to-live checklist
-        priceFrom: null,
-        tagline: "The cloth a new baby is wrapped in for the going-home photograph — embroidered with their name.",
-        description: "A soft swaddle for the earliest weeks — the cloth around the baby in the hospital photograph, the cloth on the first night in the crib, the cloth in the carrier walking through the front door of a house that just got fuller by one. Lusik embroiders the baby's name on it, in Armenian or English, the parents pick. A first object with a first name on it. Made to order by Lusik from her home in Cypress, California. Made to order, made to last.",
-      },
-      // NOTE: "The Baby Bathrobe" (baby-bathrobe) is now CMS-managed — it lives
-      // in content/products/baby-bathrobe.json and is merged into this category
-      // at build time (see the CMS merge block below CATALOG). It's the proof-
-      // of-concept migration for the Content Studio product pipeline.
-    ],
+    // CMS-managed (Content Studio /studio): both baby items live in
+    // content/products/{baby-swaddle,baby-bathrobe}.json and are merged into
+    // this category at build (see the CMS merge below). displayOrder in those
+    // files keeps swaddle before bathrobe.
+    products: [],
   },
 };
 
