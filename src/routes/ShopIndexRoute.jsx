@@ -17,6 +17,7 @@ export function ShopIndexRoute() {
       onNavigateProduct={nav.goShopProduct}
       onNavigateJournalPost={nav.goJournalPost}
       onNavigateJournal={nav.goJournal}
+      onPrefetch={nav.prefetch}
     />
   );
 }

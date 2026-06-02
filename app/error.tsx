@@ -25,7 +25,9 @@ export default function Error({
   }, [error]);
 
   return (
-    <main
+    // Plain <div> (not <main>): this renders inside SiteChrome's <main>, so a
+    // <main> here would create a nested/duplicate landmark.
+    <div
       style={{
         minHeight: "60vh",
         display: "flex",
@@ -87,6 +89,6 @@ export default function Error({
           Back home
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

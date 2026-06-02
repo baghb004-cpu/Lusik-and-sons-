@@ -17,6 +17,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useT } from "../i18n/LangContext.jsx";
+import { prefetchAllowed } from "../lib/connection";
 import { AnimatePresence, m } from "framer-motion";
 import { backdrop, drawerRight } from "../lib/motion";
 import { MobilePageHeader } from "./MobilePageHeader.jsx";
@@ -83,8 +84,7 @@ export function SiteChrome({ children }) {
   //      so the prefetch never competes with the current page's first paint.
   // router.prefetch dedupes/caches, so each route's payload is fetched once.
   useEffect(() => {
-    const conn = typeof navigator !== "undefined" ? navigator.connection : null;
-    if (conn && (conn.saveData || /(^|-)2g$|^3g$/.test(conn.effectiveType || ""))) return;
+    if (!prefetchAllowed()) return;
     const warm = () => ["/", "/shop", "/journal", "/cart"].forEach((href) => nav.prefetch(href));
     const ric = typeof window !== "undefined" ? window.requestIdleCallback : null;
     const id = ric ? ric(warm, { timeout: 2500 }) : setTimeout(warm, 800);
@@ -141,8 +141,11 @@ export function SiteChrome({ children }) {
         />
       )}
 
-      {/* Route content */}
-      {children}
+      {/* Route content — wrapped in the single page <main> landmark (the nav,
+          header, footer and overlays live outside it). Satisfies the
+          landmark-one-main accessibility audit; error/404 pages render inside
+          this, so their own wrappers are plain <div>s (no nested <main>). */}
+      <main>{children}</main>
 
       {/* Footer (desktop only — lg:block inside the component) */}
       <SiteFooter onOpenPolicy={setPolicyOpen} />

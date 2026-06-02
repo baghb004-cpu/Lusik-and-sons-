@@ -21,6 +21,7 @@ export function CategoryRoute() {
       onNavigateHome={nav.goForYou}
       onNavigateShop={nav.goShopIndex}
       onNavigateProduct={nav.goShopProduct}
+      onPrefetch={nav.prefetch}
     />
   );
 }

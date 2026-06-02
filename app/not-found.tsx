@@ -11,7 +11,9 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main
+    // Plain <div> (not <main>): this renders inside SiteChrome's <main>, so a
+    // <main> here would create a nested/duplicate landmark.
+    <div
       style={{
         minHeight: "60vh",
         display: "flex",
@@ -70,6 +72,6 @@ export default function NotFound() {
           Browse the shop
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

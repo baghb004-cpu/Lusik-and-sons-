@@ -106,6 +106,9 @@ export function HomeView({
   // to live only in the footer, which is now hidden on mobile — so on phones
   // they survive as small cards in the Explore "More" row below.
   onOpenPolicy,
+  // Connection-guarded route prefetch (nav.prefetch) — warms a destination's
+  // payload on hover/focus so tapping an Explore or product card feels instant.
+  onPrefetch,
   // Mobile-only: on a return visit within the same session the App
   // collapses the home screen to an Apple Store "For You" layout —
   // the brand hero is dropped and the For-You sections lead. Desktop
@@ -243,6 +246,8 @@ export function HomeView({
         <button
           type="button"
           onClick={() => onNavigateProduct?.("blankets", "armenian-alphabet-blanket")}
+          onPointerEnter={() => onPrefetch?.("/shop/blankets/armenian-alphabet-blanket")}
+          onFocus={() => onPrefetch?.("/shop/blankets/armenian-alphabet-blanket")}
           className="w-full flex items-center gap-4 text-left rounded-2xl p-3"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 10px 26px -14px rgba(26,22,18,0.24)" }}
           aria-label={`${t("forYou.featuredName")} — ${t("forYou.selectedForYou")}`}
@@ -310,6 +315,8 @@ export function HomeView({
               key={key}
               type="button"
               onClick={go}
+              onPointerEnter={() => onPrefetch?.(`/${key}`)}
+              onFocus={() => onPrefetch?.(`/${key}`)}
               className="snap-start flex-shrink-0 text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
               style={{ width: 156, height: 156, background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${title} — ${blurb}`}
@@ -332,6 +339,8 @@ export function HomeView({
               key={key}
               type="button"
               onClick={go}
+              onPointerEnter={() => onPrefetch?.(`/${key}`)}
+              onFocus={() => onPrefetch?.(`/${key}`)}
               className="lg-button lg-shine text-left rounded-2xl p-6 flex flex-col gap-4 transition"
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
               aria-label={`${title} — ${blurb}`}
