@@ -161,7 +161,7 @@ export function HomeView({
       <section className={`${simplified ? "hidden lg:block " : ""}max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24`}>
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
           <div className="lg:col-span-5 slide-up min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--accent)" }}>Southern California</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--text-primary)" }}>Southern California</p>
             <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-6" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
               {t("hero.headline")} <em style={{ fontWeight: 400 }}>{t("hero.headlineEm")}</em>.
             </h1>
@@ -182,7 +182,7 @@ export function HomeView({
                 <p
                   key={heroIndex}
                   className="fade-in text-base lg:text-lg italic mb-8 max-w-md"
-                  style={{ color: "var(--accent)", fontWeight: 400, letterSpacing: "0.005em" }}
+                  style={{ color: "var(--text-primary)", fontWeight: 400, letterSpacing: "0.005em" }}
                   aria-live="polite"
                 >
                   — {caption} —
@@ -215,7 +215,7 @@ export function HomeView({
                 <HeroSlideshow className="w-full h-full" onIndexChange={setHeroIndex} />
               </div>
               <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
-                <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "var(--accent)" }}>{t("hero.callout1")}</p>
+                <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "var(--text-primary)" }}>{t("hero.callout1")}</p>
                 <p className="font-display text-lg" style={{ fontWeight: 400 }}>{t("hero.callout2")}</p>
               </div>
             </div>

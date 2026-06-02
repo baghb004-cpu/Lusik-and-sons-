@@ -31,7 +31,7 @@ export function ThemeToggle({ compact = false }) {
             style={{
               padding: compact ? "4px 8px" : "5px 10px",
               background: active ? "var(--ink)" : "transparent",
-              color:      active ? "var(--text-on-ink)" : "var(--text-muted)",
+              color:      active ? "var(--text-on-ink)" : "var(--text-secondary)",
               fontSize: "0.6rem",
               letterSpacing: "0.15em",
               textTransform: "uppercase",
