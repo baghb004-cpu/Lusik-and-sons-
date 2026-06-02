@@ -265,13 +265,13 @@ export function HomeView({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[0.6rem] tracking-[0.2em] uppercase mb-1" style={{ color: "var(--accent)", fontWeight: 600 }}>
+            <p className="text-[0.6rem] tracking-[0.2em] uppercase mb-1" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
               ✦ {t("forYou.selectedForYou")}
             </p>
             <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
               {t("forYou.featuredName")}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>{t("search.from", { price: 65 })}</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-primary)", fontWeight: 500 }}>{t("search.from", { price: 65 })}</p>
           </div>
           <ChevronRight size={18} strokeWidth={1.5} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
         </button>
