@@ -1287,6 +1287,20 @@
     --glass-chromatic-green:rgba(80, 210, 120, 0.38);
   }
 
+  /* Bottom-nav clearance. The floating nav island below is position:fixed and
+     overlays the page, so without this the last of any mobile route (the
+     "Still need help deciding?" contact circles, a product page's footer, the
+     copyright line) hides behind it. The island sits 12px above the home
+     indicator and is 72px tall — it covers ~84px + the safe-area — so we pad
+     the bottom of <main> on phones to clear it with room to spare (generous on
+     purpose: better a little empty space than cut-off buttons). Desktop is
+     unaffected (the nav is lg:hidden). */
+  @media (max-width: 1023px) {
+    main {
+      padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
   .lg-bottom-island {
     position: fixed;
     /* Centered floating island, fixed max width — sits above the iPhone
