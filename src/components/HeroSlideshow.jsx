@@ -157,7 +157,7 @@ export function HeroSlideshow({ className = "", style = {}, onIndexChange }) {
             src={photo.src}
             alt={photo.alt}
             fill
-            sizes="(max-width: 1024px) 100vw, 58vw"
+            sizes="(max-width: 1023px) 100vw, (max-width: 1279px) 52vw, 664px"
             className="object-cover"
             style={{
               opacity: i === activeIdx ? 1 : 0,
