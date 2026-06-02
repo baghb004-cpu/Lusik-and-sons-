@@ -32,7 +32,7 @@ export function SiteFooter({ onOpenPolicy }) {
               Lusik <span style={{ color: "var(--accent)" }}>&</span> Sons
             </p>
             <p className="text-sm opacity-70 leading-relaxed mb-4">{t("footer.brand")}</p>
-            <p className="text-xs opacity-50 italic font-display" style={{ fontWeight: 400 }}>{t("footer.tagline")}</p>
+            <p className="text-xs opacity-75 italic font-display" style={{ fontWeight: 400 }}>{t("footer.tagline")}</p>
           </div>
 
           <div className="md:col-span-2">
@@ -64,7 +64,7 @@ export function SiteFooter({ onOpenPolicy }) {
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-60 flex items-center gap-2"><Instagram size={14} /> @lusikandsons</a>
               <a href="mailto:hello@lusikandsons.com" className="hover:opacity-60 flex items-center gap-2"><Mail size={14} /> hello@lusikandsons.com</a>
             </div>
-            <p className="text-xs opacity-50 mt-4 leading-relaxed">{t("footer.repliesNote")}</p>
+            <p className="text-xs opacity-75 mt-4 leading-relaxed">{t("footer.repliesNote")}</p>
           </div>
         </div>
 
@@ -78,18 +78,18 @@ export function SiteFooter({ onOpenPolicy }) {
           <div className="flex items-center gap-2.5"><Send size={14} strokeWidth={1.5} style={{ color: "var(--accent)", flexShrink: 0 }} /><span>{t("footer.trustShips")}</span></div>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs opacity-60 pt-6" style={{ borderTop: "1px solid var(--border-soft)" }}>
-          <p>{t("footer.copyright", { year: new Date().getFullYear() })}</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs pt-6" style={{ borderTop: "1px solid var(--border-soft)" }}>
+          <p className="opacity-75">{t("footer.copyright", { year: new Date().getFullYear() })}</p>
           <div className="flex items-center gap-3 flex-wrap justify-center">
             <FooterLangToggle />
             <ThemeToggle />
           </div>
-          <p className="font-display italic" style={{ fontWeight: 400 }}>
-            <span style={{ color: "var(--accent)" }}>{t("footer.thanks")}</span> · {t("footer.thanksEn")} · {t("footer.madeWith")}
+          <p className="font-display italic opacity-75" style={{ fontWeight: 400 }}>
+            <span>{t("footer.thanks")}</span> · {t("footer.thanksEn")} · {t("footer.madeWith")}
           </p>
         </div>
 
-        <p className="text-[0.6rem] opacity-40 leading-relaxed pt-4 mt-4" style={{ borderTop: "1px solid rgba(26,22,18,0.05)" }}>
+        <p className="text-[0.6rem] opacity-75 leading-relaxed pt-4 mt-4" style={{ borderTop: "1px solid rgba(26,22,18,0.05)" }}>
           All trademarks belong to their respective owners. Lusik &amp; Sons is not affiliated with, endorsed by, or sponsored by any of the companies mentioned on this site. See our <button onClick={() => openPolicy("terms")} className="underline hover:opacity-100">Terms of Service</button> for full details.
         </p>
       </div>

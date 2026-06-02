@@ -11,7 +11,7 @@ export function FooterLangToggle() {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-[0.6rem] tracking-[0.3em] uppercase opacity-50">
+      <span className="text-[0.6rem] tracking-[0.3em] uppercase opacity-75">
         {t("langToggle.label")}:
       </span>
       {LANGUAGES.map((l) => {
@@ -22,10 +22,9 @@ export function FooterLangToggle() {
             onClick={() => setLang(l.code)}
             className="text-xs px-2.5 py-1 transition"
             style={{
-              background: active ? "#1A1612" : "transparent",
-              color: active ? "#F5EFE3" : "inherit",
-              border: `1px solid ${active ? "#1A1612" : "rgba(26,22,18,0.2)"}`,
-              opacity: active ? 1 : 0.7,
+              background: active ? "var(--ink)" : "transparent",
+              color: active ? "var(--text-on-ink)" : "var(--text-secondary)",
+              border: `1px solid ${active ? "var(--ink)" : "var(--border-strong)"}`,
             }}
             aria-pressed={active}
             aria-label={`Switch to ${l.label}`}
