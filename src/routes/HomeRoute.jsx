@@ -29,7 +29,7 @@ export function HomeRoute({ pageSlug = null }) {
       onNavigateProduct={nav.goShopProduct}
       onNavigateJournal={nav.goJournal}
       onPrefetch={nav.prefetch}
-      onOpenPolicy={() => { /* policy modal — wired in a later phase */ }}
+      onOpenPolicy={(key) => window.dispatchEvent(new CustomEvent("openPolicy", { detail: key }))}
       // Mobile For You collapses to the Apple-Store card layout: the brand
       // hero (eyebrow / headline / description / slideshow) + trust badges are
       // hidden on phones (hidden lg:block) so the page leads with the

@@ -102,6 +102,20 @@ export function SiteChrome({ children }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [cartOpen]);
 
+  // Policy links scattered through the tree (the mobile "More" cards on the
+  // For You page, the cart's fine print) open the shared PolicyModal by
+  // dispatching a window "openPolicy" CustomEvent with the policy key in
+  // `detail`. App.jsx used to listen for this; SiteChrome owns the modal now,
+  // so it has to listen — without this the event fell on the floor and those
+  // buttons did nothing.
+  useEffect(() => {
+    const onOpenPolicy = (e) => {
+      if (e?.detail) setPolicyOpen(e.detail);
+    };
+    window.addEventListener("openPolicy", onOpenPolicy);
+    return () => window.removeEventListener("openPolicy", onOpenPolicy);
+  }, []);
+
   // Adding to the bag surfaces the cart — the slide-in drawer on desktop, the
   // full /cart page on mobile (where the drawer would fight the bottom nav).
   // Parity with the old App.jsx openCart(): SiteProvider bumps cartOpenSignal
