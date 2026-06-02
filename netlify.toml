@@ -108,3 +108,14 @@ Cache-Control = "public, max-age=31536000, immutable"
 for = "/img/*"
 [headers.values]
 Cache-Control = "public, max-age=86400, stale-while-revalidate=2592000"
+
+# Hero brand photography (/img/hero/*) is fixed — the slideshow art set, not
+# swappable product photos. Cache it long (30 days fresh + a year of
+# stale-while-revalidate) so repeat visits never re-download it and PageSpeed's
+# "efficient cache lifetimes" stops flagging the big hero JPEGs. This rule is
+# more specific than /img/* above, so it wins for hero paths; product photos
+# keep their shorter, refresh-friendly TTL.
+[[headers]]
+for = "/img/hero/*"
+[headers.values]
+Cache-Control = "public, max-age=2592000, stale-while-revalidate=31536000"

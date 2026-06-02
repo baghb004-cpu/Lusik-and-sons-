@@ -46,17 +46,20 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {/* Netlify Identity widget — loaded afterInteractive so it no longer
-          blocks initial render/hydration on every page (most visitors never
-          sign in). Still the CDN build (the confirmation redirect handler
-          expects window.netlifyIdentity from it — do NOT swap to the npm pkg).
-          onReady re-runs auth.init() the moment the widget is actually present,
-          so an already-signed-in user's session restores + the widget's
-          login/logout events wire up reliably despite the deferred load. The
-          mount-time auth.init() above is a harmless no-op until then. */}
+      {/* Netlify Identity widget — loaded lazyOnload (during browser idle,
+          after the page is interactive) so its ~54 KiB + ~300ms of main-thread
+          work no longer lands in the initial hydration window. Most visitors
+          never sign in, so this is pure cost on the critical path otherwise.
+          Still the CDN build (the confirmation redirect handler expects
+          window.netlifyIdentity from it — do NOT swap to the npm pkg). onReady
+          re-runs auth.init() the moment the widget is present, so an
+          already-signed-in user's session restores and the login/logout events
+          wire up; the hash-token handler in auth.js retries ~5s, which covers
+          the email-confirmation / recovery redirect even with the deferred
+          load. The mount-time auth.init() above is a harmless no-op until then. */}
       <Script
         src="https://identity.netlify.com/v1/netlify-identity-widget.js"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         onReady={() => { try { auth.init(); } catch { /* widget unavailable */ } }}
       />
       <LanguageProvider>
