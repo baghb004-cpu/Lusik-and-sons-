@@ -119,6 +119,10 @@ export function PolicyModal({ policyKey, onClose }) {
           body: "Our liability is limited to the amount you paid for the product. We're not responsible for incidental damages, missed events, or other indirect losses. Please order in advance if you need a piece for a specific occasion."
         },
         {
+          heading: "Our designs are our own",
+          body: "Every piece Lusik & Sons sells is designed and hand cross-stitched by Lusik herself. Our designs, color combinations, patterns, photographs, written descriptions, and the Lusik & Sons name and logo are our original creative work — protected by copyright and held as our trademark (™). You're welcome to share our photographs with credit and a link to lusikandsons.com, but please don't reproduce, copy, or sell our designs, images, or text for commercial use without our written permission. If you'd like to license a design or collaborate, write to hello@lusikandsons.com — we'd love to talk."
+        },
+        {
           heading: "Trademarks and materials",
           body: "Other names and marks mentioned on this site — including Stripe; USPS, UPS, and FedEx; Instagram, TikTok, Facebook, and YouTube; Visa, Mastercard, American Express, Apple Pay, and Google Pay; and DMC threads — are referenced only to describe how we run our business or what we use to make our products. Lusik & Sons is not affiliated with, endorsed by, sponsored by, or partnered with any of these companies, and no such relationship is implied. All trademarks, service marks, and trade names belong to their respective owners."
         },
