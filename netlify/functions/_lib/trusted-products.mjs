@@ -88,7 +88,7 @@ export const TRUSTED_PRODUCTS = {
   "bib-anushig-pair": {
     name:        "The Mama & Papa's Anushig Bib Set",
     variant:     "Pair of hand cross-stitched bibs — Mama's + Papa's",
-    priceCents:  4500,
+    priceCents:  5400,
   },
 
   // The Bari Akhorzhak Bib & Burp Cloth Set. Hand cross-stitched. Two
@@ -113,7 +113,7 @@ export const TRUSTED_PRODUCTS = {
   "bib-hy-em": {
     name:        "The Hye Em Yes Bib",
     variant:     "Bib alone",
-    priceCents:  3400,
+    priceCents:  3500,
   },
   "bib-hy-em-with-cap": {
     name:        "The Hye Em Yes Bib",

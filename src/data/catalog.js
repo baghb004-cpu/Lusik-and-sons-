@@ -335,7 +335,7 @@ export const CATALOG = {
         name: "The Hye Em Yes Bib",
         name_hy: "«Հայ եմ ես» կրծկալ",
         status: "live",
-        priceFrom: 34,
+        priceFrom: 35,
         // Tagline = the cultural payload + a hook to the flag colors,
         // which is THE differentiating visual cue on this bib.
         tagline: "Հայ եմ ես — \"I am Armenian,\" stitched in the colors of the flag.",
@@ -397,7 +397,7 @@ export const CATALOG = {
         name: "The Mama & Papa's Anushig Bib Set",
         name_hy: "Մայրիկի և Պապայի «Անոյշիկ» կրծկալների հավաքածու",
         status: "live",
-        priceFrom: 45,
+        priceFrom: 54,
         tagline: "One bib says Mama's sweetheart, the other Papa's — Armenian for \"darling,\" stitched as a pair.",
         tagline_hy: "Մի կրծկալն ասում է «Մայրիկի անոյշիկը», մյուսը՝ «Պապայի», հայերեն՝ «սիրելի», կարկատված որպես զույգ։",
         description: "A matched pair of baby bibs that take turns. One reads Մայրիկիս Անոյշիկը — \"Mama's sweetheart.\" The other reads Պապայիս Անոյշիկը — \"Papa's sweetheart.\" Anushig is the Armenian word for darling, the kind of name a grandmother says when she means it. Embroidered together, gifted together: the bib for the morning Dad gets up first, the bib for the night Mom takes over, both of them small daily reassurances that the baby is loved on both sides of the crib. A small heritage anchor for the first months — when the answer to \"whose baby is this?\" deserves to be said in two voices. Lusik embroiders each pair by hand from her home in Southern California. Made to order, made to last.",

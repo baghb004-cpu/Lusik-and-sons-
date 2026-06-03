@@ -133,7 +133,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-anushig-pair": {
     key: "bib-anushig-pair",
     name: "The Mama & Papa's Anushig Bib Set",
-    price: 45,
+    price: 54,
     image: "/img/anushig-bib/cover.jpg",
     buy: {
       kind: "bibSet",
@@ -181,7 +181,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-hy-em": {
     key: "bib-hy-em",
     name: "The Hye Em Yes Bib",
-    price: 34,
+    price: 35,
     image: "/img/hye-em-bib/cover.jpg",
     buy: {
       kind: "bibSet",
@@ -190,7 +190,7 @@ export const CUSTOM_PRODUCTS = {
       cap: {
         withKey: "bib-hy-em-with-cap",
         priceWithCap: 52,
-        upcharge: 18,
+        upcharge: 17,       // unified cap upcharge across the line
         nameInput: false,   // tricolor cap, no name
       },
     },
