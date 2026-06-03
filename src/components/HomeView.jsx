@@ -511,7 +511,7 @@ export function HomeView({
             </h2>
             <div className="space-y-5 text-base lg:text-lg leading-relaxed opacity-90">
               <p>
-                Lusik came to Los Angeles from Armenia in the late 1970s, with a cross-stitch hoop and the way of working her own grandmother had taught her. She lived in East Hollywood — what people there call Little Armenia — and later moved south to Orange County, where she lives and stitches today.
+                Lusik came to Los Angeles from Armenia in the late 1970s, with a cross-stitch hoop and the way of working her mother and grandmother had taught her. She lived in East Hollywood — what people there call Little Armenia — and later moved south to Orange County, where she lives and stitches today.
               </p>
               <p>
                 What she does is cross-stitch by hand. On every blanket, the first three letters of the alphabet — <span style={{ fontWeight: 500, color: "var(--accent)" }}>Ա, Բ, Գ</span> in Armenian, or <span style={{ fontWeight: 500, color: "var(--accent)" }}>A, B, C</span> in English — placed one tiny X at a time onto soft cloth woven through with the Armenian pomegranate. For other letters, or a name you'd like spelled out, please write her directly. She always says yes.
