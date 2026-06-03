@@ -6,7 +6,6 @@
 // they pick from (subset of all platforms — only the ones we
 // actually plan to share to).
 //
-// MIRRORED FROM index.html (~line 1933) during the Vite
 // migration. After the flip (Phase 10), the index.html copy
 // gets deleted and this becomes the single source of truth.
 // ============================================================

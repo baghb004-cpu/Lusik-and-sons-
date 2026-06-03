@@ -7,7 +7,6 @@
 // list in netlify/functions/_lib/email.mjs and the SHIPPING
 // rate options in create-checkout-session.mjs.
 //
-// MIRRORED FROM index.html (~line 1940). When changing
 // shipping options, edit BOTH this file AND the equivalent
 // server-side list. The pricing-drift test pattern (see
 // _lib/__tests__/pricing-drift.test.mjs) could be extended to

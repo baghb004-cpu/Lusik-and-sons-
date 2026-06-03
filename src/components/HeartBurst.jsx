@@ -14,7 +14,6 @@
 //          burst. The component renders fixed-positioned and
 //          uses these to anchor the pivot div.
 //
-// MIRRORED FROM index.html (~line 6540).
 // ============================================================
 
 import React, { useState } from "react";

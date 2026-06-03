@@ -20,7 +20,6 @@
 // Kinds: "info" (default), "success", "error". Errors get a
 // longer duration (6s) and role="alert" for screen readers.
 //
-// MIRRORED FROM index.html (~line 3460).
 // ============================================================
 
 import React, { useState, useRef, useEffect, useCallback, useContext } from "react";

@@ -18,7 +18,6 @@
 // EVERYWHERE, the literal key string is returned so the dev
 // sees exactly what to add to translations.js.
 //
-// MIRRORED FROM index.html (~line 2693).
 // ============================================================
 
 import React, { useState, useEffect } from "react";

@@ -19,7 +19,6 @@
 // sheets and lock-screen shortcuts. Fires once per session
 // (sessionStorage gate), honors prefers-reduced-motion.
 //
-// MIRRORED FROM index.html (~line 6804).
 // ============================================================
 
 import React, { useState, useEffect, useRef, useCallback } from "react";

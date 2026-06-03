@@ -23,6 +23,7 @@
 // ============================================================
 
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { CATALOG } from "../../data/catalog.js";
 import { JOURNAL_POSTS } from "../../data/journalPosts.js";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
@@ -187,12 +188,15 @@ function FeaturedPieceCard({ piece, onTap, onPrefetch }) {
         marginBottom: 16,
       }}
     >
-      <img
-        src={piece.image}
-        alt={piece.name}
-        loading="lazy"
-        style={{ width: "100%", height: 260, objectFit: "cover", display: "block" }}
-      />
+      <div style={{ position: "relative", width: "100%", height: 260 }}>
+        <Image
+          src={piece.image}
+          alt={piece.name}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          style={{ objectFit: "cover" }}
+        />
+      </div>
       <div style={{ padding: "18px 20px 20px" }}>
         <p
           className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
@@ -493,13 +497,15 @@ function ProductGridCard({ item, onTap, onPrefetch }) {
           boxShadow: "0 1px 6px rgba(26,22,18,0.06)",
           overflow: "hidden",
           aspectRatio: "1 / 1",
+          position: "relative",
         }}
       >
-        <img
+        <Image
           src={item.image}
           alt={item.name}
-          loading="lazy"
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          fill
+          sizes="(max-width: 768px) 50vw, 25vw"
+          style={{ objectFit: "cover" }}
         />
       </div>
       <h3
@@ -622,12 +628,15 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
               overflow: "hidden",
             }}
           >
-            <img
-              src="/img/bari-akhorzhak-set/cover.jpg"
-              alt="The Bari Akhorzhak Bib & Burp Cloth Set"
-              loading="lazy"
-              style={{ width: "100%", height: 280, objectFit: "cover", display: "block" }}
-            />
+            <div style={{ position: "relative", width: "100%", height: 280 }}>
+              <Image
+                src="/img/bari-akhorzhak-set/cover.jpg"
+                alt="The Bari Akhorzhak Bib & Burp Cloth Set"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                style={{ objectFit: "cover" }}
+              />
+            </div>
             <div style={{ padding: "18px 20px 20px" }}>
               <p
                 className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"

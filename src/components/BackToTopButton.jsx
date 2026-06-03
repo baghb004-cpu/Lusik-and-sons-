@@ -11,7 +11,6 @@
 // Passive scroll listener so the handler doesn't interfere
 // with the browser's compositor pipeline on mobile.
 //
-// MIRRORED FROM index.html (~line 4360).
 // ============================================================
 
 import React, { useState, useEffect } from "react";

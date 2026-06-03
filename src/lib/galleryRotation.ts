@@ -11,7 +11,6 @@
 // `shape` controls the scale factor (4:5 portrait needs 1.25 to
 // fill; square needs 1.0).
 //
-// MIRRORED FROM index.html (~line 1913).
 // ============================================================
 
 import type { CSSProperties } from "react";

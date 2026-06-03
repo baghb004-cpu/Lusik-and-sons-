@@ -10,7 +10,6 @@
 // directly — add a method here and call db.foo() so error
 // shape, auth header, and base path stay consistent.
 //
-// MIRRORED FROM index.html (~line 3248).
 // ============================================================
 
 import { auth } from "./auth.js";

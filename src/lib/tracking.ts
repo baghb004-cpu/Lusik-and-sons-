@@ -13,7 +13,6 @@
 // notification email — if you change carrier coverage here,
 // mirror it there.
 //
-// MIRRORED FROM index.html (~line 8000).
 // ============================================================
 
 export function getTrackingUrl(

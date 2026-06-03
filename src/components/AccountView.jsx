@@ -8,7 +8,6 @@
 // delete. Big component but composed of OrderHistory +
 // SavedDesignsSection + inline-form profile editor.
 //
-// MIRRORED FROM index.html (~line 7045).
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";

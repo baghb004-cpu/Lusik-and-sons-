@@ -13,7 +13,6 @@
 // JournalPostView so each post is indexed as its own page by
 // Google.
 //
-// MIRRORED FROM index.html (~line 8894). All three components
 // + their dependencies (JOURNAL_POSTS) consolidated here.
 // ============================================================
 
@@ -163,7 +162,9 @@ export function JournalPostView({ post, onBack, onSelectPost }) {
 
   return (
     <div className="fade-in max-w-3xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* Escape `<` so a future post body containing "</script>" can't
+          break out of the JSON-LD block — same hardening as src/lib/seo.js. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
         ← All posts
       </button>

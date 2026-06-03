@@ -18,7 +18,6 @@
 //      consentedAt date she captured the permission on.
 //   3. Deploy.
 //
-// MIRRORED FROM index.html (~line 3782). Co-located data with
 // component for the same reason TestimonialsSection does.
 // ============================================================
 

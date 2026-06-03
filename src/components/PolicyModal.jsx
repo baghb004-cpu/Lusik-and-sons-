@@ -7,7 +7,6 @@
 // well without a lawyer, and the audience is U.S.). Three
 // policy bodies, picked by `policyKey` prop.
 //
-// MIRRORED FROM index.html (~line 6587). No external deps
 // other than React + the X icon.
 // ============================================================
 

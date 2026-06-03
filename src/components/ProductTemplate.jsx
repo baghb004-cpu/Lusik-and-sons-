@@ -4,7 +4,6 @@
 // Renders a stylized bib with the typed name in the chosen
 // thread color. Used in the CustomProductCard picker.
 //
-// MIRRORED FROM index.html (~line 9891).
 // ============================================================
 
 import React from "react";

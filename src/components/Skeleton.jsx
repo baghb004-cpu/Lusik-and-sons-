@@ -6,7 +6,6 @@
 // stylesheet (currently the <style> block in index.html;
 // migrates to src/styles/index.css in Phase 10).
 //
-// MIRRORED FROM index.html (~line 7761).
 // ============================================================
 
 import React from "react";

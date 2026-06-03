@@ -10,7 +10,6 @@
 // (status ∈ ACTIVE_ORDER_STATUSES) it becomes a clickable bar
 // that takes them to their account view to track the order.
 //
-// MIRRORED FROM index.html (~line 8826). The two helpers
 // (ACTIVE_ORDER_STATUSES + statusToActiveBarMessage) co-locate
 // with the component since they're only used here.
 // ============================================================

@@ -14,7 +14,6 @@
 // first name + city is the lightest-touch attribution that
 // still feels credible.
 //
-// MIRRORED FROM index.html (~line 3731). Co-located the
 // testimonials data with the component because it's small,
 // only used here, and feels less like "data" than the larger
 // catalog / config structures.

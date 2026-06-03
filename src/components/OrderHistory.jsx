@@ -7,7 +7,6 @@
 // Post-checkout polling logic (refetch a couple of times after
 // a Stripe return) is handled by the parent (AccountView).
 //
-// MIRRORED FROM index.html (~line 7641).
 // ============================================================
 
 import React, { useState, useEffect } from "react";

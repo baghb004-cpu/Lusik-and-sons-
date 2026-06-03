@@ -13,7 +13,6 @@
 // tappable so the customer can always see + revisit their
 // choice.
 //
-// MIRRORED FROM index.html (~line 10373).
 // ============================================================
 
 import React from "react";

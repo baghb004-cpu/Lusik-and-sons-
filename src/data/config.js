@@ -7,7 +7,6 @@
 // this file MUST stay a single export — do NOT split it into
 // smaller modules.
 //
-// MIRRORED FROM index.html (~line 1603). Some keys are also
 // duplicated in netlify/functions/_lib/pricing.mjs
 // (FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS); the
 // pricing-drift unit test guards those against silent drift.

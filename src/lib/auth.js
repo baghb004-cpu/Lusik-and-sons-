@@ -71,7 +71,6 @@
 // from that CDN). Do NOT switch to the npm package — they
 // behave differently.
 //
-// MIRRORED FROM index.html (~line 3051).
 // ============================================================
 
 function _initAuth() {

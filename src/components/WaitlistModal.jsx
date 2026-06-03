@@ -13,7 +13,6 @@
 // The "Or email Lusik directly" fallback link is preserved for
 // customers who want a personal conversation instead.
 //
-// MIRRORED FROM index.html (~line 3850).
 // ============================================================
 
 import React, { useState } from "react";

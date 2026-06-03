@@ -91,16 +91,20 @@ export function CategoryCardImage({ images, alt = "", className = "" }) {
 
   if (list.length === 0) return null;
 
-  // Single-image case — no behavior, no stacking, just render.
+  // Single-image case — no behavior, just render. Uses next/image
+  // (fill) so Netlify's CDN serves a resized AVIF/WebP instead of the
+  // full-resolution original — mirrors the multi-image branch below.
   if (list.length === 1) {
     return (
-      <img
-        src={list[0]}
-        alt={alt}
-        className={`w-full h-full object-cover ${className}`}
-        loading="lazy"
-        decoding="async"
-      />
+      <div className={`relative w-full h-full ${className}`}>
+        <Image
+          src={list[0]}
+          alt={alt}
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover"
+        />
+      </div>
     );
   }
 

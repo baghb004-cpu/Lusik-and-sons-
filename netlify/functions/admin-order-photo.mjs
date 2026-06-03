@@ -35,7 +35,12 @@ export default async (req, context) => {
   const body = await req.json().catch(() => ({}));
   const { orderId, filename, contentType, dataBase64 } = body ?? {};
 
-  if (!orderId)                  return json(400, { error: "Missing orderId" });
+  // UUID-shape-gate orderId before it's used in the blob key (line ~83) —
+  // the same defense-in-depth its sibling blob endpoints (avatar-get,
+  // order-photo-get) apply, preventing any odd value from shaping a key.
+  if (!orderId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+    return json(400, { error: "Missing or malformed orderId" });
+  }
   if (!filename || !contentType || !dataBase64) {
     return json(400, { error: "Need filename, contentType, dataBase64" });
   }
