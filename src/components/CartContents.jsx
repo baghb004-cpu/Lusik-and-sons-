@@ -36,6 +36,7 @@ import { ShippingEstimator } from "./ShippingEstimator.jsx";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { StillHaveQuestionsCard } from "./shop/HelpDecidingSection.jsx";
 import { PRODUCT } from "../data/product.js";
+import { CartItemThumb } from "./CartItemThumb.jsx";
 import { X, ShoppingBag, ArrowRight, Check, ChevronDown } from "./icons.jsx";
 import { useT } from "../i18n/LangContext.jsx";
 
@@ -199,7 +200,7 @@ export function CartContents({
                   }
                 >
                   <div className="relative">
-                    <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                    <CartItemThumb src={item.image || PRODUCT.gallery[0]} alt={item.name} width={80} height={96} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                     {item.isCustom && (
                       <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "var(--accent)", color: "#fff", fontWeight: 500 }}>{t("bag.custom")}</span>
                     )}

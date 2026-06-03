@@ -91,10 +91,23 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== "DELETE") return;
     setDeleteBusy(true);
-    const { error } = await db.deleteAccount("DELETE");
+    const { error, identityDeleted } = await db.deleteAccount("DELETE");
     if (error) {
       setDeleteBusy(false);
       toast({ kind: "error", message: error.message || "Couldn't delete your account — please try again or email hello@lusikandsons.com." });
+      return;
+    }
+    // Partial deletion: data + orders were anonymized, but the Identity
+    // login couldn't be removed automatically. Don't hard-reload to the
+    // "deleted" confirmation (which would falsely imply it's fully gone)
+    // — stay put and tell the customer the one remaining step. Toast
+    // survives because we don't navigate away.
+    if (identityDeleted === false) {
+      setDeleteBusy(false);
+      toast({
+        kind: "info",
+        message: "Your personal data and orders have been removed. We couldn't finish deleting your login automatically — please email hello@lusikandsons.com and we'll remove it within 30 days.",
+      });
       return;
     }
     // Hard reload to /?account=deleted. App.useEffect catches
