@@ -35,6 +35,8 @@ import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
+import { useSite } from "../../state/SiteProvider.jsx";
+import { inventoryKeyForCatalog } from "../../lib/inventory";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 
@@ -62,6 +64,9 @@ export function ProductView({
 }) {
   const t = useT();
   const { lang } = useLang();
+  const { isSoldOut } = useSite();
+  const inventoryKey = inventoryKeyForCatalog(product.key);
+  const soldOut = isSoldOut(inventoryKey);
   const trail = [
     { label: t("shop.breadcrumbHome"), onClick: onNavigateHome },
     { label: t("footer.shop"), onClick: onNavigateShop },
@@ -124,6 +129,8 @@ export function ProductView({
           user={user}
           onRequireSignIn={onRequireSignIn}
           onStickyCtaShown={onStickyCtaShown}
+          soldOut={soldOut}
+          notifyKey={inventoryKey}
         />
       </div>
     );
@@ -148,6 +155,8 @@ export function ProductView({
           onAddCustom={onAddCustom}
           onBuyNow={onBuyNowCustom}
           onCartFeedback={onCartFeedback}
+          soldOut={soldOut}
+          notifyKey={inventoryKey}
         />
 
         {/* Past customer orders gallery -- same shape as the full-
@@ -192,6 +201,8 @@ export function ProductView({
         onAddCustom={onAddCustom}
         onBuyNow={onBuyNowCustom}
         onCartFeedback={onCartFeedback}
+        soldOut={soldOut}
+        notifyKey={inventoryKey}
       />
     );
   }
@@ -204,6 +215,8 @@ export function ProductView({
         onAddCustom={onAddCustom}
         onBuyNow={onBuyNowCustom}
         onCartFeedback={onCartFeedback}
+        soldOut={soldOut}
+        notifyKey={inventoryKey}
       />
     );
   }

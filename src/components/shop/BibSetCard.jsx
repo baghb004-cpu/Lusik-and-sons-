@@ -28,6 +28,7 @@ import React, { useState, useRef } from "react";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { BibColorPicker } from "./BibColorPicker.jsx";
+import { SoldOutPanel } from "./SoldOutPanel.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight } from "../icons.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
@@ -40,7 +41,7 @@ function cleanText(text) {
   return text.split(/\s*⚠️\s*TODO_LUSIK\s*:?/i)[0].trim().replace(/\s{2,}/g, " ");
 }
 
-export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback }) {
+export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey }) {
   const t = useT();
   const { lang } = useLang();
   const buy = spec.buy ?? {};
@@ -160,8 +161,14 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             <p className="text-base leading-relaxed mb-8 opacity-85">{description}</p>
           )}
 
+          {/* SOLD OUT — replaces every buy control below with a warm
+              "check back soon" + restock-notify panel. */}
+          {soldOut && (
+            <SoldOutPanel name={productName} productKey={notifyKey ?? spec.key} className="mb-8" />
+          )}
+
           {/* ── THREAD COLOR (skipped for Hye Em Yes) ── */}
-          {buy.colorPicker ? (
+          {!soldOut && (buy.colorPicker ? (
             <div className="mb-6">
               <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
                 {t("bibSet.colorLabel")}
@@ -178,10 +185,10 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             <div className="mb-6 p-3 text-[0.8rem] leading-snug" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
               {t("bibSet.flagFixed")}
             </div>
-          )}
+          ))}
 
           {/* ── MATCHING CAP (when offered) ── */}
-          {cap && (
+          {!soldOut && cap && (
             <div className="mb-6">
               <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
                 {t("bibSet.capHeading")}
@@ -249,6 +256,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             </div>
           )}
 
+          {!soldOut && (<>
           {/* FINAL SALE note */}
           <div className="mb-4 p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
             <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("bib.finalSale")}</span>
@@ -294,6 +302,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
               {t("bib.buyNow")}
             </button>
           )}
+          </>)}
         </div>
       </div>
     </div>

@@ -336,6 +336,27 @@ test.describe("shop hierarchy navigation", () => {
       expect(item.productKey).toMatch(/^(blanket-|bib)/);
     }
   });
+
+  test("a sold-out product shows the graceful sold-out state + notify", async ({ page }) => {
+    // Stub the public availability snapshot so the Days-of-the-Week set
+    // reads as sold out (remaining 0). The real cap is server-enforced at
+    // checkout; this exercises the front-of-house sold-out UX.
+    await page.route("**/.netlify/functions/inventory*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ inventory: { "bib-days-of-week": { remaining: 0, limit: 5, soldOut: true } } }),
+      });
+    });
+
+    await page.goto("/shop/bibs/days-of-the-week-bib-set");
+    await expect(page.getByRole("heading", { name: /days-of-the-week/i })).toBeVisible({ timeout: 10_000 });
+
+    // Warm sold-out copy + a restock-notify button, and NO add-to-bag.
+    await expect(page.getByText(/sold out for now/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("button", { name: /notify me when it.s back/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /add to bag/i })).toHaveCount(0);
+  });
 });
 
 test.describe("journal navigation", () => {

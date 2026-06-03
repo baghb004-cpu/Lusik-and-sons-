@@ -13,6 +13,7 @@
 import React, { useState, useRef } from "react";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
+import { SoldOutPanel } from "./SoldOutPanel.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight } from "../icons.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
@@ -23,7 +24,7 @@ function cleanText(text) {
   return text.split(/\s*⚠️\s*TODO_LUSIK\s*:?/i)[0].trim().replace(/\s{2,}/g, " ");
 }
 
-export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback }) {
+export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey }) {
   const t = useT();
   const { lang } = useLang();
   const buy = spec.buy ?? {};
@@ -113,8 +114,13 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             <p className="text-base leading-relaxed mb-8 opacity-85">{description}</p>
           )}
 
+          {/* SOLD OUT — replaces the body-color / name / buy controls. */}
+          {soldOut && (
+            <SoldOutPanel name={productName} productKey={notifyKey ?? spec.key} className="mb-8" />
+          )}
+
           {/* BODY COLOR */}
-          {bodyColors.length > 0 && (
+          {!soldOut && bodyColors.length > 0 && (
             <div className="mb-6">
               <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
                 {t("cribBlanket.bodyColorLabel")}
@@ -147,7 +153,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
           )}
 
           {/* OPTIONAL NAME */}
-          {buy.allowName && (
+          {!soldOut && buy.allowName && (
             <div className="mb-6">
               <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
                 {t("cribBlanket.nameLabel")}
@@ -190,6 +196,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             </div>
           )}
 
+          {!soldOut && (<>
           {/* FINAL SALE */}
           <div className="mb-4 p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
             <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("bib.finalSale")}</span>
@@ -234,6 +241,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
               {t("bib.buyNow")}
             </button>
           )}
+          </>)}
         </div>
       </div>
     </div>

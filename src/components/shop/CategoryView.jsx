@@ -25,6 +25,8 @@ import { ArrowRight } from "../icons.jsx";
 import { PRODUCT } from "../../data/product.js";
 import { CategoryCardImage } from "../CategoryCardImage.jsx";
 import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
+import { useSite } from "../../state/SiteProvider.jsx";
+import { inventoryKeyForCatalog } from "../../lib/inventory";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 
@@ -62,6 +64,7 @@ function productHeroImages(product) {
 export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
+  const { isSoldOut } = useSite();
   return (
     <>
     <div className="fade-in max-w-6xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
@@ -82,6 +85,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
         {category.products.map((p, i) => {
           const isLive = p.status === "live";
+          const soldOut = isLive && isSoldOut(inventoryKeyForCatalog(p.key));
           const hero   = productHeroImages(p);
           return (
             <button
@@ -138,9 +142,15 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                       <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent)" }}>
                         {t("shop.from", { price: p.priceFrom })}
                       </p>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
-                        {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
-                      </span>
+                      {soldOut ? (
+                        <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent)", fontWeight: 600 }}>
+                          {t("soldOut.badge")}
+                        </span>
+                      ) : (
+                        <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                          {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
+                        </span>
+                      )}
                     </>
                   ) : typeof p.priceFrom === "number" && p.priceFrom > 0 ? (
                     <>

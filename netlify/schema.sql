@@ -214,6 +214,11 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
 
+-- Speeds up the handmade-stock availability aggregate
+-- (SUM(quantity) GROUP BY product_key) used by the inventory
+-- endpoint and the checkout-time overselling guard.
+CREATE INDEX IF NOT EXISTS idx_order_items_product_key ON order_items (product_key);
+
 -- ============================================================
 -- Defensive CHECK constraints on orders status columns
 -- ============================================================

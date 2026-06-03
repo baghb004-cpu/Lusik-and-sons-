@@ -28,6 +28,7 @@ import { SiteTopNav } from "./SiteTopNav.jsx";
 import { SiteFooter } from "./SiteFooter.jsx";
 import { AuthDrawer } from "./AuthDrawer.jsx";
 import { PolicyModal } from "./PolicyModal.jsx";
+import { WaitlistModal } from "./WaitlistModal.jsx";
 import { BackToTopButton } from "./BackToTopButton.jsx";
 import { TextUsWidget } from "./TextUsWidget.jsx";
 import { useSite } from "../state/SiteProvider.jsx";
@@ -71,6 +72,7 @@ export function SiteChrome({ children }) {
   // Overlays driven by the chrome.
   const [authOpen, setAuthOpen] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(null); // null | "privacy" | "terms" | "finalSale"
+  const [waitlistProduct, setWaitlistProduct] = useState(null); // { key, name } | null — restock / coming-soon notify
 
   // Close transient surfaces on route change.
   useEffect(() => { setSearchOpen(false); setCartOpen(false); }, [pathname]);
@@ -114,6 +116,20 @@ export function SiteChrome({ children }) {
     };
     window.addEventListener("openPolicy", onOpenPolicy);
     return () => window.removeEventListener("openPolicy", onOpenPolicy);
+  }, []);
+
+  // "Notify me when it's back / available" buttons (sold-out live
+  // products AND coming-soon placeholders) dispatch a window
+  // "openWaitlist" CustomEvent carrying { key, name }. SiteChrome owns
+  // the modal so it listens here — without this the buttons would do
+  // nothing (the WaitlistModal was previously mounted nowhere).
+  useEffect(() => {
+    const onOpenWaitlist = (e) => {
+      const d = e?.detail;
+      if (d && d.key) setWaitlistProduct({ key: d.key, name: d.name ?? "this product" });
+    };
+    window.addEventListener("openWaitlist", onOpenWaitlist);
+    return () => window.removeEventListener("openWaitlist", onOpenWaitlist);
   }, []);
 
   // Adding to the bag surfaces the cart — the slide-in drawer on desktop, the
@@ -236,6 +252,12 @@ export function SiteChrome({ children }) {
 
       {/* Policy modal (privacy / terms / final sale) — opened from the footer */}
       {policyOpen && <PolicyModal policyKey={policyOpen} onClose={() => setPolicyOpen(null)} />}
+
+      {/* Restock / coming-soon notify modal — opened via the "openWaitlist"
+          CustomEvent from sold-out product pages and placeholder cards. */}
+      {waitlistProduct && (
+        <WaitlistModal product={waitlistProduct} onClose={() => setWaitlistProduct(null)} />
+      )}
 
       {/* Ancillary floating widgets (match production) */}
       <TextUsWidget />
