@@ -249,6 +249,7 @@ export function ProductImageGallery({
             onClick={() => setActiveIdx(vi)}
             className={`shrink-0 aspect-square overflow-hidden ${vi === safeIdx ? "" : "opacity-50 hover:opacity-100"}`}
             style={{
+              position: "relative",
               width: "16%",
               minWidth: "64px",
               maxWidth: "92px",
@@ -259,12 +260,19 @@ export function ProductImageGallery({
             aria-label={`View photo ${vi + 1}`}
             aria-selected={vi === safeIdx}
           >
-            <img
+            {/* Optimized via next/image — thumbnails display at ~80px, so
+                Netlify's image CDN serves a tiny resized file instead of the
+                full-resolution original (a real page-weight win on galleries
+                with many photos). draggable disabled for light, tasteful
+                copy-deterrence — no global handlers, nothing that fights the
+                browser. */}
+            <Image
               src={images[rawI]}
               alt=""
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
+              fill
+              sizes="92px"
+              className="object-cover"
+              draggable={false}
             />
           </button>
         ))}
@@ -325,11 +333,15 @@ export function ProductImageGallery({
           onClick={() => setZoomOpen(false)}
           {...zoomSwipe.handlers}
         >
+          {/* Full image on purpose: this only loads when the customer
+              taps to zoom (never on page load), and a handmade piece
+              sells on visible detail. draggable disabled — light touch. */}
           <img
             src={currentSrc}
             alt={alt}
             className="max-w-full max-h-full object-contain"
             style={{ padding: "3rem 1rem" }}
+            draggable={false}
           />
           <button
             type="button"
