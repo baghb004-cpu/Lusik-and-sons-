@@ -22,7 +22,6 @@
 // splitting on `-` and taking parts[2] reliably grabs the
 // whole layout token.
 //
-// MIRRORED FROM index.html (~line 11849, inside CheckoutView).
 // ============================================================
 
 export function mapLegacyId(id: string | null | undefined): string | null {

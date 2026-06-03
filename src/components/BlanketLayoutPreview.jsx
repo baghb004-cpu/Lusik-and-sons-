@@ -12,7 +12,6 @@
 // blockColor, letterColor, letterColors, customLine1,
 // customLine2). No global state.
 //
-// MIRRORED FROM index.html (~line 9964). Pure presentational
 // component — no external imports beyond React.
 // ============================================================
 

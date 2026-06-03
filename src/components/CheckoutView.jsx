@@ -12,7 +12,6 @@
 // Cart-ID shape (mapLegacyId) is load-bearing for the server's
 // TRUSTED_PRODUCTS map — see src/lib/cartId.js for the rules.
 //
-// MIRRORED FROM index.html (~line 11649).
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";

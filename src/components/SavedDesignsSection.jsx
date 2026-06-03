@@ -7,7 +7,6 @@
 // preview using BlanketLayoutPreview + a "use this design"
 // button that hydrates the picker on the PDP.
 //
-// MIRRORED FROM index.html (~line 7785).
 // ============================================================
 
 import React, { useState, useEffect } from "react";

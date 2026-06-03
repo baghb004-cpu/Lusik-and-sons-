@@ -5,7 +5,6 @@
 // drawer doesn't need to know it exists. Both threshold and
 // enabled-flag come from CONFIG.
 //
-// MIRRORED FROM index.html (~line 3609).
 // ============================================================
 
 import React from "react";

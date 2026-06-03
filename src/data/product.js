@@ -5,7 +5,6 @@
 // colorPresets, alphabets (Armenian / English), and the single
 // currently-enabled layout (double_diag_br).
 //
-// MIRRORED FROM index.html (~line 1137). Photo references at the
 // top now come from src/images/photos.js instead of being bare
 // top-level constants in the same file.
 //

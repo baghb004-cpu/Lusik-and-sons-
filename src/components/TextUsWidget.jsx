@@ -12,7 +12,6 @@
 // Includes its own copied-state timer with unmount-safe
 // cleanup (capture-and-clear via useRef).
 //
-// MIRRORED FROM index.html (~line 4422).
 // ============================================================
 
 import React, { useState, useRef, useEffect } from "react";

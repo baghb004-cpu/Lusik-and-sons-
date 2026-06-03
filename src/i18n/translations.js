@@ -13,7 +13,6 @@
 // without her sign-off; the literal English copy may be more
 // idiomatic for the audience.
 //
-// MIRRORED FROM index.html (~line 2082). Big file (~608 lines)
 // but pure string data — no React, no React-tree deps.
 // ============================================================
 

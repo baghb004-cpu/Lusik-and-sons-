@@ -12,7 +12,6 @@
 // `native`   — what the switcher shows when in the language itself
 // `direction` — 'ltr' / 'rtl' (Armenian is ltr; reserved for later)
 //
-// MIRRORED FROM index.html (~line 2077).
 // ============================================================
 
 export type LanguageDirection = "ltr" | "rtl";

@@ -12,7 +12,6 @@
 // The function caps per-IP + per-session turns so a single bad
 // actor can't run up the bill.
 //
-// MIRRORED FROM index.html (~line 4704).
 // ============================================================
 
 import React, { useState, useRef, useEffect } from "react";

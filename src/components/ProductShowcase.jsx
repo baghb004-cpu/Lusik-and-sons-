@@ -9,7 +9,6 @@
 // sticky CTA on mobile, save-design + share-design flows, and
 // the deep-link `?d=<base64>` URL hydration.
 //
-// MIRRORED FROM index.html (~line 10406). Inter-component imports
 // fan out broadly because this is the PDP — almost everything
 // in src/components/ shows up somewhere on the page.
 // ============================================================

@@ -31,15 +31,32 @@ export default async (req, context) => {
   }
 
   const body = await req.json().catch(() => ({}));
-  const productKey  = typeof body?.product_key === "string"  ? body.product_key.trim()  : "";
-  const productName = typeof body?.product_name === "string" ? body.product_name.trim() : "";
-  const productUrl  = typeof body?.product_url === "string"  ? body.product_url.trim()  : "";
+  // Cap lengths + shape-validate even though this is admin-gated: a
+  // careless or compromised admin shouldn't be able to blast an
+  // unbounded name or a phishing link from the trusted sender to up to
+  // 100 customers. product_key is parameterized in SQL (no injection),
+  // but we still bound it.
+  const productKey  = typeof body?.product_key === "string"  ? body.product_key.trim().slice(0, 64)   : "";
+  const productName = typeof body?.product_name === "string" ? body.product_name.trim().slice(0, 200) : "";
+  const rawUrl      = typeof body?.product_url === "string"  ? body.product_url.trim()                 : "";
 
-  if (!productKey) {
-    return json(400, { error: "Missing product_key" });
+  if (!productKey || !/^[a-z][a-z0-9_-]{0,63}$/.test(productKey)) {
+    return json(400, { error: "Missing or malformed product_key" });
   }
   if (!productName) {
     return json(400, { error: "Missing product_name" });
+  }
+  // The CTA link is embedded in an email sent from lusikandsons.com.
+  // Only allow https URLs so it can never become a javascript:/http
+  // phishing vector. Empty is fine (the email composer omits the CTA).
+  let productUrl = "";
+  if (rawUrl) {
+    let parsed;
+    try { parsed = new URL(rawUrl); } catch { parsed = null; }
+    if (!parsed || parsed.protocol !== "https:") {
+      return json(400, { error: "product_url must be an https:// link" });
+    }
+    productUrl = parsed.toString();
   }
 
   const eligible = await sql`

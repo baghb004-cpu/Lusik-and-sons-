@@ -6,7 +6,6 @@
 // determines what's accepted at runtime, so this is purely
 // visual reassurance for the customer browsing the page.
 //
-// MIRRORED FROM index.html (~line 3676).
 // ============================================================
 
 import React from "react";

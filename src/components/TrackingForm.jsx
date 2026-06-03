@@ -9,7 +9,6 @@
 // exports; left inline here because this form's flow is its
 // own thing.
 //
-// MIRRORED FROM index.html (~line 9397).
 // ============================================================
 
 import React, { useState } from "react";

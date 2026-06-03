@@ -192,7 +192,9 @@ export default async (req, context) => {
 
     return json(200, {
       reply: text,
-      usage: result.usage,           // input_tokens + output_tokens for cost visibility
+      // Token usage is intentionally NOT returned to the browser — it's
+      // internal cost telemetry, of no use to the client. Keep it in logs
+      // if needed, not in the public response.
       turnsUsed: rate.used,
       turnsRemaining: Math.max(0, MAX_TURNS_PER_SESSION - rate.used),
     });

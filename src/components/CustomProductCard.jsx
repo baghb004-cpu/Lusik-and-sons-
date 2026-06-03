@@ -7,7 +7,6 @@
 // selector, single-color override. Builds the cart entry shape
 // the server-side trusted-products map expects ('bib').
 //
-// MIRRORED FROM index.html (~line 9480).
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";

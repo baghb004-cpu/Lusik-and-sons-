@@ -6,7 +6,6 @@
 // has loaded. When neither provider is configured this is a
 // total no-op and costs nothing.
 //
-// MIRRORED FROM index.html (~line 4908).
 //
 // Usage:
 //   import { track } from "@/lib/analytics.js";

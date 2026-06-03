@@ -12,7 +12,6 @@
 // items, shipping info, finished-photo if uploaded, reorder
 // button. Imports the tracking-URL builder from lib.
 //
-// MIRRORED FROM index.html (~lines 7939 + 8010).
 // ============================================================
 
 import React from "react";

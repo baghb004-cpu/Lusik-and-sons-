@@ -7,7 +7,6 @@
 //
 // Each entry's `Icon` is a React component reference (not a
 // string), so this file imports them from ../components/icons.jsx.
-// MIRRORED FROM index.html (~line 1879).
 // ============================================================
 
 import type { ComponentType, SVGProps } from "react";

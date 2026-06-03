@@ -13,7 +13,6 @@
 // Wrapped in try/catch so a malformed ?d=... share URL never
 // crashes the PDP mount.
 //
-// MIRRORED FROM index.html (~line 4250).
 // ============================================================
 
 // Minimal shapes used at the design-URL boundary. The picker's

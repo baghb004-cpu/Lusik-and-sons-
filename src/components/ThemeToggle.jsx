@@ -1,6 +1,5 @@
 "use client";
 
-// ThemeToggle — MIRRORED FROM index.html (~line 4993).
 import React from "react";
 import { Sun, Moon, Monitor } from "./icons.jsx";
 import { useTheme } from "../lib/useTheme.js";

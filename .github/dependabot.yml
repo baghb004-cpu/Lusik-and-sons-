@@ -6,12 +6,10 @@
 #
 # Weekly schedule keeps noise low. Security updates are grouped so a CVE wave lands as one PR.
 #
-# NOTE: vite / next / react MAJOR bumps are ignored here in the ROOT package (where they
-# actually live). They were previously placed under /netlify/functions — which has none of
-# these deps — so the ignores never applied, and the grouped PR (vite 8 / next 15) kept
-# reopening and failing CI. The site now builds with Next.js (`next:build`); Vite is being
-# retired, so its majors are pinned out. Next majors are pinned until a deliberate upgrade.
-# Security PATCHES and minor updates still flow through.
+# NOTE: next / react MAJOR bumps are ignored in the ROOT package (where they live), so a
+# major upgrade is always a deliberate, tested change rather than an auto-PR that fails CI.
+# The site builds with Next.js 15 (`next:build`); Vite has been fully removed, so there are
+# no longer any vite ignores to carry. Security PATCHES and minor updates still flow through.
 
 version: 2
 updates:
@@ -27,17 +25,11 @@ updates:
     labels:
       - "dependencies"
     ignore:
-      # Defer Next.js majors (14 -> 15/16) to a deliberate, tested upgrade.
-      # Patch / minor security fixes on the current 14.2.x line still flow.
+      # Defer Next.js majors (16+) to a deliberate, tested upgrade.
+      # Patch / minor security fixes on the current 15.x line still flow.
       - dependency-name: "next"
         update-types: ["version-update:semver-major"]
-      # Vite is being retired post-migration; pin its majors out so the v8
-      # PR stops reopening. Patch / minor on v5 still allowed until removal.
-      - dependency-name: "vite"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@vitejs/plugin-react"
-        update-types: ["version-update:semver-major"]
-      # React 19 deferred until the ecosystem + Next 14.2.x settle.
+      # React 19 deferred until the ecosystem + Next 15.x settle.
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"

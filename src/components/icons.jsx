@@ -8,7 +8,6 @@
 //
 //   import { Instagram, Cart, Heart } from "@/components/icons.jsx";
 //
-// MIRRORED FROM index.html (~line 1024). 58 named icons in this
 // file + the `Icon` wrapper itself = 59 exports.
 //
 // React-only — no other deps.
