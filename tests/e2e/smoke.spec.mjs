@@ -211,7 +211,7 @@ test.describe("checkout view", () => {
     // the cart-ID mismatch bug.
     for (const item of receivedBody.cart) {
       expect(item.productKey, `cart item missing productKey: ${JSON.stringify(item)}`).toBeTruthy();
-      expect(item.productKey).toMatch(/^(blanket-|bib$)/);
+      expect(item.productKey).toMatch(/^(blanket-|bib)/);
     }
 
     // Idempotency key — must accompany every checkout POST so a
@@ -255,7 +255,7 @@ test.describe("checkout view", () => {
     // Express checkout is a single transient item — never the whole bag.
     expect(receivedBody.cart.length).toBe(1);
     expect(receivedBody.cart[0].productKey).toBeTruthy();
-    expect(receivedBody.cart[0].productKey).toMatch(/^(blanket-|bib$)/);
+    expect(receivedBody.cart[0].productKey).toMatch(/^(blanket-|bib)/);
   });
 });
 
@@ -285,37 +285,56 @@ test.describe("shop hierarchy navigation", () => {
     await expect(page.getByRole("button", { name: /^Armenian\b/ }).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test("placeholder product page shows its commission CTA", async ({ page }) => {
-    // We navigate via the SPA (clicks) rather than `page.goto` so
-    // the test passes against the static `vite preview` server which
-    // doesn't have Netlify's SPA fallback for /shop/* URLs. The
-    // SPA's pushState routing handles the hierarchy fine; only the
-    // initial server response would 404 on a deep URL.
-    await page.goto("/");
-    // Open /shop via the home "Shop" Explore card (renders on both
-    // viewports — see the test above).
-    await page.getByRole("button", { name: /shop.*blankets, bibs/i }).click();
-    await page.getByRole("button", { name: /browse blankets/i }).click();
-    // Click the placeholder card — accessible name is
-    // "The Full Alphabet Crib Blanket — coming soon".
-    await page.getByRole("button", { name: /full alphabet crib blanket.*coming soon/i }).click();
-    await expect(page).toHaveURL(/\/shop\/blankets\/full-alphabet-crib-blanket\/?$/, { timeout: 10_000 });
+  test("live Full Alphabet Crib Blanket page shows the buy flow", async ({ page }) => {
+    // The Full Alphabet Crib Blanket is now LIVE (no longer a placeholder).
+    // Navigate straight to the PDP — the home→shop→category hierarchy is
+    // already covered by the test above, and the crib blanket appears on
+    // the category page in both the grid and a "heirloom" feature card, so
+    // a card-based click would be ambiguous.
+    await page.goto("/shop/blankets/full-alphabet-crib-blanket");
 
-    // The Full Alphabet Crib Blanket is a PRICED placeholder ($245, with
-    // status still "placeholder"), so its page renders the commission
-    // path rather than the unpriced waitlist path. The primary CTA is a
-    // "Write Lusik to commission this" mailto link (role=link), not the
-    // unpriced "Write me when it's ready" button. Assert the CTA that
-    // actually renders for this product.
-    await expect(
-      page.getByRole("link", { name: /write lusik to commission this/i })
-    ).toBeVisible({ timeout: 10_000 });
-
-    // Product name in the page heading — confirms the placeholder
-    // page rendered with the right product, not just any page.
+    // Product name in the page heading — confirms the live PDP rendered.
     await expect(
       page.getByRole("heading", { name: /full alphabet crib blanket/i })
     ).toBeVisible({ timeout: 5_000 });
+
+    // The live configurator: a body-color option + an Add-to-Cart button
+    // priced at the server-trusted $245 (CribBlanketCard). This replaces
+    // the old commission/waitlist placeholder CTA.
+    await expect(page.getByRole("button", { name: /^Blue$/ }).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /\$245/ }).first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("live heritage bib set page wires options into a custom add", async ({ page }) => {
+    // The hand cross-stitched heritage bibs (e.g. the Bari Akhorzhak set)
+    // are live BibSetCard surfaces with a thread-color picker + an optional
+    // matching cap. Assert the page renders the buy flow and that adding it
+    // POSTs a cart with the heritage productKey shape (bib-...), proving the
+    // server-trusted SKU mapping is wired — not the legacy $22 `bib` key.
+    let receivedBody = null;
+    await page.route("**/.netlify/functions/create-checkout-session*", async (route) => {
+      receivedBody = JSON.parse(route.request().postData() ?? "{}");
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ url: null }) });
+    });
+
+    await page.goto("/shop/bibs/bari-akhorzhak-bib-burp-cloth-set");
+    await expect(
+      page.getByRole("heading", { name: /bari akhorzhak/i })
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Add to bag (server-trusted $48 base price). Then drive the same
+    // in-app add → Checkout → Pay path the blanket checkout test uses, so
+    // the in-memory cart survives (a hard nav would wipe it).
+    await page.getByRole("button", { name: /add to bag.*48/i }).first().click();
+    await page.getByRole("button", { name: /^checkout/i }).click();
+    await page.getByRole("button", { name: /pay with stripe/i }).click();
+
+    await expect.poll(() => receivedBody, { timeout: 8_000 }).not.toBeNull();
+    const keys = receivedBody.cart.map((i) => i.productKey);
+    expect(keys.some((k) => /^bib-bari-akhorzhak-set/.test(k))).toBe(true);
+    for (const item of receivedBody.cart) {
+      expect(item.productKey).toMatch(/^(blanket-|bib)/);
+    }
   });
 });
 

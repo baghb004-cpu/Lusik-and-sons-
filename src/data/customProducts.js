@@ -1,18 +1,81 @@
 // ============================================================
-// CUSTOM_PRODUCTS — machine-embroidered customizable items
+// CUSTOM_PRODUCTS — configurable items added via addCustomToCart
 // ============================================================
-// Currently just one entry: the personalized baby bib. The
-// blanket lives separately in `product.js` because its config
-// (alphabets, layouts, dual-color presets) is too different
-// to share a shape with the bib.
+// Every product here is added to the bag through the same
+// `addCustomToCart(payload)` path (src/state/SiteProvider.jsx →
+// buildCustomCartItem), which stamps a unique cart id, carries the
+// `productKey` straight through to Stripe, and threads the chosen
+// options into the line-item description + order metadata.
 //
-// `customMode: "name"` tells the picker UI to render the short
-// typed-name flow. (The previous "hand-stitched" bib mode was
-// removed — Lusik dropped the hand-cross-stitched bib option;
-// the bib is now machine-embroidery-only.)
+// Each key MUST equal a TRUSTED_PRODUCTS key (server price source of
+// truth) at the same price — the `pricing-drift.test.mjs` guard fails
+// loudly otherwise, so the customer can never see one price and be
+// charged another.
 //
-// MIRRORED FROM index.html (~line 1391).
+// Entries:
+//   bib                              — the live machine name bib ($22)
+//   blanket-full-alphabet            — hand-knit full-alphabet crib blanket
+//   bib-days-of-week                 — 7 hand cross-stitched day bibs
+//   bib-anushig-pair                 — Mama's + Papa's matched pair
+//   bib-bari-akhorzhak-set[-with-cap]— bib + burp cloth (+ optional cap)
+//   bib-hy-em[-with-cap]             — "I am Armenian" flag bib (+ optional cap)
+//
+// The two `*-with-cap` keys are SKU/price records for the cap variant;
+// they're never routed as standalone catalog products. The base entry's
+// `buy.cap.withKey` points at them, and the configurator emits that key
+// when the customer ticks "add the cap."
+//
+// MIRRORED ORIGIN: index.html (~line 1391), pre-Next migration.
 // ============================================================
+
+// ============================================================
+// SHARED BIB COLOR SYSTEM
+// ============================================================
+// Extracted so every bib — the live machine name bib AND the hand
+// cross-stitched heritage sets — picks thread color through the exact
+// same mechanic and palette. One source of truth keeps the experience
+// identical across products and keeps BibColorPicker in sync everywhere.
+export const BIB_THREAD_COLORS = [
+  { dmc: "311", name: "Medium Navy Blue",   hex: "#2B4C73", category: "blue"   },
+  { dmc: "775", name: "Baby Blue",          hex: "#B5CEDE", category: "blue"   },
+  { dmc: "604", name: "Light Pink",         hex: "#F4A6C4", category: "pink"   },
+  { dmc: "718", name: "Magenta Pink",       hex: "#C92E7E", category: "pink"   },
+  { dmc: "905", name: "Bright Green",       hex: "#67923A", category: "green"  },
+  { dmc: "550", name: "Very Dark Violet",   hex: "#5C2D6E", category: "purple" },
+  { dmc: "815", name: "Wine Red",           hex: "#8B2C2C", category: "red"    },
+  { dmc: "844", name: "Charcoal",           hex: "#3C3934", category: "neutral"},
+];
+
+export const BIB_COLOR_PRESETS = [
+  { key: "lusik_boys",   label: "Boys",   letter: "311", description: "Semi-dark blue — Lusik's classic boys choice." },
+  { key: "lusik_girls",  label: "Girls",  letter: "718", description: "Magenta pink. A coral variant is also available — email to request." },
+  { key: "lusik_unisex", label: "Unisex", letter: "905", description: "Bright green. Cheerful and gender-neutral." },
+  { key: "lusik_purple", label: "Purple", letter: "550", description: "Dark violet. Quiet and elegant." },
+  {
+    key: "lusik_armenian_flag",
+    label: "Armenian Flag",
+    letter: "498",                        // fallback single color
+    // Per-letter colors cycle red → blue → orange in stitch order. These
+    // refs aren't in the 8-color bib palette, so BibColorPicker falls back
+    // to the blanket palette (PRODUCT.threadColors) to resolve them.
+    letterColors: ["498", "798", "740"],  // Red, Blue, Orange
+    description: "Letters in red, blue, and orange — the colors of the Armenian flag.",
+  },
+];
+
+export const BIB_DEFAULT_PRESET_KEY = "lusik_boys";
+
+// Body colorways offered on the Full Alphabet Crib Blanket. Mirrors the
+// solid colorways in the catalog gallery; the satin backing is matched to
+// whichever the customer picks.
+export const CRIB_BLANKET_BODY_COLORS = [
+  { key: "blue",       label: "Blue",       hex: "#93B7D5" },
+  { key: "pink",       label: "Pink",       hex: "#E8B5C7" },
+  { key: "lavender",   label: "Lavender",   hex: "#BBA8D6" },
+  { key: "mint",       label: "Mint",       hex: "#B5D9BC" },
+  { key: "yellow",     label: "Yellow",     hex: "#E8D89B" },
+  { key: "dusty_rose", label: "Dusty rose", hex: "#D8AFA3" },
+];
 
 export const CUSTOM_PRODUCTS = {
   bib: {
@@ -22,82 +85,121 @@ export const CUSTOM_PRODUCTS = {
     tagline: "Your child's name on the cloth they wear every morning — embroidered by Lusik, in Armenian or English.",
     tagline_hy: "Ձեր երեխայի անունը այն կտորի վրա, որ նա կրում է ամեն առավոտ՝ ասեղնագործված Լուսիկի կողմից, հայերեն կամ անգլերեն։",
     price: 22,                    // single price — machine-only
-    // handStitchedPrice removed — Lusik decided to drop the hand-cross-stitched
-    // bib option. The bib is now machine-embroidery-only with a typed name.
     customMode: "name",           // machine mode accepts a short typed name
     description: "A soft white bib with your child's name embroidered across it — in Armenian script or English, the way it will be said for the rest of their life. Lusik does this one by machine, the way a bib needs to be done: 150 wash cycles a year, formula, blueberry yogurt, the entire bowl of oatmeal a one-year-old just flipped — the name has to survive all of it without lifting from the cloth. Up to six letters fit comfortably on the bib's small surface. One size, fits most babies. Made to order from her home in Southern California.",
     sizes: [
       "One size · fits most babies · white only",
     ],
-    // Hard limit on machine-embroidered name length. Enforced in the picker UI.
     maxNameLength: 6,
+    threadColors: BIB_THREAD_COLORS,
+    colorPresets: BIB_COLOR_PRESETS,
+    defaultPresetKey: BIB_DEFAULT_PRESET_KEY,
+  },
 
-    // ============================================================
-    // BIB THREAD COLOR PALETTE — curated subset for machine-embroidered bibs.
-    // ============================================================
-    // Smaller than the blanket palette because a machine embroidery setup
-    // typically only has 6-8 thread spools loaded at a time. These eight
-    // colors are the most commonly-requested for baby bibs and are what
-    // Lusik would realistically keep stocked. References (`dmc`) match the
-    // blanket palette so order metadata stays consistent across products.
-    threadColors: [
-      { dmc: "311", name: "Medium Navy Blue",   hex: "#2B4C73", category: "blue"   },
-      { dmc: "775", name: "Baby Blue",          hex: "#B5CEDE", category: "blue"   },
-      { dmc: "604", name: "Light Pink",         hex: "#F4A6C4", category: "pink"   },
-      { dmc: "718", name: "Magenta Pink",       hex: "#C92E7E", category: "pink"   },
-      { dmc: "905", name: "Bright Green",       hex: "#67923A", category: "green"  },
-      { dmc: "550", name: "Very Dark Violet",   hex: "#5C2D6E", category: "purple" },
-      { dmc: "815", name: "Wine Red",           hex: "#8B2C2C", category: "red"    },
-      { dmc: "844", name: "Charcoal",           hex: "#3C3934", category: "neutral"},
-    ],
+  // ── The Full Alphabet Crib Blanket ──────────────────────────────────
+  "blanket-full-alphabet": {
+    key: "blanket-full-alphabet",
+    name: "The Full Alphabet Crib Blanket",
+    price: 245,
+    image: "/img/full-alphabet/cover.jpg",
+    buy: {
+      kind: "cribBlanket",
+      bodyColors: CRIB_BLANKET_BODY_COLORS,
+      defaultBodyKey: "blue",
+      allowName: true,   // optional name set into a free square, no upcharge
+      nameMax: 12,
+      sizeLabel: "One size · approx. 30 × 36 in",
+    },
+  },
 
-    // ============================================================
-    // BIB COLOR PRESETS — same conceptual palette as the blanket so
-    // customers see consistent options across products. Single-color presets
-    // pick one thread color for the whole name; Armenian Flag uses
-    // `letterColors` to alternate red/blue/orange across letters.
-    // ============================================================
-    colorPresets: [
-      {
-        key: "lusik_boys",
-        label: "Boys",
-        letter: "311",  // Medium Navy Blue
-        description: "Semi-dark blue — Lusik's classic boys choice."
-      },
-      {
-        key: "lusik_girls",
-        label: "Girls",
-        letter: "718",  // Magenta Pink
-        description: "Magenta pink. A coral variant is also available — email to request."
-      },
-      {
-        key: "lusik_unisex",
-        label: "Unisex",
-        letter: "905",  // Bright Green
-        description: "Bright green. Cheerful and gender-neutral."
-      },
-      {
-        key: "lusik_purple",
-        label: "Purple",
-        letter: "550",  // Very Dark Violet
-        description: "Dark violet. Quiet and elegant."
-      },
-      {
-        key: "lusik_armenian_flag",
-        label: "Armenian Flag",
-        letter: "498",  // fallback single color
-        // Per-letter colors — letters cycle through red, blue, orange in
-        // stitch order. For "ANNA" (4 letters): A=red, N=blue, N=orange, A=red.
-        // The thread refs below need to exist in the bib's threadColors palette
-        // OR be added — we add them as a fallback list since the bib palette
-        // doesn't include all three flag colors.
-        letterColors: ["498", "798", "740"],   // Red, Blue, Orange
-        description: "Letters in red, blue, and orange — the colors of the Armenian flag."
-      },
-    ],
+  // ── The Armenian Days-of-the-Week Bib Set (7 bibs) ──────────────────
+  "bib-days-of-week": {
+    key: "bib-days-of-week",
+    name: "The Armenian Days-of-the-Week Bib Set",
+    price: 129,
+    image: "/img/days-bib/cover.jpg",
+    buy: {
+      kind: "bibSet",
+      colorPicker: true,
+      threadColors: BIB_THREAD_COLORS,
+      colorPresets: BIB_COLOR_PRESETS,
+      defaultPresetKey: BIB_DEFAULT_PRESET_KEY,
+      sizeLabel: "Set of seven · one size",
+      cap: null,
+    },
+  },
 
-    // Default preset key. Boys preset matches the blanket's default for
-    // consistency across products.
-    defaultPresetKey: "lusik_boys",
+  // ── The Mama & Papa's Anushig Bib Set (pair) ────────────────────────
+  "bib-anushig-pair": {
+    key: "bib-anushig-pair",
+    name: "The Mama & Papa's Anushig Bib Set",
+    price: 54,
+    image: "/img/anushig-bib/cover.jpg",
+    buy: {
+      kind: "bibSet",
+      colorPicker: true,
+      threadColors: BIB_THREAD_COLORS,
+      colorPresets: BIB_COLOR_PRESETS,
+      defaultPresetKey: BIB_DEFAULT_PRESET_KEY,
+      sizeLabel: "Set of two · one size · same colorway on both",
+      cap: null,
+    },
+  },
+
+  // ── The Bari Akhorzhak Bib & Burp Cloth Set (+ optional cap) ────────
+  "bib-bari-akhorzhak-set": {
+    key: "bib-bari-akhorzhak-set",
+    name: "The Bari Akhorzhak Bib & Burp Cloth Set",
+    price: 48,
+    image: "/img/bari-akhorzhak-set/cover.jpg",
+    buy: {
+      kind: "bibSet",
+      colorPicker: true,
+      threadColors: BIB_THREAD_COLORS,
+      colorPresets: BIB_COLOR_PRESETS,
+      defaultPresetKey: BIB_DEFAULT_PRESET_KEY,
+      sizeLabel: "Bib + burp cloth · one size",
+      cap: {
+        withKey: "bib-bari-akhorzhak-set-with-cap",
+        priceWithCap: 65,
+        upcharge: 17,
+        nameInput: true,    // cap carries the baby's name or initial
+        nameMax: 12,
+      },
+    },
+  },
+  // SKU/price record for the Bari cap variant (not routed standalone).
+  "bib-bari-akhorzhak-set-with-cap": {
+    key: "bib-bari-akhorzhak-set-with-cap",
+    name: "The Bari Akhorzhak Bib & Burp Cloth Set",
+    price: 65,
+    variantOf: "bib-bari-akhorzhak-set",
+  },
+
+  // ── The Hye Em Yes Bib (+ optional cap) ─────────────────────────────
+  // No thread-color choice: the three flag colors ARE the design.
+  "bib-hy-em": {
+    key: "bib-hy-em",
+    name: "The Hye Em Yes Bib",
+    price: 35,
+    image: "/img/hye-em-bib/cover.jpg",
+    buy: {
+      kind: "bibSet",
+      colorPicker: false,
+      sizeLabel: "One size · fits most babies 0–24 months",
+      cap: {
+        withKey: "bib-hy-em-with-cap",
+        priceWithCap: 52,
+        upcharge: 17,       // unified cap upcharge across the line
+        nameInput: false,   // tricolor cap, no name
+      },
+    },
+  },
+  // SKU/price record for the Hye Em cap variant (not routed standalone).
+  "bib-hy-em-with-cap": {
+    key: "bib-hy-em-with-cap",
+    name: "The Hye Em Yes Bib",
+    price: 52,
+    variantOf: "bib-hy-em",
   },
 };

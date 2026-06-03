@@ -567,6 +567,28 @@ export const TRANSLATIONS = {
       othersBody: "Armenian names, English names, a small motif beside each one for the milestone it marked — tulips, teddy bears, giraffes, daffodils, the things a baby will one day point at and ask the word for. Tap any photo to step closer.",
       othersAlt: "Past customer bibs",
     },
+
+    // Heritage bib sets (BibSetCard) — shared option labels.
+    bibSet: {
+      colorLabel: "Thread color",
+      capHeading: "Matching cap",
+      addCap: "Add the matching cap",
+      capAdded: "Added ✓",
+      capUpcharge: "Add — +${price}",
+      capNameLabel: "Name or initial on the cap",
+      capNamePlaceholder: "e.g. Anna or A",
+      capNameHint: "Optional — leave blank and Lusik uses the first initial.",
+      includesCap: "Includes the matching cap",
+      flagFixed: "Hand cross-stitched in the three colors of the Armenian flag — red, blue, orange. The flag is the design, so the colors are fixed.",
+    },
+
+    // Full Alphabet Crib Blanket (CribBlanketCard).
+    cribBlanket: {
+      bodyColorLabel: "Body color",
+      nameLabel: "Optional name (set into a free square)",
+      namePlaceholder: "e.g. Anna",
+      nameHint: "Optional — leave blank and the blanket ships with just the alphabet. No extra charge either way.",
+    },
   },
 
   // ============================================================
@@ -1216,6 +1238,28 @@ export const TRANSLATIONS = {
       othersTitlePost: " այլ ընտանիքների համար։",
       othersBody: "Հայկական անուններ, անգլերեն անուններ, յուրաքանչյուրի կողքին փոքր մոտիվ՝ այն իրադարձության համար, որ նշում էր — կակաչներ, արջուկներ, ընձուղտներ, նարգիզներ, այն բաները, որ մի օր երեխան կմատնացույց անի և կհարցնի դրանց անունը։ Սեղմեք ցանկացած լուսանկար՝ ավելի մոտիկից տեսնելու համար։",
       othersAlt: "Նախկին հաճախորդների կրծկալներ",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    bibSet: {
+      colorLabel: "Թելի գույնը",
+      capHeading: "Համապատասխան գլխարկ",
+      addCap: "Ավելացնել համապատասխան գլխարկը",
+      capAdded: "Ավելացված ✓",
+      capUpcharge: "Ավելացնել — +${price}",
+      capNameLabel: "Անունը կամ սկզբնատառը գլխարկի վրա",
+      capNamePlaceholder: "օր.՝ Աննա կամ Ա",
+      capNameHint: "Ըստ ցանկության — թողեք դատարկ, և Լուսիկը կօգտագործի առաջին տառը։",
+      includesCap: "Ներառում է համապատասխան գլխարկը",
+      flagFixed: "Ձեռքով խաչաձև կարված հայկական դրոշի երեք գույներով՝ կարմիր, կապույտ, նարնջագույն։ Դրոշը հենց ձևավորումն է, ուստի գույները հաստատուն են։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    cribBlanket: {
+      bodyColorLabel: "Հիմնական գույնը",
+      nameLabel: "Ըստ ցանկության անուն (տեղադրվում է ազատ վանդակում)",
+      namePlaceholder: "օր.՝ Աննա",
+      nameHint: "Ըստ ցանկության — թողեք դատարկ, և ծածկոցը կառաքվի միայն այբուբենով։ Լրացուցիչ վճար չկա։",
     },
   },
 };

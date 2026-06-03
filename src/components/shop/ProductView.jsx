@@ -29,6 +29,8 @@ import React, { useEffect } from "react";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ProductShowcase } from "../ProductShowcase.jsx";
 import { CustomProductCard } from "../CustomProductCard.jsx";
+import { BibSetCard } from "./BibSetCard.jsx";
+import { CribBlanketCard } from "./CribBlanketCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
@@ -42,6 +44,7 @@ export function ProductView({
   // Live-product callbacks from App (unchanged shape)
   productData,        // PRODUCT for blanket
   customProductData,  // CUSTOM_PRODUCTS.bib for bib
+  customProducts,     // full CUSTOM_PRODUCTS map (heritage bib sets + crib blanket)
   onAdd,
   onAddCustom,
   onBuyNow,        // express buy-it-now for the blanket
@@ -172,6 +175,36 @@ export function ProductView({
           </div>
         </section>
       </div>
+    );
+  }
+
+  // The hand cross-stitched heritage bib sets + the hand-knit crib
+  // blanket. Their buy spec (price, options, cap variant) lives in
+  // CUSTOM_PRODUCTS, keyed by the same catalog key; the configurator
+  // adds through the shared addCustomToCart path.
+  const spec = customProducts?.[product.key];
+  if (spec?.buy?.kind === "cribBlanket") {
+    return (
+      <CribBlanketCard
+        product={product}
+        spec={spec}
+        trail={trail}
+        onAddCustom={onAddCustom}
+        onBuyNow={onBuyNowCustom}
+        onCartFeedback={onCartFeedback}
+      />
+    );
+  }
+  if (spec?.buy?.kind === "bibSet") {
+    return (
+      <BibSetCard
+        product={product}
+        spec={spec}
+        trail={trail}
+        onAddCustom={onAddCustom}
+        onBuyNow={onBuyNowCustom}
+        onCartFeedback={onCartFeedback}
+      />
     );
   }
 
