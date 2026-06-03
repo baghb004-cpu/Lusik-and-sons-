@@ -20,6 +20,7 @@ import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
 import { auth } from "../lib/auth.js";
 import { track } from "../lib/analytics.js";
 import { mapLegacyId } from "../lib/cartId";
+import { CartItemThumb } from "./CartItemThumb.jsx";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { PRODUCT } from "../data/product.js";
@@ -561,7 +562,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {cart.map((item) => (
               <div key={item.id} className="flex gap-3 py-4 items-start" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="relative shrink-0">
-                  <img src={item.image || PRODUCT.gallery[0]} alt={item.name} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} loading="lazy" decoding="async" />
+                  <CartItemThumb src={item.image || PRODUCT.gallery[0]} alt={item.name} width={64} height={80} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                   {item.isCustom && (
                     <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "var(--accent)", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                   )}

@@ -122,8 +122,11 @@ function _initDb() {
     }
   };
   const deleteAccount = async (confirm) => {
-    const { error } = await call("/account-delete", { method: "POST", body: { confirm } });
-    return { error };
+    const { error, data } = await call("/account-delete", { method: "POST", body: { confirm } });
+    // identityDeleted is false when the customer's data was anonymized
+    // but their Identity login couldn't be removed automatically — the
+    // UI surfaces that instead of falsely claiming a full deletion.
+    return { error, identityDeleted: data?.identityDeleted !== false };
   };
 
   // --- ADMIN ---
