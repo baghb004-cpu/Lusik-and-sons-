@@ -29,7 +29,9 @@ test("keys match the expected browser cart-id shape", () => {
   // produce keys matching this pattern. If a new product is added with
   // a different shape, this test fails loudly so the trusted map and
   // the cart-id generator stay in sync.
-  const pattern = /^(blanket-[a-z0-9_-]+|bib)$/;
+  // `bib` (the live machine name bib) plus hand cross-stitched heritage
+  // bib SKUs like `bib-days-of-week`, `bib-hy-em`, `bib-hy-em-with-cap`.
+  const pattern = /^(blanket-[a-z0-9_-]+|bib(-[a-z0-9-]+)?)$/;
   for (const key of Object.keys(TRUSTED_PRODUCTS)) {
     assert.match(key, pattern, `key "${key}" doesn't match expected productKey shape`);
   }

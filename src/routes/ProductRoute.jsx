@@ -28,6 +28,7 @@ export function ProductRoute() {
       product={pair.product}
       productData={PRODUCT}
       customProductData={CUSTOM_PRODUCTS?.bib}
+      customProducts={CUSTOM_PRODUCTS}
       onAdd={site.addToCart}
       onAddCustom={site.addCustomToCart}
       onBuyNow={(...a) => { site.buyNowBlanket(...a); nav.goCheckout(); }}

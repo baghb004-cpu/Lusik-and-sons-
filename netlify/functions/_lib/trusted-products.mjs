@@ -61,80 +61,65 @@ export const TRUSTED_PRODUCTS = {
 
   // ----- BLANKETS -----
 
-  // The Full Alphabet Crib Blanket
-  // catalog key: blanket-full-alphabet
-  //
-  // If pricing diverges per colorway (e.g. the two-color
-  // personalized variant costs more), split this single key
-  // into per-color rows:
-  //   "blanket-full-alphabet-blue":     { ..., priceCents: 6500 },
-  //   "blanket-full-alphabet-pink":     { ..., priceCents: 6500 },
-  //   ...
-  //   "blanket-full-alphabet-twocolor": { ..., priceCents: 7500 },
-  // and update CheckoutView's mapLegacyId() to emit the
-  // colorway suffix on the cart-id.
-  // "blanket-full-alphabet": {
-  //   name:        "The Full Alphabet Crib Blanket",
-  //   variant:     "Full Armenian alphabet, satin-backed",
-  //   priceCents:  6500,   // ⚠️ TODO_LUSIK: confirm
-  // },
+  // The Full Alphabet Crib Blanket — hand-knit by Lusik (body) with a
+  // crochet edge and satin backing. All 36 Armenian letters. Single
+  // price across all body colorways; the chosen body color + optional
+  // name ride in the line-item description + order metadata, not the
+  // price. catalog key: blanket-full-alphabet
+  "blanket-full-alphabet": {
+    name:        "The Full Alphabet Crib Blanket",
+    variant:     "Full Armenian alphabet · hand-knit, satin-backed",
+    priceCents:  24500,
+  },
 
   // ----- BIBS -----
 
-  // The Armenian Days-of-the-Week Bib Set (7 bibs, Mon–Sun in Armenian)
-  // catalog key: bib-days-of-week
-  // Single price across all colorways (Pink, Lavender, Blue, Gold,
-  // Boy pastel, Rainbow, Green) per current product strategy. Split
-  // if Lusik wants premium pricing for the multi-color Rainbow set.
-  // "bib-days-of-week": {
-  //   name:        "The Armenian Days-of-the-Week Bib Set",
-  //   variant:     "Seven bibs, Armenian day names",
-  //   priceCents:  9900,   // ⚠️ TODO_LUSIK: confirm (placeholder)
-  // },
+  // The Armenian Days-of-the-Week Bib Set (7 bibs, Mon–Sun in Armenian).
+  // Hand cross-stitched. Single price across all thread colors; the
+  // chosen color rides in metadata. catalog key: bib-days-of-week
+  "bib-days-of-week": {
+    name:        "The Armenian Days-of-the-Week Bib Set",
+    variant:     "Seven hand cross-stitched bibs, Armenian day names",
+    priceCents:  12900,
+  },
 
-  // The Mama & Papa's Anushig Bib Set (pair: Mama's + Papa's "sweetheart")
-  // catalog key: bib-anushig-pair
-  // Sold as a pair only (no half-set variant). Single price across
-  // all four colorways (pink / blue / mint / yellow).
-  // "bib-anushig-pair": {
-  //   name:        "The Mama & Papa's Anushig Bib Set",
-  //   variant:     "Pair of matched bibs — Mama's + Papa's",
-  //   priceCents:  4500,   // ⚠️ TODO_LUSIK: confirm
-  // },
+  // The Mama & Papa's Anushig Bib Set (pair: Mama's + Papa's "sweetheart").
+  // Hand cross-stitched. Sold as a pair only. catalog key: bib-anushig-pair
+  "bib-anushig-pair": {
+    name:        "The Mama & Papa's Anushig Bib Set",
+    variant:     "Pair of hand cross-stitched bibs — Mama's + Papa's",
+    priceCents:  4500,
+  },
 
-  // The Bari Akhorzhak Bib & Burp Cloth Set
-  // catalog key: bib-bari-akhorzhak-set
-  // Two variants -- the set alone, or the set + matching cap. Customer
-  // picks at checkout; CheckoutView's mapLegacyId() emits the matching
-  // key. Single price across all colorways within each variant.
-  // "bib-bari-akhorzhak-set":          {
-  //   name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
-  //   variant:     "Bib + burp cloth",
-  //   priceCents:  4800,   // ⚠️ TODO_LUSIK: confirm
-  // },
-  // "bib-bari-akhorzhak-set-with-cap": {
-  //   name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
-  //   variant:     "Bib + burp cloth + matching cap",
-  //   priceCents:  6500,   // ⚠️ TODO_LUSIK: confirm
-  // },
+  // The Bari Akhorzhak Bib & Burp Cloth Set. Hand cross-stitched. Two
+  // variants -- the set alone, or the set + matching cap (cap carries the
+  // baby's name/initial). The browser sets the matching productKey
+  // directly on the cart item. catalog key: bib-bari-akhorzhak-set
+  "bib-bari-akhorzhak-set": {
+    name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
+    variant:     "Bib + burp cloth",
+    priceCents:  4800,
+  },
+  "bib-bari-akhorzhak-set-with-cap": {
+    name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
+    variant:     "Bib + burp cloth + matching cap (with name)",
+    priceCents:  6500,
+  },
 
-  // The Hye Em Yes Bib ("I am Armenian")
+  // The Hye Em Yes Bib ("I am Armenian"). Hand cross-stitched in the three
+  // colors of the Armenian flag — the flag is the design, so there is no
+  // color choice; the only option is bib alone vs. bib + matching cap.
   // catalog key: bib-hy-em
-  // Sold either as a bib alone OR a bib + matching cap. Two cart-id
-  // variants below -- the customer picks one at checkout, the
-  // CheckoutView's mapLegacyId() emits the matching key. Per-
-  // colorway pricing is intentionally NOT split (flag tricolor and
-  // pink+purple should cost the same).
-  // "bib-hy-em":         {
-  //   name:        "The Hye Em Yes Bib",
-  //   variant:     "Bib alone",
-  //   priceCents:  2800,   // ⚠️ TODO_LUSIK: confirm
-  // },
-  // "bib-hy-em-with-cap": {
-  //   name:        "The Hye Em Yes Bib",
-  //   variant:     "Bib + matching baby cap",
-  //   priceCents:  4500,   // ⚠️ TODO_LUSIK: confirm (placeholder)
-  // },
+  "bib-hy-em": {
+    name:        "The Hye Em Yes Bib",
+    variant:     "Bib alone",
+    priceCents:  3400,
+  },
+  "bib-hy-em-with-cap": {
+    name:        "The Hye Em Yes Bib",
+    variant:     "Bib + matching baby cap",
+    priceCents:  5200,
+  },
 
   // ----- TOWELS -----
 
