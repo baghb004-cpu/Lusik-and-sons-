@@ -34,7 +34,11 @@ import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 
 export function ProductImageGallery({
   images,
-  colorways,                  // optional
+  colorways,                  // optional — renders the built-in swatch filter row
+  filterIndices,              // optional — externally-controlled photo subset
+                              // (e.g. the crib blanket's body-color buttons).
+                              // When provided, the gallery shows only these
+                              // photos and no swatch row of its own.
   alt = "Product photo",
 }) {
   // null = no color filter active; otherwise an index into colorways[]
@@ -45,9 +49,20 @@ export function ProductImageGallery({
   const containerRef = useRef(null);
   const thumbStripRef = useRef(null);
 
-  const visibleIndices = activeColorway == null || !colorways
-    ? images.map((_, i) => i)
-    : colorways[activeColorway].indices;
+  const externallyFiltered = Array.isArray(filterIndices) && filterIndices.length > 0;
+  const visibleIndices = externallyFiltered
+    ? filterIndices
+    : (activeColorway == null || !colorways
+      ? images.map((_, i) => i)
+      : colorways[activeColorway].indices);
+
+  // When the external filter changes (customer picks a different body
+  // color), jump back to the first photo of the new set. `filterIndices`
+  // is memoized by the parent, so this only fires on an actual change.
+  useEffect(() => {
+    if (externallyFiltered) setActiveIdx(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterIndices]);
 
   const count = visibleIndices.length;
   const safeIdx = activeIdx >= count ? 0 : activeIdx;

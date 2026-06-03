@@ -10,7 +10,7 @@
 // order metadata — never in the price, which the server controls.
 // ============================================================
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { SoldOutPanel } from "./SoldOutPanel.jsx";
@@ -40,6 +40,16 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
 
   const [body, setBody] = useState(defaultBody);
   const [name, setName] = useState("");
+
+  // Map the selected body color to its photos so the gallery jumps to
+  // that color when the customer clicks a swatch. Matched by label
+  // against the catalog colorways (which carry the photo indices).
+  // Memoized so the gallery's reset effect only fires on a real change.
+  const filterIndices = useMemo(() => {
+    if (!Array.isArray(product.colorways) || !body) return null;
+    const cw = product.colorways.find((c) => c.label === body.label);
+    return cw && Array.isArray(cw.indices) && cw.indices.length > 0 ? cw.indices : null;
+  }, [product.colorways, body]);
 
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
@@ -88,7 +98,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         <div className="min-w-0 w-full">
-          <ProductImageGallery images={product.images} alt={productName} />
+          <ProductImageGallery images={product.images} alt={productName} filterIndices={filterIndices} />
         </div>
 
         <div className="min-w-0 w-full">
