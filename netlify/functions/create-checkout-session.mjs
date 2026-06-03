@@ -16,6 +16,8 @@ import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
 import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
+import { findInventoryViolation } from "./_lib/inventory.mjs";
+import { sql }         from "./_lib/db.mjs";
 import { json }        from "./_lib/json.mjs";
 import { isAllowedOrigin } from "./_lib/origin.mjs";
 
@@ -289,6 +291,33 @@ async function handle(req, context) {
         },
       },
     });
+  }
+
+  // ---- Handmade-stock safety cap (overselling guard) ----
+  // The authoritative check: reject the checkout BEFORE creating a
+  // Stripe session if the cart would push any product past its limit.
+  // Because pricing/quantity are already locked to the trusted map +
+  // clamped qty above, the client cannot bypass this by tampering.
+  //
+  // Fail-OPEN on a DB error (log + continue): a transient database
+  // hiccup must not block every customer's checkout. The window for
+  // an actual oversell during such an error is tiny for a low-volume
+  // handmade shop, and order_items still records the truth.
+  try {
+    const violation = await findInventoryViolation(sql, cart);
+    if (violation) {
+      const { remaining } = violation;
+      return json(409, {
+        error: remaining <= 0
+          ? "One of the items in your bag just sold out — these are handmade in small batches. Please remove it and check back soon; you can ask us to email you when it's back."
+          : `Only ${remaining} of one item in your bag ${remaining === 1 ? "is" : "are"} still available right now. Please lower the quantity to continue.`,
+        code: "INVENTORY_LIMIT",
+        group: violation.group,
+        remaining,
+      });
+    }
+  } catch (invErr) {
+    console.error("Inventory check failed (allowing checkout):", invErr?.message || invErr);
   }
 
   const returnUrls = buildReturnUrls(req.headers.get("origin"));

@@ -192,7 +192,21 @@ function _initDb() {
     return { linkedCount: data?.linkedCount ?? 0, error };
   };
 
+  // --- INVENTORY (public, no auth) ---
+  // Availability snapshot for the handmade-stock cap. Display only —
+  // the server enforces the real limit at checkout. Returns {} on any
+  // failure so the UI degrades to "available" rather than breaking.
+  const getInventory = async () => {
+    try {
+      const { data } = await call("/inventory", { method: "GET", auth: false });
+      return data?.inventory ?? {};
+    } catch {
+      return {};
+    }
+  };
+
   return {
+    getInventory,
     getProfile, updateProfile, uploadAvatar,
     listAddresses, insertAddress, deleteAddress,
     getSavedCart, saveCart,

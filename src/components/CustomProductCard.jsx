@@ -14,6 +14,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
+import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
 // PHOTO_BIB_ROMEO + PHOTO_BIB_STACK imports removed -- the Romeo
@@ -22,7 +23,7 @@ import { loc } from "../i18n/localize.js";
 // photo slideshow on the bib product page in a follow-up PR.
 import { PRODUCT } from "../data/product.js";
 
-export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback }) {
+export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey }) {
   const t = useT();
   const { lang } = useLang();
   const [customName, setCustomName] = useState("");
@@ -426,6 +427,9 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           </span>
         </div>
 
+        {soldOut ? (
+          <SoldOutPanel name={loc(config, "name", lang)} productKey={notifyKey ?? config.key} className="mt-2" />
+        ) : (<>
         {/* Add to Bag (primary) + Buy it now (express) */}
         <button
           onClick={handleAdd}
@@ -459,6 +463,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         >
           {t("bib.buyNow")}
         </button>
+        </>)}
       </div>
     </div>
   );

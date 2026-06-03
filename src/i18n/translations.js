@@ -589,6 +589,14 @@ export const TRANSLATIONS = {
       namePlaceholder: "e.g. Anna",
       nameHint: "Optional — leave blank and the blanket ships with just the alphabet. No extra charge either way.",
     },
+
+    // Sold-out state + restock notify (SoldOutPanel).
+    soldOut: {
+      eyebrow: "Sold out",
+      body: "Sold out for now. Please check back soon — Lusik makes these by hand in small batches.",
+      notify: "Notify me when it's back in stock",
+      badge: "Sold out",
+    },
   },
 
   // ============================================================
@@ -1260,6 +1268,14 @@ export const TRANSLATIONS = {
       nameLabel: "Ըստ ցանկության անուն (տեղադրվում է ազատ վանդակում)",
       namePlaceholder: "օր.՝ Աննա",
       nameHint: "Ըստ ցանկության — թողեք դատարկ, և ծածկոցը կառաքվի միայն այբուբենով։ Լրացուցիչ վճար չկա։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    soldOut: {
+      eyebrow: "Սպառված է",
+      body: "Առայժմ սպառված է։ Խնդրում ենք շուտով կրկին ստուգել — Լուսիկը դրանք պատրաստում է ձեռքով, փոքր քանակով։",
+      notify: "Տեղեկացրեք ինձ, երբ նորից առկա լինի",
+      badge: "Սպառված է",
     },
   },
 };
