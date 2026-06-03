@@ -143,7 +143,7 @@ export const TRANSLATIONS = {
     story: {
       eyebrow: "Our Story",
       title: "Lusik came to Los Angeles in the late 1970s.",
-      p1: "She brought a cross-stitch hoop, a few skeins of red and gold thread, and a way of working her grandmother had taught her in Armenia — slow, even stitches that build a letter one small X at a time.",
+      p1: "She brought a cross-stitch hoop, a few skeins of red and gold thread, and a way of working her mother and grandmother had taught her in Armenia — slow, even stitches that build a letter one small X at a time.",
       p2: "She has been making these pieces, by hand, ever since. Her sons run this website. She does the stitching. Mom does the work; we do the typing.",
       p3: "Every blanket is made to order. Lusik picks up each one when it's ready, sits with it on her kitchen table, and personally checks it before it goes in the box for your family.",
       meetLusik: "Meet Lusik",
@@ -804,7 +804,7 @@ export const TRANSLATIONS = {
     story: {
       eyebrow: "Մեր Պատմությունը",
       title: "Լուսիկը Լոս Անջելես է եկել 1970-ականների վերջին։",
-      p1: "Իր հետ բերել է խաչաձև կարկատանի շրջանակ, մի քանի կարմիր ու ոսկեգույն թելի կծիկ, և իր տատիկից սովորած աշխատելու ոճը՝ դանդաղ, հավասար կարկատաններ, որ տառը կազմում են մեկ X-ով։",
+      p1: "Իր հետ բերել է խաչաձև կարկատանի շրջանակ, մի քանի կարմիր ու ոսկեգույն թելի կծիկ, և իր մորից ու տատիկից սովորած աշխատելու ոճը՝ դանդաղ, հավասար կարկատաններ, որ տառը կազմում են մեկ X-ով։",
       p2: "Այդ ժամանակից ի վեր նա պատրաստում է այս ծածկոցները՝ ձեռքով։ Իր որդիները կայքը կառավարում են։ Նա կարկատում է։",
       p3: "Յուրաքանչյուր ծածկոց պատվերով է պատրաստվում։ Լուսիկը անձամբ վերցնում է յուրաքանչյուրը, երբ պատրաստ է, և ստուգում այն մինչև առաքելը։",
       meetLusik: "Ծանոթացեք Լուսիկի հետ",
