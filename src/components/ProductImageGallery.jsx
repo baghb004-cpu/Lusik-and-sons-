@@ -266,7 +266,12 @@ export function ProductImageGallery({
           <span className="font-display text-lg sm:text-xl" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
             {colorways[activeColorway ?? 0]?.label}
           </span>
-          <div className="flex items-center gap-2.5 flex-wrap justify-end" role="radiogroup" aria-label="Choose color">
+          <div
+            className="flex items-center gap-2.5 overflow-x-auto max-w-[62%] [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none", scrollSnapType: "x proximity" }}
+            role="radiogroup"
+            aria-label="Choose color"
+          >
             {colorways.map((cw, i) => {
               const selected = (activeColorway ?? 0) === i;
               return (
@@ -287,6 +292,7 @@ export function ProductImageGallery({
                     border: "1px solid rgba(26,22,18,0.15)",
                     outline: selected ? "2px solid var(--accent)" : "none",
                     outlineOffset: "2px",
+                    scrollSnapAlign: "start",
                   }}
                 />
               );
@@ -302,9 +308,12 @@ export function ProductImageGallery({
           picker visible no matter how many photos are in the
           set. The active thumb scrolls into view automatically
           when the customer paginates with the chevron buttons. */}
+      {/* THUMBNAIL STRIP — desktop only (hidden on mobile to save vertical
+          space; on phones the main image is swipeable + has the dot
+          counter, so the strip is redundant there). */}
       <div
         ref={thumbStripRef}
-        className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
+        className="hidden lg:flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
         style={{ scrollSnapType: "x mandatory", scrollbarWidth: "thin" }}
         role="tablist"
         aria-label="Photo thumbnails"
