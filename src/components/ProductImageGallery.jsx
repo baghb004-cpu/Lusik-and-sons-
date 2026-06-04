@@ -34,15 +34,20 @@ import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 
 export function ProductImageGallery({
   images,
-  colorways,                  // optional — renders the built-in swatch filter row
+  colorways,                  // optional — color variants with photo indices
   filterIndices,              // optional — externally-controlled photo subset
-                              // (e.g. the crib blanket's body-color buttons).
-                              // When provided, the gallery shows only these
-                              // photos and no swatch row of its own.
+  appleColorRow = false,      // when true: render the Apple-style color row
+                              // (name on the left, circles on the right) tight
+                              // under the image, always one selected, and report
+                              // the choice via onColorwayChange.
+  onColorwayChange,           // (colorway) => void — fired in appleColorRow mode
   alt = "Product photo",
 }) {
-  // null = no color filter active; otherwise an index into colorways[]
-  const [activeColorway, setActiveColorway] = useState(null);
+  // null = no color filter active; otherwise an index into colorways[].
+  // In appleColorRow mode a color is ALWAYS selected, so default to 0.
+  const [activeColorway, setActiveColorway] = useState(
+    appleColorRow && Array.isArray(colorways) && colorways.length > 0 ? 0 : null
+  );
   // Index into the FILTERED visible list, not the raw images array.
   const [activeIdx, setActiveIdx] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -63,6 +68,18 @@ export function ProductImageGallery({
     if (externallyFiltered) setActiveIdx(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterIndices]);
+
+  // Apple-row mode: report the selected colorway up to the parent (for the
+  // order). Fires on mount + each change. Ref keeps the callback identity
+  // from re-triggering the effect.
+  const onColorwayChangeRef = useRef(onColorwayChange);
+  onColorwayChangeRef.current = onColorwayChange;
+  useEffect(() => {
+    if (appleColorRow && Array.isArray(colorways) && activeColorway != null) {
+      onColorwayChangeRef.current?.(colorways[activeColorway]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeColorway, appleColorRow]);
 
   const count = visibleIndices.length;
   const safeIdx = activeIdx >= count ? 0 : activeIdx;
@@ -241,6 +258,43 @@ export function ProductImageGallery({
         </div>
       </div>
 
+      {/* APPLE-STYLE COLOR ROW — tight under the slideshow, color name on
+          the left, swatch circles on the right. Tapping a circle swaps the
+          photo to that color and reports the choice for the order. */}
+      {appleColorRow && Array.isArray(colorways) && colorways.length > 0 && (
+        <div className="flex items-center justify-between gap-3 mt-3 mb-5">
+          <span className="font-display text-lg sm:text-xl" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+            {colorways[activeColorway ?? 0]?.label}
+          </span>
+          <div className="flex items-center gap-2.5 flex-wrap justify-end" role="radiogroup" aria-label="Choose color">
+            {colorways.map((cw, i) => {
+              const selected = (activeColorway ?? 0) === i;
+              return (
+                <button
+                  key={cw.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  aria-label={cw.label}
+                  title={cw.label}
+                  onClick={() => { setActiveColorway(i); setActiveIdx(0); }}
+                  className="shrink-0 transition"
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: "999px",
+                    background: swatchBackground(cw.swatch),
+                    border: "1px solid rgba(26,22,18,0.15)",
+                    outline: selected ? "2px solid var(--accent)" : "none",
+                    outlineOffset: "2px",
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* THUMBNAIL STRIP — single horizontal row, scrolls
           horizontally for long galleries. Was a wrapping 6-col
           grid; with 61 photos that pushed the color picker far
@@ -298,7 +352,7 @@ export function ProductImageGallery({
           dropped per product feedback: the customer is buying a
           color, not a "family" or "studio shot". To clear a filter,
           tap the active swatch again. */}
-      {colorways && colorways.length > 0 && (
+      {!appleColorRow && colorways && colorways.length > 0 && (
         <div className="mt-6">
           <div className="flex items-baseline justify-between mb-3">
             <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)", fontWeight: 600 }}>
