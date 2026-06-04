@@ -28,10 +28,11 @@ import React, { useState, useRef } from "react";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
-import { BibColorPicker } from "./BibColorPicker.jsx";
 import { SoldOutPanel } from "./SoldOutPanel.jsx";
+import { StickyMobileBuyBar } from "./StickyMobileBuyBar.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Plus } from "../icons.jsx";
+import { useInViewport } from "../../lib/useInViewport";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 
@@ -53,7 +54,9 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   const details = Array.isArray(product.details) ? product.details : [];
 
   // ── Selection state ─────────────────────────────────────
-  const [colorMeta, setColorMeta] = useState(null);   // from BibColorPicker
+  // Color is chosen from the gallery's Apple color row (the photographed
+  // colorways). Default to the first colorway; the gallery reports changes.
+  const [colorway, setColorway] = useState(product.colorways?.[0] ?? null);
   const [capSelected, setCapSelected] = useState(false);
   const [capName, setCapName] = useState("");
 
@@ -64,16 +67,13 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   // Double-tap guard — same shape as CustomProductCard / ProductShowcase.
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
+  // Mobile sticky Add-to-Bag shows while the in-page button is off-screen.
+  const [addBtnRef, addBtnInView] = useInViewport();
 
   // ── Payload (one source of truth for Add-to-Bag + Buy-it-now) ──
   const buildPayload = () => {
-    const isMulti = Array.isArray(colorMeta?.letterColorList) && colorMeta.letterColorList.length > 0;
-    const letterColor = colorMeta?.letterColor ?? null;
-    const colorName = !buy.colorPicker
-      ? null
-      : isMulti
-        ? colorMeta.letterColorList.map((c) => c.name).join("/")
-        : (letterColor?.name ?? null);
+    const colorName = colorway?.label ?? null;
+    const colorHex = colorway?.swatch?.color ?? colorway?.swatch?.dual?.[0] ?? null;
 
     const trimmedCapName = capName.trim().slice(0, capNameMax);
 
@@ -98,13 +98,8 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
       customMetadata: {
         production: "hand_cross_stitch",
         set: buy.sizeLabel ?? null,
-        thread_color_name: buy.colorPicker && !isMulti ? (letterColor?.name ?? null) : null,
-        thread_color_hex:  buy.colorPicker && !isMulti ? (letterColor?.hex  ?? null) : null,
-        thread_color_ref:  buy.colorPicker && !isMulti ? (letterColor?.dmc  ?? null) : null,
-        thread_colors_multi: buy.colorPicker && isMulti
-          ? colorMeta.letterColorList.map((c) => `${c.name} (${c.hex})`).join(" | ")
-          : null,
-        color_preset_key: buy.colorPicker ? (colorMeta?.activePresetKey ?? null) : null,
+        color_name: colorName,
+        color_hex: colorHex,
         cap_added: cap ? capSelected : false,
         cap_name: cap && capSelected && cap.nameInput && trimmedCapName ? trimmedCapName : null,
       },
@@ -129,9 +124,16 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
       <Breadcrumbs trail={trail} />
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-        {/* GALLERY — no colorway swatch filter (intentionally removed). */}
+        {/* GALLERY — Apple color row (name left, circles right) sits tight
+            under the slideshow and drives both the photo and the order. */}
         <div className="min-w-0 w-full">
-          <ProductImageGallery images={product.images} alt={productName} />
+          <ProductImageGallery
+            images={product.images}
+            alt={productName}
+            colorways={product.colorways}
+            appleColorRow
+            onColorwayChange={setColorway}
+          />
         </div>
 
         {/* CONFIGURATOR */}
@@ -168,25 +170,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             <SoldOutPanel name={productName} productKey={notifyKey ?? spec.key} className="mb-8" />
           )}
 
-          {/* ── THREAD COLOR (skipped for Hye Em Yes) ── */}
-          {!soldOut && (buy.colorPicker ? (
-            <div className="mb-6">
-              <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-                {t("bibSet.colorLabel")}
-              </label>
-              <BibColorPicker
-                threadColors={buy.threadColors}
-                colorPresets={buy.colorPresets}
-                defaultPresetKey={buy.defaultPresetKey}
-                sampleText="Աբգ"
-                onChange={setColorMeta}
-              />
-            </div>
-          ) : (
-            <div className="mb-6 p-3 text-[0.8rem] leading-snug" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
-              {t("bibSet.flagFixed")}
-            </div>
-          ))}
+          {/* Color is chosen from the Apple color row under the gallery. */}
 
           {/* ── MATCHING CAP (when offered) ── */}
           {!soldOut && cap && (
@@ -281,6 +265,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
 
           {/* ADD TO BAG + BUY NOW */}
           <button
+            ref={addBtnRef}
             onClick={(e) => fire(e, onAddCustom)}
             disabled={adding}
             aria-busy={adding}
@@ -311,6 +296,15 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
           </>)}
         </div>
       </div>
+
+      {/* Mobile sticky Add-to-Bag — appears while the in-page button is
+          scrolled out of view, hides when it's back. */}
+      <StickyMobileBuyBar
+        visible={!soldOut && !addBtnInView}
+        label={t("common.addToCart")}
+        price={currentPrice}
+        onClick={(e) => fire(e, onAddCustom)}
+      />
     </div>
   );
 }

@@ -15,8 +15,10 @@ import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
 import { SoldOutPanel } from "./SoldOutPanel.jsx";
+import { StickyMobileBuyBar } from "./StickyMobileBuyBar.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Plus } from "../icons.jsx";
+import { useInViewport } from "../../lib/useInViewport";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 
@@ -44,6 +46,8 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
 
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
+  // Mobile sticky Add-to-Bag shows while the in-page button is off-screen.
+  const [addBtnRef, addBtnInView] = useInViewport();
 
   const buildPayload = () => {
     const trimmed = name.trim().slice(0, nameMax);
@@ -188,6 +192,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
           </div>
 
           <button
+            ref={addBtnRef}
             onClick={(e) => fire(e, onAddCustom)}
             disabled={adding}
             aria-busy={adding}
@@ -218,6 +223,15 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
           </>)}
         </div>
       </div>
+
+      {/* Mobile sticky Add-to-Bag — appears while the in-page button is
+          scrolled out of view, hides when it's back. */}
+      <StickyMobileBuyBar
+        visible={!soldOut && !addBtnInView}
+        label={t("common.addToCart")}
+        price={spec.price}
+        onClick={(e) => fire(e, onAddCustom)}
+      />
     </div>
   );
 }
