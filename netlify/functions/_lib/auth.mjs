@@ -2,19 +2,17 @@
 // ============================================================
 // Auth helpers for Netlify Functions v2.
 //
-// Two ways to read the user (in order):
-//   1) context.clientContext.user (auto-injected by Netlify edge from the
-//      Authorization: Bearer JWT). This is the preferred path.
-//   2) Fallback: parse the Authorization: Bearer JWT directly from
-//      req.headers when clientContext.user is missing. Required when
-//      callers run on a Netlify runtime that does not auto-inject
-//      clientContext.user (observed on @netlify/functions v2.x).
+// The user is read ONLY from context.clientContext.user, which Netlify's
+// edge injects AFTER it has verified the Identity (GoTrue) JWT's
+// signature, issuer, and audience. If clientContext.user is absent, the
+// caller is treated as unauthenticated — full stop.
 //
-// JWT signature verification: the Netlify edge performs JWT signature
-// verification against the GoTrue keypair before the request reaches
-// this function. Our fallback decodes the payload only and trusts the
-// edge for signature/issuer/audience checks. If the request reached us,
-// the JWT was valid at the edge.
+// We deliberately do NOT fall back to decoding the Authorization: Bearer
+// token ourselves. A manual base64 decode does not verify the signature,
+// so a forged token (e.g. one minting app_metadata.roles:["admin"]) would
+// otherwise be trusted. Trusting only the edge-verified clientContext.user
+// closes that hole. (Production was confirmed to reject forged/absent
+// tokens with 401 before this fallback was removed.)
 //
 // Admin gate uses BOTH:
 //   - ADMIN_EMAILS env var (comma-separated, case-insensitive match on email)
@@ -29,31 +27,6 @@
 // where _raw is the underlying GoTrue user payload (provided for
 // advanced callers; consider this internal).
 // ============================================================
-
-function decodeJwtPayload(token) {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    let payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    while (payload.length % 4) payload += "=";
-    const bin = (typeof atob === "function")
-      ? atob(payload)
-      : Buffer.from(payload, "base64").toString("binary");
-    let utf8 = "";
-    try {
-      utf8 = decodeURIComponent(
-        bin.split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-    } catch {
-      utf8 = bin;
-    }
-    return JSON.parse(utf8);
-  } catch {
-    return null;
-  }
-}
 
 function jsonResponse(body, status) {
   return new Response(JSON.stringify(body), {
@@ -90,19 +63,14 @@ function normalizeArgs(a, b) {
 }
 
 function getRawUserFromAny(a, b) {
-  const { req, context } = normalizeArgs(a, b);
+  // ONLY the Netlify-edge-verified user is trusted. No manual token
+  // decoding — an unverified decode would trust forged claims (incl.
+  // app_metadata.roles:["admin"]). Absent clientContext.user == not
+  // signed in.
+  const { context } = normalizeArgs(a, b);
   const cu = context?.clientContext?.user;
   if (cu && (cu.email || cu.sub)) return cu;
-  if (!req) return null;
-  const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
-  if (!authHeader) return null;
-  const m = /^bearer\s+(.+)$/i.exec(authHeader.trim());
-  if (!m) return null;
-  const token = m[1].trim();
-  const payload = decodeJwtPayload(token);
-  if (!payload) return null;
-  if (payload.exp && Date.now() / 1000 > payload.exp) return null;
-  return payload;
+  return null;
 }
 
 // Transform the raw GoTrue user (from clientContext or decoded JWT) into
