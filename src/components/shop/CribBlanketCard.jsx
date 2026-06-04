@@ -13,9 +13,10 @@
 import React, { useState, useRef, useMemo } from "react";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
+import { ExpandableText } from "../ExpandableText.jsx";
 import { SoldOutPanel } from "./SoldOutPanel.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
-import { ArrowRight } from "../icons.jsx";
+import { ArrowRight, Plus } from "../icons.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 
@@ -121,7 +122,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
           <ProductVariationNote className="mb-6 mt-2" />
 
           {description && (
-            <p className="text-base leading-relaxed mb-8 opacity-85">{description}</p>
+            <ExpandableText text={description} clampLines={2} className="mb-8" />
           )}
 
           {/* SOLD OUT — replaces the body-color / name / buy controls. */}
@@ -189,13 +190,17 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             </div>
           )}
 
-          {/* DETAILS */}
+          {/* DETAILS · SIZE · CARE — collapsed by default (native
+              <details> accordion) so the buy button stays high. */}
           {details.length > 0 && (
-            <div className="mb-8 pt-6" style={{ borderTop: "1px solid rgba(26,22,18,0.10)" }}>
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)", fontWeight: 600 }}>
-                {t("placeholder.detailsHeading")}
-              </p>
-              <dl className="space-y-3">
+            <details className="border-t border-b mb-8 group" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
+              <summary className="py-5 flex items-center justify-between cursor-pointer list-none">
+                <span className="text-xs tracking-[0.2em] uppercase opacity-70" style={{ color: "var(--accent)" }}>
+                  {t("placeholder.detailsHeading")}
+                </span>
+                <Plus size={16} strokeWidth={1.5} className="open-icon opacity-60" />
+              </summary>
+              <dl className="space-y-3 pb-5">
                 {details.map((row) => (
                   <div key={row.label} className="grid grid-cols-[7rem_1fr] gap-3 items-baseline">
                     <dt className="text-[0.65rem] tracking-[0.2em] uppercase opacity-60" style={{ fontWeight: 500 }}>{row.label}</dt>
@@ -203,7 +208,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
                   </div>
                 ))}
               </dl>
-            </div>
+            </details>
           )}
 
           {!soldOut && (<>
