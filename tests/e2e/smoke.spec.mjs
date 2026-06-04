@@ -298,10 +298,10 @@ test.describe("shop hierarchy navigation", () => {
       page.getByRole("heading", { name: /full alphabet crib blanket/i })
     ).toBeVisible({ timeout: 5_000 });
 
-    // The live configurator: a body-color option + an Add-to-Cart button
-    // priced at the server-trusted $245 (CribBlanketCard). This replaces
-    // the old commission/waitlist placeholder CTA.
-    await expect(page.getByRole("button", { name: /^Blue$/ }).first()).toBeVisible({ timeout: 10_000 });
+    // The live configurator: the Apple-style color row (a "Blue" swatch
+    // radio under the gallery) + an Add-to-Cart button priced at the
+    // server-trusted $245 (CribBlanketCard).
+    await expect(page.getByRole("radio", { name: /^Blue$/ }).first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("button", { name: /\$245/ }).first()).toBeVisible({ timeout: 5_000 });
   });
 

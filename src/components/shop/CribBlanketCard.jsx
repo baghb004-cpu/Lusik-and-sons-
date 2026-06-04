@@ -10,7 +10,7 @@
 // order metadata — never in the price, which the server controls.
 // ============================================================
 
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef } from "react";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
@@ -29,28 +29,18 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
   const t = useT();
   const { lang } = useLang();
   const buy = spec.buy ?? {};
-  const bodyColors = Array.isArray(buy.bodyColors) ? buy.bodyColors : [];
+  const colorways = Array.isArray(product.colorways) ? product.colorways : [];
 
   const productName = loc(product, "name", lang);
   const description = cleanText(product.description);
   const details = Array.isArray(product.details) ? product.details : [];
   const nameMax = buy.nameMax ?? 12;
 
-  const defaultBody =
-    bodyColors.find((c) => c.key === buy.defaultBodyKey) ?? bodyColors[0] ?? null;
-
-  const [body, setBody] = useState(defaultBody);
+  // The selected colorway (a catalog colorway object: { label, indices,
+  // swatch }). The gallery's Apple color row owns the selection + photo
+  // swap and reports it here; the order records the colorway by name.
+  const [body, setBody] = useState(colorways[0] ?? null);
   const [name, setName] = useState("");
-
-  // Map the selected body color to its photos so the gallery jumps to
-  // that color when the customer clicks a swatch. Matched by label
-  // against the catalog colorways (which carry the photo indices).
-  // Memoized so the gallery's reset effect only fires on a real change.
-  const filterIndices = useMemo(() => {
-    if (!Array.isArray(product.colorways) || !body) return null;
-    const cw = product.colorways.find((c) => c.label === body.label);
-    return cw && Array.isArray(cw.indices) && cw.indices.length > 0 ? cw.indices : null;
-  }, [product.colorways, body]);
 
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
@@ -72,8 +62,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
       customMetadata: {
         production: "hand_knit_full_alphabet",
         body_color_name: body?.label ?? null,
-        body_color_hex: body?.hex ?? null,
-        body_color_key: body?.key ?? null,
+        body_color_hex: body?.swatch?.color ?? body?.swatch?.dual?.[0] ?? null,
         personalized_name: trimmed || null,
       },
     };
@@ -99,7 +88,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         <div className="min-w-0 w-full">
-          <ProductImageGallery images={product.images} alt={productName} filterIndices={filterIndices} />
+          <ProductImageGallery images={product.images} alt={productName} colorways={colorways} appleColorRow onColorwayChange={setBody} />
         </div>
 
         <div className="min-w-0 w-full">
@@ -130,38 +119,8 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             <SoldOutPanel name={productName} productKey={notifyKey ?? spec.key} className="mb-8" />
           )}
 
-          {/* BODY COLOR */}
-          {!soldOut && bodyColors.length > 0 && (
-            <div className="mb-6">
-              <label className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 block mb-2">
-                {t("cribBlanket.bodyColorLabel")}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {bodyColors.map((c) => {
-                  const selected = body?.key === c.key;
-                  return (
-                    <button
-                      key={c.key}
-                      type="button"
-                      onClick={() => setBody(c)}
-                      aria-pressed={selected}
-                      aria-label={c.label}
-                      title={c.label}
-                      className="flex items-center gap-2 px-2.5 py-1.5 text-xs transition"
-                      style={{
-                        border: `1px solid ${selected ? "var(--ink)" : "var(--border-strong)"}`,
-                        background: selected ? "var(--ink)" : "transparent",
-                        color: selected ? "var(--text-on-ink)" : "var(--text-primary)",
-                      }}
-                    >
-                      <span style={{ width: 16, height: 16, borderRadius: 999, background: c.hex, border: "1px solid rgba(26,22,18,0.2)" }} />
-                      {c.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Body color is chosen via the Apple-style color row under the
+              gallery (name left, circles right) — see ProductImageGallery. */}
 
           {/* OPTIONAL NAME */}
           {!soldOut && buy.allowName && (
