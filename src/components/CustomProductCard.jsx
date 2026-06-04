@@ -13,6 +13,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
+import { ExpandableText } from "./ExpandableText.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
@@ -204,7 +205,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         <div>
           <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{loc(config, "tagline", lang)}</p>
           <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{loc(config, "name", lang)}</h3>
-          <p className="text-sm opacity-70 leading-relaxed">{config.description}</p>
+          <ExpandableText text={config.description} clampLines={2} textClassName="text-sm opacity-70 leading-relaxed" />
           <p className="font-display text-xl mt-3" style={{ fontWeight: 500 }}>
             ${config.price}
           </p>
