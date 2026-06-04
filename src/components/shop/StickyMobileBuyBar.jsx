@@ -7,17 +7,30 @@
 // Add-to-Bag button is scrolled out of view, and slides away once it's
 // back in view. Mobile only (lg:hidden); desktop never sees it.
 //
+// CRITICAL: it's rendered through a portal into document.body. Every
+// route is wrapped in a framer-motion <m.div> + .page-enter, both of
+// which set a `transform` — and a transformed ancestor becomes the
+// containing block for `position: fixed`, which would trap this bar
+// inside the (tall) page content instead of pinning it to the viewport.
+// Portaling to <body> escapes that so `fixed` means the real viewport.
+//
 // `position: fixed`, so it adds nothing to the document flow → zero CLS.
 // It's mutually exclusive with the in-page button, so it never covers
 // the real one and needs no extra page padding. Reuses the same add
 // handler, so cart + Stripe behavior is unchanged.
 // ============================================================
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight } from "../icons.jsx";
 
 export function StickyMobileBuyBar({ visible, label, price, onClick }) {
-  return (
+  // Portals need a real DOM target; only available after mount on the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className="lg:hidden fixed left-0 right-0 z-40 px-4"
       style={{
@@ -45,6 +58,7 @@ export function StickyMobileBuyBar({ visible, label, price, onClick }) {
       >
         {label} — ${price} <ArrowRight size={14} strokeWidth={1.5} />
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 }
