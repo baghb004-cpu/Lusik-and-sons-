@@ -90,6 +90,35 @@ export const CONFIG = {
   GIFT_WRAP_PRICE_CENTS: 500,
 
   // ============================================================
+  // LAUNCH PROMO — time-boxed "Founding Price" intro pricing
+  // ============================================================
+  // DISPLAY mirror of netlify/functions/_lib/launch-promo.mjs (the
+  // server is what actually charges; this drives the struck-through
+  // price + gold "Founding price" badge in the shop). The two files
+  // are kept in lockstep by launch-promo-drift.test.mjs.
+  //
+  // enabled: false = fully dormant — no badge, no price change anywhere.
+  // To run it: set enabled: true HERE AND in launch-promo.mjs, set the
+  // startsAt/endsAt window, and deploy. Prices auto-revert at endsAt.
+  //
+  // FOUNDING_CENTS: productKey -> founding price in cents (bibs only).
+  // Must match the server file exactly.
+  LAUNCH_PROMO: {
+    enabled: false,
+    startsAt: "2026-06-06T00:00:00Z",
+    endsAt:   "2026-06-13T00:00:00Z",
+    label: "Founding price",
+    FOUNDING_CENTS: {
+      "bib":                              1900,  // $22 -> $19
+      "bib-hy-em":                        2900,  // $35 -> $29
+      "bib-hy-em-with-cap":               4500,  // $52 -> $45
+      "bib-anushig-pair":                 4700,  // $54 -> $47
+      "bib-bari-akhorzhak-set":           4200,  // $48 -> $42
+      "bib-bari-akhorzhak-set-with-cap":  5700,  // $65 -> $57
+    },
+  },
+
+  // ============================================================
   // PRIVACY-FIRST ANALYTICS (opt-in, empty by default)
   // ============================================================
   // Both values empty = no script loaded, no requests made, no

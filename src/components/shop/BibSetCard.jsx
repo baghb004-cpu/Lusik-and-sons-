@@ -33,6 +33,8 @@ import { StickyMobileBuyBar } from "./StickyMobileBuyBar.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Plus } from "../icons.jsx";
 import { useInViewport } from "../../lib/useInViewport";
+import { foundingPriceForKey } from "../../lib/launchPromo.js";
+import { FoundingPriceBadge } from "../FoundingPriceBadge.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 
@@ -62,6 +64,11 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
 
   const currentPrice = capSelected && cap ? cap.priceWithCap : spec.price;
   const currentKey = capSelected && cap ? cap.withKey : spec.key;
+  // Launch-promo founding price for the current variant (null when the
+  // promo is dormant/over). effectivePrice is what the browser shows AND
+  // puts in the cart, so display + cart + the server charge all agree.
+  const foundingPrice = foundingPriceForKey(currentKey, currentPrice);
+  const effectivePrice = foundingPrice ?? currentPrice;
   const capNameMax = cap?.nameMax ?? 12;
 
   // Double-tap guard — same shape as CustomProductCard / ProductShowcase.
@@ -90,7 +97,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
     return {
       productKey: currentKey,
       name: productName,
-      price: currentPrice,
+      price: effectivePrice,
       size: buy.sizeLabel ?? null,
       customImage: product.coverImage ?? null,
       customImageName: null,
@@ -148,11 +155,18 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             <p className="text-base opacity-70 mb-6">{loc(product, "tagline", lang)}</p>
           )}
 
-          {/* Price — reflects the cap upcharge live. */}
-          <div className="flex items-baseline gap-3 mb-2">
+          {/* Price — reflects the cap upcharge live, and the founding
+              price during the launch promo (original struck + badge). */}
+          <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1 mb-2">
+            {foundingPrice != null && (
+              <p className="text-2xl tabular-nums line-through" style={{ fontWeight: 400, color: "var(--text-muted, rgba(26,22,18,0.45))" }}>
+                ${currentPrice}
+              </p>
+            )}
             <p className="text-3xl tabular-nums" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
-              ${currentPrice}
+              ${effectivePrice}
             </p>
+            {foundingPrice != null && <FoundingPriceBadge className="self-center" />}
             {cap && capSelected && (
               <span className="text-xs opacity-60">{t("bibSet.includesCap")}</span>
             )}
@@ -275,7 +289,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
               cursor: adding ? "wait" : "pointer", opacity: adding ? 0.6 : 1,
             }}
           >
-            {t("common.addToCart")} — ${currentPrice} <ArrowRight size={14} strokeWidth={1.5} />
+            {t("common.addToCart")} — ${effectivePrice} <ArrowRight size={14} strokeWidth={1.5} />
           </button>
 
           {onBuyNow && (
@@ -302,7 +316,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
       <StickyMobileBuyBar
         visible={!soldOut && !addBtnInView}
         label={t("common.addToCart")}
-        price={currentPrice}
+        price={effectivePrice}
         onClick={(e) => fire(e, onAddCustom)}
       />
     </div>
