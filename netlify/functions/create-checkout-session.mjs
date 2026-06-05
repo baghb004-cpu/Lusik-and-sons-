@@ -379,14 +379,17 @@ async function handle(req, context) {
     const stripeOpts = idempotencyKey ? { idempotencyKey } : undefined;
     session = await stripe.checkout.sessions.create({
       mode: "payment",
-      // Let Stripe offer every eligible payment method for hosted
-      // Checkout — Apple Pay, Google Pay, and Link in addition to
-      // card. Stripe handles Apple Pay domain registration itself for
-      // hosted Checkout, so no Apple Developer account or manual
-      // domain verification is needed. One-tap wallets are the single
+      // Intentionally omit `payment_method_types` so hosted Checkout
+      // uses dynamic payment methods configured in the Stripe
+      // Dashboard — that's how a Checkout Session surfaces Apple Pay,
+      // Google Pay, and Link in addition to card, with Stripe handling
+      // Apple Pay domain registration itself (no Apple Developer
+      // account needed). NOTE: `automatic_payment_methods` is a
+      // PaymentIntent/SetupIntent param and is rejected by the
+      // Checkout Sessions API — the correct lever here is simply to
+      // not pin payment_method_types at all. One-tap wallets are the
       // biggest conversion lever for our mostly-mobile (Instagram)
       // traffic vs. the old card-only flow.
-      automatic_payment_methods: { enabled: true },
       line_items: lineItems,
       customer_email: customerEmail || undefined,
       success_url: returnUrls.success_url,
