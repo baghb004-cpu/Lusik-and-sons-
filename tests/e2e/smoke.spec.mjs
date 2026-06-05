@@ -322,10 +322,12 @@ test.describe("shop hierarchy navigation", () => {
       page.getByRole("heading", { name: /bari akhorzhak/i })
     ).toBeVisible({ timeout: 10_000 });
 
-    // Add to bag (server-trusted $48 base price). Then drive the same
-    // in-app add → Checkout → Pay path the blanket checkout test uses, so
-    // the in-memory cart survives (a hard nav would wipe it).
-    await page.getByRole("button", { name: /add to bag.*48/i }).first().click();
+    // Add to bag (base price $48, or $42 while the Founding-Price launch
+    // promo is active — match either so this passes regardless of the
+    // promo window). Then drive the same in-app add → Checkout → Pay path
+    // the blanket checkout test uses, so the in-memory cart survives (a
+    // hard nav would wipe it).
+    await page.getByRole("button", { name: /add to bag.*(48|42)/i }).first().click();
     await page.getByRole("button", { name: /^checkout/i }).click();
     await page.getByRole("button", { name: /pay with stripe/i }).click();
 
