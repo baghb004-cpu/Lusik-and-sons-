@@ -31,6 +31,8 @@ import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
 import { ArrowRight, Heart, Home, Sparkles } from "../icons.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
+import { promoForCatalogProduct, foundingPriceForKey } from "../../lib/launchPromo.js";
+import { FoundingFromPrice, FoundingPriceBadge } from "../FoundingPriceBadge.jsx";
 
 // ------------------------------------------------------------
 // FEATURED_PIECES — the curated mobile "Featured pieces" set.
@@ -69,6 +71,10 @@ const FEATURED_PIECES = [
     name: "The Custom Name Bib",
     tagline: "Your child's name, in Armenian or English.",
     price: "From $22",
+    // Launch-promo hooks: the trusted productKey + normal "from" dollars
+    // so this featured card can show the founding price while it's live.
+    promoKey: "bib",
+    promoNormalDollars: 22,
     image: "/img/bib-examples/01.jpg",
   },
 ];
@@ -214,12 +220,25 @@ function FeaturedPieceCard({ piece, onTap, onPrefetch }) {
           {piece.tagline}
         </p>
         <div className="flex items-center justify-between" style={{ marginTop: 14 }}>
-          <span
-            className="text-sm"
-            style={{ fontWeight: 500, color: "var(--text-primary, #1A1612)" }}
-          >
-            {piece.price}
-          </span>
+          {(() => {
+            const founding = piece.promoKey
+              ? foundingPriceForKey(piece.promoKey, piece.promoNormalDollars)
+              : null;
+            return founding != null ? (
+              <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="text-sm line-through" style={{ color: "var(--text-muted, rgba(26,22,18,0.5))" }}>{piece.price}</span>
+                <span className="text-sm" style={{ fontWeight: 600, color: "var(--text-primary, #1A1612)" }}>From ${founding}</span>
+                <FoundingPriceBadge className="self-center" />
+              </span>
+            ) : (
+              <span
+                className="text-sm"
+                style={{ fontWeight: 500, color: "var(--text-primary, #1A1612)" }}
+              >
+                {piece.price}
+              </span>
+            );
+          })()}
           {/* Pill is purely visual — the whole card is the button. */}
           <span
             className="text-sm rounded-full"
@@ -448,6 +467,7 @@ function buildGridItems() {
         slug: p.slug,
         // Carry both languages + the raw price fields so the card can localize
         // the name and the "From $X / by order / made to order" label at render.
+        key: p.key,                 // for launch-promo founding-price lookup
         name: p.name,
         name_hy: p.name_hy,
         priceFrom: p.priceFrom,
@@ -476,6 +496,7 @@ function ProductGridCard({ item, onTap, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const name = loc(item, "name", lang);
+  const promo = item.status === "live" ? promoForCatalogProduct(item) : null;
   let priceLabel;
   if (item.priceFrom && item.status === "live") priceLabel = t("shop.from", { price: item.priceFrom });
   else if (item.priceFrom) priceLabel = t("shop.byOrder", { price: item.priceFrom });
@@ -514,9 +535,17 @@ function ProductGridCard({ item, onTap, onPrefetch }) {
       >
         {name}
       </h3>
-      <p className="text-sm" style={{ color: "var(--text-muted, rgba(26,22,18,0.65))", marginTop: 4 }}>
-        {priceLabel}
-      </p>
+      {promo ? (
+        <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1" style={{ marginTop: 4 }}>
+          <span className="text-sm line-through" style={{ color: "var(--text-muted, rgba(26,22,18,0.5))" }}>{t("shop.from", { price: promo.normalDollars })}</span>
+          <span className="text-sm" style={{ fontWeight: 600, color: "var(--text-primary, #1A1612)" }}>{t("shop.from", { price: promo.foundingDollars })}</span>
+          <FoundingPriceBadge className="self-center" />
+        </span>
+      ) : (
+        <p className="text-sm" style={{ color: "var(--text-muted, rgba(26,22,18,0.65))", marginTop: 4 }}>
+          {priceLabel}
+        </p>
+      )}
       {item.swatches.length > 0 && (
         <div className="flex items-center" style={{ gap: 6, marginTop: 10 }}>
           {item.swatches.map((s, i) => (
