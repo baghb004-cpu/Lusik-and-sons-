@@ -17,6 +17,8 @@ import { ExpandableText } from "./ExpandableText.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
+import { foundingPriceForKey } from "../lib/launchPromo.js";
+import { FoundingPriceBadge } from "./FoundingPriceBadge.jsx";
 // PHOTO_BIB_ROMEO + PHOTO_BIB_STACK imports removed -- the Romeo
 // empty-state image and the thread-range reference strip were
 // both removed at user request. They'll be replaced by a real
@@ -29,6 +31,12 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
   const [customName, setCustomName] = useState("");
   const [size, setSize] = useState("");
   const [error, setError] = useState("");
+
+  // Launch-promo founding price (null when dormant/over). effectivePrice
+  // is what the browser shows AND puts in the cart, so display + cart +
+  // the server charge all agree.
+  const foundingPrice = foundingPriceForKey(config.key, config.price);
+  const effectivePrice = foundingPrice ?? config.price;
 
   // ============================================================
   // BIB COLOR PICKER STATE
@@ -117,8 +125,10 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         : ` · ${letterColor?.name ?? ""}`;
     return {
       productKey: config.key,
+      // founding price during the launch promo, else normal (keeps the
+      // cart + checkout summary in step with what the server charges)
       name: config.name,
-      price: config.price,
+      price: effectivePrice,
       size,
       customImage: null,
       customImageName: null,
@@ -206,8 +216,12 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{loc(config, "tagline", lang)}</p>
           <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{loc(config, "name", lang)}</h3>
           <ExpandableText text={config.description} clampLines={2} textClassName="text-sm opacity-70 leading-relaxed" />
-          <p className="font-display text-xl mt-3" style={{ fontWeight: 500 }}>
-            ${config.price}
+          <p className="font-display text-xl mt-3 flex items-baseline flex-wrap gap-x-2.5 gap-y-1" style={{ fontWeight: 500 }}>
+            {foundingPrice != null && (
+              <span className="line-through" style={{ fontWeight: 400, color: "var(--text-muted, rgba(26,22,18,0.45))" }}>${config.price}</span>
+            )}
+            <span>${effectivePrice}</span>
+            {foundingPrice != null && <FoundingPriceBadge className="self-center" />}
           </p>
           <p className="text-[0.65rem] opacity-60 mt-1.5">
             {t("pdp.madeToOrderEyebrow")}
@@ -443,7 +457,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
             opacity: adding ? 0.6 : 1,
           }}
         >
-          {t("common.addToCart")} — ${config.price} <ArrowRight size={14} strokeWidth={1.5} />
+          {t("common.addToCart")} — ${effectivePrice} <ArrowRight size={14} strokeWidth={1.5} />
         </button>
 
         {/* Express checkout — straight to Stripe with this configured bib.

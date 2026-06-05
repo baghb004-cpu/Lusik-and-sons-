@@ -15,6 +15,7 @@ import Stripe          from "stripe";
 import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
+import { effectiveCents } from "./_lib/launch-promo.mjs";
 import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { findInventoryViolation } from "./_lib/inventory.mjs";
 import { sql }         from "./_lib/db.mjs";
@@ -276,11 +277,19 @@ async function handle(req, context) {
       .join(" · ")
       .slice(0, 500); // Stripe caps description length
 
+    // Launch-promo founding price when active (server-authoritative;
+    // the helper only ever discounts, never raises). Stamp the charged
+    // unit price onto the cart item so the webhook records EXACTLY what
+    // Stripe charged, even if the promo window closes between this call
+    // and payment completion.
+    const unitCents = effectiveCents(key, trusted.priceCents);
+    item.unitPriceCents = unitCents;
+
     lineItems.push({
       quantity: qty,
       price_data: {
         currency: "usd",
-        unit_amount: trusted.priceCents,
+        unit_amount: unitCents,
         product_data: {
           name: trusted.name,
           description: desc || undefined,

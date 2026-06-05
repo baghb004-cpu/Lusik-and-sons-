@@ -208,13 +208,18 @@ export default async (req) => {
     const t = TRUSTED_PRODUCTS[i.productKey];
     if (!t) continue;
     const qty = Number.isInteger(i.qty) && i.qty > 0 ? i.qty : 1;
-    subtotalCents += t.priceCents * qty;
+    // Prefer the unit price create-checkout-session stamped onto the
+    // cart item (what Stripe actually charged, incl. any launch-promo
+    // founding price). Fall back to the trusted price for legacy carts
+    // or the Stripe-reconstruction path.
+    const unitCents = Number.isInteger(i.unitPriceCents) ? i.unitPriceCents : t.priceCents;
+    subtotalCents += unitCents * qty;
     items.push({
       productKey:    i.productKey,
       productName:   t.name,
       variantLabel:  [t.variant, i.subtitle, i.size].filter(Boolean).join(" · "),
       quantity:      qty,
-      unitPriceCents:t.priceCents,
+      unitPriceCents:unitCents,
       isCustom:      !!i.isCustom,
       customImageUrl:i.customImageUrl ?? null,
       customMetadata:i.customMetadata ?? null,

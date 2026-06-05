@@ -29,6 +29,8 @@ import { useSite } from "../../state/SiteProvider.jsx";
 import { inventoryKeyForCatalog } from "../../lib/inventory";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
+import { promoForCatalogProduct } from "../../lib/launchPromo.js";
+import { FoundingFromPrice } from "../FoundingPriceBadge.jsx";
 
 // Thumbnail image(s) for the category-grid card. Returns either:
 //   - a string (single image, no slideshow), OR
@@ -139,9 +141,19 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                         + "Write me" CTA into the waitlist */}
                   {isLive ? (
                     <>
-                      <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent)" }}>
-                        {t("shop.from", { price: p.priceFrom })}
-                      </p>
+                      {(() => {
+                        const promo = promoForCatalogProduct(p);
+                        return promo ? (
+                          <FoundingFromPrice
+                            normalLabel={t("shop.from", { price: promo.normalDollars })}
+                            foundingLabel={t("shop.from", { price: promo.foundingDollars })}
+                          />
+                        ) : (
+                          <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent)" }}>
+                            {t("shop.from", { price: p.priceFrom })}
+                          </p>
+                        );
+                      })()}
                       {soldOut ? (
                         <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent)", fontWeight: 600 }}>
                           {t("soldOut.badge")}

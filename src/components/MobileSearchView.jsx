@@ -32,6 +32,8 @@ import { CATALOG } from "../data/catalog.js";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { Search, ChevronRight, User } from "./icons.jsx";
 import { useT } from "../i18n/LangContext.jsx";
+import { promoForCatalogProduct } from "../lib/launchPromo.js";
+import { FoundingPriceBadge } from "./FoundingPriceBadge.jsx";
 import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import {
   getRecentlyViewed,
@@ -63,6 +65,7 @@ function buildProductIndex() {
     for (const product of category.products) {
       items.push({
         type: "product",
+        key: product.key,            // for launch-promo founding-price lookup
         name: product.name,
         tagline: product.tagline || "",
         description: product.description || "",
@@ -342,9 +345,18 @@ export function MobileSearchView({
                     <>
                       <p className="text-sm font-display truncate" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{r.name}</p>
                       <p className="text-xs opacity-60 truncate mt-0.5">{r.tagline}</p>
-                      {r.priceFrom != null && (
-                        <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>{t("search.from", { price: r.priceFrom })}</p>
-                      )}
+                      {r.priceFrom != null && (() => {
+                        const promo = r.status === "live" ? promoForCatalogProduct(r) : null;
+                        return promo ? (
+                          <span className="text-xs mt-0.5 inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                            <span className="line-through" style={{ color: "var(--text-muted, rgba(26,22,18,0.5))" }}>{t("search.from", { price: promo.normalDollars })}</span>
+                            <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{t("search.from", { price: promo.foundingDollars })}</span>
+                            <FoundingPriceBadge />
+                          </span>
+                        ) : (
+                          <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>{t("search.from", { price: r.priceFrom })}</p>
+                        );
+                      })()}
                       {r.status === "placeholder" && !r.priceFrom && (
                         <p className="text-xs mt-0.5 opacity-50 italic">{t("search.comingSoon")}</p>
                       )}

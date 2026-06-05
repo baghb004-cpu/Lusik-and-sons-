@@ -12,15 +12,48 @@
 // Sentry DSN is configured, initializes error monitoring. Both are no-ops when
 // their dependency isn't present, so the app always renders.
 import Script from "next/script";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { LanguageProvider } from "../src/i18n/LangContext.jsx";
 import { ToastProvider } from "../src/components/ToastProvider.jsx";
 import { SiteProvider } from "../src/state/SiteProvider.jsx";
 import { MotionProvider } from "../src/components/MotionProvider.jsx";
 import { auth } from "../src/lib/auth.js";
+import { CONFIG } from "../src/data/config.js";
+
+const META_PIXEL_ID: string = CONFIG.ANALYTICS?.META_PIXEL_ID || "";
 
 export function Providers({ children }: { children: ReactNode }) {
+  // Fire a Meta Pixel PageView on client-side route changes (the base
+  // pixel code below only fires the initial one). Skip the first run so
+  // the landing page isn't counted twice.
+  const pathname = usePathname();
+  const firstPixelRun = useRef(true);
+  useEffect(() => {
+    if (!META_PIXEL_ID) return;
+    if (firstPixelRun.current) { firstPixelRun.current = false; return; }
+    (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.("track", "PageView");
+  }, [pathname]);
+
+  // Meta Pixel Purchase event. Stripe redirects back to /?order=success
+  // &session_id=... on a completed payment; fire Purchase once here.
+  // eventID = the Stripe session id so a refresh / back-button to the
+  // success URL dedupes instead of double-counting the conversion.
+  useEffect(() => {
+    if (!META_PIXEL_ID) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("order") === "success") {
+        const sid = params.get("session_id") || undefined;
+        (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.(
+          "track", "Purchase", { currency: "USD" },
+          sid ? { eventID: sid } : undefined,
+        );
+      }
+    } catch { /* never block render on analytics */ }
+  }, []);
+
   useEffect(() => {
     // Wire the Netlify Identity widget's login/logout events into the auth
     // wrapper. Idempotent, and it swallows the "widget not loaded yet" case,
@@ -62,6 +95,18 @@ export function Providers({ children }: { children: ReactNode }) {
         strategy="lazyOnload"
         onReady={() => { try { auth.init(); } catch { /* widget unavailable */ } }}
       />
+      {/* Meta (Facebook/Instagram) Pixel — only injected when a Pixel ID
+          is configured in CONFIG.ANALYTICS.META_PIXEL_ID, so there's zero
+          cost / no third-party request when it's empty. The base snippet
+          defines window.fbq (a queuing stub until fbevents.js loads),
+          inits the pixel, and fires the first PageView. Funnel events
+          (AddToCart / InitiateCheckout / Purchase) are forwarded from the
+          track() wrapper + the Purchase effect above. */}
+      {META_PIXEL_ID ? (
+        <Script id="meta-pixel-base" strategy="afterInteractive">
+          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`}
+        </Script>
+      ) : null}
       <LanguageProvider>
         <ToastProvider>
           <MotionProvider>
