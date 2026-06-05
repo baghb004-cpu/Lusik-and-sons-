@@ -18,14 +18,29 @@
 
 import { CONFIG } from "../data/config.js";
 
+// Map our internal event names to Meta's standard event names so the
+// Pixel can be used for ad optimization + ROAS reporting. Only mapped
+// events are forwarded to Meta; everything else still flows to Umami /
+// PostHog as before. Purchase value/currency (when present in `data`)
+// is passed straight through.
+const META_EVENT_MAP = {
+  "add-to-cart":      "AddToCart",
+  "buy-now":          "InitiateCheckout",
+  "checkout-start":   "InitiateCheckout",
+  "order-complete":   "Purchase",
+  "waitlist-signup":  "Lead",
+  "newsletter-signup":"Lead",
+};
+
 export function track(eventName, data) {
   if (typeof window === "undefined") return;
   // Forward to whichever analytics providers are turned on.
-  // Both are independent — neither knows the other exists.
+  // All independent — none knows the others exist.
   const umamiOn    = !!CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID;
+  const metaOn     = !!CONFIG.ANALYTICS?.META_PIXEL_ID;
   const posthogOn  = !!CONFIG.PAID_FEATURES?.BEHAVIORAL_ANALYTICS?.ENABLED
                   && !!CONFIG.PAID_FEATURES?.BEHAVIORAL_ANALYTICS?.POSTHOG_KEY;
-  if (!umamiOn && !posthogOn) return;
+  if (!umamiOn && !posthogOn && !metaOn) return;
   try {
     if (umamiOn) {
       if (data) window.umami?.track(eventName, data);
@@ -33,6 +48,13 @@ export function track(eventName, data) {
     }
     if (posthogOn) {
       window.posthog?.capture?.(eventName, data || {});
+    }
+    if (metaOn) {
+      const metaEvent = META_EVENT_MAP[eventName];
+      // fbq is defined as a queuing stub by the base pixel code the
+      // moment it runs, so calling it early is safe even before the
+      // library finishes loading.
+      if (metaEvent) window.fbq?.("track", metaEvent, data || {});
     }
   } catch { /* analytics never throws into user code */ }
 }

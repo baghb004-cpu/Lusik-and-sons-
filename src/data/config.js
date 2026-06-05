@@ -118,6 +118,15 @@ export const CONFIG = {
   ANALYTICS: {
     UMAMI_WEBSITE_ID: "",                            // paste from umami.is dashboard
     UMAMI_SRC_URL:    "https://cloud.umami.is/script.js",
+    // Meta (Facebook/Instagram) Pixel. Paste the numeric Pixel ID from
+    // Meta Events Manager (https://business.facebook.com/events_manager)
+    // to enable conversion tracking for Instagram/Facebook ads. Empty =
+    // off (no script loaded, no requests). When set, the base pixel
+    // loads + fires PageView on every page, and the track() wrapper
+    // forwards AddToCart / InitiateCheckout / Purchase so Meta can
+    // optimize ad delivery and report real ROAS. The Pixel ID is a
+    // public client-side identifier (not a secret), so it's fine here.
+    META_PIXEL_ID: "",
   },
 
   // ============================================================
