@@ -104,9 +104,9 @@ export const CONFIG = {
   // FOUNDING_CENTS: productKey -> founding price in cents (bibs only).
   // Must match the server file exactly.
   LAUNCH_PROMO: {
-    enabled: false,
-    startsAt: "2026-06-06T00:00:00Z",
-    endsAt:   "2026-06-13T00:00:00Z",
+    enabled: true,
+    startsAt: "2026-06-05T00:00:00Z",
+    endsAt:   "2026-06-12T00:00:00Z",
     label: "Founding price",
     FOUNDING_CENTS: {
       "bib":                              1900,  // $22 -> $19

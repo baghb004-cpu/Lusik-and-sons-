@@ -27,9 +27,9 @@
 // ============================================================
 
 export const LAUNCH_PROMO = Object.freeze({
-  enabled: false,                       // master switch — dormant until true
-  startsAt: "2026-06-06T00:00:00Z",     // launch window start (UTC)
-  endsAt:   "2026-06-13T00:00:00Z",     // launch window end (UTC) — 7 days
+  enabled: true,                        // LIVE — founding prices active in the window below
+  startsAt: "2026-06-05T00:00:00Z",     // launch window start (UTC) — sale starts today
+  endsAt:   "2026-06-12T00:00:00Z",     // launch window end (UTC) — 7 days
   label: "Founding price",              // badge text shown in the UI
 
   // productKey -> founding price in CENTS. MUST be strictly less than the
