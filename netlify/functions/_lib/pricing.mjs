@@ -21,7 +21,10 @@
 
 // Free U.S. shipping at or above this subtotal. Mirrored in
 // src/data/config.js as CONFIG.FREE_SHIPPING_THRESHOLD_CENTS.
-export const FREE_SHIPPING_THRESHOLD_CENTS = 15000;
+// Set to 0 so EVERY order ships free — surprise shipping at the
+// final checkout step was the biggest small-cart abandonment
+// driver. Shipping cost is absorbed into product pricing instead.
+export const FREE_SHIPPING_THRESHOLD_CENTS = 0;
 
 // Gift-wrap add-on charge. Mirrored in src/data/config.js as
 // CONFIG.GIFT_WRAP_PRICE_CENTS. The browser shows

@@ -72,7 +72,9 @@ export const CONFIG = {
   // bib + a bib. Adjust here when the promotion changes; nothing
   // else needs to be touched.
   FREE_SHIPPING_ENABLED: true,
-  FREE_SHIPPING_THRESHOLD_CENTS: 15000,
+  // 0 = free U.S. shipping on every order (no minimum). Mirrors
+  // FREE_SHIPPING_THRESHOLD_CENTS in netlify/functions/_lib/pricing.mjs.
+  FREE_SHIPPING_THRESHOLD_CENTS: 0,
 
   // ============================================================
   // GIFT WRAP (optional add-on at checkout)
