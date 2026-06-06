@@ -30,6 +30,7 @@ import { CollapsibleSection } from "./CollapsibleSection.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
 import { PurchaseCard } from "./shop/PurchaseCard.jsx";
+import { MobilePurchaseBar } from "./shop/MobilePurchaseBar.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
@@ -66,8 +67,14 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       (entries) => {
         const entry = entries[0];
         if (!entry) return;
-        const stillBelowFold = entry.boundingClientRect.top > window.innerHeight;
-        const visible = entry.isIntersecting || stillBelowFold;
+        const rect = entry.boundingClientRect;
+        // On mobile the in-flow CTA is hidden (display:none) — the
+        // MobilePurchaseBar is the buy surface — so the observed element
+        // has no box. Treat "not rendered" as visible so we DON'T tell the
+        // parent to hide the bottom nav (the sheet already sits above it).
+        const notRendered = rect.width === 0 && rect.height === 0;
+        const stillBelowFold = rect.top > window.innerHeight;
+        const visible = notRendered || entry.isIntersecting || stillBelowFold;
         setIsAddCtaVisible(visible);
         // Lift the inverse signal to the parent so the global
         // mobile bottom-nav can hide while the sticky CTA bar
@@ -1169,7 +1176,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           {soldOut ? (
             <SoldOutPanel name={product.name} productKey={notifyKey ?? "blanket-double_diag_br"} className="mb-4" />
           ) : (<>
-          <PurchaseCard>
+          <PurchaseCard className="hidden lg:block">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center border" style={{ borderColor: "var(--border-strong)" }}>
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3"><Minus size={14} /></button>
@@ -1216,6 +1223,15 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             {t("pdp.buyNow")}
           </button>
           </PurchaseCard>
+          {/* Mobile buy sheet — persistent on mobile (delivery drawer +
+              pinned Add-to-Bag). The in-flow PurchaseCard is desktop-only. */}
+          <MobilePurchaseBar
+            visible
+            label={t("common.addToCart")}
+            price={((layout.priceCents / 100) * qty).toFixed(0)}
+            onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
+          />
+          <div className="lg:hidden" aria-hidden="true" style={{ height: 190 }} />
           </>)}
           {/* Estimated delivery — concrete ship-by / arrives-by range
               instead of a vague "5–10 days" line. Computed on every

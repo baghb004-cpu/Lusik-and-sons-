@@ -98,6 +98,10 @@ export function PolicyModal({ policyKey, onClose }) {
           body: "Every order is documented from the finished-piece photograph Lusik takes through the moment the package is handed off to the carrier — the piece itself, the packing, and the shipping label, kept on file for 90 days. If your order arrives damaged or doesn't arrive at all, that record lets us resolve things with you directly — and, in the rare cases a dispute goes to our payment processor, gives us what we need to back you up or, honestly, to back ourselves up, depending on what actually happened. Every damage claim is read personally by Lusik or one of her sons; we don't use automated screening on the photographs you send us. The conversation stays human, on both sides."
         },
         {
+          heading: "Local pickup (Orange County & Los Angeles)",
+          body: "If you're in the Orange County or Los Angeles area, you're welcome to pick up your order in person instead of having it shipped. Place your order as usual, then message Lusik (Text us or Email us) and we'll arrange a time and place that works for both of us. Everywhere else in the U.S. ships free."
+        },
+        {
           heading: "Customer responsibility",
           body: "You're responsible for entering accurate shipping information. If a package is returned because of a bad address, you'll be responsible for re-shipping costs. Please make sure your shipping address is correct before completing checkout."
         },

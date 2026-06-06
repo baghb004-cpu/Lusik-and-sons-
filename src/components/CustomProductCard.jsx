@@ -16,6 +16,7 @@ import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { ExpandableText } from "./ExpandableText.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
 import { PurchaseCard } from "./shop/PurchaseCard.jsx";
+import { MobilePurchaseBar } from "./shop/MobilePurchaseBar.jsx";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
 import { foundingPriceForKey } from "../lib/launchPromo.js";
@@ -447,7 +448,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         ) : (<>
         {/* Add to Bag + Buy it now — inside the Apple-style purchase card
             (delivery & pickup details on top, buy buttons at the bottom) */}
-        <PurchaseCard className="mt-2">
+        <PurchaseCard className="hidden lg:block mt-2">
           <button
             onClick={handleAdd}
             disabled={!canAdd || adding}
@@ -483,6 +484,19 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         </PurchaseCard>
         </>)}
       </div>
+      {/* Mobile buy sheet — persistent on mobile (delivery drawer + pinned
+          Add-to-Bag). The in-flow PurchaseCard is desktop-only. Disabled
+          until a name + size are chosen, mirroring the in-flow button. */}
+      {!soldOut && (
+        <MobilePurchaseBar
+          visible
+          disabled={!canAdd || adding}
+          label={t("common.addToCart")}
+          price={effectivePrice}
+          onClick={handleAdd}
+        />
+      )}
+      <div className="lg:hidden" aria-hidden="true" style={{ height: 190 }} />
     </div>
   );
 }
