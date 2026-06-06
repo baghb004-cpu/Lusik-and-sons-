@@ -29,7 +29,7 @@ import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
 import { SoldOutPanel } from "./SoldOutPanel.jsx";
-import { StickyMobileBuyBar } from "./StickyMobileBuyBar.jsx";
+import { MobilePurchaseBar } from "./MobilePurchaseBar.jsx";
 import { PurchaseCard } from "./PurchaseCard.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Plus } from "../icons.jsx";
@@ -280,7 +280,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
 
           {/* ADD TO BAG + BUY NOW — inside the Apple-style purchase card
               (delivery & pickup details on top, buy buttons at the bottom) */}
-          <PurchaseCard>
+          <PurchaseCard className="hidden lg:block">
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}
@@ -315,14 +315,18 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
         </div>
       </div>
 
-      {/* Mobile sticky Add-to-Bag — appears while the in-page button is
-          scrolled out of view, hides when it's back. */}
-      <StickyMobileBuyBar
-        visible={!soldOut && !addBtnInView}
+      {/* Mobile buy experience: a persistent bottom sheet (always shown on
+          mobile) with the delivery/pickup drawer + the pinned Add-to-Bag.
+          The in-flow PurchaseCard is desktop-only (hidden lg:block), so on
+          mobile this IS the buy surface. */}
+      <MobilePurchaseBar
+        visible={!soldOut}
         label={t("common.addToCart")}
         price={effectivePrice}
         onClick={(e) => fire(e, onAddCustom)}
       />
+      {/* Spacer so the last in-flow content clears the fixed bottom sheet on mobile. */}
+      <div className="lg:hidden" aria-hidden="true" style={{ height: 180 }} />
     </div>
   );
 }
