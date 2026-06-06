@@ -325,8 +325,6 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
         price={effectivePrice}
         onClick={(e) => fire(e, onAddCustom)}
       />
-      {/* Spacer so the last in-flow content clears the fixed bottom sheet on mobile. */}
-      <div className="lg:hidden" aria-hidden="true" style={{ height: 180 }} />
     </div>
   );
 }

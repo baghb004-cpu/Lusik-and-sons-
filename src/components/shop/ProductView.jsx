@@ -235,12 +235,16 @@ export function ProductView({
   })();
 
   return (
-    <>
+    // Mobile gets generous bottom padding so the last element ("Still have
+    // questions?") sits comfortably ABOVE the fixed MobilePurchaseBar sheet
+    // (delivery details + Add-to-Bag) and never gets cut off. Desktop has no
+    // sheet, so no extra padding there.
+    <div className="pb-[340px] lg:pb-0">
       {surface}
-      {/* The "delivery and pickup details" disclosure now lives INSIDE
-          each product's PurchaseCard (Apple-style), grouped with the
-          Add-to-Bag button — see PurchaseCard.jsx. */}
-      <StillHaveQuestionsCard className="mt-8 mb-12" />
-    </>
+      {/* The "delivery and pickup details" disclosure lives INSIDE each
+          product's PurchaseCard / MobilePurchaseBar (Apple-style). This is
+          the last thing on the page — it should rest just above the sheet. */}
+      <StillHaveQuestionsCard className="mt-10 lg:mt-8 mb-0 lg:mb-12" />
+    </div>
   );
 }
