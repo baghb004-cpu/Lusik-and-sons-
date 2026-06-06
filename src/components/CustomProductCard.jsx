@@ -496,7 +496,6 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           onClick={handleAdd}
         />
       )}
-      <div className="lg:hidden" aria-hidden="true" style={{ height: 190 }} />
     </div>
   );
 }

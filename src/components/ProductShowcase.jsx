@@ -1231,7 +1231,6 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             price={((layout.priceCents / 100) * qty).toFixed(0)}
             onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
           />
-          <div className="lg:hidden" aria-hidden="true" style={{ height: 190 }} />
           </>)}
           {/* Estimated delivery — concrete ship-by / arrives-by range
               instead of a vague "5–10 days" line. Computed on every
