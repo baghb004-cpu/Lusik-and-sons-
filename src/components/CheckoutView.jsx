@@ -22,6 +22,7 @@ import { track } from "../lib/analytics.js";
 import { mapLegacyId } from "../lib/cartId";
 import { CartItemThumb } from "./CartItemThumb.jsx";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
+import { CollapsibleCard } from "./CollapsibleCard.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { PRODUCT } from "../data/product.js";
 
@@ -308,9 +309,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               on Lusik's included card, and a flag that tells her to
               omit prices from the packing slip in the box. When the
               headline checkbox is off, no gift metadata is sent. */}
-          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
-            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "var(--accent)" }}>Optional · gift options</legend>
-
+          <CollapsibleCard eyebrow="Optional" title="Gift options" className="mb-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -379,7 +378,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 </p>
               </div>
             )}
-          </fieldset>
+          </CollapsibleCard>
 
           {/* ============================================================
               OPTIONAL: A SHORT NOTE FOR LUSIK
@@ -393,11 +392,8 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               empty string is fine, customers who don't need to say
               anything just skip this box.
               ============================================================ */}
-          <fieldset className="p-5 lg:p-6" style={{ border: "1px solid var(--border-default)", background: "var(--bg-surface)" }}>
+          <CollapsibleCard eyebrow="Optional" title="A short note for Lusik" className="mb-4">
             <label className="block">
-              <legend className="font-display text-lg mb-1" style={{ fontWeight: 500 }}>
-                A short note for Lusik <span className="text-sm opacity-65" style={{ fontWeight: 400 }}>(optional)</span>
-              </legend>
               <p className="text-xs opacity-65 mb-3 leading-snug">
                 Anything she should know? Pronunciations, rush requests, sensitivities, special timing. She reads every one.
               </p>
@@ -413,7 +409,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               />
               <span className="text-[0.6rem] opacity-55 mt-1 block tabular-nums">{customerNotes.length}/{CUSTOMER_NOTES_MAX}</span>
             </label>
-          </fieldset>
+          </CollapsibleCard>
 
           {/* ============================================================
               OPTIONAL: ONE-YEAR REMINDER
@@ -422,8 +418,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               for gift-givers (so they remember next year's baby shower)
               and self-purchases alike. Sent at most once, ~11 months
               after the order. */}
-          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
-            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "var(--accent)" }}>Optional · gentle reminder</legend>
+          <CollapsibleCard eyebrow="Optional" title="Gentle reminder" className="mb-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -439,7 +434,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 </span>
               </span>
             </label>
-          </fieldset>
+          </CollapsibleCard>
 
           {/* ============================================================
               OPTIONAL: SOCIAL-SHARE CONSENT
@@ -451,9 +446,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               everywhere. Unticking the headline collapses everything
               and zeroes the submitted payload, so "unchecked" stays the
               legally-clean default. */}
-          <fieldset className="mb-6 p-4 lg:p-5" style={{ background: "rgba(176,136,66,0.05)", border: "1px solid rgba(176,136,66,0.2)" }}>
-            <legend className="px-2 text-[0.65rem] tracking-[0.25em] uppercase" style={{ color: "var(--accent)" }}>Optional · share your story</legend>
-
+          <CollapsibleCard eyebrow="Optional" title="Share your story" className="mb-6">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -531,7 +524,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 )}
               </div>
             )}
-          </fieldset>
+          </CollapsibleCard>
 
           <button
             onClick={handleCheckout}
@@ -556,7 +549,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </p>
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 order-first lg:order-none">
           <h2 className="text-xs tracking-[0.3em] uppercase mb-6 opacity-70">Order summary</h2>
           <div className="mb-6" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
             {cart.map((item) => (
