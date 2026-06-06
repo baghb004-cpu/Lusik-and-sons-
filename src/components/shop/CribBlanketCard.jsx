@@ -15,7 +15,7 @@ import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
 import { SoldOutPanel } from "./SoldOutPanel.jsx";
-import { StickyMobileBuyBar } from "./StickyMobileBuyBar.jsx";
+import { MobilePurchaseBar } from "./MobilePurchaseBar.jsx";
 import { PurchaseCard } from "./PurchaseCard.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Plus } from "../icons.jsx";
@@ -192,7 +192,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             </span>
           </div>
 
-          <PurchaseCard>
+          <PurchaseCard className="hidden lg:block">
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}
@@ -227,14 +227,15 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
         </div>
       </div>
 
-      {/* Mobile sticky Add-to-Bag — appears while the in-page button is
-          scrolled out of view, hides when it's back. */}
-      <StickyMobileBuyBar
-        visible={!soldOut && !addBtnInView}
+      {/* Mobile buy sheet — persistent on mobile (delivery drawer + pinned
+          Add-to-Bag). The in-flow PurchaseCard is desktop-only. */}
+      <MobilePurchaseBar
+        visible={!soldOut}
         label={t("common.addToCart")}
         price={spec.price}
         onClick={(e) => fire(e, onAddCustom)}
       />
+      <div className="lg:hidden" aria-hidden="true" style={{ height: 190 }} />
     </div>
   );
 }

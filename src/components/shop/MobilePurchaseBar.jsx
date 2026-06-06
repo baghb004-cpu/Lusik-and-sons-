@@ -64,7 +64,7 @@ function Row({ icon, title, body }) {
   );
 }
 
-export function MobilePurchaseBar({ visible = true, label, price, onClick }) {
+export function MobilePurchaseBar({ visible = true, label, price, onClick, disabled = false }) {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -77,12 +77,12 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick }) {
   return createPortal(
     <div
       className="lg:hidden fixed left-0 right-0 z-40 px-3"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)" }}
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}
     >
       <div
         style={{
           background: "var(--bg-surface, #FFFFFF)",
-          borderRadius: 20,
+          borderRadius: 22,
           border: "1px solid var(--border-default)",
           boxShadow: "0 -8px 30px rgba(26,22,18,0.18)",
           overflow: "hidden",
@@ -93,7 +93,7 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick }) {
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="w-full flex items-center justify-between gap-4 px-4 py-3"
+          className="w-full flex items-center justify-between gap-4 px-5 py-4"
           style={{ color: "var(--text-primary)" }}
         >
           <span className="text-sm" style={{ fontWeight: 600 }}>
@@ -104,7 +104,7 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick }) {
 
         {/* Drawer — slides up (grows the sheet upward; button stays pinned) */}
         <div style={{ maxHeight: open ? 320 : 0, overflow: "hidden", transition: "max-height 0.3s ease" }}>
-          <div className="px-4 pb-3 flex flex-col gap-3" style={{ borderTop: "1px solid var(--border-soft)" }}>
+          <div className="px-5 pb-4 flex flex-col gap-3.5" style={{ borderTop: "1px solid var(--border-soft)" }}>
             {pickupOn && (
               <Row icon={<PinIcon />} title="Local pickup"
                 body={`Available in ${pickup.AREA || "select areas"} — message Lusik to arrange.`} />
@@ -115,12 +115,19 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick }) {
         </div>
 
         {/* Pinned Add-to-Bag */}
-        <div className="px-3 pt-1 pb-3">
+        <div className="px-4 pt-3 pb-4" style={{ borderTop: "1px solid var(--border-soft)" }}>
           <button
             type="button"
             onClick={onClick}
-            className="w-full py-3.5 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2"
-            style={{ background: "var(--ink)", color: "var(--text-on-ink)", borderRadius: 999 }}
+            disabled={disabled}
+            aria-disabled={disabled}
+            className="w-full py-4 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2"
+            style={{
+              background: disabled ? "var(--bg-subtle)" : "var(--ink)",
+              color: disabled ? "var(--text-muted)" : "var(--text-on-ink)",
+              borderRadius: 999,
+              cursor: disabled ? "not-allowed" : "pointer",
+            }}
           >
             {label} — ${price} <ArrowRight size={14} strokeWidth={1.5} />
           </button>

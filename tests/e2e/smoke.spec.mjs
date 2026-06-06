@@ -225,7 +225,12 @@ test.describe("checkout view", () => {
     expect(receivedBody.idempotency_key).toMatch(/^[\x21-\x7e]+$/);
   });
 
-  test("Buy it now sends exactly one item straight to checkout", async ({ page }) => {
+  test("Buy it now sends exactly one item straight to checkout", async ({ page, isMobile }) => {
+    // Express "Buy it now" is a DESKTOP-only control now: on mobile the
+    // persistent MobilePurchaseBar shows a single pinned "Add to Bag"
+    // (the in-flow PurchaseCard — which holds Buy-it-now — is hidden via
+    // `hidden lg:block`). Mobile buyers use Add-to-Bag → checkout instead.
+    test.skip(isMobile, "Express Buy-it-now is desktop-only; mobile uses the sticky Add-to-Bag sheet.");
     // Express checkout must bypass the bag and POST a single configured
     // item with the same load-bearing productKey shape as a normal add.
     let receivedBody = null;
