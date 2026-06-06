@@ -29,6 +29,7 @@ import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
+import { PurchaseCard } from "./shop/PurchaseCard.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
@@ -1168,6 +1169,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           {soldOut ? (
             <SoldOutPanel name={product.name} productKey={notifyKey ?? "blanket-double_diag_br"} className="mb-4" />
           ) : (<>
+          <PurchaseCard>
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center border" style={{ borderColor: "var(--border-strong)" }}>
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3"><Minus size={14} /></button>
@@ -1213,6 +1215,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           >
             {t("pdp.buyNow")}
           </button>
+          </PurchaseCard>
           </>)}
           {/* Estimated delivery — concrete ship-by / arrives-by range
               instead of a vague "5–10 days" line. Computed on every
