@@ -15,6 +15,7 @@ import { ArrowRight } from "./icons.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { ExpandableText } from "./ExpandableText.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
+import { PurchaseCard } from "./shop/PurchaseCard.jsx";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
 import { foundingPriceForKey } from "../lib/launchPromo.js";
@@ -444,39 +445,42 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         {soldOut ? (
           <SoldOutPanel name={loc(config, "name", lang)} productKey={notifyKey ?? config.key} className="mt-2" />
         ) : (<>
-        {/* Add to Bag (primary) + Buy it now (express) */}
-        <button
-          onClick={handleAdd}
-          disabled={!canAdd || adding}
-          aria-busy={adding}
-          className="mt-2 w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
-          style={{
-            background: canAdd ? "var(--ink)" : "var(--bg-subtle)",
-            color: canAdd ? "var(--text-on-ink)" : "var(--text-muted)",
-            cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
-            opacity: adding ? 0.6 : 1,
-          }}
-        >
-          {t("common.addToCart")} — ${effectivePrice} <ArrowRight size={14} strokeWidth={1.5} />
-        </button>
+        {/* Add to Bag + Buy it now — inside the Apple-style purchase card
+            (delivery & pickup details on top, buy buttons at the bottom) */}
+        <PurchaseCard className="mt-2">
+          <button
+            onClick={handleAdd}
+            disabled={!canAdd || adding}
+            aria-busy={adding}
+            className="w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+            style={{
+              background: canAdd ? "var(--ink)" : "var(--bg-subtle)",
+              color: canAdd ? "var(--text-on-ink)" : "var(--text-muted)",
+              cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
+              opacity: adding ? 0.6 : 1,
+            }}
+          >
+            {t("common.addToCart")} — ${effectivePrice} <ArrowRight size={14} strokeWidth={1.5} />
+          </button>
 
-        {/* Express checkout — straight to Stripe with this configured bib.
-            Outlined secondary so the ink-filled Add to Bag stays primary. */}
-        <button
-          onClick={handleBuyNow}
-          disabled={!canAdd || adding}
-          aria-busy={adding}
-          className="mt-2 w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
-          style={{
-            background: "transparent",
-            color: canAdd ? "var(--text-primary)" : "var(--text-muted)",
-            border: `1px solid ${canAdd ? "var(--ink)" : "var(--border-strong)"}`,
-            cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
-            opacity: adding ? 0.6 : 1,
-          }}
-        >
-          {t("bib.buyNow")}
-        </button>
+          {/* Express checkout — straight to Stripe with this configured bib.
+              Outlined secondary so the ink-filled Add to Bag stays primary. */}
+          <button
+            onClick={handleBuyNow}
+            disabled={!canAdd || adding}
+            aria-busy={adding}
+            className="w-full py-3 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+            style={{
+              background: "transparent",
+              color: canAdd ? "var(--text-primary)" : "var(--text-muted)",
+              border: `1px solid ${canAdd ? "var(--ink)" : "var(--border-strong)"}`,
+              cursor: canAdd && !adding ? "pointer" : (adding ? "wait" : "not-allowed"),
+              opacity: adding ? 0.6 : 1,
+            }}
+          >
+            {t("bib.buyNow")}
+          </button>
+        </PurchaseCard>
         </>)}
       </div>
     </div>

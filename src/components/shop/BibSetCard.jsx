@@ -30,6 +30,7 @@ import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
 import { SoldOutPanel } from "./SoldOutPanel.jsx";
 import { StickyMobileBuyBar } from "./StickyMobileBuyBar.jsx";
+import { PurchaseCard } from "./PurchaseCard.jsx";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { ArrowRight, Plus } from "../icons.jsx";
 import { useInViewport } from "../../lib/useInViewport";
@@ -277,36 +278,39 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             </span>
           </div>
 
-          {/* ADD TO BAG + BUY NOW */}
-          <button
-            ref={addBtnRef}
-            onClick={(e) => fire(e, onAddCustom)}
-            disabled={adding}
-            aria-busy={adding}
-            className="w-full py-4 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
-            style={{
-              background: "var(--ink)", color: "var(--text-on-ink)",
-              cursor: adding ? "wait" : "pointer", opacity: adding ? 0.6 : 1,
-            }}
-          >
-            {t("common.addToCart")} — ${effectivePrice} <ArrowRight size={14} strokeWidth={1.5} />
-          </button>
-
-          {onBuyNow && (
+          {/* ADD TO BAG + BUY NOW — inside the Apple-style purchase card
+              (delivery & pickup details on top, buy buttons at the bottom) */}
+          <PurchaseCard>
             <button
-              onClick={(e) => fire(e, onBuyNow)}
+              ref={addBtnRef}
+              onClick={(e) => fire(e, onAddCustom)}
               disabled={adding}
               aria-busy={adding}
-              className="mt-2 w-full py-4 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+              className="w-full py-4 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
               style={{
-                background: "transparent", color: "var(--text-primary)",
-                border: "1px solid var(--ink)",
+                background: "var(--ink)", color: "var(--text-on-ink)",
                 cursor: adding ? "wait" : "pointer", opacity: adding ? 0.6 : 1,
               }}
             >
-              {t("bib.buyNow")}
+              {t("common.addToCart")} — ${effectivePrice} <ArrowRight size={14} strokeWidth={1.5} />
             </button>
-          )}
+
+            {onBuyNow && (
+              <button
+                onClick={(e) => fire(e, onBuyNow)}
+                disabled={adding}
+                aria-busy={adding}
+                className="w-full py-4 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+                style={{
+                  background: "transparent", color: "var(--text-primary)",
+                  border: "1px solid var(--ink)",
+                  cursor: adding ? "wait" : "pointer", opacity: adding ? 0.6 : 1,
+                }}
+              >
+                {t("bib.buyNow")}
+              </button>
+            )}
+          </PurchaseCard>
           </>)}
         </div>
       </div>
