@@ -34,6 +34,7 @@ import { CribBlanketCard } from "./CribBlanketCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
+import { DeliveryPickupDetails } from "../DeliveryPickupDetails.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
 import { useSite } from "../../state/SiteProvider.jsx";
 import { inventoryKeyForCatalog } from "../../lib/inventory";
@@ -237,10 +238,14 @@ export function ProductView({
   return (
     <>
       {surface}
+      {/* Apple-style "Show delivery and pickup details" collapsible —
+          baked into EVERY product page here so it's one source of truth.
+          Copy + pickup area come from CONFIG (DELIVERY_NOTE / LOCAL_PICKUP). */}
+      <DeliveryPickupDetails className="mt-10" />
       {/* Product detail pages get the *limited* contact card (Text +
           Call). The fuller Email + Video options live on the category
           and shop-index pages. Mobile only. */}
-      <StillHaveQuestionsCard className="mt-10 mb-12" />
+      <StillHaveQuestionsCard className="mt-8 mb-12" />
     </>
   );
 }

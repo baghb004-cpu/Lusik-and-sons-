@@ -90,6 +90,20 @@ export const CONFIG = {
   GIFT_WRAP_PRICE_CENTS: 500,
 
   // ============================================================
+  // DELIVERY & LOCAL PICKUP (product-page "details" disclosure)
+  // ============================================================
+  // Powers the Apple-style "Show delivery and pickup details"
+  // collapsible on every product page (DeliveryPickupDetails).
+  // DELIVERY_NOTE is always shown; the pickup row only renders when
+  // LOCAL_PICKUP.ENABLED is true. Flip ENABLED to false to drop the
+  // pickup line (and the word "pickup" disappears from the label).
+  DELIVERY_NOTE: "Made to order — hand-stitched in ~2 weeks, then 3–5 business days in transit.",
+  LOCAL_PICKUP: {
+    ENABLED: true,
+    AREA: "the Orange County & Los Angeles area only",
+  },
+
+  // ============================================================
   // LAUNCH PROMO — time-boxed "Founding Price" intro pricing
   // ============================================================
   // DISPLAY mirror of netlify/functions/_lib/launch-promo.mjs (the
