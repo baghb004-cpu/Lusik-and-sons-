@@ -272,7 +272,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   };
 
   return (
-    <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
+    <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 pt-10 lg:pt-16 pb-[150px] lg:pb-16">
       <button onClick={onBack} className="text-sm tracking-wide opacity-70 hover:opacity-100 mb-8">← Continue shopping</button>
       {/* min-w-0 on both grid children is load-bearing: CSS Grid items
           default to min-width: auto, which means they refuse to shrink
@@ -526,10 +526,12 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             )}
           </CollapsibleCard>
 
+          {/* Inline Pay button is desktop-only; mobile uses the sticky
+              bottom bar (rendered at the end of this component). */}
           <button
             onClick={handleCheckout}
             disabled={busy || cart.length === 0}
-            className="w-full py-4 text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+            className="hidden lg:flex w-full py-4 text-sm tracking-[0.2em] uppercase items-center justify-center gap-2 transition"
             style={{
               background: busy ? "rgba(26,22,18,0.5)" : "#1A1612",
               color: "#F5EFE3",
@@ -580,6 +582,33 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-60">Calculated at Stripe</span></div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile sticky checkout bar — keeps the subtotal + Pay always
+          visible while scrolling. The checkout page hides the bottom nav,
+          so this sits flush at the bottom. Desktop uses the inline button. */}
+      <div
+        className="lg:hidden fixed left-0 right-0 bottom-0 z-40 px-5 pt-3"
+        style={{
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+          background: "var(--bg-surface, #FFFFFF)",
+          borderTop: "1px solid var(--border-default)",
+          boxShadow: "0 -6px 24px rgba(26,22,18,0.14)",
+        }}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs tracking-[0.15em] uppercase opacity-70">Subtotal · free shipping</span>
+          <span className="text-lg tabular-nums" style={{ fontWeight: 600, color: "var(--text-primary)" }}>${subtotal.toFixed(2)}</span>
+        </div>
+        <button
+          onClick={handleCheckout}
+          disabled={busy || cart.length === 0}
+          className="w-full py-3.5 text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
+          style={{ background: busy ? "rgba(26,22,18,0.5)" : "#1A1612", color: "#F5EFE3", borderRadius: 999, cursor: busy ? "wait" : "pointer" }}
+        >
+          {busy ? "Connecting to Stripe…" : "Pay with Stripe"}
+          {!busy && <ArrowRight size={16} strokeWidth={1.5} />}
+        </button>
       </div>
     </div>
   );
