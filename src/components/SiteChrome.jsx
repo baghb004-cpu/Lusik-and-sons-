@@ -24,6 +24,7 @@ import { MobilePageHeader } from "./MobilePageHeader.jsx";
 import { MobileBottomNav } from "./MobileBottomNav.jsx";
 import { MobileSearchView } from "./MobileSearchView.jsx";
 import { CartContents } from "./CartContents.jsx";
+import { YouMayAlsoLikeSheet } from "./YouMayAlsoLikeSheet.jsx";
 import { SiteTopNav } from "./SiteTopNav.jsx";
 import { SiteFooter } from "./SiteFooter.jsx";
 import { AuthDrawer } from "./AuthDrawer.jsx";
@@ -69,13 +70,20 @@ export function SiteChrome({ children }) {
   // Desktop cart drawer (mobile uses the /cart page).
   const [cartOpen, setCartOpen] = useState(false);
   const [cartEditMode, setCartEditMode] = useState(false);
+  // Apple-style "You may also like" sheet that opens on add-to-bag.
+  const [recommendOpen, setRecommendOpen] = useState(false);
+  // Open the bag the original way (drawer on desktop, /cart page on mobile).
+  const openCartNow = () => {
+    const isMobile = typeof window !== "undefined" && window.matchMedia?.("(max-width: 1023px)").matches;
+    if (isMobile) nav.goCart(); else setCartOpen(true);
+  };
   // Overlays driven by the chrome.
   const [authOpen, setAuthOpen] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(null); // null | "privacy" | "terms" | "finalSale"
   const [waitlistProduct, setWaitlistProduct] = useState(null); // { key, name } | null — restock / coming-soon notify
 
   // Close transient surfaces on route change.
-  useEffect(() => { setSearchOpen(false); setCartOpen(false); }, [pathname]);
+  useEffect(() => { setSearchOpen(false); setCartOpen(false); setRecommendOpen(false); }, [pathname]);
 
   // Warm the primary nav destinations (the bottom-nav tabs + main browse) so
   // tapping them feels instant — but never at the expense of the page the
@@ -136,13 +144,12 @@ export function SiteChrome({ children }) {
   // full /cart page on mobile (where the drawer would fight the bottom nav).
   // Parity with the old App.jsx openCart(): SiteProvider bumps cartOpenSignal
   // on every add; 0 is the initial value (no add yet), so we ignore it.
+  // On add-to-bag, surface the Apple-style "You may also like" sheet
+  // (with the "Product added to Bag" confirmation). Its Continue button
+  // then opens the bag. The bag is also always reachable from the nav.
   useEffect(() => {
     if (!site.cartOpenSignal) return;
-    const isMobile =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(max-width: 1023px)").matches;
-    if (isMobile) nav.goCart();
-    else setCartOpen(true);
+    setRecommendOpen(true);
   }, [site.cartOpenSignal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navView = searchOpen ? "search" : view;
@@ -244,6 +251,16 @@ export function SiteChrome({ children }) {
           </m.div>
         )}
       </AnimatePresence>
+
+      {/* Apple-style "You may also like" sheet — opens on add-to-bag with a
+          fading "Product added to Bag" pill; Continue proceeds to the bag. */}
+      <YouMayAlsoLikeSheet
+        open={recommendOpen}
+        addedKey={site.lastAddedKey}
+        onClose={() => setRecommendOpen(false)}
+        onContinue={() => { setRecommendOpen(false); openCartNow(); }}
+        onNavigateProduct={(c, s) => { setRecommendOpen(false); nav.goShopProduct(c, s); }}
+      />
 
       {/* Auth drawer (sign in / sign up / forgot password) */}
       {authOpen && (

@@ -48,6 +48,9 @@ export function SiteProvider({ children }) {
   // even when the same item is added twice.
   const [cartOpenSignal, setCartOpenSignal] = useState(0);
   const requestOpenCart = useCallback(() => setCartOpenSignal((n) => n + 1), []);
+  // The productKey most recently added — drives the "You may also like"
+  // post-add sheet (SiteChrome reads it off the cartOpenSignal bump).
+  const [lastAddedKey, setLastAddedKey] = useState(null);
 
   const cartCount = useMemo(() => cart.reduce((s, i) => s + (Number(i.qty) || 0), 0), [cart]);
   const subtotal  = useMemo(() => cart.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0), [cart]);
@@ -100,6 +103,7 @@ export function SiteProvider({ children }) {
       if (existing) return c.map((i) => (i.id === item.id ? { ...i, qty: i.qty + addQty } : i));
       return [...c, { ...item, qty: addQty }];
     });
+    setLastAddedKey(key);
     requestOpenCart();
   }, [requestOpenCart, cart, remainingFor, stockToast]);
 
@@ -113,6 +117,7 @@ export function SiteProvider({ children }) {
     haptic(12);
     track("add-to-cart", { kind: "custom", productKey: payload.productKey });
     setCart((c) => [...c, buildCustomCartItem(payload)]);
+    setLastAddedKey(payload.productKey);
     requestOpenCart();
   }, [requestOpenCart, cart, remainingFor, stockToast]);
 
@@ -249,11 +254,11 @@ export function SiteProvider({ children }) {
   const value = useMemo(() => ({
     cart, setCart, cartCount, subtotal, buyNowItem, setBuyNowItem,
     addToCart, addCustomToCart, buyNowBlanket, buyNowCustom, removeFromCart, updateQty, setQtyExact,
-    cartOpenSignal, requestOpenCart,
+    cartOpenSignal, requestOpenCart, lastAddedKey,
     inventory, remainingFor, isSoldOut, refreshInventory,
     user, profile, setProfile, isAdmin, authReady, signOut,
   }), [cart, cartCount, subtotal, buyNowItem, addToCart, addCustomToCart, buyNowBlanket, buyNowCustom,
-       removeFromCart, updateQty, setQtyExact, cartOpenSignal, requestOpenCart,
+       removeFromCart, updateQty, setQtyExact, cartOpenSignal, requestOpenCart, lastAddedKey,
        inventory, remainingFor, isSoldOut, refreshInventory,
        user, profile, isAdmin, authReady, signOut]);
 

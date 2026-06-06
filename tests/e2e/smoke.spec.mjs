@@ -144,10 +144,10 @@ test.describe("blanket purchase flow", () => {
     await expect(addToCart).toBeEnabled({ timeout: 5_000 });
     await addToCart.click();
 
-    // Cart drawer auto-opens; the item should be visible with the
-    // product name. Target the drawer's <p> directly — the shop
-    // mega-menu also renders the product name in a hidden <button>
-    // and we don't want to match that.
+    // Add now opens the Apple-style "You may also like" sheet first; its
+    // Continue button proceeds to the bag (drawer on desktop, /cart page
+    // on mobile), where the added item appears.
+    await page.getByRole("button", { name: /^continue$/i }).first().click();
     await expect(
       page.locator("p", { hasText: /armenian alphabet blanket/i }).first()
     ).toBeVisible({ timeout: 5_000 });
@@ -165,7 +165,8 @@ test.describe("checkout view", () => {
     await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
     await page.getByRole("button", { name: /add to bag.*\$/i }).first().click();
 
-    // Cart auto-opens. Click Checkout.
+    // Add opens the "You may also like" sheet → Continue opens the bag → Checkout.
+    await page.getByRole("button", { name: /^continue$/i }).first().click();
     await page.getByRole("button", { name: /^checkout/i }).click();
 
     // We should land on the checkout page. The heading was renamed in the
@@ -198,6 +199,7 @@ test.describe("checkout view", () => {
     // Match just the label so we don't depend on the exact glyph rendering.
     await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
     await page.getByRole("button", { name: /add to bag.*\$/i }).first().click();
+    await page.getByRole("button", { name: /^continue$/i }).first().click();
     await page.getByRole("button", { name: /^checkout/i }).click();
     await page.getByRole("button", { name: /pay with stripe/i }).click();
 
@@ -333,6 +335,8 @@ test.describe("shop hierarchy navigation", () => {
     // the blanket checkout test uses, so the in-memory cart survives (a
     // hard nav would wipe it).
     await page.getByRole("button", { name: /add to bag.*(48|42)/i }).first().click();
+    // Add opens the "You may also like" sheet → Continue opens the bag.
+    await page.getByRole("button", { name: /^continue$/i }).first().click();
     await page.getByRole("button", { name: /^checkout/i }).click();
     await page.getByRole("button", { name: /pay with stripe/i }).click();
 
