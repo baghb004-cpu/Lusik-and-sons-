@@ -400,6 +400,13 @@ async function handle(req, context) {
       // biggest conversion lever for our mostly-mobile (Instagram)
       // traffic vs. the old card-only flow.
       line_items: lineItems,
+      // Show Stripe's "Add promotion code" field on the hosted checkout
+      // page. Codes themselves (and their discount, redemption caps,
+      // expiry, and minimum-order restrictions) are created + managed in
+      // the Stripe Dashboard / API — this flag just lets customers enter
+      // one. Stripe validates it and applies the discount; the webhook
+      // already records session.amount_total as the true paid amount.
+      allow_promotion_codes: true,
       customer_email: customerEmail || undefined,
       success_url: returnUrls.success_url,
       cancel_url:  returnUrls.cancel_url,
