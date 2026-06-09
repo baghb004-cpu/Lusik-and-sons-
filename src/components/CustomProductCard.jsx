@@ -27,7 +27,7 @@ import { FoundingPriceBadge } from "./FoundingPriceBadge.jsx";
 // photo slideshow on the bib product page in a follow-up PR.
 import { PRODUCT } from "../data/product.js";
 
-export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey }) {
+export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey, immersive = false }) {
   const t = useT();
   const { lang } = useLang();
   const [customName, setCustomName] = useState("");
@@ -188,7 +188,13 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
   };
 
   return (
-    <div className="flex flex-col h-full lg:grid lg:grid-cols-2 lg:items-start lg:h-auto" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
+    // Immersive (mobile sheet): no card border/background — the sheet provides
+    // the surface. The live SVG name preview stays (it's the personalization,
+    // not a backdrop photo).
+    <div
+      className={immersive ? "flex flex-col" : "flex flex-col h-full lg:grid lg:grid-cols-2 lg:items-start lg:h-auto"}
+      style={immersive ? undefined : { background: "var(--bg-page)", border: "1px solid var(--border-default)" }}
+    >
       {/* Preview area with template — sticks on lg+ so the bib stays in view
           while the customer scrolls through name / color / size below.
           `lg:top-24` clears the sticky nav (~80px) with breathing room. */}
@@ -448,7 +454,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         ) : (<>
         {/* Add to Bag + Buy it now — inside the Apple-style purchase card
             (delivery & pickup details on top, buy buttons at the bottom) */}
-        <PurchaseCard className="hidden lg:block mt-2">
+        <PurchaseCard className={immersive ? "mt-2" : "hidden lg:block mt-2"}>
           <button
             onClick={handleAdd}
             disabled={!canAdd || adding}
@@ -486,8 +492,9 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
       </div>
       {/* Mobile buy sheet — persistent on mobile (delivery drawer + pinned
           Add-to-Bag). The in-flow PurchaseCard is desktop-only. Disabled
-          until a name + size are chosen, mirroring the in-flow button. */}
-      {!soldOut && (
+          until a name + size are chosen, mirroring the in-flow button.
+          Suppressed in immersive mode (the immersive sheet is the buy surface). */}
+      {!soldOut && !immersive && (
         <MobilePurchaseBar
           visible
           disabled={!canAdd || adding}

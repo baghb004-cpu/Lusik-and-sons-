@@ -41,6 +41,12 @@ export function ProductImageGallery({
                               // under the image, always one selected, and report
                               // the choice via onColorwayChange.
   onColorwayChange,           // (colorway) => void — fired in appleColorRow mode
+  photosHidden = false,       // when true: render ONLY the controls (the Apple
+                              // color row) and SKIP the main image, thumbnail
+                              // strip, swatches and lightbox. Used by the mobile
+                              // ImmersiveProductSheet, which moves the photos to a
+                              // full-screen backdrop but still needs the colorway
+                              // selector (welded in here) live inside the sheet.
   alt = "Product photo",
 }) {
   // null = no color filter active; otherwise an index into colorways[].
@@ -182,7 +188,10 @@ export function ProductImageGallery({
           TAP TO ZOOM badge bottom-left, counter bottom-right.
           Mirrors ProductShowcase line-for-line so the customer
           gets the same handle whether they're looking at the
-          Armenian Alphabet Blanket or this Full Alphabet Crib Blanket. */}
+          Armenian Alphabet Blanket or this Full Alphabet Crib Blanket.
+          Skipped in photosHidden mode (the immersive sheet shows the
+          photos full-screen behind it instead). */}
+      {!photosHidden && (
       <div
         className="relative aspect-[4/5] overflow-hidden mb-4"
         style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}
@@ -257,6 +266,7 @@ export function ProductImageGallery({
           <ZoomIn size={11} strokeWidth={2} /> Tap to zoom
         </div>
       </div>
+      )}
 
       {/* APPLE-STYLE COLOR ROW — tight under the slideshow, color name on
           the left, swatch circles on the right. Tapping a circle swaps the
@@ -310,7 +320,9 @@ export function ProductImageGallery({
           when the customer paginates with the chevron buttons. */}
       {/* THUMBNAIL STRIP — desktop only (hidden on mobile to save vertical
           space; on phones the main image is swipeable + has the dot
-          counter, so the strip is redundant there). */}
+          counter, so the strip is redundant there). Skipped entirely in
+          photosHidden mode. */}
+      {!photosHidden && (
       <div
         ref={thumbStripRef}
         className="hidden lg:flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
@@ -355,13 +367,14 @@ export function ProductImageGallery({
           </button>
         ))}
       </div>
+      )}
 
       {/* COLOR SWATCHES — actual sellable colorways only. The
           previous "All / The family / In the studio" entries were
           dropped per product feedback: the customer is buying a
           color, not a "family" or "studio shot". To clear a filter,
-          tap the active swatch again. */}
-      {!appleColorRow && colorways && colorways.length > 0 && (
+          tap the active swatch again. Skipped in photosHidden mode. */}
+      {!photosHidden && !appleColorRow && colorways && colorways.length > 0 && (
         <div className="mt-6">
           <div className="flex items-baseline justify-between mb-3">
             <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)", fontWeight: 600 }}>
@@ -400,8 +413,9 @@ export function ProductImageGallery({
 
       {/* FULLSCREEN ZOOM LIGHTBOX — opens when the main image is
           tapped. Click anywhere (or X / Escape) to close. Arrow
-          buttons paginate within the same filtered set. */}
-      {zoomOpen && (
+          buttons paginate within the same filtered set. Never opens in
+          photosHidden mode (the main image that triggers it isn't rendered). */}
+      {!photosHidden && zoomOpen && (
         <div
           role="dialog"
           aria-modal="true"
