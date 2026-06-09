@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { CATALOG, getProductBySlugs } from "../../../../src/data/catalog.js";
 import { pageMetadata, productJsonLd, jsonLdScript } from "../../../../src/lib/seo.js";
 import { ProductRoute } from "../../../../src/routes/ProductRoute.jsx";
@@ -38,9 +39,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function Page({ params }: { params: Promise<Params> }) {
   const { category, product } = await params;
   const pair = getProductBySlugs(category, product);
+  if (!pair) notFound();
   return (
     <>
-      {pair && <script {...jsonLdScript(productJsonLd(pair.category, pair.product))} />}
+      <script {...jsonLdScript(productJsonLd(pair.category, pair.product))} />
       <ProductRoute />
     </>
   );

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { CATALOG, getCategoryBySlug } from "../../../src/data/catalog.js";
 import { pageMetadata } from "../../../src/lib/seo.js";
 import { CategoryRoute } from "../../../src/routes/CategoryRoute.jsx";
@@ -21,6 +22,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   });
 }
 
-export default function Page() {
+export default async function Page({ params }: { params: Promise<Params> }) {
+  const { category: categorySlug } = await params;
+  if (!getCategoryBySlug(categorySlug)) notFound();
   return <CategoryRoute />;
 }
