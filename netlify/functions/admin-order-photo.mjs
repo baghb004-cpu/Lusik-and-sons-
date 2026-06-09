@@ -27,7 +27,7 @@ const ALLOWED_EXTS  = new Set(["png", "jpg", "jpeg", "webp"]);
 const STORE_NAME    = "order-finished-photos";
 
 export default async (req, context) => {
-  const auth = requireAdmin(req, context);
+  const auth = await requireAdmin(req, context);
   if (auth.response) return auth.response;
 
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });

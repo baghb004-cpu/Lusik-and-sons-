@@ -23,7 +23,7 @@ import { sendWaitlistAvailableEmail } from "./_lib/email.mjs";
 const MAX_PER_RUN = 100;
 
 export default async (req, context) => {
-  const auth = requireAdmin(req, context);
+  const auth = await requireAdmin(req, context);
   if (auth.response) return auth.response;
 
   if (req.method !== "POST") {

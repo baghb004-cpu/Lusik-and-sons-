@@ -14,7 +14,7 @@
 
 import { getStore }     from "@netlify/blobs";
 import { sql }          from "./_lib/db.mjs";
-import { requireUser }  from "./_lib/auth.mjs";
+import { requireUser, isAdmin }  from "./_lib/auth.mjs";
 import { json }         from "./_lib/json.mjs";
 
 const STORE_NAME = "order-finished-photos";
@@ -22,7 +22,7 @@ const STORE_NAME = "order-finished-photos";
 export default async (req, context) => {
   if (req.method !== "GET") return json(405, { error: "Method not allowed" });
 
-  const auth = requireUser(req, context);
+  const auth = await requireUser(req, context);
   if (auth.response) return auth.response;
 
   const url = new URL(req.url);
@@ -40,17 +40,10 @@ export default async (req, context) => {
     return json(400, { error: "Malformed key" });
   }
 
-  // Admin check uses the same logic as requireAdmin() in _lib/auth.mjs —
-  // role on the JWT OR the ADMIN_EMAILS env fallback. Previously this
-  // function honored only the role, which would 403 admins still
-  // relying on the pre-role-assignment escape hatch.
-  const envAdminEmails = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  const isAdmin = (auth.user.roles?.includes("admin"))
-              || (auth.user.email && envAdminEmails.includes(auth.user.email.toLowerCase()));
-  if (!isAdmin) {
+  // Admin check uses the shared isAdmin() from _lib/auth.mjs — role on
+  // the JWT OR the ADMIN_EMAILS env fallback. Customers see only their
+  // own photos; admins (Lusik reviewing her work) can see any.
+  if (!isAdmin(auth.user)) {
     const rows = await sql`SELECT user_id FROM orders WHERE id = ${orderId} LIMIT 1`;
     if (rows.length === 0)            return json(404, { error: "Not found" });
     if (rows[0].user_id !== auth.user.id) return json(403, { error: "Not yours" });
