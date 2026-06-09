@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { JOURNAL_POSTS } from "../../../src/data/journalPosts.js";
 import { pageMetadata, postJsonLd, jsonLdScript } from "../../../src/lib/seo.js";
 import { JournalRoute } from "../../../src/routes/JournalRoute.jsx";
@@ -27,9 +28,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function Page({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
   const post = (JOURNAL_POSTS as any[]).find((p) => p.slug === slug);
+  if (!post) notFound();
   return (
     <>
-      {post && <script {...jsonLdScript(postJsonLd(post))} />}
+      <script {...jsonLdScript(postJsonLd(post))} />
       <JournalRoute />
     </>
   );

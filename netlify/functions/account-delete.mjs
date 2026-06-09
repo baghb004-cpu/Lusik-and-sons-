@@ -48,7 +48,7 @@ const CONFIRM_PHRASE = "DELETE";
 export default async (req, context) => {
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
-  const auth = requireUser(req, context);
+  const auth = await requireUser(req, context);
   if (auth.response) return auth.response;
   const { user } = auth;
 

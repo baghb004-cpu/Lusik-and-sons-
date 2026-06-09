@@ -1,71 +1,96 @@
 # Launch checklist — Lusik & Sons
 
-A living inventory of what's still blocking a full public launch, generated from
-the catalog + repo state. Most items are addressed to **Lusik** (photos, pricing,
-copy confirmation) or need brand artwork; a couple need a dev pass. Maintained by
-the daily maintenance sweep — last refreshed **2026-05-29**.
+A living inventory of what's still between the site and a fully-finished public
+launch. Most items are addressed to **Lusik** (photos, pricing, copy
+confirmation); a couple need a dev pass. Refresh this file by hand (or ask
+Claude to re-audit) whenever the catalog or content changes — last refreshed
+**2026-06-09**.
 
 Status legend: ✅ done · 🟡 needs Lusik · 🔧 needs a dev pass.
 
 ## Products
 
-Two products are fully live and buyable today; the rest are coming-soon
-placeholders. The catalog carries **16 `TODO_LUSIK` markers** in total.
+**Seven products are live and buyable today**, each with its matching
+server-side price row in `netlify/functions/_lib/trusted-products.mjs`:
 
-| Product | Status | Blocker |
-| --- | --- | --- |
-| Armenian Alphabet Blanket | ✅ live ($65) | — |
-| The Custom Name Bib | ✅ live ($22) | — |
-| Full Alphabet Crib Blanket | 🔧 placeholder, **priced $245** | Price is set; needs the live product view + `trusted-products.mjs` row wired so it's buyable online. Until then the page shows the commission (write/call) path. |
-| Days-of-the-Week Bib Set | 🟡 placeholder | **Set a price**, confirm sizing |
-| Hye Em Yes Bib | 🟡 placeholder | **Set a price**, confirm whether the matching cap is bundled or an add-on |
-| Mama & Papa's Anushig Bib Set | 🟡 placeholder | **Set a price** |
-| Bari Akhorzhak Bib & Burp Cloth Set | 🟡 placeholder | **Set a price**, confirm sizing |
-| Embroidered Hand Towel | 🟡 placeholder | **Set a price** |
-| Armenian Baptism Towel | 🟡 placeholder | **Set a price** |
-| Baby Swaddle | 🟡 placeholder | **Set a price** |
-| Baby Bathrobe | 🟡 placeholder | **Set a price** |
+| Product | Status |
+| --- | --- |
+| Armenian Alphabet Blanket | ✅ live ($65) |
+| Full Alphabet Crib Blanket | ✅ live ($245) |
+| The Custom Name Bib | ✅ live ($22) |
+| Days-of-the-Week Bib Set | ✅ live ($129) |
+| Hye Em Yes Bib | ✅ live ($35 / $52 with cap) |
+| Mama & Papa's Anushig Bib Set | ✅ live ($54) |
+| Bari Akhorzhak Bib & Burp Cloth Set | ✅ live ($48 / $65 with cap) |
 
-**Bottom line:** 8 products are blocked only on Lusik setting a price (and a few
-sizing confirmations). Once a price + photos + final copy exist, each placeholder
-can be flipped to `live` — but only together with its matching
-`netlify/functions/_lib/trusted-products.mjs` entry (the server-side price
-contract), or checkout will reject it.
+**Four products remain coming-soon placeholders**, now CMS-managed — Lusik can
+edit them herself in the Content Studio at `/studio` (they live in
+`content/products/*.json`):
 
-## Brand assets (missing — need artwork)
+| Product | Blocker |
+| --- | --- |
+| Embroidered Hand Towel | 🟡 set a price + photos |
+| Armenian Baptism Towel | 🟡 set a price + photos |
+| Baby Swaddle | 🟡 set a price + photos |
+| Baby Bathrobe | 🟡 set a price + photos |
 
-The site references these in the manifest/favicon tags, but the files don't exist
-in `public/` yet (an `icon.svg` and `manifest.webmanifest` are present). The PWA
-install still works without them — the browser falls back to a page screenshot —
-but the experience is much better with real artwork.
+Flipping a placeholder to buyable takes **both** halves: the CMS entry gets
+`status: live` + `priceFrom`, **and** the matching commented-out row in
+`netlify/functions/_lib/trusted-products.mjs` gets uncommented with the same
+price (the server-side price contract) — otherwise checkout rejects it.
 
-- 🟡 `public/favicon.ico` (32×32 or multi-size)
-- 🟡 `public/apple-touch-icon.png` (180×180, iOS home screen)
-- 🟡 `public/icon-192.png` (192×192, Android)
-- 🟡 `public/icon-512.png` (512×512, Android splash + iOS large)
-- 🟡 `public/icon-maskable-512.png` (512×512 with safe-zone padding, Android adaptive)
-- 🟡 `public/og-image.jpg` (1200×630, social-share preview card)
+## Time-boxed: Founding-price launch promo
 
-All six could be generated from the existing `public/icon.svg` if Lusik is happy
-to use that mark; otherwise they need her chosen artwork.
+- 🟡 `LAUNCH_PROMO` (intro pricing on the bibs) runs **2026-06-05 → 2026-06-12**
+  and auto-reverts at the end timestamp. To extend it, change the window in
+  **both** `src/data/config.js` and `netlify/functions/_lib/launch-promo.mjs`
+  (kept in lockstep by `launch-promo-drift.test.mjs`). To let it lapse, do
+  nothing.
 
-## Content review (TODO_LUSIK_REVIEW)
+## Content review (the big one)
 
-- 🟡 The three Journal posts carry `TODO_LUSIK_REVIEW` — Lusik should read each and
+In rough priority order:
+
+- 🟡 **Replace the placeholder testimonials.** The quotes in
+  `src/components/TestimonialsSection.jsx` (rendered on the home page) use
+  invented names and were written as seed content. Swap in real quotes from
+  customers who said yes to being quoted — or hide the section until then.
+- 🟡 **Verify the Calendly link.** `CONFIG.TEXT_US.calendly_url` is a guessed
+  placeholder URL. If the account/event doesn't exist, the "Book a video call"
+  circle on the mobile Shop page dead-ends. Create the event (free tier is
+  fine) and paste the real link.
+- 🟡 Confirm the Alphabet Blanket size (`src/data/catalog.js` — "Approx.
+  30 × 36 in" is marked unconfirmed) and the blanket variants flagged in
+  `src/data/product.js`.
+- 🟡 Record + upload the hands-stitching video clip (`src/data/product.js`).
+- 🟡 Replace the placeholder photo of Lusik in the shop "Help deciding" section
+  (`src/components/shop/HelpDecidingSection.jsx`).
+- 🟡 Customer photos: `CustomerPhotosSection` hides itself until real photos
+  exist — add them when customers consent.
+- 🟡 The journal posts carry `TODO_LUSIK_REVIEW` — Lusik should read each and
   confirm (or send a personal anecdote to splice in).
-- 🟡 Eastern Armenian (`hy`) is surfaced; Western Armenian (`hyw`) is auto-translated
-  and staged for a native speaker's review before it's exposed.
+- 🟡 Eastern Armenian (`hy`) is surfaced but ~two dozen strings are
+  auto-translated drafts awaiting a native speaker
+  (`src/i18n/translations.js`); Western Armenian (`hyw`) is staged and hidden
+  until reviewed.
+
+## Brand assets
+
+- ✅ Full icon set + favicon + maskable icon + `og-image.jpg` shipped under
+  `public/`. The art is placeholder-grade — fine to replace with final brand
+  artwork whenever it exists, no code change needed (same filenames).
 
 ## Payments / go-live (owner-only — can't be automated)
 
-- 🟡 The end-to-end **Stripe live-card test**: place one small real-card order, confirm
-  the webhook fires and the order lands in the DB, then refund. This is the last
-  gate before the shop is officially shippable.
+- 🟡 The end-to-end **Stripe live-card test**: place one small real-card order,
+  confirm the webhook fires and the order lands in the DB, then refund.
 - 🟡 Confirm the Stripe webhook is subscribed to all three events
   (`checkout.session.completed`, `charge.refunded`, `checkout.session.expired`).
+- 🟡 Confirm `NEXT_PUBLIC_SENTRY_DSN` is set in Netlify if error monitoring
+  should be on (Sentry is wired but dormant without it).
 
 ## Engineering hygiene (in progress, low priority)
 
+- ✅ Unknown `/shop/...` and `/journal/...` URLs now return a real 404 (the
+  dynamic routes call `notFound()`), instead of a soft-404 with HTTP 200.
 - 🔧 Gradual `.js → .ts` migration is ongoing (one module at a time, each a PR).
-- 🔧 The production bundle is a single ~590 KB chunk; consider code-splitting
-  (`build.rollupOptions.output.manualChunks`) if load time becomes a concern.

@@ -114,13 +114,13 @@ export default async (req) => {
     return await handleSessionExpired(event.data.object);
   }
   if (event.type === "payment_intent.payment_failed") {
-    return await handlePaymentFailed(event.data.object);
+    return await handlePaymentFailed(event.data.object, event.id);
   }
   if (event.type === "charge.dispute.created") {
-    return await handleDisputeCreated(event.data.object);
+    return await handleDisputeCreated(event.data.object, event.id);
   }
   if (event.type === "radar.early_fraud_warning.created") {
-    return await handleFraudWarning(event.data.object);
+    return await handleFraudWarning(event.data.object, event.id);
   }
   if (event.type !== "checkout.session.completed") {
     return new Response("ok (ignored)", { status: 200 });
@@ -546,9 +546,29 @@ async function handleSessionExpired(session) {
 // New webhook event handlers added 2026-05-17
 // Each emails admin via Resend. No DB writes -- those can be
 // added in a follow-up PR once the schema has a webhook_events table.
+//
+// Unlike the order/refund/expiry paths (which dedupe via the orders
+// row), these notification-only events have nothing to dedupe against,
+// so a Stripe re-delivery would send a second admin email. alreadyNotified
+// records the event id in a Blob and skips repeats. It is best-effort and
+// fails OPEN: if Blobs is unavailable the alert still goes out, because a
+// duplicate email is far better than a dropped dispute/fraud warning.
 // ----------------------------------------------------------------
 
-async function handlePaymentFailed(intent) {
+async function alreadyNotified(eventId) {
+  if (!eventId) return false;
+  try {
+    const store = getStore({ name: "stripe-events-seen" });
+    if (await store.get(eventId)) return true;
+    await store.setJSON(eventId, { at: new Date().toISOString() });
+    return false;
+  } catch {
+    return false; // fail open — never let a Blobs hiccup drop an alert
+  }
+}
+
+async function handlePaymentFailed(intent, eventId) {
+  if (await alreadyNotified(eventId)) return new Response("ok (duplicate)", { status: 200 });
   console.log("[webhook] payment_intent.payment_failed", intent.id);
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
   if (!adminEmail) return new Response("ok", { status: 200 });
@@ -564,7 +584,8 @@ async function handlePaymentFailed(intent) {
   return new Response("ok", { status: 200 });
 }
 
-async function handleDisputeCreated(dispute) {
+async function handleDisputeCreated(dispute, eventId) {
+  if (await alreadyNotified(eventId)) return new Response("ok (duplicate)", { status: 200 });
   console.log("[webhook] charge.dispute.created", dispute.id);
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
   if (!adminEmail) return new Response("ok", { status: 200 });
@@ -580,7 +601,8 @@ async function handleDisputeCreated(dispute) {
   return new Response("ok", { status: 200 });
 }
 
-async function handleFraudWarning(warning) {
+async function handleFraudWarning(warning, eventId) {
+  if (await alreadyNotified(eventId)) return new Response("ok (duplicate)", { status: 200 });
   console.log("[webhook] radar.early_fraud_warning.created", warning.id);
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
   if (!adminEmail) return new Response("ok", { status: 200 });

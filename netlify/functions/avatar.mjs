@@ -25,7 +25,7 @@ const ALLOWED_EXTS     = new Set(["png", "jpg", "jpeg", "webp"]);
 const STORE_NAME       = "profile-photos";
 
 export default async (req, context) => {
-  const auth = requireUser(req, context);
+  const auth = await requireUser(req, context);
   if (auth.response) return auth.response;
   const { user } = auth;
 
