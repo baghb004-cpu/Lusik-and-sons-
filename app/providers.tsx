@@ -23,6 +23,7 @@ import { auth } from "../src/lib/auth.js";
 import { CONFIG } from "../src/data/config.js";
 
 const META_PIXEL_ID: string = CONFIG.ANALYTICS?.META_PIXEL_ID || "";
+const GOOGLE_ADS_ID: string = CONFIG.ANALYTICS?.GOOGLE_ADS_ID || "";
 
 export function Providers({ children }: { children: ReactNode }) {
   // Fire a Meta Pixel PageView on client-side route changes (the base
@@ -106,6 +107,18 @@ export function Providers({ children }: { children: ReactNode }) {
         <Script id="meta-pixel-base" strategy="afterInteractive">
           {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`}
         </Script>
+      ) : null}
+      {GOOGLE_ADS_ID ? (
+        <>
+          <Script
+            id="google-ads-gtag-src"
+            src={"https://www.googletagmanager.com/gtag/js?id=" + GOOGLE_ADS_ID}
+            strategy="afterInteractive"
+          />
+          <Script id="google-ads-gtag-init" strategy="afterInteractive">
+            {"window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','" + GOOGLE_ADS_ID + "');"}
+          </Script>
+        </>
       ) : null}
       <LanguageProvider>
         <ToastProvider>
