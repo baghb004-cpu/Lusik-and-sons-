@@ -38,11 +38,17 @@ export const CONFIG = {
   // Maps / Find My. It layers BELOW the bottom-nav island and stops above
   // it, so the nav stays usable.
   //
-  // IMMERSIVE_ENABLED is the master flag. It defaults to FALSE: the normal
-  // product page is the fallback, and the immersive sheet only appears
-  // when this is flipped to true (mobile only — desktop is never affected).
+  // IMMERSIVE_ENABLED is an ENVIRONMENT flag, not a code literal, so the
+  // same code ships everywhere but only turns on where the env says so.
+  // It reads the build-time var NEXT_PUBLIC_IMMERSIVE_SHEET (inlined per
+  // build by Next). netlify.toml sets it PER CONTEXT:
+  //   production     → "false"  (live site stays on the normal page)
+  //   deploy-preview → "true"   (PR previews show the sheet, for testing)
+  // Because Netlify builds each context separately, production CANNOT
+  // inherit the preview value — merging this branch does not enable it
+  // live. Unset / anything-but-"true" ⇒ false (fail-safe off).
   SHEET: {
-    IMMERSIVE_ENABLED:    false,  // master flag — false = normal product page everywhere
+    IMMERSIVE_ENABLED:    process.env.NEXT_PUBLIC_IMMERSIVE_SHEET === "true",
     DEFAULT_DETENT:       "medium", // opening detent: "expanded" | "medium" | "collapsed"
     FLICK_VELOCITY_PX_MS: 0.6,    // |drag speed| past this = a flick (jumps a detent)
     STORAGE_PREFIX:       "lusik_sheet_detent_v1", // localStorage key prefix (per product)
