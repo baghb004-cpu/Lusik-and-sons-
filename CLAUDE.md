@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Status banner — last updated 2026-05-31.** Three big things to know, all now
+> **Status banner — last updated 2026-06-09.** Four big things to know, all now
 > reflected below:
 > 1. **The Next.js (App Router) migration is COMPLETE and flipped to production.**
 >    The site was a Vite-built React SPA; it is now a **Next.js App Router** app.
@@ -17,6 +17,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > 3. **Launch-readiness polish landed** after the flip: a PNG icon set + favicon +
 >    maskable icon, Organization JSON-LD, branded `404`/error pages, Sentry wired
 >    into the Next provider shell (DSN-gated), and a dependency-review CI gate.
+> 4. **Ads are live and consent-gated (June 2026).** A Meta Pixel + Google Ads
+>    tag load from `app/providers.tsx`, behind the CPRA do-not-share opt-out in
+>    `src/lib/adConsent.ts` (footer "Your privacy choices" link + a live switch
+>    inside the Privacy Policy; GPC browser signals honored). The Privacy Policy
+>    was rewritten to disclose them — keep it in sync with the tags. The cart now
+>    also persists (localStorage for everyone + debounced `saved-cart` PUT for
+>    signed-in users, cleared on the `?order=success` return), and the Full
+>    Alphabet Crib Blanket is **live**, no longer the priced-placeholder example.
 
 ## What this is
 
@@ -129,10 +137,11 @@ often trip up code/tests written against the old UI:
   (was "Almost there"); the journal back button is **"All posts"**.
 - **Priced vs unpriced placeholders.** `ProductPlaceholderView` renders one of two
   CTA paths depending on the catalog entry's `priceFrom`:
-  - **Priced** placeholder (e.g. the Full Alphabet Crib Blanket, `priceFrom: 245`,
-    `status: "placeholder"`) → a **commission path**: primary CTA is a
-    "Write Lusik to commission this" **mailto link** (role=link), a phone link, and
-    an "Add me to the list" waitlist button. The price is shown.
+  - **Priced** placeholder (`priceFrom` set, `status: "placeholder"`) → a
+    **commission path**: primary CTA is a "Write Lusik to commission this"
+    **mailto link** (role=link), a phone link, and an "Add me to the list"
+    waitlist button. The price is shown. (The Full Alphabet Crib Blanket was
+    the canonical example until it went **live** in June 2026.)
   - **Unpriced** placeholder (`priceFrom: null`) → a **waitlist path**: a disabled
     "Currently unavailable" bar + a "Write me when it's ready" **button**, with
     "Price coming soon."
@@ -215,9 +224,12 @@ A mini-blog (`/journal` list, `/journal/<slug>` posts) with starter posts about 
 - **Icon set now shipped** (placeholder art, fine to replace with final brand assets): `/favicon.ico`, `/apple-touch-icon.png` (180×180), `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png` — all under `/public/`, referenced by the manifest and linked from the layout.
 - Print styles live in the main stylesheet (`@media print`): hide fixed UI, grayscale photos, append `(URL)` after external links, `page-break-inside: avoid` on `article`/`section`/order cards.
 
-### Analytics (privacy-first, opt-in)
+### Analytics + ad pixels (consent-gated)
 
-[Umami](https://umami.is)-compatible, default OFF. Set `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` (in `src/data/config.js`) to a real ID to enable; when off, every `track()` call is a no-op. Tracks pageviews (incl. SPA navigation) and custom events: `add-to-cart`, `checkout-start`, `order-complete`, `save-design`, `share-design`, `waitlist-signup`, `newsletter-signup`. The Privacy Policy's "Cookies and tracking" clause already discloses the optional provider honestly.
+Two distinct layers, both fed by the `track()` wrapper in `src/lib/analytics.js`:
+
+1. **Umami (privacy-first, opt-in, default OFF).** Set `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` (in `src/data/config.js`) to enable; when off, Umami calls are no-ops. Tracks pageviews (incl. SPA navigation) and custom events: `add-to-cart`, `checkout-start`, `order-complete`, `save-design`, `share-design`, `waitlist-signup`, `newsletter-signup`.
+2. **Ad pixels (LIVE since June 2026): Meta Pixel + Google Ads gtag.** IDs in `CONFIG.ANALYTICS.META_PIXEL_ID` / `GOOGLE_ADS_ID`; tags injected from `app/providers.tsx`; `track()` forwards mapped funnel events (AddToCart / InitiateCheckout / Purchase / Lead) to `fbq`. **Both sit behind the CPRA do-not-share opt-out in `src/lib/adConsent.ts`**: a stored opt-out (`lusik_ads_optout_v1`) or a Global Privacy Control browser signal prevents injection and event forwarding. The opt-out UI is the switch inside the Privacy Policy's "Advertising pixels" section (`PolicyModal.jsx`, `widget: "adsOptOut"`), reachable via the footer's "Your privacy choices" link (`openPolicy("privacyChoices")` deep-links to it). **If you add/remove an ad tag, update the Privacy Policy section in the same change — the policy describing reality is the deal.**
 
 ### SEO infrastructure
 
@@ -318,6 +330,7 @@ A condensed list of things wired up that aren't obvious from the architecture ov
 - `SwipeableRow` — touch gesture machine for left-swipe-to-delete on cart rows (honors `prefers-reduced-motion`, handles `touchcancel` + multi-touch; tunables in `CONFIG.SWIPE`).
 - Cart drawer (desktop) also has swipe-right-to-dismiss, X button, backdrop click, and Escape.
 - Cart `-` on `qty === 1` routes to `removeFromCart` (with undo toast).
+- **Cart persistence (June 2026).** The cart mirrors to localStorage (`lusik_cart_v1`, 30-day TTL, shape-validated on read) for everyone, and signed-in users get a debounced PUT to the `saved-cart` Function (which previously existed but was never called). The `/?order=success` return from Stripe explicitly clears both copies — before persistence, the full-page redirect resetting React state was the only thing "emptying" the bag post-purchase. All of it lives in `src/state/SiteProvider.jsx`.
 
 ### Security additions
 - `link-guest-order.mjs` requires `email_verified === true` before claiming guest orders by email.

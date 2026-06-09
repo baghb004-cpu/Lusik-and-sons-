@@ -41,7 +41,7 @@ export function TrackingForm() {
           Track <ArrowRight size={14} />
         </button>
       </div>
-      <p className="text-xs opacity-60 mt-3">Opens the carrier's tracking page in a new tab.</p>
+      <p className="text-xs opacity-70 mt-3">Opens the carrier's tracking page in a new tab.</p>
     </div>
   );
 }

@@ -76,7 +76,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
         { label: loc(category, "label", lang) },
       ]} />
 
-      <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>{loc(category, "eyebrow", lang)}</p>
+      <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>{loc(category, "eyebrow", lang)}</p>
       <h1 className="font-display text-4xl lg:text-6xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
         {loc(category, "label", lang)}.
       </h1>
@@ -114,7 +114,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                     style={{ background: "var(--accent-soft)" }}
                   >
                     <div>
-                      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "var(--accent)", fontWeight: 600 }}>
+                      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "var(--accent-text)", fontWeight: 600 }}>
                         {t("shop.almostReady")}
                       </p>
                       <p className="text-xs opacity-55 italic">{t("shop.lusikHands")}</p>
@@ -149,36 +149,36 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
                             foundingLabel={t("shop.from", { price: promo.foundingDollars })}
                           />
                         ) : (
-                          <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent)" }}>
+                          <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent-text)" }}>
                             {t("shop.from", { price: p.priceFrom })}
                           </p>
                         );
                       })()}
                       {soldOut ? (
-                        <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent)", fontWeight: 600 }}>
+                        <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent-text)", fontWeight: 600 }}>
                           {t("soldOut.badge")}
                         </span>
                       ) : (
-                        <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                        <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
                           {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
                         </span>
                       )}
                     </>
                   ) : typeof p.priceFrom === "number" && p.priceFrom > 0 ? (
                     <>
-                      <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent)" }}>
+                      <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent-text)" }}>
                         {t("shop.from", { price: p.priceFrom })}
                       </p>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
                         {t("shop.byDirectOrder")} <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent)", fontWeight: 600 }}>
+                      <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent-text)", fontWeight: 600 }}>
                         {t("shop.almostReady")}
                       </span>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
                         {t("shop.writeMe")} <ArrowRight size={12} strokeWidth={1.75} />
                       </span>
                     </>

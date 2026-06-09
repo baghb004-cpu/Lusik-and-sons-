@@ -184,7 +184,7 @@ export function BibColorPicker({ threadColors, colorPresets, defaultPresetKey, s
               );
             })}
           </div>
-          <p className="text-[0.65rem] opacity-50 mt-1.5">
+          <p className="text-[0.65rem] opacity-70 mt-1.5">
             {t("bib.selected")} <span style={{ fontWeight: 500 }}>{letterColor?.name ?? "—"}</span>
           </p>
         </div>

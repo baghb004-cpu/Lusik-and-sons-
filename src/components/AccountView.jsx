@@ -240,7 +240,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
           swipe-down already provide "close", so the in-page back link is
           hidden there. */}
       {!inSheet && (
-        <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
+        <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-70 hover:opacity-100 flex items-center gap-2 mb-8">
           <ChevronLeft size={14} /> Back to shop
         </button>
       )}
@@ -296,7 +296,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
             </p>
             <p className="text-sm opacity-70 mt-1">{user.email}</p>
             {profile?.phone && <p className="text-sm opacity-70 mt-0.5">{profile.phone}</p>}
-            {avatarBusy && <p className="text-xs opacity-60 mt-2 italic">Uploading photo…</p>}
+            {avatarBusy && <p className="text-xs opacity-70 mt-2 italic">Uploading photo…</p>}
           </div>
         </div>
 
@@ -427,15 +427,15 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
         </div>
 
         {addressesLoading ? (
-          <p className="text-sm opacity-60">Loading…</p>
+          <p className="text-sm opacity-70">Loading…</p>
         ) : addresses.length === 0 && !addingAddress ? (
-          <p className="text-sm opacity-60 italic">No saved addresses yet. We'll never need one until you place an order.</p>
+          <p className="text-sm opacity-70 italic">No saved addresses yet. We'll never need one until you place an order.</p>
         ) : (
           <div className="space-y-3">
             {addresses.map((a) => (
               <div key={a.id} className="p-4 flex items-start justify-between gap-4" style={{ border: "1px solid rgba(26,22,18,0.12)" }}>
                 <div className="flex-1">
-                  {a.label && <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60 mb-1">{a.label}</p>}
+                  {a.label && <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 mb-1">{a.label}</p>}
                   <p className="font-display text-base" style={{ fontWeight: 500 }}>{a.recipient_name}</p>
                   <p className="text-sm opacity-70 leading-relaxed">
                     {a.street_line_1}
@@ -518,7 +518,7 @@ export function AccountView({ user, profile, onProfileUpdate, onBack, onSignOut,
       <div className="flex items-center justify-between gap-6 flex-wrap mb-16">
         <button
           onClick={onSignOut}
-          className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2"
+          className="text-xs tracking-[0.2em] uppercase opacity-70 hover:opacity-100 flex items-center gap-2"
         >
           <LogOut size={14} strokeWidth={1.5} /> Sign out
         </button>

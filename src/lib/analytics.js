@@ -17,6 +17,7 @@
 // ============================================================
 
 import { CONFIG } from "../data/config.js";
+import { adsOptedOut } from "./adConsent";
 
 // Map our internal event names to Meta's standard event names so the
 // Pixel can be used for ad optimization + ROAS reporting. Only mapped
@@ -37,7 +38,9 @@ export function track(eventName, data) {
   // Forward to whichever analytics providers are turned on.
   // All independent — none knows the others exist.
   const umamiOn    = !!CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID;
-  const metaOn     = !!CONFIG.ANALYTICS?.META_PIXEL_ID;
+  // Meta forwarding respects the CPRA do-not-share opt-out (and GPC) —
+  // same gate that keeps the pixel from being injected in providers.tsx.
+  const metaOn     = !!CONFIG.ANALYTICS?.META_PIXEL_ID && !adsOptedOut();
   const posthogOn  = !!CONFIG.PAID_FEATURES?.BEHAVIORAL_ANALYTICS?.ENABLED
                   && !!CONFIG.PAID_FEATURES?.BEHAVIORAL_ANALYTICS?.POSTHOG_KEY;
   if (!umamiOn && !posthogOn && !metaOn) return;

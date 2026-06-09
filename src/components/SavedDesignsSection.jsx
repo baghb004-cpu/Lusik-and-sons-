@@ -67,7 +67,7 @@ export function SavedDesignsSection({ userId, product }) {
 
   if (designs.length === 0) {
     return (
-      <p className="text-sm opacity-60 italic max-w-md leading-relaxed">
+      <p className="text-sm opacity-70 italic max-w-md leading-relaxed">
         Nothing saved yet. On the blanket page, click <span style={{ fontWeight: 500 }}>Save</span> next to the live preview to keep a configuration here for later.
       </p>
     );
@@ -114,7 +114,7 @@ export function SavedDesignsSection({ userId, product }) {
               </button>
               <button
                 onClick={() => handleDelete(entry)}
-                className="px-3 py-2 opacity-60 hover:opacity-100 transition"
+                className="px-3 py-2 opacity-70 hover:opacity-100 transition"
                 style={{ border: "1px solid rgba(26,22,18,0.15)" }}
                 aria-label={`Delete saved design ${entry.label}`}
                 title="Delete"

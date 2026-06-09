@@ -546,7 +546,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
               customers don't know that until they see the icons. */}
           <PaymentMethodsRow className="mt-4" />
 
-          <p className="text-xs opacity-60 mt-4 leading-relaxed">
+          <p className="text-xs opacity-70 mt-4 leading-relaxed">
             Or order the old-fashioned way: <button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">message us on Instagram</button>, <button onClick={() => window.open("mailto:hello@lusikandsons.com")} className="underline">write an email</button>, or call <a href="tel:+17608742333" className="underline">(760) 874-2333</a>.
           </p>
         </div>
@@ -566,7 +566,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                   <p className="font-display text-base leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
                   <div className="flex items-center gap-2 mt-1">
                     {item.colorHex && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                    <p className="text-xs opacity-60 truncate">{item.subtitle} · Qty {item.qty}</p>
+                    <p className="text-xs opacity-70 truncate">{item.subtitle} · Qty {item.qty}</p>
                   </div>
                 </div>
                 <p className="text-sm tabular-nums shrink-0" style={{ fontWeight: 500 }}>${(item.price * item.qty).toFixed(2)}</p>
@@ -578,8 +578,8 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {giftIsGift && giftWrap && (
               <div className="flex justify-between"><span className="opacity-70">Gift wrap</span><span className="tabular-nums">+${(CONFIG.GIFT_WRAP_PRICE_CENTS / 100).toFixed(2)}</span></div>
             )}
-            <div className="flex justify-between"><span className="opacity-70">Shipping</span><span className="opacity-60">Calculated at Stripe</span></div>
-            <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-60">Calculated at Stripe</span></div>
+            <div className="flex justify-between"><span className="opacity-70">Shipping</span><span className="opacity-70">Calculated at Stripe</span></div>
+            <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-70">Calculated at Stripe</span></div>
           </div>
         </div>
       </div>

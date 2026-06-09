@@ -237,7 +237,7 @@ export const CATALOG = {
   bibs: {
     slug: "bibs",
     label: "Bibs",
-    label_hy: "Կրծկալներ",
+    label_hy: "Թքակալներ",
     // Recap-the-category copy. Three products, three different gift
     // moments. Names them all in one line so customers landing here
     // from a search ("Armenian baby bib", "personalized name bib",
@@ -254,7 +254,7 @@ export const CATALOG = {
         key: "bib-single",
         slug: "baby-bib",
         name: "The Custom Name Bib",
-        name_hy: "Անհատական անունով կրծկալ",
+        name_hy: "Անհատական անունով թքակալ",
         status: "live",                // points to CUSTOM_PRODUCTS.bib
         priceFrom: 22,
         // Tagline = the value prop in one line. Names both languages
@@ -274,12 +274,12 @@ export const CATALOG = {
         // pattern used on "The Full Alphabet Crib Blanket".
         // Heritage hook + clear product identity in the title.
         name: "The Armenian Days-of-the-Week Bib Set",
-        name_hy: "Շաբաթվա օրերի հայկական կրծկալների հավաքածու",
+        name_hy: "Շաբաթվա օրերի հայկական թքակալների հավաքածու",
         status: "live",
         priceFrom: 129,
         // Tagline leads with the count (seven) + the heritage angle.
         tagline: "Seven bibs for seven days — Monday through Sunday in Armenian, hand cross-stitched by Lusik.",
-        tagline_hy: "Յոթ կրծկալ յոթ օրվա համար՝ երկուշաբթիից կիրակի հայերեն, ասեղնագործված Լուսիկի կողմից։",
+        tagline_hy: "Յոթ թքակալ յոթ օրվա համար՝ երկուշաբթիից կիրակի հայերեն, ասեղնագործված Լուսիկի կողմից։",
         // Description in the same maker + heirloom voice as the
         // homepage. Names the buying contexts (baby shower,
         // christening) where these sets sell best.
@@ -333,7 +333,7 @@ export const CATALOG = {
         key: "bib-hy-em",
         slug: "hy-em-armenian-bib",
         name: "The Hye Em Yes Bib",
-        name_hy: "«Հայ եմ ես» կրծկալ",
+        name_hy: "«Հայ եմ ես» թքակալ",
         status: "live",
         priceFrom: 35,
         // Tagline = the cultural payload + a hook to the flag colors,
@@ -395,11 +395,11 @@ export const CATALOG = {
         key: "bib-anushig-pair",
         slug: "anushig-bib-set",
         name: "The Mama & Papa's Anushig Bib Set",
-        name_hy: "Մայրիկի և Պապայի «Անոյշիկ» կրծկալների հավաքածու",
+        name_hy: "Մայրիկի և Պապայի «Անոյշիկ» թքակալների հավաքածու",
         status: "live",
         priceFrom: 54,
         tagline: "One bib says Mama's sweetheart, the other Papa's — Armenian for \"darling,\" stitched as a pair.",
-        tagline_hy: "Մի կրծկալն ասում է «Մայրիկի անոյշիկը», մյուսը՝ «Պապայի», հայերեն՝ «սիրելի», կարկատված որպես զույգ։",
+        tagline_hy: "Մի թքակալն ասում է «Մայրիկի անոյշիկը», մյուսը՝ «Պապայի», հայերեն՝ «սիրելի», կարկատված որպես զույգ։",
         description: "A matched pair of baby bibs that take turns. One reads Մայրիկիս Անոյշիկը — \"Mama's sweetheart.\" The other reads Պապայիս Անոյշիկը — \"Papa's sweetheart.\" Anushig is the Armenian word for darling, the kind of name a grandmother says when she means it. Embroidered together, gifted together: the bib for the morning Dad gets up first, the bib for the night Mom takes over, both of them small daily reassurances that the baby is loved on both sides of the crib. A small heritage anchor for the first months — when the answer to \"whose baby is this?\" deserves to be said in two voices. Lusik embroiders each pair by hand from her home in Southern California. Made to order, made to last.",
         coverImage: "/img/anushig-bib/cover.jpg",
         images: Array.from({ length: 9 }, (_, i) =>
@@ -477,7 +477,10 @@ export const CATALOG = {
         key: "bib-bari-akhorzhak-set",
         slug: "bari-akhorzhak-bib-burp-cloth-set",
         name: "The Bari Akhorzhak Bib & Burp Cloth Set",
-        name_hy: "«Բարի ախորժակ» կրծկալի և թքակալի հավաքածու",
+        // ⚠️ TODO_LUSIK_REVIEW: bib wording site-wide changed from «կրծկալ»
+        // (reads as "bra" in modern usage) to «թքակալ»; burp cloth here is
+        // «ուսի սրբիչ». Please confirm both with a native ear.
+        name_hy: "«Բարի ախորժակ» թքակալի և ուսի սրբիչի հավաքածու",
         status: "live",
         priceFrom: 48,
         tagline: "Two Armenian meal blessings, one matched set — said before the baby eats, and after.",

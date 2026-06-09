@@ -481,7 +481,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   />
                 </div>
               </div>
-              <p className="text-[0.65rem] opacity-60 italic text-center leading-relaxed">
+              <p className="text-[0.65rem] opacity-70 italic text-center leading-relaxed">
                 {t("pdp.livePreviewCaption")}
               </p>
             </>
@@ -555,7 +555,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   on a video they may not watch. */}
               {product.video?.src && (
                 <div className="mt-4">
-                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2 opacity-60" style={{ color: "var(--accent)" }}>
+                  <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>
                     Watch Lusik stitch
                   </p>
                   <div className="relative aspect-video overflow-hidden" style={{ background: "rgba(26,22,18,0.04)" }}>
@@ -573,7 +573,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     />
                   </div>
                   {product.video.caption && (
-                    <p className="text-[0.65rem] opacity-60 italic mt-2 leading-relaxed">
+                    <p className="text-[0.65rem] opacity-70 italic mt-2 leading-relaxed">
                       {product.video.caption}
                     </p>
                   )}
@@ -584,14 +584,14 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
         </div>
 
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>{t("pdp.madeToOrderEyebrow")}</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent-text)" }}>{t("pdp.madeToOrderEyebrow")}</p>
           <h2 className="font-display text-4xl lg:text-5xl mb-3 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{loc(product, "name", lang)}</h2>
           <p className="text-base opacity-70 mb-6">{loc(product, "subtitle", lang)}</p>
 
           <div className="flex items-baseline gap-3 mb-2">
             <p className="text-3xl" style={{ fontWeight: 500 }}>${(layout.priceCents / 100).toFixed(0)}</p>
           </div>
-          <p className="text-xs opacity-60 mb-8">
+          <p className="text-xs opacity-70 mb-8">
             {layout.letterCount === 6 ? t("pdp.premiumNote") : t("pdp.standardNote")}
           </p>
 
@@ -610,7 +610,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 <span style={{ fontFamily: "Fraunces, serif", fontSize: "1.5rem", lineHeight: 1, letterSpacing: "0.05em" }}>
                   {alphabet.letters.join(" ")}
                 </span>
-                <span className="opacity-60">{alphabet.label}</span>
+                <span className="opacity-70">{alphabet.label}</span>
               </span>
             }
           >
@@ -639,7 +639,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     }}>
                       {a.letters.join(" ")}
                     </p>
-                    <p className="text-[0.7rem] opacity-60">{a.transliteration}</p>
+                    <p className="text-[0.7rem] opacity-70">{a.transliteration}</p>
                   </button>
                 );
               })}
@@ -658,7 +658,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 </div>
                 <span className="leading-tight">
                   <span className="block">{layout.shortLabel}</span>
-                  <span className="text-[0.65rem] opacity-60">{t("pdp.letters", { n: layout.letterCount })} · ${(layout.priceCents / 100).toFixed(0)}</span>
+                  <span className="text-[0.65rem] opacity-70">{t("pdp.letters", { n: layout.letterCount })} · ${(layout.priceCents / 100).toFixed(0)}</span>
                 </span>
               </span>
             }
@@ -698,7 +698,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 );
               })}
             </div>
-            <p className="text-xs opacity-60 mt-3 leading-relaxed">
+            <p className="text-xs opacity-70 mt-3 leading-relaxed">
               {layout.description}{t("pdp.forDifferentLetterPre")}<a href="mailto:hello@lusikandsons.com?subject=Custom letter request" className="underline">{t("pdp.writeLusikDirectly")}</a>{t("pdp.forDifferentLetterPost")}
             </p>
           </CollapsibleSection>
@@ -720,12 +720,12 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 </span>
                 <span className="leading-tight">
                   <span className="block text-[0.7rem]">{blockColor.name} {t("pdp.cube")} · {letterColor.name} {t("pdp.letter")}</span>
-                  <span className="text-[0.6rem] opacity-60">{blockColor.name} & {letterColor.name}</span>
+                  <span className="text-[0.6rem] opacity-70">{blockColor.name} & {letterColor.name}</span>
                 </span>
               </span>
             }
           >
-            <p className="text-[0.65rem] opacity-50 italic mb-4">
+            <p className="text-[0.65rem] opacity-70 italic mb-4">
               {t("pdp.colorIntro")}
             </p>
 
@@ -860,7 +860,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                       );
                     })}
                   </div>
-                  <p className="text-[0.65rem] opacity-50 mt-1.5">
+                  <p className="text-[0.65rem] opacity-70 mt-1.5">
                     {t("pdp.selected")} <span style={{ fontWeight: 500 }}>{blockColor.name}</span>
                   </p>
                 </div>
@@ -888,7 +888,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                       );
                     })}
                   </div>
-                  <p className="text-[0.65rem] opacity-50 mt-1.5">
+                  <p className="text-[0.65rem] opacity-70 mt-1.5">
                     {t("pdp.selected")} <span style={{ fontWeight: 500 }}>{letterColor.name}</span>
                   </p>
                 </div>
@@ -929,18 +929,18 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     <span className="block text-[0.75rem]" style={{ fontFamily: "Fraunces, serif", fontWeight: 500 }}>
                       {[customLine1.trim(), customLine2.trim()].filter(Boolean).join("  ·  ")}
                     </span>
-                    <span className="text-[0.6rem] opacity-60">{t("pdp.willEmbroider")}</span>
+                    <span className="text-[0.6rem] opacity-70">{t("pdp.willEmbroider")}</span>
                   </>
                 ) : (
                   <>
                     <span className="block text-[0.75rem] opacity-70">{t("pdp.noOptionalText")}</span>
-                    <span className="text-[0.6rem] opacity-50">{t("pdp.shipsAlphabet")}</span>
+                    <span className="text-[0.6rem] opacity-70">{t("pdp.shipsAlphabet")}</span>
                   </>
                 )}
               </span>
             }
           >
-            <p className="text-[0.65rem] opacity-60 italic mb-4 leading-relaxed">
+            <p className="text-[0.65rem] opacity-70 italic mb-4 leading-relaxed">
               {t("pdp.personalizationIntro")}
             </p>
 
@@ -969,7 +969,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   }}
                   aria-label={t("pdp.line1Aria")}
                 />
-                <p className="text-[0.6rem] opacity-50 mt-1">
+                <p className="text-[0.6rem] opacity-70 mt-1">
                   {t("pdp.upToChars", { n: customLine1.trim().length })}
                 </p>
               </div>
@@ -998,7 +998,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   }}
                   aria-label={t("pdp.line2Aria")}
                 />
-                <p className="text-[0.6rem] opacity-50 mt-1">
+                <p className="text-[0.6rem] opacity-70 mt-1">
                   {t("pdp.upToChars", { n: customLine2.trim().length })}
                 </p>
               </div>
@@ -1024,7 +1024,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1" style={{ color: "var(--accent)" }}>{t("pdp.realExample")}</p>
+                <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1" style={{ color: "var(--accent-text)" }}>{t("pdp.realExample")}</p>
                 <p className="text-[0.7rem] opacity-75 leading-snug italic">
                   Lusik stitches the name in the center of the blanket and the year on the empty square diagonally above — on the line that runs between the two alphabet diagonals — like the <span style={{ fontStyle: "normal", fontFamily: "Fraunces, serif", fontWeight: 500 }}>OLEN / 2026</span> blanket shown here. Final placement may shift slightly depending on the specific text length.
                 </p>
@@ -1054,7 +1054,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               sheet or copies to clipboard — see handleShareDesign above. */}
           <div className="mb-6 p-5 lg:p-6" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.1)" }}>
             <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60" style={{ color: "var(--accent)" }}>{t("pdp.yourBlanket")}</p>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent-text)" }}>{t("pdp.yourBlanket")}</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handleSaveDesign}
@@ -1086,7 +1086,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             {/* Promotion hint — guests see a soft sign-in nudge; signed-in
                 customers see a pointer to their account library so they
                 know the saved design will be retrievable later. */}
-            <p className="text-[0.65rem] opacity-55 italic mb-3 leading-snug">
+            <p className="text-[0.65rem] opacity-70 italic mb-3 leading-snug">
               {user ? t("pdp.saveHintUser") : t("pdp.saveHintGuest")}
             </p>
             <div className="flex items-center gap-5">
@@ -1129,7 +1129,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                     <span style={{ color: letterColor.hex, fontWeight: 600 }}>■</span> {t("pdp.letterInside", { name: letterColor.name })}
                   </p>
                 )}
-                <p className="text-xs opacity-60 mt-2">
+                <p className="text-xs opacity-70 mt-2">
                   {t("pdp.letters", { n: layout.letterCount })} · ${(layout.priceCents / 100).toFixed(0)}
                 </p>
               </div>
@@ -1142,12 +1142,12 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           <details className="border-t border-b mb-8 group" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
             <summary className="py-5 flex items-center justify-between cursor-pointer list-none">
               <span className="text-xs tracking-[0.2em] uppercase opacity-70">{t("product.details")}</span>
-              <Plus size={16} strokeWidth={1.5} className="open-icon opacity-60" />
+              <Plus size={16} strokeWidth={1.5} className="open-icon opacity-70" />
             </summary>
             <ul className="space-y-2 text-sm pb-5 -mt-1">
               {product.specs.map((s, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span style={{ color: "var(--accent)" }}>—</span>
+                  <span style={{ color: "var(--accent-text)" }}>—</span>
                   <span>{s}</span>
                 </li>
               ))}
@@ -1159,14 +1159,14 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               callout, not alarming; links to the full Final Sale Policy
               modal so anyone who wants the detail can read it. */}
           <div className="mb-3 p-3 text-xs leading-snug flex items-start gap-2.5" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
-            <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("pdp.finalSale")}</span>
-            <span className="opacity-80">
+            <span style={{ color: "var(--accent-text)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("pdp.finalSale")}</span>
+            <span>
               {t("pdp.finalSaleBody")}{" "}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
                 className="underline hover:opacity-60"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--accent-text)" }}
               >
                 {t("pdp.readPolicy")}
               </button>.
@@ -1179,9 +1179,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           <PurchaseCard className="hidden lg:block">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center border" style={{ borderColor: "var(--border-strong)" }}>
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3"><Minus size={14} /></button>
-              <span className="px-5 text-base">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} className="px-4 py-3"><Plus size={14} /></button>
+              <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3" aria-label="Decrease quantity"><Minus size={14} /></button>
+              <span className="px-5 text-base" aria-live="polite">{qty}</span>
+              <button onClick={() => setQty(qty + 1)} className="px-4 py-3" aria-label="Increase quantity"><Plus size={14} /></button>
             </div>
             {/* Primary Add-to-cart. The ref drives the IntersectionObserver
                 above so the mobile sticky bar knows when this button is
@@ -1243,8 +1243,8 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               return (
                 <>
                   <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: est.shipBy })}</span>
-                  <span className="opacity-70">{t("pdp.arrives", { date: est.arrives })}</span>
-                  <span className="block opacity-60 mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
+                  <span>{t("pdp.arrives", { date: est.arrives })}</span>
+                  <span className="block mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
                 </>
               );
             })()}

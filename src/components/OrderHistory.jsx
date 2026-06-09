@@ -152,7 +152,7 @@ export function OrderHistory({ userId, onReorder }) {
 
   if (orders.length === 0) {
     return (
-      <p className="text-sm opacity-60 italic max-w-md leading-relaxed">
+      <p className="text-sm opacity-70 italic max-w-md leading-relaxed">
         Nothing in your hands yet. When Lusik finishes a piece for you and walks it to the carrier, it will show up here — with the tracking number, a photograph of the finished stitchwork, and a few words on how to keep it for the next generation.
       </p>
     );

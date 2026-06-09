@@ -327,7 +327,7 @@ export function AuthDrawer({ onClose, onAuthed }) {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {mode === "signup" && <p className="text-[0.65rem] opacity-60 mt-1.5">At least 8 characters.</p>}
+              {mode === "signup" && <p className="text-[0.65rem] opacity-70 mt-1.5">At least 8 characters.</p>}
             </div>
           )}
 

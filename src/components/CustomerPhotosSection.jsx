@@ -43,7 +43,7 @@ export function CustomerPhotosSection() {
   return (
     <section className="max-w-6xl mx-auto px-6 lg:px-12 py-16 lg:py-24">
       <div className="text-center mb-10 lg:mb-14 max-w-xl mx-auto">
-        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>From customer homes</p>
+        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>From customer homes</p>
         <h2 className="font-display text-3xl lg:text-4xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
           Where they <em style={{ fontWeight: 400 }}>landed</em>.
         </h2>
@@ -72,7 +72,7 @@ export function CustomerPhotosSection() {
         ))}
       </div>
       <p className="text-center text-xs opacity-65 mt-8 leading-relaxed">
-        Tag <span style={{ fontWeight: 500, color: "var(--accent)" }}>#lusikandsons</span> or send us a photo on Instagram — with your permission, we'd love to share it here.
+        Tag <span style={{ fontWeight: 500, color: "var(--accent-text)" }}>#lusikandsons</span> or send us a photo on Instagram — with your permission, we'd love to share it here.
       </p>
     </section>
   );

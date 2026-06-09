@@ -52,6 +52,9 @@ export function SiteFooter({ onOpenPolicy }) {
               <button onClick={() => nav.goPage("shipping")} className="text-left hover:opacity-60">{t("footer.shippingTracking")}</button>
               <button onClick={() => openPolicy("finalSale")} className="text-left hover:opacity-60">{t("footer.finalSalePolicy")}</button>
               <button onClick={() => openPolicy("privacy")} className="text-left hover:opacity-60">{t("footer.privacyPolicy")}</button>
+              {/* CPRA-required opt-out link — opens the privacy policy scrolled
+                  to the live do-not-share switch (see PolicyModal). */}
+              <button onClick={() => openPolicy("privacyChoices")} className="text-left hover:opacity-60">{t("footer.privacyChoices")}</button>
               <button onClick={() => openPolicy("terms")} className="text-left hover:opacity-60">{t("footer.termsOfService")}</button>
               <button onClick={() => nav.goPage("contact")} className="text-left hover:opacity-60">{t("footer.contactUs")}</button>
             </div>

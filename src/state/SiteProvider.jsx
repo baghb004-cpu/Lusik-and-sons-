@@ -17,7 +17,7 @@
 // its own copy of this state until it's retired at the Phase 8 flip.
 // ============================================================
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useToast } from "../components/ToastProvider.jsx";
 import { auth } from "../lib/auth.js";
 import { db } from "../lib/db.js";
@@ -33,6 +33,35 @@ export function useSite() {
   const ctx = useContext(SiteContext);
   if (!ctx) throw new Error("useSite must be used within <SiteProvider>");
   return ctx;
+}
+
+// ── Guest-cart persistence ────────────────────────────────
+// The cart lives in React state, so before this it evaporated on every
+// reload for guests (signed-in users got a server restore, but nothing ever
+// WROTE the server copy, so in practice everyone lost their bag). The cart
+// now mirrors to localStorage on every change and rehydrates on boot;
+// signed-in users additionally sync to the saved-cart Function (below).
+const CART_STORAGE_KEY = "lusik_cart_v1";
+const CART_STORAGE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days — stale carts re-pitch poorly
+const CART_STORAGE_MAX_ITEMS = 40;
+
+// localStorage is same-device data, but it's still external input: validate
+// the shape so a corrupt/ancient entry can't crash the cart math. Prices are
+// only ever display-deep — Stripe re-prices from trusted-products.mjs.
+function readStoredCart() {
+  try {
+    const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.items)) return [];
+    if (Date.now() - (Number(parsed.at) || 0) > CART_STORAGE_MAX_AGE_MS) return [];
+    return parsed.items
+      .filter((i) => i && typeof i.id === "string" && typeof i.name === "string" && Number.isFinite(Number(i.price)))
+      .slice(0, CART_STORAGE_MAX_ITEMS)
+      .map((i) => ({ ...i, qty: Math.min(99, Math.max(1, Math.floor(Number(i.qty) || 1))) }));
+  } catch {
+    return [];
+  }
 }
 
 export function SiteProvider({ children }) {
@@ -194,37 +223,86 @@ export function SiteProvider({ children }) {
     setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: clamped } : i)));
   }, [cart, maxQtyForLine, stockToast, remainingFor]);
 
+  // ── Cart persistence (see readStoredCart above) ─────────
+  // True when this page load is the return leg of a successful Stripe
+  // checkout (/?order=success). The full-page redirect used to be the only
+  // thing "clearing" the cart — React state simply reset. With persistence
+  // that accident goes away, so the success landing explicitly clears the
+  // stored copy (local below, server in the session handler) instead of
+  // restoring a bag the customer just paid for.
+  const [orderJustCompleted] = useState(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("order") === "success"
+  );
+
+  const cartHydratedRef = useRef(false);
+  useEffect(() => {
+    if (orderJustCompleted) {
+      try { window.localStorage.removeItem(CART_STORAGE_KEY); } catch { /* storage blocked */ }
+    } else {
+      const stored = readStoredCart();
+      if (stored.length) setCart((c) => (c.length ? c : stored));
+    }
+    cartHydratedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!cartHydratedRef.current) return;
+    try {
+      if (cart.length) window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ at: Date.now(), items: cart }));
+      else window.localStorage.removeItem(CART_STORAGE_KEY);
+    } catch { /* storage full/blocked — the in-memory cart still works */ }
+  }, [cart]);
+
   // ── Auth (mirrors App.jsx's session effect) ─────────────
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [authReady, setAuthReady] = useState(false);
 
+  // Guards the saved-cart write-back: stays false until the session handler
+  // has reconciled the server copy into local state, so a slow first
+  // getSavedCart can't be overwritten by an early PUT of an empty cart.
+  const serverCartSyncedRef = useRef(false);
+
   useEffect(() => {
     let mounted = true;
     const handleSession = async (session) => {
       if (!session?.user) {
         if (!mounted) return;
+        serverCartSyncedRef.current = false;
         setUser(null); setProfile(null); setIsAdmin(false); setAuthReady(true);
         return;
       }
       setUser(session.user);
       setIsAdmin(auth.isAdmin());
+      // Re-reconcile from scratch for this session — pause the write-back
+      // until the fetch below lands so it can't clobber the server copy.
+      serverCartSyncedRef.current = false;
       try {
         const [{ profile: p }, { cart: savedCart }] = await Promise.all([db.getProfile(), db.getSavedCart()]);
         if (!mounted) return;
         setProfile(p ?? null);
         if (savedCart && Array.isArray(savedCart)) {
-          setCart((local) => {
-            if (local.length === 0) return savedCart;
-            const merged = [...savedCart];
-            for (const localItem of local) {
-              const idx = merged.findIndex((m) => m.id === localItem.id);
-              if (idx >= 0) merged[idx] = localItem; else merged.push(localItem);
-            }
-            return merged;
-          });
+          if (orderJustCompleted) {
+            // Back from Stripe success: the server copy is the cart that was
+            // just purchased — clear it rather than refill the bag.
+            db.saveCart([]).catch(() => {});
+          } else {
+            setCart((local) => {
+              if (local.length === 0) return savedCart;
+              const merged = [...savedCart];
+              for (const localItem of local) {
+                const idx = merged.findIndex((m) => m.id === localItem.id);
+                if (idx >= 0) merged[idx] = localItem; else merged.push(localItem);
+              }
+              return merged;
+            });
+          }
         }
+        // Server copy is now reconciled with local state — the debounced
+        // write-back below may start persisting changes from here on.
+        serverCartSyncedRef.current = true;
       } catch (err) {
         console.warn("Profile/cart hydrate failed:", err);
       }
@@ -244,6 +322,20 @@ export function SiteProvider({ children }) {
     }
     return () => { mounted = false; if (subscription) subscription.unsubscribe(); };
   }, []);
+
+  // Saved-cart write-back. The /saved-cart Function always supported PUT but
+  // nothing ever called it, so "your cart follows your account" only worked
+  // until the first change. Debounced so a qty-stepper flurry lands as one
+  // request; errors are swallowed — persistence must never break the cart.
+  const saveCartTimerRef = useRef(null);
+  useEffect(() => {
+    if (!user || !serverCartSyncedRef.current) return undefined;
+    clearTimeout(saveCartTimerRef.current);
+    saveCartTimerRef.current = setTimeout(() => {
+      Promise.resolve(db.saveCart(cart)).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(saveCartTimerRef.current);
+  }, [cart, user]);
 
   const signOut = useCallback(async () => {
     const { error } = await auth.signOut();

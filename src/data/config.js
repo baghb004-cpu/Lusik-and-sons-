@@ -169,6 +169,14 @@ export const CONFIG = {
     // forwards AddToCart / InitiateCheckout / Purchase so Meta can
     // optimize ad delivery and report real ROAS. The Pixel ID is a
     // public client-side identifier (not a secret), so it's fine here.
+    //
+    // CONSENT: both tags sit behind the CPRA do-not-share opt-out in
+    // src/lib/adConsent.ts (the "Your privacy choices" footer link +
+    // the switch inside the Privacy Policy). A stored opt-out or a
+    // Global Privacy Control browser signal keeps them from loading.
+    // The Privacy Policy's "Advertising pixels" section describes
+    // exactly these two tags — if you add/remove one, update that
+    // section in PolicyModal.jsx in the same change.
     META_PIXEL_ID: "1011469671814643",
     GOOGLE_ADS_ID: "AW-18161513091",
   },

@@ -121,7 +121,7 @@ export function WaitlistModal({ product, onClose }) {
             Don't fill this out: <input name="bot-field" value={bot} onChange={(e) => setBot(e.target.value)} tabIndex={-1} autoComplete="off" />
           </label>
         </form>
-        <p className="text-xs opacity-60 leading-relaxed">
+        <p className="text-xs opacity-70 leading-relaxed">
           Or <a href={`mailto:hello@lusikandsons.com?subject=${encodeURIComponent(`Inquiry: ${product.name}`)}`} className="underline hover:opacity-100">write Lusik directly</a> if you'd rather have the conversation in her own words.
         </p>
       </div>

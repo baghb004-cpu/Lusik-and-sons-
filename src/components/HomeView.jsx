@@ -72,7 +72,7 @@ function SectionBackHeader({ onBack }) {
           type="button"
           onClick={() => onBack?.()}
           className="flex items-center gap-1 -ml-1 pr-4 py-1.5 active:opacity-60 transition-opacity"
-          style={{ color: "var(--accent)", fontWeight: 600 }}
+          style={{ color: "var(--accent-text)", fontWeight: 600 }}
           aria-label={t("mobileNav.backToForYou")}
         >
           <ChevronLeft size={30} strokeWidth={2} />
@@ -525,7 +525,7 @@ export function HomeView({
             </div>
             <div className="mt-10 pt-8" style={{ borderTop: "1px solid rgba(245,239,227,0.15)" }}>
               <p className="font-display text-2xl italic" style={{ fontWeight: 300 }}>— Lusik's sons</p>
-              <p className="text-sm opacity-60 mt-1">Sons of the maker</p>
+              <p className="text-sm opacity-70 mt-1">Sons of the maker</p>
             </div>
           </div>
         </div>
@@ -564,7 +564,7 @@ export function HomeView({
       {/* ── PAGE: Good Questions (FAQ) ─────────────────────────── */}
       {pageSlug === "faq" && (
       <section id="faq" className="max-w-4xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
-        <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "var(--accent)" }}>{CMS_PAGES.faq.eyebrow}</p>
+        <p className="text-xs tracking-[0.3em] uppercase mb-4 text-center" style={{ color: "var(--accent-text)" }}>{CMS_PAGES.faq.eyebrow}</p>
         <h2 className="font-display text-4xl lg:text-5xl mb-12 text-center" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{CMS_PAGES.faq.title}</h2>
         <div className="space-y-1">
           {CMS_PAGES.faq.items.map((item, i) => (
@@ -621,7 +621,7 @@ export function HomeView({
               <p className="text-base lg:text-lg opacity-80 leading-relaxed">
                 For handwritten orders, gift notes you'd like tucked into the box, family-name requests, and the slower kind of correspondence — Lusik checks mail at our local UPS Store mailbox in Buena Park.
               </p>
-              <p className="text-sm opacity-60 italic mt-4 leading-relaxed">
+              <p className="text-sm opacity-70 italic mt-4 leading-relaxed">
                 A mail-receiving address only — please don't visit in person. Lusik works from her kitchen, and that's a private one.
               </p>
             </div>
@@ -632,7 +632,7 @@ export function HomeView({
                   <p className="font-display text-xl lg:text-2xl leading-tight" style={{ fontWeight: 500 }}>
                     Lusik <span style={{ color: "var(--accent)" }}>&</span> Sons
                   </p>
-                  <p className="text-sm opacity-60 mt-0.5 mb-2">c/o The UPS Store</p>
+                  <p className="text-sm opacity-70 mt-0.5 mb-2">c/o The UPS Store</p>
                   <p className="text-base leading-relaxed">
                     5825 Lincoln Ave, Suite D<br />
                     Buena Park, CA 90620
@@ -644,7 +644,7 @@ export function HomeView({
               </div>
               <div className="pt-5" style={{ borderTop: "1px solid rgba(26,22,18,0.12)" }}>
                 <p className="text-xs tracking-[0.3em] uppercase mb-3 opacity-70">Mail pickup hours</p>
-                <p className="text-xs opacity-60 italic mb-4 leading-relaxed">
+                <p className="text-xs opacity-70 italic mb-4 leading-relaxed">
                   The hours Lusik can stop by the UPS Store to gather your letter.
                 </p>
                 <div className="text-sm space-y-2">
@@ -694,7 +694,7 @@ export function HomeView({
                   <span style={{ fontWeight: 500 }}>FedEx</span>
                 </button>
               </div>
-              <p className="text-xs opacity-60 mt-3">Opens Google Maps with the offices closest to you.</p>
+              <p className="text-xs opacity-70 mt-3">Opens Google Maps with the offices closest to you.</p>
             </div>
             <TrackingForm />
           </div>

@@ -245,7 +245,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
             </button>
           )}
           {!stepNext && stageIndex >= 0 && (
-            <p className="text-xs opacity-60 italic self-center">This order is at the end of the pipeline.</p>
+            <p className="text-xs opacity-70 italic self-center">This order is at the end of the pipeline.</p>
           )}
           <label className="lg-pill inline-flex items-center gap-2 px-3 py-1.5 text-[0.6rem] tracking-[0.2em] uppercase">
             <span className="opacity-70">Or jump to:</span>
@@ -303,7 +303,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
       {/* SHIPPING ADDRESS — read-only */}
       {ship && (
         <section className="mb-8">
-          <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 mb-1.5">Ship to</p>
+          <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 mb-1.5">Ship to</p>
           <p className="text-sm leading-relaxed">
             {ship.name && <><span style={{ fontWeight: 500 }}>{ship.name}</span><br /></>}
             {ship.line1 ?? ship.address_line1}
@@ -337,7 +337,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
           digging into the DB. */}
       {(order.order_items?.length ?? 0) > 0 && (
         <section className="mb-10">
-          <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 mb-2">Items</p>
+          <p className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 mb-2">Items</p>
           <div className="space-y-3">
             {order.order_items.map((it) => (
               <div key={it.id} className="p-3" style={{ border: "1px solid rgba(26,22,18,0.10)" }}>
@@ -371,7 +371,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
 
       {/* SHIPPING + INTERNAL FORM */}
       <section className="lg-panel mb-10 p-5">
-        <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60 mb-4">Shipping & internal</p>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 mb-4">Shipping & internal</p>
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="block">
             <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Carrier</span>
@@ -412,7 +412,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
 
       {/* FINISHED-PIECE PHOTO */}
       <section className="mb-10">
-        <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-60 mb-2">Finished-piece photo</p>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase opacity-70 mb-2">Finished-piece photo</p>
         <p className="text-xs opacity-65 mb-3 leading-relaxed italic">
           Uploading a photo emails the customer the first time, telling them their blanket is ready. Subsequent uploads replace the photo without re-emailing.
         </p>

@@ -7,11 +7,92 @@
 // well without a lawyer, and the audience is U.S.). Three
 // policy bodies, picked by `policyKey` prop.
 //
-// other than React + the X icon.
+// The privacy policy's "Advertising pixels" section renders a LIVE
+// control (sections support `widget: "adsOptOut"`): the CPRA
+// do-not-share switch backed by src/lib/adConsent.ts. If the ad
+// tags in app/providers.tsx ever change, update that section's
+// text in the same PR — the policy describing reality is the
+// whole point of it.
 // ============================================================
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "./icons.jsx";
+import { hasGpcSignal, hasStoredOptOut, setAdsOptedOut } from "../lib/adConsent";
+
+// ------------------------------------------------------------
+// AdvertisingChoices — the do-not-share switch, rendered inside
+// the privacy policy's "Advertising pixels" section. Reads the
+// persisted opt-out after mount (SSR-safe) and writes through
+// src/lib/adConsent so the pixels stand down immediately.
+// ------------------------------------------------------------
+function AdvertisingChoices() {
+  const [optedOut, setOptedOut] = useState(false);
+  const [gpc, setGpc] = useState(false);
+  useEffect(() => {
+    setOptedOut(hasStoredOptOut());
+    setGpc(hasGpcSignal());
+  }, []);
+
+  // GPC alone is enough to stop sharing; the stored choice also stands on
+  // its own so it travels to browsers without a GPC signal turned on.
+  const off = optedOut || gpc;
+  const statusText = gpc
+    ? "Your browser is sending a Global Privacy Control signal, so sharing is already off on this device — no switch needed."
+    : optedOut
+      ? "Sharing is off on this device. The Meta and Google tags will not load."
+      : "Sharing is currently on. Flip the switch and both tags stop loading on this device, immediately and on future visits.";
+
+  return (
+    <div
+      data-ads-choices
+      className="mt-4 p-4 flex items-center justify-between gap-4"
+      style={{ border: "1px solid var(--border-default)", background: "rgba(176,136,66,0.06)" }}
+    >
+      <div>
+        <p className="text-sm" style={{ fontWeight: 600 }}>
+          Do not sell or share my personal information
+        </p>
+        <p className="text-xs opacity-70 mt-1 leading-relaxed">{statusText}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={off}
+        aria-label="Do not sell or share my personal information"
+        onClick={() => {
+          const next = !optedOut;
+          setAdsOptedOut(next);
+          setOptedOut(next);
+        }}
+        className="flex-shrink-0"
+        style={{
+          width: 46,
+          height: 26,
+          borderRadius: 999,
+          position: "relative",
+          background: off ? "var(--accent)" : "rgba(26,22,18,0.25)",
+          border: "1px solid rgba(26,22,18,0.15)",
+          transition: "background 0.18s ease",
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 2,
+            left: off ? 21 : 2,
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            background: "#FFFFFF",
+            boxShadow: "0 1px 3px rgba(26,22,18,0.3)",
+            transition: "left 0.18s ease",
+          }}
+        />
+      </button>
+    </div>
+  );
+}
 
 export function PolicyModal({ policyKey, onClose }) {
   // Close on Escape
@@ -28,7 +109,7 @@ export function PolicyModal({ policyKey, onClose }) {
   }, [onClose]);
 
   // Last-updated date — bump this manually whenever you revise the text.
-  const lastUpdated = "May 2026";
+  const lastUpdated = "June 2026";
 
   const policies = {
     privacy: {
@@ -41,11 +122,11 @@ export function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "How we use it",
-          body: "We use your information to fulfill your order, ship your blanket, contact you about your order, and — if you create an account — to show you your order history. That's it. We do not sell your information. We do not share it with advertisers. We do not run analytics that track you across the internet."
+          body: "We use your information to fulfill your order, ship your blanket, contact you about your order, and — if you create an account — to show you your order history. We never sell your personal information. One thing we want to say plainly rather than bury: we run a small number of ads to help new families find Lusik's work, and the measurement tools for those ads share limited browsing signals with Meta and Google. What that means — and the switch that turns it off — is described under 'Advertising pixels' below."
         },
         {
           heading: "Who can see it",
-          body: "Lusik and her sons can see your contact information and shipping address. Stripe sees your payment information. The United States Postal Service, UPS, or FedEx see your shipping address — whichever carrier you select at checkout. Nobody else."
+          body: "Lusik and her sons can see your contact information and shipping address. Stripe sees your payment information. The United States Postal Service, UPS, or FedEx see your shipping address — whichever carrier you select at checkout. And unless you've opted out, Meta and Google receive the limited browsing signals described under 'Advertising pixels' below — pages viewed, an item added to the bag, a completed purchase — never your name, address, or payment details."
         },
         {
           heading: "How long we keep it",
@@ -53,7 +134,12 @@ export function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Cookies and tracking",
-          body: "We use only the cookies necessary to keep you signed in and to remember your cart. We don't use Google Analytics, Facebook Pixel, or any other cross-site tracking, and we don't run advertisements. The site may use a privacy-first analytics provider (Umami) for aggregate pageview counts; if active, it doesn't set cookies, doesn't track you across other sites, and doesn't collect personal data. On mobile, the site also remembers your recently viewed items and recent searches locally in your own browser to help you pick up where you left off — that history stays on your device, is never sent to us, and you can clear it anytime from the search screen. You can confirm what's running by opening your browser's developer tools and looking at the Network tab — every request the site makes will be visible there."
+          body: "We use the cookies necessary to keep you signed in and to remember your cart, plus the optional advertising cookies described in the next section — those are the only cross-site tracking on the site, and you can turn them off. The site may also use a privacy-first analytics provider (Umami) for aggregate pageview counts; if active, it doesn't set cookies, doesn't track you across other sites, and doesn't collect personal data. On mobile, the site also remembers your recently viewed items and recent searches locally in your own browser to help you pick up where you left off — that history stays on your device, is never sent to us, and you can clear it anytime from the search screen. You can confirm what's running by opening your browser's developer tools and looking at the Network tab — every request the site makes will be visible there."
+        },
+        {
+          heading: "Advertising pixels — and your off switch",
+          body: "To help the next family find Lusik's work, we run a few ads on Instagram, Facebook, and Google. To know whether those ads actually led to an order (and to stop paying for the ones that don't), the site loads two standard measurement tools: the Meta Pixel and Google's ad tag. They use cookies and share limited signals about your visit with Meta and Google — pages viewed, an item added to the bag, a completed purchase — never your name, shipping address, or payment details. Meta and Google may connect those signals with your accounts on their own platforms. Under California law that counts as 'sharing' personal information for advertising, and you have the right to say no. The switch below turns both tools off on this device, immediately and for future visits. If your browser sends a Global Privacy Control signal, we treat that as a no automatically — nothing to flip.",
+          widget: "adsOptOut"
         },
         {
           heading: "Children's privacy",
@@ -65,7 +151,7 @@ export function PolicyModal({ policyKey, onClose }) {
         },
         {
           heading: "Your California rights",
-          body: "If you are a California resident, you have specific rights under the California Consumer Privacy Act (CCPA) and its 2023 amendments (CPRA): the right to know what personal information we have collected about you, the right to access a copy of it, the right to correct inaccuracies, the right to delete it (subject to the order-record retention noted above), and the right to opt out of the sale or sharing of your personal information. We do not sell your information and we do not share it with advertisers, so the opt-out is, in our case, the default state for every customer. The first two rights are self-serve: in your account page, the \"Download my data\" button gives you a JSON export of everything we hold, and \"Delete my account\" tears it down. To exercise the others, email hello@lusikandsons.com from the address associated with your account or order. We do not discriminate against customers who exercise their privacy rights — your order is fulfilled the same way either way."
+          body: "If you are a California resident, you have specific rights under the California Consumer Privacy Act (CCPA) and its 2023 amendments (CPRA): the right to know what personal information we have collected about you, the right to access a copy of it, the right to correct inaccuracies, the right to delete it (subject to the order-record retention noted above), and the right to opt out of the sale or sharing of your personal information. We never sell your personal information. We do share the limited advertising signals described under 'Advertising pixels' above with Meta and Google — and the switch in that section, also reachable through 'Your privacy choices' in the site footer, is the opt-out. It takes effect immediately on the device where you flip it, and we honor your browser's Global Privacy Control signal the same way. The know-and-access rights are self-serve: in your account page, the \"Download my data\" button gives you a JSON export of everything we hold, and \"Delete my account\" tears it down. To exercise the others, email hello@lusikandsons.com from the address associated with your account or order. We do not discriminate against customers who exercise their privacy rights — your order is fulfilled the same way either way."
         },
         {
           heading: "Questions",
@@ -171,7 +257,21 @@ export function PolicyModal({ policyKey, onClose }) {
     },
   };
 
-  const policy = policies[policyKey];
+  // "privacyChoices" is an alias key (used by the footer's CPRA-required
+  // "Your privacy choices" link): same privacy policy, but opened scrolled
+  // to the do-not-share switch so the opt-out is one click away.
+  const scrollToAdChoices = policyKey === "privacyChoices";
+  const effectiveKey = scrollToAdChoices ? "privacy" : policyKey;
+  const policy = policies[effectiveKey];
+
+  useEffect(() => {
+    if (!scrollToAdChoices) return;
+    const t = setTimeout(() => {
+      document.querySelector("[data-ads-choices]")?.scrollIntoView({ block: "center" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [scrollToAdChoices]);
+
   if (!policy) return null;
 
   return (
@@ -195,7 +295,7 @@ export function PolicyModal({ policyKey, onClose }) {
             </h2>
             <p className="text-xs opacity-50 mt-1">Last updated: {lastUpdated}</p>
           </div>
-          <button onClick={onClose} className="p-1 -mt-1 -mr-1 opacity-60 hover:opacity-100" aria-label="Close" data-tooltip="Close" data-tooltip-pos="left">
+          <button onClick={onClose} className="p-1 -mt-1 -mr-1 opacity-70 hover:opacity-100" aria-label="Close" data-tooltip="Close" data-tooltip-pos="left">
             <X size={22} />
           </button>
         </div>
@@ -207,15 +307,16 @@ export function PolicyModal({ policyKey, onClose }) {
               <div key={i}>
                 <h3 className="font-display text-base lg:text-lg mb-2" style={{ fontWeight: 500 }}>{s.heading}</h3>
                 <p className="text-sm leading-relaxed opacity-85">{s.body}</p>
+                {s.widget === "adsOptOut" ? <AdvertisingChoices /> : null}
               </div>
             ))}
           </div>
 
           {/* Sister-policy links at the bottom */}
-          <div className="mt-10 pt-6 text-xs opacity-60" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
+          <div className="mt-10 pt-6 text-xs opacity-70" style={{ borderTop: "1px solid rgba(26,22,18,0.08)" }}>
             <p className="mb-1">Other policies:</p>
             <div className="flex gap-4 flex-wrap">
-              {Object.keys(policies).filter((k) => k !== policyKey).map((k) => (
+              {Object.keys(policies).filter((k) => k !== effectiveKey).map((k) => (
                 <button
                   key={k}
                   onClick={(e) => { e.stopPropagation(); /* swap content by reopening */ window.dispatchEvent(new CustomEvent("openPolicy", { detail: k })); }}
@@ -229,7 +330,7 @@ export function PolicyModal({ policyKey, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 lg:px-8 py-4 text-center text-xs opacity-60" style={{ borderTop: "1px solid rgba(26,22,18,0.08)", background: "rgba(176,136,66,0.06)" }}>
+        <div className="px-6 lg:px-8 py-4 text-center text-xs opacity-70" style={{ borderTop: "1px solid rgba(26,22,18,0.08)", background: "rgba(176,136,66,0.06)" }}>
           Questions? <a href="mailto:hello@lusikandsons.com" className="underline">hello@lusikandsons.com</a> · <a href="tel:+17608742333" className="underline">(760) 874-2333</a>
         </div>
       </div>

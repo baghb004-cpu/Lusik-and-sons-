@@ -12,7 +12,7 @@
 // Sentry DSN is configured, initializes error monitoring. Both are no-ops when
 // their dependency isn't present, so the app always renders.
 import Script from "next/script";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { LanguageProvider } from "../src/i18n/LangContext.jsx";
@@ -21,11 +21,25 @@ import { SiteProvider } from "../src/state/SiteProvider.jsx";
 import { MotionProvider } from "../src/components/MotionProvider.jsx";
 import { auth } from "../src/lib/auth.js";
 import { CONFIG } from "../src/data/config.js";
+import { adsOptedOut, ADS_CONSENT_EVENT } from "../src/lib/adConsent";
 
 const META_PIXEL_ID: string = CONFIG.ANALYTICS?.META_PIXEL_ID || "";
 const GOOGLE_ADS_ID: string = CONFIG.ANALYTICS?.GOOGLE_ADS_ID || "";
 
 export function Providers({ children }: { children: ReactNode }) {
+  // Ad-pixel consent gate. Starts false so the server and the client's first
+  // render agree (no tag in either), then flips on after mount unless the
+  // visitor opted out ("Your privacy choices" in the footer / Privacy Policy)
+  // or their browser sends a Global Privacy Control signal. Opting out
+  // mid-session flips it back off; un-opting re-injects without a reload.
+  const [adsAllowed, setAdsAllowed] = useState(false);
+  useEffect(() => {
+    setAdsAllowed(!adsOptedOut());
+    const onConsent = () => setAdsAllowed(!adsOptedOut());
+    window.addEventListener(ADS_CONSENT_EVENT, onConsent);
+    return () => window.removeEventListener(ADS_CONSENT_EVENT, onConsent);
+  }, []);
+
   // Fire a Meta Pixel PageView on client-side route changes (the base
   // pixel code below only fires the initial one). Skip the first run so
   // the landing page isn't counted twice.
@@ -34,6 +48,7 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!META_PIXEL_ID) return;
     if (firstPixelRun.current) { firstPixelRun.current = false; return; }
+    if (adsOptedOut()) return;
     (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.("track", "PageView");
   }, [pathname]);
 
@@ -43,6 +58,7 @@ export function Providers({ children }: { children: ReactNode }) {
   // success URL dedupes instead of double-counting the conversion.
   useEffect(() => {
     if (!META_PIXEL_ID) return;
+    if (adsOptedOut()) return;
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get("order") === "success") {
@@ -102,13 +118,17 @@ export function Providers({ children }: { children: ReactNode }) {
           defines window.fbq (a queuing stub until fbevents.js loads),
           inits the pixel, and fires the first PageView. Funnel events
           (AddToCart / InitiateCheckout / Purchase) are forwarded from the
-          track() wrapper + the Purchase effect above. */}
-      {META_PIXEL_ID ? (
+          track() wrapper + the Purchase effect above.
+          BOTH tags additionally sit behind `adsAllowed` — the CPRA
+          do-not-share opt-out + GPC gate above. Keep any new ad/analytics
+          tag behind the same gate, and keep the Privacy Policy's
+          "Advertising pixels" section in sync with what loads here. */}
+      {META_PIXEL_ID && adsAllowed ? (
         <Script id="meta-pixel-base" strategy="afterInteractive">
           {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`}
         </Script>
       ) : null}
-      {GOOGLE_ADS_ID ? (
+      {GOOGLE_ADS_ID && adsAllowed ? (
         <>
           <Script
             id="google-ads-gtag-src"
