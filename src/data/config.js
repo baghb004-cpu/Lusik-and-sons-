@@ -169,7 +169,7 @@ export const CONFIG = {
     // forwards AddToCart / InitiateCheckout / Purchase so Meta can
     // optimize ad delivery and report real ROAS. The Pixel ID is a
     // public client-side identifier (not a secret), so it's fine here.
-    META_PIXEL_ID: "",
+    META_PIXEL_ID: "1011469671814643",
     GOOGLE_ADS_ID: "AW-18161513091",
   },
 
