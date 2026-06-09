@@ -86,7 +86,7 @@ export function GalleryView() {
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-8">
         <p
           className="text-xs tracking-[0.3em] uppercase mb-4 text-center"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--accent-text)" }}
         >
           The archive
         </p>
@@ -122,7 +122,7 @@ export function GalleryView() {
                   borderColor: active ? "var(--ink)" : "rgba(26,22,18,0.18)",
                 }}
               >
-                {f.label} <span className="opacity-60 ml-1">{count}</span>
+                {f.label} <span className="opacity-70 ml-1">{count}</span>
               </button>
             );
           })}
@@ -149,7 +149,7 @@ export function GalleryView() {
         </div>
 
         {visible.length === 0 && (
-          <p className="text-center opacity-60 py-12">No photos in this category yet.</p>
+          <p className="text-center opacity-70 py-12">No photos in this category yet.</p>
         )}
       </section>
 

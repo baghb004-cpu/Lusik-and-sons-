@@ -84,6 +84,11 @@
     --accent:         #B08842;  /* gold — UNCHANGED in dark mode */
     --accent-soft:    rgba(176,136,66,0.10);
     --accent-strong:  rgba(176,136,66,0.30);
+    /* Gold for TEXT on light surfaces. #B08842 reads ~2.9:1 on cream —
+       below WCAG AA for small text — so eyebrows/labels use this deeper
+       gold (~5:1). Keep --accent for borders, icons, fills, and any gold
+       text sitting on ink/dark surfaces (where the brighter gold passes). */
+    --accent-text:    #826027;
 
     --success:        #3D5A3D;
     --error:          #8B2C2C;
@@ -115,6 +120,7 @@
     --accent:         #C9A678;  /* brighter gold for dark-bg contrast */
     --accent-soft:    rgba(201,166,120,0.14);
     --accent-strong:  rgba(201,166,120,0.36);
+    --accent-text:    #C9A678;  /* on dark surfaces the bright gold already passes */
 
     --success:        #6FA86F;
     --error:          #D17474;

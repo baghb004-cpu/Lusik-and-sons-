@@ -210,7 +210,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
           ← View site
         </button>
         <div className="flex items-center gap-4 opacity-80">
-          <span className="hidden sm:inline opacity-60">{user?.email}</span>
+          <span className="hidden sm:inline opacity-70">{user?.email}</span>
           {onSignOut && (
             <button onClick={onSignOut} className="opacity-70 hover:opacity-100" aria-label="Sign out">
               Sign out
@@ -241,7 +241,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
 
       {/* SEARCH */}
       <label className="block mb-4">
-        <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 block mb-1.5">Search</span>
+        <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Search</span>
         <div className="lg-input">
           <input
             type="search"
@@ -282,7 +282,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
         <div className="lg-panel lg-panel-gold mb-8 p-5">
           <div className="flex items-baseline justify-between mb-3">
             <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)", fontWeight: 600 }}>Waitlists</p>
-            <p className="text-[0.65rem] opacity-60 italic">Click Notify when a product goes live.</p>
+            <p className="text-[0.65rem] opacity-70 italic">Click Notify when a product goes live.</p>
           </div>
           <div className="space-y-2">
             {waitlists.map((w) => (
@@ -326,7 +326,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-sm opacity-60 italic">
+        <p className="text-sm opacity-70 italic">
           {orders.length === 0
             ? "No orders yet. When the first paid checkout lands, it'll appear here."
             : trimmedQuery

@@ -136,7 +136,7 @@ export function ChatAssistant() {
           <span className="font-display text-sm" style={{ fontWeight: 500 }}>Lusik & Sons</span>
           <span className="text-[0.55rem] tracking-[0.2em] uppercase opacity-55">AI</span>
         </div>
-        <button onClick={() => setOpen(false)} aria-label="Close chat" className="opacity-60 hover:opacity-100 transition">
+        <button onClick={() => setOpen(false)} aria-label="Close chat" className="opacity-70 hover:opacity-100 transition">
           <X size={18} strokeWidth={1.5} />
         </button>
       </div>

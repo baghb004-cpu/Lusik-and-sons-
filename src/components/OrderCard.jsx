@@ -128,7 +128,7 @@ export function OrderCard({ order, onReorder }) {
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <p className="font-display text-lg" style={{ fontWeight: 500 }}>{order.order_number}</p>
-          <p className="text-xs opacity-60">{orderDate}</p>
+          <p className="text-xs opacity-70">{orderDate}</p>
         </div>
         <div className="text-right">
           <p className="text-[0.65rem] tracking-[0.2em] uppercase" style={{ color: statusLabel.color, fontWeight: 500 }}>
@@ -180,7 +180,7 @@ export function OrderCard({ order, onReorder }) {
           <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-1.5 flex items-baseline justify-between gap-2" style={{ color: "#3D5A3D", fontWeight: 600 }}>
             <span>A note from Lusik</span>
             {order.admin_message_updated_at && (
-              <span className="opacity-60 normal-case tracking-normal text-[0.6rem]" style={{ fontWeight: 400 }}>
+              <span className="opacity-70 normal-case tracking-normal text-[0.6rem]" style={{ fontWeight: 400 }}>
                 {relTime(order.admin_message_updated_at)}
               </span>
             )}
@@ -232,8 +232,8 @@ export function OrderCard({ order, onReorder }) {
                 {item.product_name}
                 {item.is_custom && <span className="ml-2 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "var(--accent)", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>}
               </p>
-              {item.variant_label && <p className="text-xs opacity-60">{item.variant_label}</p>}
-              <p className="text-xs opacity-60">Qty {item.quantity}</p>
+              {item.variant_label && <p className="text-xs opacity-70">{item.variant_label}</p>}
+              <p className="text-xs opacity-70">Qty {item.quantity}</p>
             </div>
             <p className="text-sm opacity-70">${((item.unit_price_cents * item.quantity) / 100).toFixed(2)}</p>
           </div>
@@ -272,7 +272,7 @@ export function OrderCard({ order, onReorder }) {
           <p>Estimated ship date: {new Date(order.estimated_ship_date).toLocaleDateString()}</p>
         )}
         {order.shipping_address && (
-          <p className="opacity-60 italic">
+          <p className="opacity-70 italic">
             Shipping to {order.shipping_address.city}, {order.shipping_address.state}
           </p>
         )}

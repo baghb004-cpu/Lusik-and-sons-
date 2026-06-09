@@ -16,7 +16,7 @@ export function FoundingPriceBadge({ label, className = "" }) {
   return (
     <span
       className={`inline-block text-[0.6rem] tracking-[0.18em] uppercase px-2 py-0.5 rounded-full ${className}`}
-      style={{ background: "var(--accent)", color: "#F5EFE3", fontWeight: 600 }}
+      style={{ background: "var(--accent-text)", color: "var(--bg-page)", fontWeight: 600 }}
     >
       {label || promoLabel()}
     </span>

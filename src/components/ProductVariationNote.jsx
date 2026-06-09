@@ -31,7 +31,7 @@ export function ProductVariationNote({ bib = false, className = "" }) {
         color: "var(--text-secondary)",
       }}
     >
-      <p style={{ color: "var(--accent)", fontWeight: 600, marginBottom: 4 }}>
+      <p style={{ color: "var(--accent-text)", fontWeight: 600, marginBottom: 4 }}>
         {t("disclaimer.heading")}
       </p>
       <p>

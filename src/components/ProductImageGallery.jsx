@@ -183,11 +183,13 @@ export function ProductImageGallery({
           Mirrors ProductShowcase line-for-line so the customer
           gets the same handle whether they're looking at the
           Armenian Alphabet Blanket or this Full Alphabet Crib Blanket. */}
+      {/* The frame is a plain click target (convenience for pointer users);
+          the REAL zoom control is the "Tap to zoom" button below — keeping
+          the container non-interactive avoids nesting the chevron buttons
+          inside another interactive element (WCAG nested-interactive). */}
       <div
         className="relative aspect-[4/5] overflow-hidden mb-4"
         style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}
-        role="button"
-        aria-label={`Zoom photo ${safeIdx + 1} of ${count}`}
         onClick={() => { if (!glide.swiped.current) setZoomOpen(true); }}
         {...glide.handlers}
       >
@@ -250,12 +252,15 @@ export function ProductImageGallery({
         >
           {safeIdx + 1} / {count}
         </div>
-        <div
-          className="absolute bottom-3 left-3 px-2.5 py-1 text-[0.6rem] tracking-[0.15em] uppercase pointer-events-none flex items-center gap-1.5"
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setZoomOpen(true); }}
+          aria-label={`Zoom photo ${safeIdx + 1} of ${count}`}
+          className="absolute bottom-3 left-3 px-2.5 py-1 text-[0.6rem] tracking-[0.15em] uppercase flex items-center gap-1.5"
           style={{ background: "rgba(26,22,18,0.6)", color: "#F5EFE3" }}
         >
           <ZoomIn size={11} strokeWidth={2} /> Tap to zoom
-        </div>
+        </button>
       </div>
 
       {/* APPLE-STYLE COLOR ROW — tight under the slideshow, color name on

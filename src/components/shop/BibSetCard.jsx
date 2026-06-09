@@ -146,7 +146,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
 
         {/* CONFIGURATOR */}
         <div className="min-w-0 w-full">
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent-text)" }}>
             {t("pdp.madeToOrderEyebrow")}
           </p>
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
@@ -169,7 +169,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             </p>
             {foundingPrice != null && <FoundingPriceBadge className="self-center" />}
             {cap && capSelected && (
-              <span className="text-xs opacity-60">{t("bibSet.includesCap")}</span>
+              <span className="text-xs opacity-70">{t("bibSet.includesCap")}</span>
             )}
           </div>
 
@@ -233,7 +233,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
                     }}
                     aria-label={t("bibSet.capNameLabel")}
                   />
-                  <p className="text-[0.65rem] opacity-60 mt-1.5">{t("bibSet.capNameHint")}</p>
+                  <p className="text-[0.65rem] opacity-70 mt-1.5">{t("bibSet.capNameHint")}</p>
                 </div>
               )}
             </div>
@@ -245,15 +245,15 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
           {details.length > 0 && (
             <details className="border-t border-b mb-8 group" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
               <summary className="py-5 flex items-center justify-between cursor-pointer list-none">
-                <span className="text-xs tracking-[0.2em] uppercase opacity-70" style={{ color: "var(--accent)" }}>
+                <span className="text-xs tracking-[0.2em] uppercase opacity-70" style={{ color: "var(--accent-text)" }}>
                   {t("placeholder.detailsHeading")}
                 </span>
-                <Plus size={16} strokeWidth={1.5} className="open-icon opacity-60" />
+                <Plus size={16} strokeWidth={1.5} className="open-icon opacity-70" />
               </summary>
               <dl className="space-y-3 pb-5">
                 {details.map((row) => (
                   <div key={row.label} className="grid grid-cols-[7rem_1fr] gap-3 items-baseline">
-                    <dt className="text-[0.65rem] tracking-[0.2em] uppercase opacity-60" style={{ fontWeight: 500 }}>{row.label}</dt>
+                    <dt className="text-[0.65rem] tracking-[0.2em] uppercase opacity-70" style={{ fontWeight: 500 }}>{row.label}</dt>
                     <dd className="text-sm leading-relaxed opacity-90">{cleanText(row.value)}</dd>
                   </div>
                 ))}
@@ -264,14 +264,14 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
           {!soldOut && (<>
           {/* FINAL SALE note */}
           <div className="mb-4 p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
-            <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("bib.finalSale")}</span>
-            <span className="opacity-80">
+            <span style={{ color: "var(--accent-text)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("bib.finalSale")}</span>
+            <span>
               {t("bib.finalSaleBody")}{" "}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
                 className="underline hover:opacity-60"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--accent-text)" }}
               >
                 {t("bib.readPolicy")}
               </button>.

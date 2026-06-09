@@ -38,7 +38,7 @@ export function Breadcrumbs({ trail }) {
               ) : (
                 <button
                   onClick={seg.onClick}
-                  className="opacity-60 hover:opacity-100 transition"
+                  className="opacity-70 hover:opacity-100 transition"
                   style={{ color: "var(--text-primary)" }}
                 >
                   {seg.label}

@@ -325,7 +325,7 @@ export function MobileSearchView({
 
         {noResults && (
           <div className="text-center py-12">
-            <p className="text-sm opacity-60 mb-1">{t("search.noResults", { q: query.trim() })}</p>
+            <p className="text-sm opacity-70 mb-1">{t("search.noResults", { q: query.trim() })}</p>
             <p className="text-xs opacity-40">{t("search.noResultsHint")}</p>
           </div>
         )}
@@ -344,7 +344,7 @@ export function MobileSearchView({
                   {r.type === "product" && (
                     <>
                       <p className="text-sm font-display truncate" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{r.name}</p>
-                      <p className="text-xs opacity-60 truncate mt-0.5">{r.tagline}</p>
+                      <p className="text-xs opacity-70 truncate mt-0.5">{r.tagline}</p>
                       {r.priceFrom != null && (() => {
                         const promo = r.status === "live" ? promoForCatalogProduct(r) : null;
                         return promo ? (
@@ -365,7 +365,7 @@ export function MobileSearchView({
                   {r.type === "journal" && (
                     <>
                       <p className="text-sm font-display truncate" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{r.title}</p>
-                      <p className="text-xs opacity-60 truncate mt-0.5">{r.excerpt}</p>
+                      <p className="text-xs opacity-70 truncate mt-0.5">{r.excerpt}</p>
                       <p className="text-xs mt-0.5 opacity-40 italic">{t("search.journalTag")}</p>
                     </>
                   )}

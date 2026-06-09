@@ -15,11 +15,17 @@
 // ============================================================
 
 import React, { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { CONFIG } from "../data/config.js";
 import { Check, Copy, MessageCircle, X } from "./icons.jsx";
 
 export function TextUsWidget() {
   const [open, setOpen] = useState(false);
+  // The proactive bubble stays out of checkout: a "can we help you find
+  // something?" nudge at the pay step is friction at the worst moment.
+  // The widget button itself stays available there for real questions.
+  const pathname = usePathname();
+  const onCheckout = (pathname || "").startsWith("/checkout");
   const [copied, setCopied] = useState(false);
   // Unmount-safe timer for the "Copied!" badge. See note on
   // justSavedTimerRef in ProductShowcase for the rationale.
@@ -100,6 +106,7 @@ export function TextUsWidget() {
   useEffect(() => {
     if (proactiveDismissed) return;
     if (open) return; // don't pop while panel is already open
+    if (onCheckout) return; // never nudge mid-payment; re-arms after leaving
     const t = setTimeout(() => {
       // Re-check guards at fire time. If the user opened the panel between
       // delay-start and now, skip the proactive entirely.
@@ -109,7 +116,12 @@ export function TextUsWidget() {
       });
     }, PROACTIVE_DELAY_MS);
     return () => clearTimeout(t);
-  }, [open, proactiveDismissed]);
+  }, [open, proactiveDismissed, onCheckout]);
+
+  // If the bubble is up when the customer heads to checkout, take it down.
+  useEffect(() => {
+    if (onCheckout && proactiveOpen) setProactiveOpen(false);
+  }, [onCheckout, proactiveOpen]);
 
   // If the user opens the main panel, the proactive bubble is no longer needed.
   useEffect(() => {
@@ -206,7 +218,7 @@ export function TextUsWidget() {
               </a>
             ) : (
               <div className="space-y-3">
-                <p className="text-xs opacity-60 leading-relaxed">
+                <p className="text-xs opacity-70 leading-relaxed">
                   On your phone, tap below to start a text. On desktop, copy our number and text from your phone.
                 </p>
                 <div className="flex items-stretch gap-2">
@@ -232,7 +244,7 @@ export function TextUsWidget() {
             )}
 
             {/* Secondary: prefer voice */}
-            <div className="text-xs opacity-60 text-center pt-1">
+            <div className="text-xs opacity-70 text-center pt-1">
               Prefer to call? <a href={telHref} className="underline hover:opacity-100">{cfg.phone_display}</a>
             </div>
           </div>
@@ -252,7 +264,7 @@ export function TextUsWidget() {
               <p className="font-display text-base leading-tight mb-1" style={{ fontWeight: 500 }}>
                 Can we help you find something?
               </p>
-              <p className="text-xs opacity-60 leading-relaxed">
+              <p className="text-xs opacity-70 leading-relaxed">
                 Lusik usually replies within a day.
               </p>
             </div>

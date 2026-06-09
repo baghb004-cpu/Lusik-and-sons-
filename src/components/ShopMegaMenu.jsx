@@ -29,7 +29,7 @@ export function ShopMegaMenu({ onNavigateShop, onNavigateCategory, onNavigatePro
         onClick={() => onNavigateShop?.()}
       >
         Shop
-        <ChevronDown size={14} strokeWidth={1.5} className="opacity-60" />
+        <ChevronDown size={14} strokeWidth={1.5} className="opacity-70" />
       </button>
       <div className="shop-menu" role="menu">
         <div className="grid grid-cols-4 gap-8">

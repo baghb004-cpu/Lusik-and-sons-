@@ -206,7 +206,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         {cleanName.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
             <div className="text-center">
-              <p className="text-xs opacity-50 italic">{t("bib.previewHint")}</p>
+              <p className="text-xs opacity-70 italic">{t("bib.previewHint")}</p>
             </div>
           </div>
         )}
@@ -215,7 +215,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
       {/* Card body */}
       <div className="p-5 lg:p-6 flex flex-col flex-1 gap-4">
         <div>
-          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{loc(config, "tagline", lang)}</p>
+          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>{loc(config, "tagline", lang)}</p>
           <h3 className="font-display text-2xl mb-1" style={{ fontWeight: 500 }}>{loc(config, "name", lang)}</h3>
           <ExpandableText text={config.description} clampLines={2} textClassName="text-sm opacity-70 leading-relaxed" />
           <p className="font-display text-xl mt-3 flex items-baseline flex-wrap gap-x-2.5 gap-y-1" style={{ fontWeight: 500 }}>
@@ -225,7 +225,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
             <span>${effectivePrice}</span>
             {foundingPrice != null && <FoundingPriceBadge className="self-center" />}
           </p>
-          <p className="text-[0.65rem] opacity-60 mt-1.5">
+          <p className="text-[0.65rem] opacity-70 mt-1.5">
             {t("pdp.madeToOrderEyebrow")}
           </p>
           {/* Photos are samples — bibs especially may use a different neck
@@ -257,10 +257,10 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
             }}
             aria-label={t("bib.nameAria")}
           />
-          <p className="text-[0.65rem] opacity-60 mt-1.5">
+          <p className="text-[0.65rem] opacity-70 mt-1.5">
             {t("bib.upToLetters", { n: maxNameLength, len: cleanName.length })}
           </p>
-          <p className="text-[0.6rem] opacity-50 italic mt-1">
+          <p className="text-[0.6rem] opacity-70 italic mt-1">
             {t("bib.previewOnly")}
           </p>
         </div>
@@ -391,7 +391,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
                     );
                   })}
                 </div>
-                <p className="text-[0.65rem] opacity-50 mt-1.5">
+                <p className="text-[0.65rem] opacity-70 mt-1.5">
                   {t("bib.selected")} <span style={{ fontWeight: 500 }}>{letterColor?.name ?? "—"}</span>
                 </p>
               </div>
@@ -429,14 +429,14 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         {/* Final-sale reminder — same callout pattern used on the blanket
             PDP, sized down to fit the bib card. */}
         <div className="mt-auto p-2.5 text-[0.7rem] leading-snug flex items-start gap-2" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
-          <span style={{ color: "var(--accent)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("bib.finalSale")}</span>
-          <span className="opacity-80">
+          <span style={{ color: "var(--accent-text)", fontWeight: 600, letterSpacing: "0.05em" }}>{t("bib.finalSale")}</span>
+          <span>
             {t("bib.finalSaleBody")}{" "}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("openPolicy", { detail: "finalSale" }))}
               className="underline hover:opacity-60"
-              style={{ color: "var(--accent)" }}
+              style={{ color: "var(--accent-text)" }}
             >
               {t("bib.readPolicy")}
             </button>.

@@ -62,7 +62,7 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
               >
                 <span
                   className="text-[0.6rem] tracking-[0.3em] uppercase"
-                  style={{ color: "var(--accent)", fontWeight: 600, position: "absolute", top: 18, left: 20 }}
+                  style={{ color: "var(--accent-text)", fontWeight: 600, position: "absolute", top: 18, left: 20 }}
                 >
                   Journal
                 </span>
@@ -76,7 +76,7 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
                   {post.excerpt}
                 </p>
                 <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-                  <BookOpen size={14} strokeWidth={1.6} style={{ color: "var(--accent)" }} />
+                  <BookOpen size={14} strokeWidth={1.6} style={{ color: "var(--accent-text)" }} />
                   <span>{post.readMinutes} min read</span>
                   <span style={{ opacity: 0.4 }}>·</span>
                   <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
@@ -91,11 +91,11 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
           DESKTOP — the existing editorial layout, unchanged.
           ============================================================ */}
       <div className="hidden lg:block max-w-4xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
-        <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
+        <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-70 hover:opacity-100 flex items-center gap-2 mb-8">
           ← Back to the shop
         </button>
         <header className="mb-12 lg:mb-16">
-          <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>The Journal</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>The Journal</p>
           <h1 className="font-display text-4xl lg:text-5xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
             Notes from <em style={{ fontWeight: 400 }}>Lusik's table</em>.
           </h1>
@@ -112,11 +112,11 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
               onClick={() => onSelectPost(post.slug)}
             >
               <div className="flex items-baseline gap-3 mb-2 flex-wrap">
-                <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60" dateTime={post.publishedAt}>
+                <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70" dateTime={post.publishedAt}>
                   {formatPublishedDate(post.publishedAt)}
                 </time>
                 <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
-                <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60">{post.readMinutes} min read</span>
+                <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70">{post.readMinutes} min read</span>
               </div>
               <h2 className="font-display text-2xl lg:text-3xl mb-3 transition group-hover:opacity-80" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
                 {post.title}
@@ -124,7 +124,7 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
               <p className="text-sm lg:text-base opacity-80 leading-relaxed mb-4 max-w-2xl">
                 {post.excerpt}
               </p>
-              <span className="text-[0.65rem] tracking-[0.2em] uppercase transition group-hover:opacity-100" style={{ color: "var(--accent)", fontWeight: 500 }}>
+              <span className="text-[0.65rem] tracking-[0.2em] uppercase transition group-hover:opacity-100" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
                 Keep reading →
               </span>
             </article>
@@ -165,19 +165,19 @@ export function JournalPostView({ post, onBack, onSelectPost }) {
       {/* Escape `<` so a future post body containing "</script>" can't
           break out of the JSON-LD block — same hardening as src/lib/seo.js. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-60 hover:opacity-100 flex items-center gap-2 mb-8">
+      <button onClick={onBack} className="text-xs tracking-[0.2em] uppercase opacity-70 hover:opacity-100 flex items-center gap-2 mb-8">
         ← All posts
       </button>
       <article>
         <header className="mb-10 lg:mb-12">
           <div className="flex items-baseline gap-3 mb-3 flex-wrap">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)" }}>Journal</p>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent-text)" }}>Journal</p>
             <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
-            <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60" dateTime={post.publishedAt}>
+            <time className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70" dateTime={post.publishedAt}>
               {formatPublishedDate(post.publishedAt)}
             </time>
             <span className="text-[0.65rem] tracking-[0.2em] uppercase opacity-40">·</span>
-            <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-60">{post.readMinutes} min read</span>
+            <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70">{post.readMinutes} min read</span>
           </div>
           <h1 className="font-display text-4xl lg:text-5xl leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
             {post.title}
@@ -211,7 +211,7 @@ export function JournalPostView({ post, onBack, onSelectPost }) {
 
       {others.length > 0 && (
         <aside className="mt-16 pt-10" style={{ borderTop: "1px solid rgba(26,22,18,0.12)" }}>
-          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-5" style={{ color: "var(--accent)" }}>Keep reading</p>
+          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-5" style={{ color: "var(--accent-text)" }}>Keep reading</p>
           <div className="grid sm:grid-cols-2 gap-6">
             {others.map((p) => (
               <button
@@ -220,7 +220,7 @@ export function JournalPostView({ post, onBack, onSelectPost }) {
                 className="text-left p-5 transition hover:bg-[rgba(26,22,18,0.03)]"
                 style={{ border: "1px solid rgba(26,22,18,0.1)" }}
               >
-                <time className="text-[0.6rem] tracking-[0.25em] uppercase opacity-60 block mb-2" dateTime={p.publishedAt}>
+                <time className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-2" dateTime={p.publishedAt}>
                   {formatPublishedDate(p.publishedAt)}
                 </time>
                 <h3 className="font-display text-lg leading-tight mb-2" style={{ fontWeight: 500 }}>

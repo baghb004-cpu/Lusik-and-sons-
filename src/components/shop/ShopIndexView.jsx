@@ -79,13 +79,14 @@ const FEATURED_PIECES = [
   },
 ];
 
-// Per-category cover image for the mobile title cards. Keyed by
-// category slug. Towels + Baby have no real photography yet, so
-// they intentionally have NO entry here — the card falls back to
-// a cream placeholder tile (see CategoryCard) rather than render
-// a broken <img>. Update this map (don't inline paths) when Lusik
-// delivers category-level photos for those two.
-const MOBILE_CATEGORY_IMAGE = {
+// Per-category cover image, used by BOTH the mobile title cards and the
+// desktop category cards. Keyed by category slug. Towels + Baby have no
+// real photography yet, so they intentionally have NO entry here — those
+// cards fall back to a cream placeholder tile (mobile: the label; desktop:
+// a "photographs coming soon" line) rather than render a broken <img>.
+// Update this map (don't inline paths) when Lusik delivers category-level
+// photos for those two.
+const CATEGORY_COVER_IMAGE = {
   blankets: "/img/abc-blanket/cover.jpg",
   bibs: "/img/bib-examples/01.jpg",
   // towels: (no real photo yet → placeholder tile)
@@ -102,7 +103,7 @@ function CategoryCard({ category, onTap, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const label = loc(category, "label", lang);
-  const image = MOBILE_CATEGORY_IMAGE[category.slug] || null;
+  const image = CATEGORY_COVER_IMAGE[category.slug] || null;
 
   return (
     <button
@@ -206,7 +207,7 @@ function FeaturedPieceCard({ piece, onTap, onPrefetch }) {
       <div style={{ padding: "18px 20px 20px" }}>
         <p
           className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--accent-text)" }}
         >
           {piece.eyebrow}
         </p>
@@ -286,7 +287,7 @@ function JournalCard({ post, onTap }) {
     >
       <p
         className="text-[0.6rem] tracking-[0.3em] uppercase mb-3"
-        style={{ color: "var(--accent)" }}
+        style={{ color: "var(--accent-text)" }}
       >
         {t("shop.journal")}
       </p>
@@ -320,7 +321,7 @@ function JournalCard({ post, onTap }) {
       </p>
       <p
         className="text-[0.7rem] tracking-[0.15em] uppercase"
-        style={{ color: "var(--accent)", marginTop: 12, fontWeight: 500 }}
+        style={{ color: "var(--accent-text)", marginTop: 12, fontWeight: 500 }}
       >
         {t("shop.readMin", { min: post.readMinutes })}
       </p>
@@ -407,7 +408,7 @@ function DifferenceCarousel({ onSlideAction }) {
                 className="flex items-center justify-center"
                 style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent-soft)", marginBottom: 18 }}
               >
-                <Ico size={28} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+                <Ico size={28} strokeWidth={1.5} style={{ color: "var(--accent-text)" }} />
               </div>
               <p
                 className="font-display"
@@ -419,7 +420,7 @@ function DifferenceCarousel({ onSlideAction }) {
                 type="button"
                 onClick={() => onSlideAction?.(slide.action)}
                 className="text-sm flex items-center gap-1.5"
-                style={{ color: "var(--accent)", fontWeight: 500, marginTop: 16 }}
+                style={{ color: "var(--accent-text)", fontWeight: 500, marginTop: 16 }}
               >
                 {copy.linkLabel} <ArrowRight size={14} strokeWidth={1.75} />
               </button>
@@ -669,7 +670,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             <div style={{ padding: "18px 20px 20px" }}>
               <p
                 className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--accent-text)" }}
               >
                 {t("shop.newest")}
               </p>
@@ -790,7 +791,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           { label: t("footer.shop") },
         ]} />
 
-        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>{t("shop.theShop")}</p>
+        <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>{t("shop.theShop")}</p>
         <h1 className="font-display text-4xl lg:text-6xl mb-4" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
           {t("shop.everythingPre")}<em style={{ fontWeight: 400 }}>{t("shop.everythingEm")}</em>.
         </h1>
@@ -807,6 +808,8 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             if (total - liveCount > 0) subtitleParts.push(t("shop.comingSoonCount", { n: total - liveCount }));
             const catLabel = loc(category, "label", lang);
 
+            const cover = CATEGORY_COVER_IMAGE[category.slug] || null;
+
             return (
               <button
                 key={category.slug}
@@ -817,7 +820,31 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
                 style={{ "--i": i }}
                 aria-label={t("shop.browseAria", { label: catLabel })}
               >
-                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>
+                {/* Photo band — the categories sell with Lusik's real
+                    photography, so lead the card with it. Decorative for
+                    AT (alt="") since the button's aria-label carries the
+                    destination. */}
+                <div
+                  className="mb-5 overflow-hidden"
+                  style={{ borderRadius: 12, height: 170, position: "relative", background: "var(--accent-soft)" }}
+                >
+                  {cover ? (
+                    <Image
+                      src={cover}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 560px, 100vw"
+                      style={{ objectFit: "cover" }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70">
+                        {t("shop.cardPhotoSoon")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>
                   {loc(category, "eyebrow", lang)}
                 </p>
                 <h2 className="font-display text-2xl lg:text-3xl mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
@@ -830,7 +857,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
                   <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-65">
                     {subtitleParts.join(" · ")}
                   </p>
-                  <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                  <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
                     {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
                   </span>
                 </div>

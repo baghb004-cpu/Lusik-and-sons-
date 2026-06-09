@@ -109,7 +109,7 @@ export function ShippingEstimator({ subtotalCents }) {
       <button
         type="button"
         onClick={() => { setExpanded(false); setZip(""); }}
-        className="underline opacity-60 hover:opacity-100 mt-2 inline-block"
+        className="underline opacity-70 hover:opacity-100 mt-2 inline-block"
       >
         Cancel
       </button>

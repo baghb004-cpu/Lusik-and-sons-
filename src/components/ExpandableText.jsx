@@ -42,7 +42,7 @@ export function ExpandableText({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         className="mt-2 inline-flex items-center gap-1.5 text-[0.7rem] tracking-[0.15em] uppercase hover:opacity-70 transition"
-        style={{ color: "var(--accent)", fontWeight: 600 }}
+        style={{ color: "var(--accent-text)", fontWeight: 600 }}
       >
         {open ? t("common.showLess") : t("common.readMore")}
         {open ? <Minus size={12} strokeWidth={2} /> : <Plus size={12} strokeWidth={2} />}

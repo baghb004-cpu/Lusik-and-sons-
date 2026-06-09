@@ -52,7 +52,7 @@ export function AdminOrderRow({ order, onOpen }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-3 flex-wrap mb-1">
             <p className="font-display text-lg" style={{ fontWeight: 500 }}>{order.order_number}</p>
-            <p className="text-xs opacity-60">{orderDate}</p>
+            <p className="text-xs opacity-70">{orderDate}</p>
             {order.gift?.is_gift && (
               <span className="text-[0.55rem] tracking-[0.18em] uppercase px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "var(--accent)", fontWeight: 500 }}>
                 Gift

@@ -176,7 +176,7 @@ export function CartContents({
           {user && (
             <button
               onClick={onOpenSavedDesigns}
-              className="text-[0.65rem] tracking-[0.18em] uppercase opacity-60 hover:opacity-100 underline underline-offset-4 transition"
+              className="text-[0.65rem] tracking-[0.18em] uppercase opacity-70 hover:opacity-100 underline underline-offset-4 transition"
             >
               {t("bag.openSaved")}
             </button>
@@ -209,7 +209,7 @@ export function CartContents({
                     <p className="font-display text-lg leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
                     <div className="flex items-center gap-2 mb-3">
                       {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
-                      <p className="text-xs opacity-60">{item.subtitle}</p>
+                      <p className="text-xs opacity-70">{item.subtitle}</p>
                     </div>
                     {cartEditMode ? (
                       <div className="flex items-center justify-between">
@@ -223,7 +223,7 @@ export function CartContents({
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                        <p className="text-xs opacity-60" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>{t("bag.qty")} {item.qty}</p>
+                        <p className="text-xs opacity-70" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>{t("bag.qty")} {item.qty}</p>
                         <p className="text-sm" style={{ fontWeight: 500 }}>${item.price * item.qty}</p>
                       </div>
                     )}
@@ -278,7 +278,7 @@ export function CartContents({
                 the next page. Sized smaller than the CTA so it informs
                 without competing. */}
             <PaymentMethodsRow className="mt-4" />
-            <p className="text-xs text-center opacity-60 mt-3">
+            <p className="text-xs text-center opacity-70 mt-3">
               {t("bag.orderViaPre")}<button onClick={() => window.open("https://instagram.com", "_blank", "noopener,noreferrer")} className="underline">{t("bag.dmInstagram")}</button>{t("bag.orderViaPost")}
             </p>
 
