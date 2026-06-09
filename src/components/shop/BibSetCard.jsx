@@ -46,7 +46,7 @@ function cleanText(text) {
   return text.split(/\s*⚠️\s*TODO_LUSIK\s*:?/i)[0].trim().replace(/\s{2,}/g, " ");
 }
 
-export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey }) {
+export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey, immersive = false }) {
   const t = useT();
   const { lang } = useLang();
   const buy = spec.buy ?? {};
@@ -128,8 +128,12 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   };
 
   return (
-    <div className="fade-in max-w-6xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
-      <Breadcrumbs trail={trail} />
+    // Immersive (mobile sheet): no outer max-width/padding/breadcrumb — the
+    // ImmersiveBuySheet provides the chrome + back button, and the photos are
+    // the full-screen backdrop (so the gallery runs photosHidden, keeping only
+    // its Apple color row live inside the sheet).
+    <div className={immersive ? "fade-in" : "fade-in max-w-6xl mx-auto px-6 lg:px-12 py-8 lg:py-12"}>
+      {!immersive && <Breadcrumbs trail={trail} />}
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         {/* GALLERY — Apple color row (name left, circles right) sits tight
@@ -140,6 +144,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             alt={productName}
             colorways={product.colorways}
             appleColorRow
+            photosHidden={immersive}
             onColorwayChange={setColorway}
           />
         </div>
@@ -278,9 +283,11 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             </span>
           </div>
 
-          {/* ADD TO BAG + BUY NOW — inside the Apple-style purchase card
-              (delivery & pickup details on top, buy buttons at the bottom) */}
-          <PurchaseCard className="hidden lg:block">
+          {/* ADD TO BAG + BUY NOW — inside the Apple-style purchase card.
+              Desktop-only normally (MobilePurchaseBar is the mobile buy
+              surface); UN-hidden in immersive mode so the delivery details +
+              buy buttons live inside the immersive sheet on mobile. */}
+          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}
@@ -315,16 +322,18 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
         </div>
       </div>
 
-      {/* Mobile buy experience: a persistent bottom sheet (always shown on
-          mobile) with the delivery/pickup drawer + the pinned Add-to-Bag.
-          The in-flow PurchaseCard is desktop-only (hidden lg:block), so on
-          mobile this IS the buy surface. */}
-      <MobilePurchaseBar
-        visible={!soldOut}
-        label={t("common.addToCart")}
-        price={effectivePrice}
-        onClick={(e) => fire(e, onAddCustom)}
-      />
+      {/* Mobile buy experience: a persistent bottom sheet with the
+          delivery/pickup drawer + pinned Add-to-Bag. Suppressed in immersive
+          mode (the immersive sheet, with the un-hidden PurchaseCard inside, is
+          the buy surface there). */}
+      {!immersive && (
+        <MobilePurchaseBar
+          visible={!soldOut}
+          label={t("common.addToCart")}
+          price={effectivePrice}
+          onClick={(e) => fire(e, onAddCustom)}
+        />
+      )}
     </div>
   );
 }
