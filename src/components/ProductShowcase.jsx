@@ -39,7 +39,7 @@ import {
   Instagram, Mail, Minus, Phone, Plus, Share2, X, ZoomIn,
 } from "./icons.jsx";
 
-export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown, soldOut = false, notifyKey, immersive = false }) {
+export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown, soldOut = false, notifyKey }) {
   const toast = useToast();
   const t = useT();
   const { lang } = useLang();
@@ -415,7 +415,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
     // the anchor is no longer used for navigation. Kept as an id
     // so any external link with #blanket on the product URL still
     // lands at the configurator section.
-    <section id="blanket" className={immersive ? "" : "max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-16"}>
+    <section id="blanket" className="max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         {/* Left column — either the live SVG preview (default) OR the photo
             gallery, toggleable via a small button at the top. The live preview
@@ -431,10 +431,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             room. `max-h-[calc(100vh-7rem)]` + `overflow-y-auto` is a safety
             net for short laptop screens. */}
         <div className="lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          {/* View toggle — "Your design" (live SVG preview) | "Real photos".
-              Hidden in immersive mode: the real photos are the full-screen
-              backdrop, so the left pane is locked to the live design preview. */}
-          {!immersive && (
+          {/* View toggle — "Your design" (live SVG preview) | "Real photos" */}
           <div className="flex gap-2 mb-4 text-xs">
             <button
               onClick={() => setLeftPaneMode("preview")}
@@ -461,9 +458,8 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               {t("pdp.realPhotos")}
             </button>
           </div>
-          )}
 
-          {(immersive || leftPaneMode === "preview") ? (
+          {leftPaneMode === "preview" ? (
             <>
               {/* LIVE PREVIEW MODE — large schematic showing the customer's
                   current configuration: alphabet, layout, colors, optional text.
@@ -1180,7 +1176,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           {soldOut ? (
             <SoldOutPanel name={product.name} productKey={notifyKey ?? "blanket-double_diag_br"} className="mb-4" />
           ) : (<>
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard className="hidden lg:block">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center border" style={{ borderColor: "var(--border-strong)" }}>
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3"><Minus size={14} /></button>
@@ -1228,17 +1224,13 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           </button>
           </PurchaseCard>
           {/* Mobile buy sheet — persistent on mobile (delivery drawer +
-              pinned Add-to-Bag). The in-flow PurchaseCard is desktop-only.
-              Suppressed in immersive mode (the immersive sheet is the buy
-              surface, with the un-hidden PurchaseCard inside it). */}
-          {!immersive && (
+              pinned Add-to-Bag). The in-flow PurchaseCard is desktop-only. */}
           <MobilePurchaseBar
             visible
             label={t("common.addToCart")}
             price={((layout.priceCents / 100) * qty).toFixed(0)}
             onClick={(e) => addItemToCart(e.currentTarget.getBoundingClientRect())}
           />
-          )}
           </>)}
           {/* Estimated delivery — concrete ship-by / arrives-by range
               instead of a vague "5–10 days" line. Computed on every

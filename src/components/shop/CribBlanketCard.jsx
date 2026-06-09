@@ -28,7 +28,7 @@ function cleanText(text) {
   return text.split(/\s*⚠️\s*TODO_LUSIK\s*:?/i)[0].trim().replace(/\s{2,}/g, " ");
 }
 
-export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey, immersive = false }) {
+export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey }) {
   const t = useT();
   const { lang } = useLang();
   const buy = spec.buy ?? {};
@@ -88,15 +88,12 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
   };
 
   return (
-    // Immersive (mobile sheet): drop the outer chrome; photos move to the
-    // full-screen backdrop, so the gallery runs photosHidden (Apple color
-    // row stays live to drive the body-color choice).
-    <div className={immersive ? "fade-in" : "fade-in max-w-6xl mx-auto px-6 lg:px-12 py-8 lg:py-12"}>
-      {!immersive && <Breadcrumbs trail={trail} />}
+    <div className="fade-in max-w-6xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
+      <Breadcrumbs trail={trail} />
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         <div className="min-w-0 w-full">
-          <ProductImageGallery images={product.images} alt={productName} colorways={colorways} appleColorRow photosHidden={immersive} onColorwayChange={setBody} />
+          <ProductImageGallery images={product.images} alt={productName} colorways={colorways} appleColorRow onColorwayChange={setBody} />
         </div>
 
         <div className="min-w-0 w-full">
@@ -195,7 +192,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             </span>
           </div>
 
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard className="hidden lg:block">
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}
@@ -231,16 +228,13 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
       </div>
 
       {/* Mobile buy sheet — persistent on mobile (delivery drawer + pinned
-          Add-to-Bag). The in-flow PurchaseCard is desktop-only. Suppressed in
-          immersive mode (the immersive sheet is the buy surface). */}
-      {!immersive && (
-        <MobilePurchaseBar
-          visible={!soldOut}
-          label={t("common.addToCart")}
-          price={spec.price}
-          onClick={(e) => fire(e, onAddCustom)}
-        />
-      )}
+          Add-to-Bag). The in-flow PurchaseCard is desktop-only. */}
+      <MobilePurchaseBar
+        visible={!soldOut}
+        label={t("common.addToCart")}
+        price={spec.price}
+        onClick={(e) => fire(e, onAddCustom)}
+      />
     </div>
   );
 }
