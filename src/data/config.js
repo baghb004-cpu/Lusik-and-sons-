@@ -170,6 +170,7 @@ export const CONFIG = {
     // optimize ad delivery and report real ROAS. The Pixel ID is a
     // public client-side identifier (not a secret), so it's fine here.
     META_PIXEL_ID: "",
+    GOOGLE_ADS_ID: "AW-18161513091",
   },
 
   // ============================================================
