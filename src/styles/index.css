@@ -1856,3 +1856,26 @@
     --lg-blur-strong: 16px;
   }
 }
+
+/* ============================================================
+   THE OPEN BOOK — iPhone Fold readiness (site-wide convention)
+   ============================================================
+   The rumored iPhone Fold: 7.8" 4:3 inner display, 5.5" cover
+   screen, book-style horizontal fold. Its cover is a small phone
+   (the existing mobile layouts); its OPEN inner canvas lands at
+   ~768–1023px CSS — between our mobile (<1024) and desktop (lg+)
+   tiers — where the phone layouts used to stretch.
+
+   Convention: that zone is "the open book" and is served by
+   Tailwind `md:` utilities on mobile-visible blocks (the hero
+   becomes a text/photo spread, Explore + Featured + Journal cards
+   pair up into grids, category grids gain a column, bag/checkout
+   hold readable centered columns) plus one scoped CSS-module
+   block (ImmersiveBuySheet.module.css) that splits the immersive
+   PDP along the fold: photos = left page, buy column = right
+   page. Components that need posture awareness in JS use
+   `(min-width: 700px) and (max-width: 1023.98px),
+   (horizontal-viewport-segments: 2)` — keep any copies of that
+   query in lockstep. The floating nav island needs nothing: it
+   is already width-capped (min(92vw, 430px)) and centered.
+   ============================================================ */

@@ -159,8 +159,11 @@ export function HomeView({
           (hidden lg:block) so the "For You" sections lead, matching the
           Apple Store app. Desktop always renders it. */}
       <section className={`${simplified ? "hidden lg:block " : ""}max-w-7xl mx-auto px-6 lg:px-12 pt-12 lg:pt-20 pb-16 lg:pb-24`}>
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
-          <div className="lg:col-span-5 slide-up min-w-0">
+        {/* The two-column hero starts at md (not lg): on the iPhone Fold's
+            open 4:3 canvas the hero reads like a book spread — copy on the
+            left page, the slideshow on the right. Phones stay stacked. */}
+        <div className="grid md:grid-cols-12 gap-8 lg:gap-16 items-center">
+          <div className="md:col-span-5 slide-up min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--text-primary)" }}>Southern California</p>
             <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-6" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
               {t("hero.headline")} <em style={{ fontWeight: 400 }}>{t("hero.headlineEm")}</em>.
@@ -209,7 +212,7 @@ export function HomeView({
               <button onClick={() => onNavigatePage?.("story")} className="text-sm tracking-wide underline underline-offset-4 hover:opacity-60">{t("hero.storyCta")}</button>
             </div>
           </div>
-          <div className="lg:col-span-7 slide-up stagger-2">
+          <div className="md:col-span-7 slide-up stagger-2">
             <div className="relative">
               <div className="aspect-[4/3] overflow-hidden">
                 <HeroSlideshow className="w-full h-full" onIndexChange={setHeroIndex} />
@@ -309,7 +312,11 @@ export function HomeView({
             gutter (aligned with every other card section); only the RIGHT side
             bleeds to the screen edge (-mr-6) so the next card peeks, signalling
             "there's more" — the Apple Store pattern. */}
-        <div className="lg:hidden -mr-6 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none", scrollPaddingLeft: 0 }}>
+        {/* On the open-book canvas (iPhone Fold inner display / 768–1023px)
+            the strip becomes a 4-up grid — all eight cards visible at once,
+            two tidy rows, no horizontal scroll. Card width moves from the
+            fixed 156px to the grid track (h stays for the square feel). */}
+        <div className="lg:hidden -mr-6 md:mr-0 flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none", scrollPaddingLeft: 0 }}>
           {exploreCards.map(({ key, title, blurb, Icon, go }) => (
             <button
               key={key}
@@ -317,8 +324,8 @@ export function HomeView({
               onClick={go}
               onPointerEnter={() => onPrefetch?.(`/${key}`)}
               onFocus={() => onPrefetch?.(`/${key}`)}
-              className="snap-start flex-shrink-0 text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
-              style={{ width: 156, height: 156, background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
+              className="snap-start flex-shrink-0 w-[156px] h-[156px] md:w-auto text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${title} — ${blurb}`}
             >
               <Icon size={24} strokeWidth={1.5} style={{ color: "var(--accent)" }} />

@@ -698,14 +698,19 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           >
             {t("shop.featuredPieces")}
           </h2>
-          {featuredPieces.map((piece) => (
-            <FeaturedPieceCard
-              key={`${piece.categorySlug}/${piece.slug}`}
-              piece={piece}
-              onTap={() => onNavigateProduct?.(piece.categorySlug, piece.slug)}
-              onPrefetch={() => onPrefetch?.(`/shop/${piece.categorySlug}/${piece.slug}`)}
-            />
-          ))}
+          {/* Stacked on phones; paired up on the open-book canvas (iPhone
+              Fold inner display / 768–1023px) so the big feature cards
+              share the 4:3 width instead of each stretching across it. */}
+          <div className="md:grid md:grid-cols-2 md:gap-5 md:items-start">
+            {featuredPieces.map((piece) => (
+              <FeaturedPieceCard
+                key={`${piece.categorySlug}/${piece.slug}`}
+                piece={piece}
+                onTap={() => onNavigateProduct?.(piece.categorySlug, piece.slug)}
+                onPrefetch={() => onPrefetch?.(`/shop/${piece.categorySlug}/${piece.slug}`)}
+              />
+            ))}
+          </div>
         </section>
 
         {/* "The Lusik & Sons difference" — full-width value-prop
