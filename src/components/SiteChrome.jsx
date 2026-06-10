@@ -244,6 +244,7 @@ export function SiteChrome({ children }) {
                 onCheckout={() => { setCartOpen(false); nav.goCheckout(); }}
                 onShopBlankets={() => { setCartOpen(false); nav.goShopCategory("blankets"); }}
                 onOpenSavedDesigns={() => { setCartOpen(false); nav.goAccount(); }}
+                onOpenProduct={(href) => { setCartOpen(false); nav.go(href); }}
                 user={site.user}
                 onClose={() => setCartOpen(false)}
               />

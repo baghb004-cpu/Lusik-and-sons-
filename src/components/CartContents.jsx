@@ -37,6 +37,7 @@ import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { StillHaveQuestionsCard } from "./shop/HelpDecidingSection.jsx";
 import { PRODUCT } from "../data/product.js";
 import { bundleSavingsForCart } from "../lib/bundleDiscount.js";
+import { productPathForCartItem } from "../lib/productUrl.js";
 import { CartItemThumb } from "./CartItemThumb.jsx";
 import { X, ShoppingBag, ArrowRight, Check, ChevronDown } from "./icons.jsx";
 import { useT } from "../i18n/LangContext.jsx";
@@ -56,6 +57,7 @@ export function CartContents({
   onCheckout,
   onShopBlankets,
   onOpenSavedDesigns,
+  onOpenProduct,
   user,
   onClose,
 }) {
@@ -200,14 +202,34 @@ export function CartContents({
                       : { borderColor: "rgba(26,22,18,0.08)" }
                   }
                 >
-                  <div className="relative">
+                  {/* Photo + title tap back to the product's full page
+                      (gallery + description). Deliberately NOT the whole
+                      row — the qty picker, remove control, and the
+                      swipe-to-delete gesture live here, and an accidental
+                      navigation mid-swipe would be worse than a smaller
+                      tap target. The bag still owns quantity; the PDP
+                      visit is for re-reading, not re-adding. */}
+                  <button
+                    type="button"
+                    onClick={() => onOpenProduct?.(productPathForCartItem(item))}
+                    className="relative block flex-shrink-0"
+                    aria-label={`View ${item.name} product page`}
+                  >
                     <CartItemThumb src={item.image || PRODUCT.gallery[0]} alt={item.name} width={80} height={96} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                     {item.isCustom && (
                       <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "var(--accent)", color: "#fff", fontWeight: 500 }}>{t("bag.custom")}</span>
                     )}
-                  </div>
+                  </button>
                   <div className="flex-1">
-                    <p className="font-display text-lg leading-tight" style={{ fontWeight: 400 }}>{item.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => onOpenProduct?.(productPathForCartItem(item))}
+                      className="font-display text-lg leading-tight text-left hover:opacity-70 transition-opacity"
+                      style={{ fontWeight: 400 }}
+                      aria-label={`View ${item.name} product page`}
+                    >
+                      {item.name}
+                    </button>
                     <div className="flex items-center gap-2 mb-3">
                       {item.colorHex && <span className="w-3 h-3 rounded-full inline-block" style={{ background: item.colorHex, border: "1px solid rgba(26,22,18,0.15)" }} />}
                       <p className="text-xs opacity-70">{item.subtitle}</p>

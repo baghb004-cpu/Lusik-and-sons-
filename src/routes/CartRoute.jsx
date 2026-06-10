@@ -26,6 +26,7 @@ export function CartRoute() {
         onCheckout={nav.goCheckout}
         onShopBlankets={() => nav.goShopCategory("blankets")}
         onOpenSavedDesigns={nav.goAccount}
+        onOpenProduct={nav.go}
         user={site.user}
       />
     </div>

@@ -24,6 +24,7 @@ export function useSiteNav() {
     // never charged for speculative fetches. Safe no-op on failure — navigation
     // still works via push.
     prefetch:        (href) => { try { if (prefetchAllowed()) router.prefetch(href); } catch {} },
+    go:              (href) => push(href),                // raw path (e.g. cart item → its PDP)
     goForYou:        () => push("/"),
     goHome:          () => push("/"),
     goPage:          (slug) => push(`/${slug}`),          // /story, /faq, …
