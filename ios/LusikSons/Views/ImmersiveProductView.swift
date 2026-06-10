@@ -161,7 +161,7 @@ struct ImmersiveProductView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: height, alignment: .top)
-        .background(.background)
+        .background(Brand.surface)
         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22))
         .shadow(color: .black.opacity(0.25), radius: 18, y: -4)
         .offset(y: breatheOffset)

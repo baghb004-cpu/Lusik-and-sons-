@@ -68,12 +68,12 @@ struct BagView: View {
                 }
                 .onDelete { cart.remove(atOffsets: $0) }
             }
-            .listRowBackground(Color(uiColor: .systemBackground))
+            .listRowBackground(Brand.surface)
 
             Section {
                 summary
             }
-            .listRowBackground(Color(uiColor: .systemBackground))
+            .listRowBackground(Brand.surface)
         }
         .scrollContentBackground(.hidden)
     }
@@ -131,7 +131,7 @@ struct BagView: View {
             .buttonStyle(.plain)
             .padding(.top, 4)
 
-            Text("Tax and shipping calculated at checkout. Shipping is priced by distance from Cypress, CA — free over $\(CartStore.freeShippingThresholdDollars).")
+            Text("Tax and shipping calculated at checkout. Shipping is priced by distance from Buena Park, CA — free over $\(CartStore.freeShippingThresholdDollars).")
                 .font(Brand.fontBody(11))
                 .foregroundStyle(Brand.ink.opacity(0.5))
         }

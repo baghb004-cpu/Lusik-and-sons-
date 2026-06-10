@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 // ============================================================
 // ProductBuyControls — the ONE buy surface, used by both layouts
@@ -67,7 +66,6 @@ struct ProductBuyControls: View {
                     photoURL: product.photoURLs.first
                 ))
                 added = true
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 Task { try? await Task.sleep(for: .seconds(1.6)); added = false }
             } label: {
                 Text(added ? "Added ✓" : "Add to Bag — $\(displayPrice)")

@@ -64,6 +64,45 @@ struct LusikAPI {
         return (try JSONDecoder().decode(Wrapper.self, from: data)).inventory ?? [:]
     }
 
+    // ── waitlist (Chunk 8) ──
+
+    enum APIError: LocalizedError {
+        /// A failure carrying the server's customer-facing message.
+        case message(String)
+
+        var errorDescription: String? {
+            if case .message(let text) = self { return text }
+            return nil
+        }
+    }
+
+    /// POST /waitlist → { ok: true } (netlify/functions/waitlist.mjs).
+    /// Public + IP-rate-limited server-side; `productKey` must match the
+    /// web CATALOG key (the server shape-validates it), so the admin
+    /// Notify sweep sees app and website signups as one list.
+    static func joinWaitlist(email: String, productKey: String, productName: String) async throws {
+        struct Body: Encodable {
+            let email: String
+            let product_key: String
+            let product_name: String
+        }
+        struct Reply: Decodable {
+            let ok: Bool?
+            let error: String?
+        }
+        var req = URLRequest(url: functionsBase.appendingPathComponent("waitlist"))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(Body(email: email, product_key: productKey, product_name: productName))
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let decoded = try? JSONDecoder().decode(Reply.self, from: data)
+        guard status == 200, decoded?.ok == true else {
+            throw APIError.message(decoded?.error
+                ?? "We couldn't add you just now — please try again, or write to \(Contact.email).")
+        }
+    }
+
     // ── chat (Chunk 7) ──
 
     struct ChatMessage: Codable, Hashable {

@@ -96,7 +96,7 @@ private struct JournalCard: View {
             .padding(.horizontal, 20)
             .padding(.top, 16)
             .padding(.bottom, 20)
-            .background(.background)
+            .background(Brand.surface)
         }
         .clipShape(RoundedRectangle(cornerRadius: 22))
         .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Brand.ink.opacity(0.08), lineWidth: 1))
@@ -218,7 +218,7 @@ struct JournalPostView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(18)
-                    .background(.background)
+                    .background(Brand.surface)
                     .clipShape(RoundedRectangle(cornerRadius: Brand.cornerRadius))
                     .overlay(
                         RoundedRectangle(cornerRadius: Brand.cornerRadius)

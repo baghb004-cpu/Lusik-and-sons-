@@ -108,9 +108,28 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       email — meaning the sheet is useful from day one. Contact.swift
       mirrors CONFIG.TEXT_US; For You gained the "Send us a text."
       cluster (sms: prefill link + assistant launcher).
-- [ ] **Chunk 8 — Niceties.** Waitlist for placeholders, haptics
-      (UIImpactFeedbackGenerator on add-to-bag — parity with `haptic.js`),
-      reduced-motion checks, Dynamic Type pass, dark mode via brand tokens.
+- [x] **Chunk 8 — Niceties.** Shipped: WAITLIST — the four web
+      placeholder products (towel-hand, towel-baptism, baby-swaddle,
+      baby-bathrobe; keys + copy verbatim from catalog.js) as
+      coming-soon cards inside the now-browsable Towels / For Baby
+      categories → PlaceholderProductView with the "Currently
+      unavailable / Price coming soon." bar and a one-field signup
+      POSTing to the SAME /waitlist Function the site uses (app +
+      site signups land in one Notify list per product), success
+      state, mailto fallback. HAPTICS — Haptics.swift vocabulary
+      (add/remove/step/tap/success) moved INTO CartStore mutations
+      (web SiteProvider parity — every surface feels identical), plus
+      a success buzz on order-complete and waitlist-joined. DARK
+      MODE — every Brand color is now a light/dark pair mirroring
+      :root[data-theme="dark"] (the ink↔cream inversion, warm dark
+      surfaces, brighter dark gold) with new surface / shadow /
+      glassBevel tokens replacing system .background fills and
+      ink-colored shadows. DYNAMIC TYPE — Brand fonts scale relative
+      to .body via UIFontMetrics; the glass island is capped at
+      xxxLarge (fixed-chrome pattern, content scales freely).
+      REDUCED MOTION — audited: tab lens, breathe hint, sheet
+      snapping, chat dots/autoscroll all honor it. Drive-by: the bag
+      footer now says Buena Park (matches the June-10 copy commits).
 - [ ] **Chunk 9 — App Store prep.** App icon set (from `public/icon.svg`),
       launch screen, `PrivacyInfo.xcprivacy` (Required Reason API +
       data-collection declarations: purchases via Stripe, no tracking),

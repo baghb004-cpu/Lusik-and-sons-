@@ -69,7 +69,7 @@ struct ChatView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
-        .background(.background)
+        .background(Brand.surface)
         .overlay(alignment: .bottom) {
             Rectangle().fill(Brand.ink.opacity(0.08)).frame(height: 1)
         }
@@ -126,7 +126,7 @@ struct ChatView: View {
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(isUser ? AnyShapeStyle(Brand.ink) : AnyShapeStyle(.background))
+                        .fill(isUser ? AnyShapeStyle(Brand.ink) : AnyShapeStyle(Brand.surface))
                 )
                 .overlay {
                     if !isUser {
@@ -146,7 +146,7 @@ struct ChatView: View {
                 .foregroundStyle(Brand.ink.opacity(0.45))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(.background))
+                .background(RoundedRectangle(cornerRadius: 12).fill(Brand.surface))
                 .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Brand.ink.opacity(0.1), lineWidth: 1))
                 .opacity(reduceMotion ? 1 : (typingPulse ? 1 : 0.35))
                 .onAppear {
@@ -189,7 +189,7 @@ struct ChatView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.background)
+        .background(Brand.surface)
         .overlay(alignment: .top) {
             Rectangle().fill(Brand.ink.opacity(0.08)).frame(height: 1)
         }
@@ -203,7 +203,7 @@ struct ChatView: View {
             .foregroundStyle(Brand.ink.opacity(0.5))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 7)
-            .background(.background)
+            .background(Brand.surface)
     }
 
     // ── offline fallback (server answered 503) ──
@@ -235,13 +235,13 @@ struct ChatView: View {
                     .foregroundStyle(Brand.ink)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
-                    .background(Capsule().fill(.background))
+                    .background(Capsule().fill(Brand.surface))
                     .overlay(Capsule().strokeBorder(Brand.ink.opacity(0.15), lineWidth: 1))
             }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
-        .background(.background)
+        .background(Brand.surface)
         .overlay(alignment: .top) {
             Rectangle().fill(Brand.ink.opacity(0.08)).frame(height: 1)
         }

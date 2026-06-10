@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 // ============================================================
 // GlassTabBar — the Liquid Glass island, native edition (Chunk 6)
@@ -54,12 +53,15 @@ struct GlassTabBar: View {
         .background {
             Capsule()
                 .fill(.ultraThinMaterial)
-                .overlay(Capsule().fill(Brand.cream.opacity(0.42)))   // warm tint
-                .overlay(Capsule().strokeBorder(.white.opacity(0.55), lineWidth: 1))
-                .shadow(color: Brand.ink.opacity(0.22), radius: 16, y: 8)
+                .overlay(Capsule().fill(Brand.cream.opacity(0.42)))   // warm tint (flips dark with the token)
+                .overlay(Capsule().strokeBorder(Brand.glassBevel, lineWidth: 1))
+                .shadow(color: Brand.shadow.opacity(0.22), radius: 16, y: 8)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 6)
+        // Chrome is capped — the island must stay an island at accessibility
+        // sizes (content itself scales freely; Apple's fixed-chrome pattern).
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     private func tabButton(_ tab: AppTab) -> some View {
@@ -72,7 +74,7 @@ struct GlassTabBar: View {
                     selection = tab
                 }
             }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Haptics.tap()
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: tab.icon)

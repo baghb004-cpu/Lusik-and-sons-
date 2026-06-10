@@ -70,21 +70,36 @@ final class CartStore: ObservableObject {
     }
 
     // ── mutations ──
+    // Haptics live here, not at call sites — the web does the same
+    // (SiteProvider owns the addToCart/removeFromCart buzzes), so every
+    // surface that mutates the bag feels identical.
     func add(_ item: CartItem) {
         if let i = items.firstIndex(where: { $0.id == item.id }) {
             items[i].qty = min(99, items[i].qty + item.qty)
         } else {
             items.append(item)
         }
+        Haptics.add()
     }
 
-    func remove(id: String) { items.removeAll { $0.id == id } }
+    func remove(id: String) {
+        let before = items.count
+        items.removeAll { $0.id == id }
+        if items.count != before { Haptics.remove() }
+    }
 
-    func remove(atOffsets offsets: IndexSet) { items.remove(atOffsets: offsets) }
+    func remove(atOffsets offsets: IndexSet) {
+        guard !offsets.isEmpty else { return }
+        items.remove(atOffsets: offsets)
+        Haptics.remove()
+    }
 
     func setQty(id: String, qty: Int) {
         guard let i = items.firstIndex(where: { $0.id == id }) else { return }
-        items[i].qty = max(1, min(99, qty))
+        let clamped = max(1, min(99, qty))
+        guard clamped != items[i].qty else { return }
+        items[i].qty = clamped
+        Haptics.step()
     }
 
     func clear() { items = [] }

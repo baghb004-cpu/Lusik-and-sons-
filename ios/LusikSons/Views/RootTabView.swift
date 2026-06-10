@@ -79,7 +79,7 @@ struct ForYouView: View {
                             .foregroundStyle(Brand.ink)
                             .padding(.horizontal, 18)
                             .padding(.vertical, 11)
-                            .background(Capsule().fill(.background))
+                            .background(Capsule().fill(Brand.surface))
                             .overlay(Capsule().strokeBorder(Brand.ink.opacity(0.15), lineWidth: 1))
                     }
                     .accessibilityLabel("Open chat assistant")

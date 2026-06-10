@@ -67,6 +67,7 @@ struct CheckoutView: View {
                     cart.clear()
                     idempotencyKey = UUID().uuidString
                     orderComplete = true
+                    Haptics.success()
                 },
                 onClose: { stripeURL = nil }
             )
@@ -149,7 +150,7 @@ struct CheckoutView: View {
                     .textContentType(.postalCode)
                     .font(Brand.fontBody(16, weight: .medium))
                     .padding(12)
-                    .background(.background, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Brand.surface, in: RoundedRectangle(cornerRadius: 10))
                     .onChange(of: shipZip) { _, new in
                         shipZip = String(new.filter(\.isNumber).prefix(5))
                     }
@@ -177,7 +178,7 @@ struct CheckoutView: View {
                     .lineLimit(2...3)
                     .font(Brand.fontBody(13))
                     .padding(10)
-                    .background(.background, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Brand.surface, in: RoundedRectangle(cornerRadius: 10))
                     .onChange(of: giftMessage) { _, new in
                         giftMessage = String(new.prefix(Self.giftMessageMax))
                     }
@@ -200,7 +201,7 @@ struct CheckoutView: View {
                 .lineLimit(2...4)
                 .font(Brand.fontBody(13))
                 .padding(10)
-                .background(.background, in: RoundedRectangle(cornerRadius: 10))
+                .background(Brand.surface, in: RoundedRectangle(cornerRadius: 10))
                 .onChange(of: notes) { _, new in
                     notes = String(new.prefix(Self.notesMax))
                 }

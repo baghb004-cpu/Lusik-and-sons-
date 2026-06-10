@@ -13,16 +13,14 @@ struct ShopView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    // Coming-soon categories are browsable too (web
+                    // "Browse {Category}" parity) — inside, their
+                    // placeholder products carry the waitlist.
                     ForEach(ShopCategory.all) { category in
-                        if category.comingSoon {
+                        NavigationLink(value: category.id) {
                             CategoryCard(category: category)
-                                .opacity(0.55)
-                        } else {
-                            NavigationLink(value: category.id) {
-                                CategoryCard(category: category)
-                            }
-                            .buttonStyle(.plain)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 18)
@@ -39,6 +37,9 @@ struct ShopView: View {
                 // ProductRoute owns the presentation split (web
                 // SHEET.EXCLUDE_KEYS parity) — shared with the bag.
                 ProductRoute(product: product)
+            }
+            .navigationDestination(for: PlaceholderProduct.self) { placeholder in
+                PlaceholderProductView(placeholder: placeholder)
             }
         }
     }
@@ -85,10 +86,10 @@ private struct CategoryCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(.background)
+            .background(Brand.surface)
         }
         .clipShape(RoundedRectangle(cornerRadius: Brand.cornerRadius))
-        .shadow(color: Brand.ink.opacity(0.08), radius: 10, y: 4)
+        .shadow(color: Brand.shadow.opacity(0.08), radius: 10, y: 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(category.comingSoon
             ? "\(category.label) — coming soon"
@@ -96,16 +97,33 @@ private struct CategoryCard: View {
     }
 }
 
-// Product grid for one category (the web's CategoryView).
+// Product grid for one category (the web's CategoryView): live products
+// in the two-up grid, placeholder products as full-width coming-soon
+// cards beneath (the waitlist path).
 struct CategoryView: View {
     let category: ShopCategory
 
+    private var placeholders: [PlaceholderProduct] {
+        Placeholders.inCategory(category.id)
+    }
+
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible())], spacing: 18) {
-                ForEach(category.products) { product in
-                    NavigationLink(value: product) {
-                        ProductCard(product: product)
+            VStack(spacing: 18) {
+                if !category.products.isEmpty {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible())], spacing: 18) {
+                        ForEach(category.products) { product in
+                            NavigationLink(value: product) {
+                                ProductCard(product: product)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                ForEach(placeholders) { placeholder in
+                    NavigationLink(value: placeholder) {
+                        PlaceholderCard(placeholder: placeholder)
                     }
                     .buttonStyle(.plain)
                 }
