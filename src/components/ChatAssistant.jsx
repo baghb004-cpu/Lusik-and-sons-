@@ -16,6 +16,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { CONFIG } from "../data/config.js";
+import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { X, Send, Sparkles } from "./icons.jsx";
 
@@ -65,22 +66,17 @@ export function ChatAssistant() {
     setInput("");
     setSending(true);
     try {
-      const res = await fetch(`${CONFIG.FN_BASE}/chat`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ messages: next, sessionId: sessionIdRef.current }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.error || "The assistant is having trouble right now.");
+      const { error, reply, turnsUsed } = await db.sendChat(next, sessionIdRef.current);
+      if (error) {
+        setError(error.message || "The assistant is having trouble right now.");
         // Roll back the user turn so they can retry without it
         // counting twice in the visible history.
         setMessages(messages);
         setInput(trimmed);
         return;
       }
-      setMessages([...next, { role: "assistant", content: data.reply || "" }]);
-      track("chat-message", { turnsUsed: data.turnsUsed });
+      setMessages([...next, { role: "assistant", content: reply || "" }]);
+      track("chat-message", { turnsUsed });
     } catch {
       setError("Couldn't reach the assistant. Please try again.");
       setMessages(messages);

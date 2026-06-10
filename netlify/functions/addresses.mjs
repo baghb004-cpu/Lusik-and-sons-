@@ -12,6 +12,11 @@ import { sql }         from "./_lib/db.mjs";
 import { requireUser } from "./_lib/auth.mjs";
 import { json }        from "./_lib/json.mjs";
 
+// addresses.id is a uuid column — validate the ?id= shape before the query so
+// a non-uuid value returns a clean 400 instead of a Postgres "invalid input
+// syntax for type uuid" 500.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async (req, context) => {
   const auth = await requireUser(req, context);
   if (auth.response) return auth.response;
@@ -87,6 +92,7 @@ export default async (req, context) => {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     if (!id) return json(400, { error: "Missing id" });
+    if (!UUID_RE.test(id)) return json(400, { error: "Invalid id" });
     // Filter by user_id so a user can only delete their OWN addresses.
     await sql`DELETE FROM addresses WHERE id = ${id} AND user_id = ${user.id}`;
     return json(200, { ok: true });

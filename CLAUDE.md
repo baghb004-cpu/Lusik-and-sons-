@@ -57,9 +57,11 @@ Runtime stack:
   `postcss.config.mjs`)
 - **`netlify-identity-widget`** — auth (signup, login, password reset, JWT
   issuance), loaded from `identity.netlify.com` via a `next/script`
-  (`beforeInteractive`) tag because Netlify's confirmation redirect handler expects
-  `window.netlifyIdentity` from their CDN. Driven programmatically through the
-  `auth` wrapper.
+  (`lazyOnload`, with an `onReady` that re-runs `auth.init()`) tag because
+  Netlify's confirmation redirect handler expects `window.netlifyIdentity` from
+  their CDN. Loaded off the critical path since most visitors never sign in; the
+  `auth.js` hash-token handler retries ~5s so the email-confirmation / recovery
+  redirect still works. Driven programmatically through the `auth` wrapper.
 - **Sentry** (`@sentry/react`) — error monitoring, dynamically imported and off
   until `NEXT_PUBLIC_SENTRY_DSN` is set (no bundle cost when unconfigured).
 - Google Fonts: Fraunces (display), DM Sans (body), Allura
@@ -361,8 +363,8 @@ A few **durable invariants** survived both migrations and still bite if ignored:
   values like DMC palette colors).
 - **The cart-ID shape is load-bearing for Stripe** — `mapLegacyId` must match
   `_lib/trusted-products.mjs`; the smoke test is the safety net.
-- **`netlify-identity-widget` stays loaded from `identity.netlify.com`** (now via
-  `next/script` `beforeInteractive`) — do NOT switch to the npm package.
+- **`netlify-identity-widget` stays loaded from `identity.netlify.com`** (via
+  `next/script` `lazyOnload`) — do NOT switch to the npm package.
 - **`netlify/functions/` was never touched by either migration** and keeps its own
   `package.json`. Don't merge it with the root one.
 - **Browser env reads go through `process.env.NEXT_PUBLIC_*`**, not

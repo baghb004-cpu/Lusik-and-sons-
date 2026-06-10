@@ -1,7 +1,14 @@
 // ============================================================
 // /.netlify/functions/cleanup-blobs  (scheduled)
 // ============================================================
-// Daily sweep that prunes stale entries in two blob stores:
+// Daily sweep that prunes stale entries in three blob stores:
+//
+//   0. stripe-events-seen
+//      One entry per processed dispute / fraud-warning / payment-
+//      failed Stripe event (the webhook's idempotency ledger),
+//      keyed by Stripe event id with a stored `at` timestamp.
+//      These are infrequent but never expired otherwise, so the
+//      store grows unbounded over the life of the site.
 //
 //   1. pending-orders
 //      One entry is written per `create-checkout-session` call,
@@ -82,6 +89,32 @@ async function cleanupPendingOrders(cutoffIso) {
   return { pruned, kept, errors };
 }
 
+// stripe-events-seen blobs are keyed by Stripe event id (no date
+// in the key) with a stored `{ at: ISO }` body — same shape as
+// pending-orders, so we read the body and compare its timestamp.
+async function cleanupStripeEventsSeen(cutoffIso) {
+  const store = getStore({ name: "stripe-events-seen" });
+  let pruned = 0, kept = 0, errors = 0;
+  for await (const { key } of store.list()) {
+    try {
+      const blob = await store.get(key, { type: "json" });
+      const at = blob?.at;
+      // Malformed / undated entries are safe to drop — they've already
+      // served their dedupe purpose well past the retention window.
+      if (!at || typeof at !== "string" || at < cutoffIso) {
+        await store.delete(key);
+        pruned++;
+      } else {
+        kept++;
+      }
+    } catch (err) {
+      console.warn("[cleanup-blobs] stripe-events-seen error on", key, err?.message);
+      errors++;
+    }
+  }
+  return { pruned, kept, errors };
+}
+
 // Rate-limit blobs use keys of shape `<ip>/<YYYY-MM-DD>`. The
 // date is right there in the key, so we don't need to read
 // the body — string-compare against the cutoff date.
@@ -114,11 +147,11 @@ async function cleanupRateLimitBucket(bucket, cutoffDate) {
 }
 
 export default async (req) => {
-  // HTTP gate — Netlify scheduled functions are reachable at the
-  // public function URL. Without this check an attacker could
-  // race-trigger pruning of pending-orders blobs that the webhook
-  // is about to consume, or rapidly inflate function-invocation
-  // counts against the project's plan. See _lib/scheduled.mjs.
+  // HTTP gate (defense-in-depth). Netlify blocks public URL access to
+  // scheduled functions, so an outside caller can't race-trigger this
+  // sweep against pending-orders blobs the webhook is about to consume;
+  // the gate keeps the handler safe regardless and enables the operator
+  // manual-trigger path. See _lib/scheduled.mjs.
   if (!(await isScheduledInvocation(req))) return forbidden();
 
   const cutoff = new Date();
@@ -128,6 +161,7 @@ export default async (req) => {
 
   const summary = {
     cutoff: cutoffIso,
+    stripeEventsSeen: await cleanupStripeEventsSeen(cutoffIso),
     pendingOrders: await cleanupPendingOrders(cutoffIso),
     rateLimit: {},
   };

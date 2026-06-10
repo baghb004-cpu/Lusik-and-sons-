@@ -44,6 +44,11 @@ const ALLOWED_CARRIERS = [
   "",
 ];
 
+// orders.id is a uuid column. Validate the shape before it reaches a query —
+// otherwise a non-uuid ?id= makes Postgres throw "invalid input syntax for
+// type uuid", which surfaces as an unhandled 500 instead of a clean 4xx.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async (req, context) => {
   const auth = await requireAdmin(req, context);
   if (auth.response) return auth.response;
@@ -54,6 +59,7 @@ export default async (req, context) => {
   // ----- GET -----
   if (req.method === "GET") {
     if (id) {
+      if (!UUID_RE.test(id)) return json(404, { error: "Order not found" });
       const rows = await sql`
         SELECT
           o.*,
@@ -130,6 +136,7 @@ export default async (req, context) => {
   // ----- PUT -----
   if (req.method === "PUT") {
     if (!id) return json(400, { error: "Missing id" });
+    if (!UUID_RE.test(id)) return json(400, { error: "Invalid id" });
     const body = await req.json().catch(() => ({}));
 
     const updates = {};

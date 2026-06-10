@@ -2,7 +2,8 @@
 # Lighthouse CI — accessibility + performance + SEO gates
 # ============================================================
 # Runs on every push to non-main branches + every PR. Builds
-# the site, serves dist/ via `vite preview`, runs Lighthouse
+# the site (next build) and serves it with `next start` (see
+# lighthouserc.json startServerCommand), runs Lighthouse
 # against three URLs (home, journal index, one journal post),
 # and asserts category scores against the floors in
 # lighthouserc.json.
