@@ -21,6 +21,24 @@
   --imm-nav-clear: calc(env(safe-area-inset-bottom, 0px) + 96px);
 }
 
+/* The nav-clear band itself, painted in the page background. The
+   bottom-nav island is near-clear liquid glass — it IS whatever it
+   blurs — and the root's ink backdrop was turning it into a black
+   blob on sheet pages. A cream band gives the glass the same light
+   backdrop it has on every other page (and follows the theme via
+   --bg-page, so dark mode stays coherent too). Sits above the photo
+   gallery (z1) and below the topbar/dots/sheet (z2+). */
+.root::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--imm-nav-clear);
+  background: var(--bg-page, #f5efe3);
+  z-index: 1;
+}
+
 /* ---- full-screen swipeable photo gallery (the backdrop) ---- */
 .gallery {
   position: absolute;
