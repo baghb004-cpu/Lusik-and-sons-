@@ -18,10 +18,14 @@ server-side price row in `netlify/functions/_lib/trusted-products.mjs`:
 | Armenian Alphabet Blanket | ✅ live ($65) |
 | Full Alphabet Crib Blanket | ✅ live ($245) |
 | The Custom Name Bib | ✅ live ($22) |
-| Days-of-the-Week Bib Set | ✅ live ($129) |
-| Hye Em Yes Bib | ✅ live ($35 / $52 with cap) |
-| Mama & Papa's Anushig Bib Set | ✅ live ($54) |
-| Bari Akhorzhak Bib & Burp Cloth Set | ✅ live ($48 / $65 with cap) |
+| Days-of-the-Week Bib Set | ✅ live ($60) |
+| Hye Em Yes Bib | ✅ live ($20 / $38 with cap) |
+| Mama & Papa's Anushig Bib Set | ✅ live ($40) |
+| Bari Akhorzhak Bib & Burp Cloth Set | ✅ live ($40 / $58 with cap) |
+
+Bib prices were dropped to these everyday levels in June 2026 (a deliberate
+price-test — lower than the old founding-promo prices, so the promo was
+retired rather than extended).
 
 **Four products remain coming-soon placeholders**, now CMS-managed — Lusik can
 edit them herself in the Content Studio at `/studio` (they live in
@@ -41,11 +45,12 @@ price (the server-side price contract) — otherwise checkout rejects it.
 
 ## Time-boxed: Founding-price launch promo
 
-- 🟡 `LAUNCH_PROMO` (intro pricing on the bibs) runs **2026-06-05 → 2026-06-12**
-  and auto-reverts at the end timestamp. To extend it, change the window in
-  **both** `src/data/config.js` and `netlify/functions/_lib/launch-promo.mjs`
-  (kept in lockstep by `launch-promo-drift.test.mjs`). To let it lapse, do
-  nothing.
+- ✅ **Retired (June 2026).** The promo was superseded by the permanent
+  bib price drop above (the new everyday prices sit below the old founding
+  prices). `LAUNCH_PROMO` is `enabled: false` with an empty `FOUNDING_CENTS`
+  in **both** `src/data/config.js` and `netlify/functions/_lib/launch-promo.mjs`
+  (kept in lockstep by `launch-promo-drift.test.mjs`). To run a future promo,
+  re-populate both files with prices strictly below the current trusted prices.
 
 ## Content review (the big one)
 

@@ -17,6 +17,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CONFIG } from "../data/config.js";
 import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
+import { estimateShippingForZip, SHIPPING_FROM_DOLLARS, SHIPPING_TO_DOLLARS } from "../data/shippingZones.js";
 import { auth } from "../lib/auth.js";
 import { track } from "../lib/analytics.js";
 import { mapLegacyId } from "../lib/cartId";
@@ -113,6 +114,20 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   // chars before persisting.
   const [customerNotes, setCustomerNotes] = useState("");
   const CUSTOMER_NOTES_MAX = 280;
+
+  // --- SHIPPING ZIP (drives the zone-priced rate) ---
+  // Hosted Stripe Checkout fixes its shipping options at session-
+  // creation time, so the destination ZIP has to be known BEFORE the
+  // hand-off. Below the free-shipping threshold the ZIP is required —
+  // it's what makes a Florida order pay Florida shipping instead of a
+  // flat fee. The estimate shown here comes from the browser mirror
+  // (src/data/shippingZones.js); the server recomputes from its own
+  // copy (drift-tested) so a tampered ZIP can't change the charge.
+  const [shipZip, setShipZip] = useState("");
+  const shipZipValid = /^\d{5}$/.test(shipZip);
+  const freeShipping = Math.round(subtotal * 100) >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
+  const shipEstimate = !freeShipping && shipZipValid ? estimateShippingForZip(shipZip) : null;
+  const zipNeeded = !freeShipping && !shipZipValid;
 
   // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
   // Default everything OFF — affirmative opt-in is the only thing
@@ -247,6 +262,10 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           // control chars; sending an empty string is fine, the
           // server stores NULL in that case.
           customer_notes: customerNotes.trim().slice(0, CUSTOMER_NOTES_MAX),
+          // Destination ZIP for the zone-priced shipping rate. The
+          // server validates the shape and recomputes the rate from
+          // its own zone table — this only tells it WHERE, not how much.
+          ship_zip: shipZipValid ? shipZip : null,
           // Idempotency key — forwarded to Stripe so a retried POST
           // (or a tap that the customer thinks didn't register)
           // returns the original Checkout Session URL instead of
@@ -544,19 +563,21 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </CollapsibleCard>
 
           {/* Inline Pay button is desktop-only; mobile uses the sticky
-              bottom bar (rendered at the end of this component). */}
+              bottom bar (rendered at the end of this component). Both
+              stay disabled until the shipping ZIP is in (when shipping
+              is paid) — the ZIP is what prices the shipping option. */}
           <button
             onClick={handleCheckout}
-            disabled={busy || cart.length === 0}
+            disabled={busy || cart.length === 0 || zipNeeded}
             className="hidden lg:flex w-full py-4 text-sm tracking-[0.2em] uppercase items-center justify-center gap-2 transition"
             style={{
-              background: busy ? "rgba(26,22,18,0.5)" : "#1A1612",
+              background: (busy || zipNeeded) ? "rgba(26,22,18,0.5)" : "#1A1612",
               color: "#F5EFE3",
-              cursor: busy ? "wait" : "pointer",
+              cursor: busy ? "wait" : zipNeeded ? "not-allowed" : "pointer",
             }}
           >
-            {busy ? "Connecting to Stripe…" : "Pay with Stripe"}
-            {!busy && <ArrowRight size={16} strokeWidth={1.5} />}
+            {busy ? "Connecting to Stripe…" : zipNeeded ? "Enter ZIP to continue" : "Pay with Stripe"}
+            {!busy && !zipNeeded && <ArrowRight size={16} strokeWidth={1.5} />}
           </button>
 
           {/* Accepted-payment row — Stripe handles all of these, but
@@ -595,9 +616,52 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {giftIsGift && giftWrap && (
               <div className="flex justify-between"><span className="opacity-70">Gift wrap</span><span className="tabular-nums">+${(CONFIG.GIFT_WRAP_PRICE_CENTS / 100).toFixed(2)}</span></div>
             )}
-            <div className="flex justify-between"><span className="opacity-70">Shipping</span><span className="opacity-70">Calculated at Stripe</span></div>
+            <div className="flex justify-between">
+              <span className="opacity-70">Shipping</span>
+              {freeShipping ? (
+                <span className="tabular-nums" style={{ color: "var(--accent)", fontWeight: 500 }}>Free</span>
+              ) : shipEstimate ? (
+                <span className="tabular-nums">${shipEstimate.dollars.toFixed(2)}</span>
+              ) : (
+                <span className="opacity-70">Enter ZIP below</span>
+              )}
+            </div>
             <div className="flex justify-between"><span className="opacity-70">Tax</span><span className="opacity-70">Calculated at Stripe</span></div>
           </div>
+
+          {/* Shipping ZIP — prices the zone-based rate before the Stripe
+              hand-off (UPS-style zones from Cypress, CA: a SoCal order
+              ships for less than a Florida one). Hidden once the order
+              earns free shipping; required otherwise. */}
+          {!freeShipping && (
+            <div className="mt-5 p-4" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.18)" }}>
+              <label className="block mb-1.5">
+                <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70">Shipping ZIP code</span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                maxLength={5}
+                value={shipZip}
+                onChange={(e) => setShipZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                placeholder="90630"
+                className="w-full px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
+                style={{ border: "1px solid rgba(26,22,18,0.15)" }}
+                aria-label="Shipping ZIP code"
+              />
+              {shipEstimate ? (
+                <p className="text-xs mt-2 leading-relaxed">
+                  <span style={{ fontWeight: 500 }}>{shipEstimate.label} — ${shipEstimate.dollars.toFixed(2)}</span>
+                  <span className="opacity-70"> · {shipEstimate.daysMin}–{shipEstimate.daysMax} business days transit once it ships.</span>
+                </p>
+              ) : (
+                <p className="text-xs opacity-60 mt-2 leading-relaxed">
+                  Shipping is priced by distance from Lusik's home in Cypress, CA — ${SHIPPING_FROM_DOLLARS.toFixed(2)}–${SHIPPING_TO_DOLLARS.toFixed(2)} in the lower 48. Enter the ZIP this order ships to.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -614,17 +678,23 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
         }}
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs tracking-[0.15em] uppercase opacity-70">Subtotal · free shipping</span>
+          <span className="text-xs tracking-[0.15em] uppercase opacity-70">
+            {freeShipping
+              ? "Subtotal · free shipping"
+              : shipEstimate
+                ? `Subtotal · +$${shipEstimate.dollars.toFixed(2)} shipping`
+                : "Subtotal · shipping by ZIP"}
+          </span>
           <span className="text-lg tabular-nums" style={{ fontWeight: 600, color: "var(--text-primary)" }}>${subtotal.toFixed(2)}</span>
         </div>
         <button
           onClick={handleCheckout}
-          disabled={busy || cart.length === 0}
+          disabled={busy || cart.length === 0 || zipNeeded}
           className="w-full py-3.5 text-sm tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition"
-          style={{ background: busy ? "rgba(26,22,18,0.5)" : "#1A1612", color: "#F5EFE3", borderRadius: 999, cursor: busy ? "wait" : "pointer" }}
+          style={{ background: (busy || zipNeeded) ? "rgba(26,22,18,0.5)" : "#1A1612", color: "#F5EFE3", borderRadius: 999, cursor: busy ? "wait" : zipNeeded ? "not-allowed" : "pointer" }}
         >
-          {busy ? "Connecting to Stripe…" : "Pay with Stripe"}
-          {!busy && <ArrowRight size={16} strokeWidth={1.5} />}
+          {busy ? "Connecting to Stripe…" : zipNeeded ? "Enter ZIP to continue" : "Pay with Stripe"}
+          {!busy && !zipNeeded && <ArrowRight size={16} strokeWidth={1.5} />}
         </button>
       </div>
     </div>

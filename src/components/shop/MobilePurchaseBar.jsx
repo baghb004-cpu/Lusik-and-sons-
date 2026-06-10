@@ -109,7 +109,7 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick, disab
               <Row icon={<PinIcon />} title="Local pickup"
                 body={`Available in ${pickup.AREA || "select areas"} — message Lusik to arrange.`} />
             )}
-            <Row icon={<BoxIcon />} title="Free U.S. shipping"
+            <Row icon={<BoxIcon />} title={`U.S. shipping — free over $${(CONFIG.FREE_SHIPPING_THRESHOLD_CENTS / 100).toFixed(0)}`}
               body={CONFIG.DELIVERY_NOTE || "Made to order — hand-stitched, then shipped to your door."} />
           </div>
         </div>

@@ -116,7 +116,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-days-of-week": {
     key: "bib-days-of-week",
     name: "The Armenian Days-of-the-Week Bib Set",
-    price: 129,
+    price: 60,
     image: "/img/days-bib/cover.jpg",
     buy: {
       kind: "bibSet",
@@ -133,7 +133,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-anushig-pair": {
     key: "bib-anushig-pair",
     name: "The Mama & Papa's Anushig Bib Set",
-    price: 54,
+    price: 40,
     image: "/img/anushig-bib/cover.jpg",
     buy: {
       kind: "bibSet",
@@ -150,7 +150,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-bari-akhorzhak-set": {
     key: "bib-bari-akhorzhak-set",
     name: "The Bari Akhorzhak Bib & Burp Cloth Set",
-    price: 48,
+    price: 40,
     image: "/img/bari-akhorzhak-set/cover.jpg",
     buy: {
       kind: "bibSet",
@@ -161,8 +161,8 @@ export const CUSTOM_PRODUCTS = {
       sizeLabel: "Bib + burp cloth · one size",
       cap: {
         withKey: "bib-bari-akhorzhak-set-with-cap",
-        priceWithCap: 65,
-        upcharge: 17,
+        priceWithCap: 58,
+        upcharge: 18,
         nameInput: true,    // cap carries the baby's name or initial
         nameMax: 12,
       },
@@ -172,7 +172,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-bari-akhorzhak-set-with-cap": {
     key: "bib-bari-akhorzhak-set-with-cap",
     name: "The Bari Akhorzhak Bib & Burp Cloth Set",
-    price: 65,
+    price: 58,
     variantOf: "bib-bari-akhorzhak-set",
   },
 
@@ -181,7 +181,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-hy-em": {
     key: "bib-hy-em",
     name: "The Hye Em Yes Bib",
-    price: 35,
+    price: 20,
     image: "/img/hye-em-bib/cover.jpg",
     buy: {
       kind: "bibSet",
@@ -189,8 +189,8 @@ export const CUSTOM_PRODUCTS = {
       sizeLabel: "One size · fits most babies 0–24 months",
       cap: {
         withKey: "bib-hy-em-with-cap",
-        priceWithCap: 52,
-        upcharge: 17,       // unified cap upcharge across the line
+        priceWithCap: 38,
+        upcharge: 18,       // unified cap upcharge across the line
         nameInput: false,   // tricolor cap, no name
       },
     },
@@ -199,7 +199,7 @@ export const CUSTOM_PRODUCTS = {
   "bib-hy-em-with-cap": {
     key: "bib-hy-em-with-cap",
     name: "The Hye Em Yes Bib",
-    price: 52,
+    price: 38,
     variantOf: "bib-hy-em",
   },
 };

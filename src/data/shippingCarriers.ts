@@ -3,14 +3,16 @@
 // ============================================================
 // Used by `getTrackingUrl(carrier, trackingNumber)` to render
 // the right tracking URL when Lusik fills in carrier + tracking
-// number in the admin view. Browser-side mirror of the server
-// list in netlify/functions/_lib/email.mjs and the SHIPPING
-// rate options in create-checkout-session.mjs.
+// number in the admin view. Browser-side mirror of the carrier
+// list in netlify/functions/_lib/email.mjs.
 //
-// shipping options, edit BOTH this file AND the equivalent
-// server-side list. The pricing-drift test pattern (see
-// _lib/__tests__/pricing-drift.test.mjs) could be extended to
-// guard this if drift becomes a problem.
+// NOTE: the price/days fields are legacy display data from the
+// old flat-rate checkout and are NOT what checkout charges —
+// shipping is zone-priced by ZIP since June 2026 (see
+// src/data/shippingZones.js + _lib/shipping-zones.mjs, kept in
+// lockstep by shipping-zones-drift.test.mjs). Lusik still hands
+// the finished piece to whichever of these carriers makes sense,
+// so the tracking-URL ids/names stay load-bearing.
 // ============================================================
 
 export interface ShippingCarrier {

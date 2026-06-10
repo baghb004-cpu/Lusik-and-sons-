@@ -276,7 +276,7 @@ export const CATALOG = {
         name: "The Armenian Days-of-the-Week Bib Set",
         name_hy: "Շաբաթվա օրերի հայկական թքակալների հավաքածու",
         status: "live",
-        priceFrom: 129,
+        priceFrom: 60,
         // Tagline leads with the count (seven) + the heritage angle.
         tagline: "Seven bibs for seven days — Monday through Sunday in Armenian, hand cross-stitched by Lusik.",
         tagline_hy: "Յոթ թքակալ յոթ օրվա համար՝ երկուշաբթիից կիրակի հայերեն, ասեղնագործված Լուսիկի կողմից։",
@@ -335,7 +335,7 @@ export const CATALOG = {
         name: "The Hye Em Yes Bib",
         name_hy: "«Հայ եմ ես» թքակալ",
         status: "live",
-        priceFrom: 35,
+        priceFrom: 20,
         // Tagline = the cultural payload + a hook to the flag colors,
         // which is THE differentiating visual cue on this bib.
         tagline: "Հայ եմ ես — \"I am Armenian,\" stitched in the colors of the flag.",
@@ -397,7 +397,7 @@ export const CATALOG = {
         name: "The Mama & Papa's Anushig Bib Set",
         name_hy: "Մայրիկի և Պապայի «Անոյշիկ» թքակալների հավաքածու",
         status: "live",
-        priceFrom: 54,
+        priceFrom: 40,
         tagline: "One bib says Mama's sweetheart, the other Papa's — Armenian for \"darling,\" stitched as a pair.",
         tagline_hy: "Մի թքակալն ասում է «Մայրիկի անոյշիկը», մյուսը՝ «Պապայի», հայերեն՝ «սիրելի», կարկատված որպես զույգ։",
         description: "A matched pair of baby bibs that take turns. One reads Մայրիկիս Անոյշիկը — \"Mama's sweetheart.\" The other reads Պապայիս Անոյշիկը — \"Papa's sweetheart.\" Anushig is the Armenian word for darling, the kind of name a grandmother says when she means it. Embroidered together, gifted together: the bib for the morning Dad gets up first, the bib for the night Mom takes over, both of them small daily reassurances that the baby is loved on both sides of the crib. A small heritage anchor for the first months — when the answer to \"whose baby is this?\" deserves to be said in two voices. Lusik embroiders each pair by hand from her home in Southern California. Made to order, made to last.",
@@ -482,7 +482,7 @@ export const CATALOG = {
         // «ուսի սրբիչ». Please confirm both with a native ear.
         name_hy: "«Բարի ախորժակ» թքակալի և ուսի սրբիչի հավաքածու",
         status: "live",
-        priceFrom: 48,
+        priceFrom: 40,
         tagline: "Two Armenian meal blessings, one matched set — said before the baby eats, and after.",
         tagline_hy: "Երկու հայկական սեղանի օրհնություն, մեկ համընկնող հավաքածու՝ ասված մանկան ուտելուց առաջ և հետո։",
         description: "A matched bib and burp cloth, each carrying one half of an Armenian grandmother's table blessing. Before the baby eats, the bib reads Բարի ախորժակ — Bari akhorzhak, bon appétit. After, when the food has worked out, the burp cloth answers Անույշ ըլլայ — Anush ella, may it be sweet. Lusik has been stitching this blessing for years — in cream with botanical green, in pale pink with magenta, in periwinkle with gold, in bubblegum pink with navy. Pick the mood you want — quiet harmony, gentle complement, or bold contrast — and Lusik picks the exact combination that fits. The bib carries a soft white inset panel that gives the cross-stitch a clean page to live on; the burp cloth is single-color terry, the everyday companion to the bib's ceremony. Each piece has a primary motif tucked between the words — a cross-stitched bottle, strawberry, grape, or carrot; an appliquéd butterfly, bunny, or daisies on the pink — and the burp cloth carries Lusik's quiet signature in the corner: a tiny car, a chick, a butterfly, varies by piece. Add the matching cap and your baby's name or initial is cross-stitched in the same thread, turning a set of two into a set of three voices: name on the cap, blessing before on the bib, blessing after on the burp cloth. The bib closes with a fabric tie at the back of the neck — the heritage closure Lusik's grandmother used. Hand cross-stitched by Lusik herself from her home in Southern California. Made to order, made to last.",

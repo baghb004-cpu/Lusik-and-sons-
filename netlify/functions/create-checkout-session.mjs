@@ -15,6 +15,7 @@ import Stripe          from "stripe";
 import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
+import { buildShippingOptionsForZip, rateForZip } from "./_lib/shipping-zones.mjs";
 import { effectiveCents } from "./_lib/launch-promo.mjs";
 import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { findInventoryViolation } from "./_lib/inventory.mjs";
@@ -49,51 +50,17 @@ function getStripe() {
 // SHIPPING POLICY
 // ============================================================
 // Free U.S. shipping at or above FREE_SHIPPING_THRESHOLD_CENTS
-// (imported from _lib/pricing.mjs). The cart-drawer progress bar
-// promises it; this is where we make it real on the Stripe side.
-// The browser's matching constant lives in CONFIG.FREE_SHIPPING_*
-// in src/data/config.js and is guarded against drift by pricing-drift.test.mjs.
+// (imported from _lib/pricing.mjs). Below the threshold, shipping
+// is ZONE-PRICED by distance from Cypress, CA: the browser collects
+// the destination ZIP on our checkout page (hosted Stripe Checkout
+// fixes shipping options at session creation, so the ZIP must be
+// known up front), and _lib/shipping-zones.mjs maps it to a UPS-
+// Ground-style zone rate ($9.99 SoCal → $15.49 East Coast). The
+// browser shows the same estimate from its mirror table
+// (src/data/shippingZones.js, drift-tested). The webhook audits the
+// ZIP Stripe actually collected against the quoted zone and flags
+// mismatches in admin_notes.
 // ============================================================
-
-// Paid shipping options offered below the threshold. Mirrors
-// SHIPPING_CARRIERS in src/data/shippingCarriers.ts. Stripe shows these on its
-// hosted checkout page; the customer picks one.
-const SHIPPING_CARRIERS = [
-  { name: "USPS Ground Advantage", amountCents:  999, daysMin: 3, daysMax: 5 },
-  { name: "UPS Ground",            amountCents: 1499, daysMin: 2, daysMax: 5 },
-  { name: "FedEx Home Delivery",   amountCents: 1699, daysMin: 2, daysMax: 5 },
-];
-
-function buildShippingOptions(subtotalCents) {
-  if (subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS) {
-    // Single free option. Including a "free" entry rather than no
-    // shipping at all keeps the checkout page consistent (always
-    // shows a "Shipping" line) and lets the customer see they
-    // earned it.
-    return [{
-      shipping_rate_data: {
-        type: "fixed_amount",
-        fixed_amount: { amount: 0, currency: "usd" },
-        display_name: "Free U.S. shipping",
-        delivery_estimate: {
-          minimum: { unit: "business_day", value: 3 },
-          maximum: { unit: "business_day", value: 5 },
-        },
-      },
-    }];
-  }
-  return SHIPPING_CARRIERS.map((c) => ({
-    shipping_rate_data: {
-      type: "fixed_amount",
-      fixed_amount: { amount: c.amountCents, currency: "usd" },
-      display_name: c.name,
-      delivery_estimate: {
-        minimum: { unit: "business_day", value: c.daysMin },
-        maximum: { unit: "business_day", value: c.daysMax },
-      },
-    },
-  }));
-}
 
 // Where Stripe sends the customer after pay/cancel. We append the
 // ?order=success|cancelled flag that the app's post-checkout
@@ -342,7 +309,21 @@ async function handle(req, context) {
     (sum, li) => sum + li.price_data.unit_amount * li.quantity,
     0,
   );
-  const shippingOptions = buildShippingOptions(subtotalCents);
+
+  // Destination ZIP from the browser's checkout page — drives the
+  // zone-priced shipping option. Validated to a 5-digit shape here;
+  // anything else falls back to the most-expensive ground zone
+  // inside rateForZip (can only over-charge, never undercut).
+  const shipZip = typeof body?.ship_zip === "string" && /^\d{5}$/.test(body.ship_zip.trim())
+    ? body.ship_zip.trim()
+    : null;
+  const shippingOptions = buildShippingOptionsForZip(shipZip, subtotalCents, FREE_SHIPPING_THRESHOLD_CENTS);
+  const freeShippingApplied = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
+  // What we quoted, for the webhook's zone-mismatch audit (compares
+  // against the address Stripe actually collected).
+  const shippingQuote = freeShippingApplied
+    ? { zip: shipZip, zone: null, amountCents: 0, free: true }
+    : (() => { const r = rateForZip(shipZip); return { zip: shipZip, zone: r.zone, amountCents: r.amountCents, free: false }; })();
 
   // Gift wrap add-on. Hardcoded price + name so the browser can't
   // talk us into a free or discounted wrap. Appended after the
@@ -418,10 +399,12 @@ async function handle(req, context) {
       // by session.id and the webhook looks it up.
       metadata: {
         userId: userId ?? "",
-        // Stamp the subtotal + whether free shipping applied so
-        // the order admin can audit later without recomputing.
+        // Stamp the subtotal + the shipping quote so the order
+        // admin can audit later without recomputing.
         subtotalCents: String(subtotalCents),
-        freeShippingApplied: String(subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS),
+        freeShippingApplied: String(freeShippingApplied),
+        shipZipQuoted: shippingQuote.zip ?? "",
+        shipZoneQuoted: shippingQuote.zone ?? "",
         automaticTaxEnabled: String(automaticTaxEnabled),
       },
     }, stripeOpts);
@@ -469,6 +452,7 @@ async function handle(req, context) {
         gift: gift ?? null,
         gift_reminder_opt_in: gift_reminder_opt_in === true,
         customer_notes: customer_notes ?? null,
+        shipping_quote: shippingQuote,
         createdAt: new Date().toISOString(),
       });
     })();
