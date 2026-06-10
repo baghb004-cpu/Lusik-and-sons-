@@ -91,8 +91,23 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       product open until the guest moves the sheet once (the Chunk-2
       gesture-learned flag), canceled instantly by any real gesture,
       skipped under reduced motion.
-- [ ] **Chunk 7 — Journal + chat.** Journal list/post rendering (port
-      `journalPostsData` content nodes), "Text Lusik" chat via POST `/chat`.
+- [x] **Chunk 7 — Journal + chat.** Shipped: the Journal tab —
+      JournalPost model + a GENERATED data mirror
+      (`ios/scripts/gen-journal-swift.mjs` ports the 7 posts from
+      `src/data/journal-posts/*.md` with the web codegen's exact parse
+      + ordering; re-run it when posts change), card list ("Read
+      something new", gold-wash cover cards) → post page rendering the
+      typed nodes (p / h2 / blockquote with the gold bar) + a
+      "Keep reading" aside pushing the two other newest posts. Chat:
+      ChatView — the web ChatAssistant natively (same welcome copy,
+      bubbles, typing dots, optimistic send with rollback-on-error,
+      per-install session id for the server's daily cap, AI
+      disclaimer), POST `/chat` added to LusikAPI with typed errors.
+      Chat is OFF server-side today (no ANTHROPIC_API_KEY), so a 503
+      swaps the composer for the REAL channels — Text (760) 874-2333 /
+      email — meaning the sheet is useful from day one. Contact.swift
+      mirrors CONFIG.TEXT_US; For You gained the "Send us a text."
+      cluster (sms: prefill link + assistant launcher).
 - [ ] **Chunk 8 — Niceties.** Waitlist for placeholders, haptics
       (UIImpactFeedbackGenerator on add-to-bag — parity with `haptic.js`),
       reduced-motion checks, Dynamic Type pass, dark mode via brand tokens.

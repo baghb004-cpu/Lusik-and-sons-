@@ -63,4 +63,54 @@ struct LusikAPI {
         let (data, _) = try await URLSession.shared.data(from: url)
         return (try JSONDecoder().decode(Wrapper.self, from: data)).inventory ?? [:]
     }
+
+    // ── chat (Chunk 7) ──
+
+    struct ChatMessage: Codable, Hashable {
+        let role: String          // "user" | "assistant"
+        let content: String
+    }
+
+    enum ChatError: LocalizedError {
+        /// 503 — the function exists but ANTHROPIC_API_KEY isn't set yet.
+        /// The UI falls back to the real channels (SMS + email).
+        case notConfigured
+        /// Any other failure, carrying the server's customer-facing message
+        /// (rate-limit copy, "having trouble right now", …).
+        case server(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .notConfigured: return "The assistant isn't online yet."
+            case .server(let message): return message
+            }
+        }
+    }
+
+    /// POST /chat → assistant reply (netlify/functions/chat.mjs, the same
+    /// Anthropic proxy the website's ChatAssistant uses — the API key never
+    /// ships in the app). The full visible history goes up each turn; the
+    /// server holds no state. `sessionId` feeds its per-session daily cap.
+    static func sendChat(messages: [ChatMessage], sessionId: String) async throws -> String {
+        struct Body: Encodable {
+            let messages: [ChatMessage]
+            let sessionId: String
+        }
+        struct Reply: Decodable {
+            let reply: String?
+            let error: String?
+        }
+        var req = URLRequest(url: functionsBase.appendingPathComponent("chat"))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(Body(messages: messages, sessionId: sessionId))
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let decoded = try? JSONDecoder().decode(Reply.self, from: data)
+        if status == 503 { throw ChatError.notConfigured }
+        guard status == 200, let reply = decoded?.reply else {
+            throw ChatError.server(decoded?.error ?? "The assistant is having trouble right now. Please try again in a moment.")
+        }
+        return reply
+    }
 }

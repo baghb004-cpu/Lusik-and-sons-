@@ -9,6 +9,7 @@ enum Brand {
     static let cream = Color(red: 0xF5 / 255, green: 0xEF / 255, blue: 0xE3 / 255)      // #F5EFE3
     static let creamSubtle = Color(red: 0xFA / 255, green: 0xF6 / 255, blue: 0xEC / 255) // #FAF6EC
     static let accent = Color(red: 0xB0 / 255, green: 0x88 / 255, blue: 0x42 / 255)     // gold #B08842
+    static let inkSoft = Color(red: 0x3D / 255, green: 0x33 / 255, blue: 0x2A / 255)    // #3D332A — long-form prose (web journal body)
     static let textOnInk = cream
 
     // Typography. Fraunces (display) + DM Sans (body) ship in Chunk 6;
