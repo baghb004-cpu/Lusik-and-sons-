@@ -81,7 +81,7 @@ struct ProductBuyControls: View {
             }
             .accessibilityLabel("Add to Bag, $\(displayPrice)")
 
-            Text("Made to order — hand-stitched in about two weeks, then shipped to your door. Shipping is priced by distance from Cypress, CA; free over $150.")
+            Text("Made to order — hand-stitched in about two weeks, then shipped to your door. Shipping is priced by distance from Lusik's workshop in Buena Park, CA; free over $150.")
                 .font(Brand.fontBody(12))
                 .foregroundStyle(Brand.ink.opacity(0.55))
                 .padding(.top, 4)

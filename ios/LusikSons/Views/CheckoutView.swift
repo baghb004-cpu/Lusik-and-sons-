@@ -159,7 +159,7 @@ struct CheckoutView: View {
                     Text("\(est.label) — \(String(format: "$%.2f", est.dollars)) · \(est.daysMin)–\(est.daysMax) business days transit once it ships.")
                         .font(Brand.fontBody(12)).foregroundStyle(Brand.ink)
                 } else {
-                    Text("Shipping is priced by distance from Lusik's home in Cypress, CA — $9.99–$15.49 in the lower 48.")
+                    Text("Shipping is priced by distance from Lusik's workshop in Buena Park, CA — $9.99–$15.49 in the lower 48.")
                         .font(Brand.fontBody(11)).foregroundStyle(Brand.ink.opacity(0.55))
                 }
             }
