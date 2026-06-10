@@ -1,0 +1,59 @@
+/* ============================================================
+   Brand tokens — the CSS mirror of ios/LusikSons/Theme/Brand.swift
+   (which itself mirrors the website's :root variables). Change values
+   here, never inline at call sites — the same "dial board" rule as the
+   web CONFIG and the Swift Brand enum. Every color is a light/dark
+   pair; dark follows the system (prefers-color-scheme) for now, the
+   same way the iOS app does.
+   ============================================================ */
+:root {
+  --ink: #1a1612;
+  --cream: #f5efe3;
+  --cream-subtle: #faf6ec;
+  --surface: #ffffff;
+  --accent: #b08842;
+  --ink-soft: #3d332a;
+  --text-on-ink: #f5efe3;
+
+  --border-soft: rgba(26, 22, 18, 0.08);
+  --border-default: rgba(26, 22, 18, 0.12);
+  --shadow: rgba(0, 0, 0, 1); /* shadows stay black in both modes */
+
+  /* Liquid Glass island */
+  --glass-tint: rgba(245, 239, 227, 0.42);
+  --glass-bevel: rgba(255, 255, 255, 0.55);
+  --lens-fill: rgba(255, 255, 255, 0.35);
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "DM Sans", system-ui, -apple-system, sans-serif;
+
+  --radius-card: 18px;
+  --radius-pill: 999px;
+
+  /* The floating island clearance content must reserve
+     (GlassTabBar.clearance parity). */
+  --island-clearance: 84px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f5efe3; /* invert: ink in dark = cream */
+    --cream: #15110e; /* warm dark — not stark black */
+    --cream-subtle: #251d17;
+    --surface: #1f1814;
+    --accent: #c9a678; /* brighter gold for dark-bg contrast */
+    --ink-soft: rgba(245, 239, 227, 0.78);
+    --text-on-ink: #1a1612;
+
+    --border-soft: rgba(245, 239, 227, 0.08);
+    --border-default: rgba(245, 239, 227, 0.12);
+
+    --glass-tint: rgba(21, 17, 14, 0.42);
+    --glass-bevel: rgba(255, 255, 255, 0.16);
+    --lens-fill: rgba(255, 255, 255, 0.22);
+
+    color-scheme: dark;
+  }
+}

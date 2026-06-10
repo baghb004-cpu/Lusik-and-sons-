@@ -1,0 +1,225 @@
+/* ============================================================
+   App shell — the Liquid Glass chrome + fold-aware layout rules.
+
+   FOLD READINESS ("the open book") — written ahead of the book-style
+   iPhone Fold: 7.8" 4:3 inner display, 5.5" cover screen, horizontal
+   fold, wider passport-like form factor. Mirrors FoldLayout.swift:
+
+   • ≥700px (the unfolded canvas, tablets) = EXPANDED layouts: the
+     island caps at 430px and stays a centered pill, content holds
+     readable columns, grids gain columns, photo-led product pages
+     become a two-page spread (chunk 2).
+   • Below that (phones + the Fold's 5.5" cover) = the compact app.
+   • Browsers that report fold posture directly are caught by the
+     viewport-segments media query as well.
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+#root {
+  height: 100%;
+}
+
+.app {
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Each tab stays mounted (nav state survives switching — RootTabView's
+   ZStack parity); only the active one is visible. */
+.tab-surface {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding-bottom: calc(var(--island-clearance) + env(safe-area-inset-bottom));
+  background: var(--cream);
+}
+
+.tab-surface[hidden] {
+  display: none;
+}
+
+/* ── the Liquid Glass island ── */
+
+.island-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(6px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 40;
+  padding: 0 24px;
+}
+
+.island {
+  pointer-events: auto;
+  display: flex;
+  width: 100%;
+  max-width: 430px; /* FoldLayout.islandMaxWidth — a pill, never a runway */
+  padding: 6px;
+  border-radius: var(--radius-pill);
+  position: relative;
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid var(--glass-bevel);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
+}
+
+.island button {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  color: var(--ink);
+  opacity: 0.65;
+  border-radius: var(--radius-pill);
+  z-index: 1;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.island button[aria-selected="true"] {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.island button .tab-label {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.island button[aria-selected="true"] .tab-label {
+  font-weight: 600;
+}
+
+.island button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* The lens — the bright frost dome gliding under the active tab
+   (matchedGeometryEffect parity, done with a transform). */
+.lens {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / 4);
+  border-radius: var(--radius-pill);
+  background: var(--lens-fill);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: transform 0.35s cubic-bezier(0.3, 1.25, 0.45, 1);
+  z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens {
+    transition: none;
+  }
+}
+
+/* Bag count bubble */
+.bag-bubble {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 19px);
+  min-width: 16px;
+  padding: 1px 4px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* ── shared surfaces ── */
+
+.brand-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+.readable {
+  max-width: 640px; /* FoldLayout.readableWidth */
+  margin-inline: auto;
+}
+
+.placeholder-panel {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 24px;
+}
+
+.placeholder-panel h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px;
+  margin: 0;
+}
+
+.placeholder-panel p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+  opacity: 0.6;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: var(--radius-pill);
+  border: 0;
+  font: 600 13px var(--font-body);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pill-ink {
+  background: var(--ink);
+  color: var(--text-on-ink);
+}
+
+.pill-outline {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border-default);
+}
+
+/* ── the open book (fold inner display / tablets) ── */
+@media (min-width: 700px), (horizontal-viewport-segments: 2) {
+  .placeholder-panel h2 {
+    font-size: 28px;
+  }
+}
