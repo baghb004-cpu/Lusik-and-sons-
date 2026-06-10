@@ -124,6 +124,21 @@ test.describe("cart drawer", () => {
     await page.keyboard.press("Escape");
     await expect(emptyState).not.toBeVisible();
   });
+
+  test("tapping a bag item jumps back to its product page", async ({ page }) => {
+    // Add the blanket, land in the drawer via the post-add sheet, then
+    // tap the item's title — it should close the drawer and navigate to
+    // the canonical PDP so the customer can re-read the full page.
+    await page.goto("/shop/blankets/armenian-alphabet-blanket");
+    await page.getByRole("button", { name: /^Armenian\b/ }).first().click();
+    await page.getByRole("button", { name: /add to bag.*\$/i }).first().click();
+    await page.getByRole("button", { name: /^continue$/i }).first().click();
+
+    await page.getByRole("button", { name: /view .* product page/i }).first().click();
+    await expect(page).toHaveURL(/\/shop\/blankets\/armenian-alphabet-blanket$/, { timeout: 5_000 });
+    // Drawer is gone — its "Your cart" heading is no longer visible.
+    await expect(page.getByRole("heading", { name: /^your cart$/i })).not.toBeVisible();
+  });
 });
 
 test.describe("blanket purchase flow", () => {
@@ -146,10 +161,12 @@ test.describe("blanket purchase flow", () => {
 
     // Add now opens the Apple-style "You may also like" sheet first; its
     // Continue button proceeds to the bag (drawer on desktop, /cart page
-    // on mobile), where the added item appears.
+    // on mobile), where the added item appears. The row's title is a
+    // tap-back-to-product button (aria-label "View <name> product page"),
+    // so assert on that semantic control rather than a <p>.
     await page.getByRole("button", { name: /^continue$/i }).first().click();
     await expect(
-      page.locator("p", { hasText: /armenian alphabet blanket/i }).first()
+      page.getByRole("button", { name: /armenian alphabet blanket product page/i }).first()
     ).toBeVisible({ timeout: 5_000 });
   });
 });
