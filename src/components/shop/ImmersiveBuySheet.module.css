@@ -132,8 +132,27 @@
 .reduced,
 .reduced .dots { transition: none; }
 
-/* Detent heights. dvh (not vh) so the iOS address bar can't clip them. */
-.collapsed {
+/* ---- "breathe" teaching hint ----
+   A soft rise-and-settle on the whole sheet when a product opens,
+   showing the card is draggable. Transform-only (never fights the
+   height detents), one-shot, removed on animationend and canceled
+   instantly if the guest grabs the sheet mid-breath. */
+@keyframes imm-breathe {
+  0%   { transform: translateY(0); }
+  32%  { transform: translateY(-16px); }
+  58%  { transform: translateY(5px); }
+  78%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+.hinting {
+  animation: imm-breathe 1.15s cubic-bezier(0.33, 1, 0.68, 1) 0.45s 1 both;
+}
+.reduced .hinting,
+.reduced.hinting {
+  animation: none;
+}
+
+/* Detent heights. dvh (not vh) so the iOS address bar can't clip them. */.collapsed {
   /* Floating pill, lifted to clear the nav band and inset on the sides. */
   height: 64px;
   left: 14px;

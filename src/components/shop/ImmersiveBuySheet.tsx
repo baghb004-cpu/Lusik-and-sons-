@@ -72,6 +72,12 @@ export function ImmersiveBuySheet({
   const [reduced, setReduced] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  // "Breathe" teaching hint: plays on every product open UNTIL the guest
+  // moves the sheet themselves once (then never again — the learned
+  // marker is set in snapTo, which only user gestures reach). Seen isn't
+  // learned; used once is.
+  const [hinting, setHinting] = useState(false);
+  const learnedKey: string = CONFIG.SHEET?.HINT_LEARNED_KEY ?? "lusik_sheet_gesture_learned_v1";
   // Portal mount gate — also our SSR guard (document isn't available on
   // the server; the first client render returns null, then the portal
   // mounts). See the createPortal note at the bottom for WHY a portal.
@@ -105,8 +111,20 @@ export function ImmersiveBuySheet({
     } catch {
       /* private mode / blocked storage — keep the default */
     }
+    try {
+      if (
+        CONFIG.SHEET?.BREATHE_HINT &&
+        !mq?.matches &&
+        localStorage.getItem(learnedKey) !== "1"
+      ) {
+        setHinting(true);
+      }
+    } catch {
+      /* blocked storage — hint anyway; it's harmless and self-clearing */
+      if (CONFIG.SHEET?.BREATHE_HINT && !mq?.matches) setHinting(true);
+    }
     return () => mq?.removeEventListener?.("change", onMq);
-  }, [storagePrefix, storageKey]);
+  }, [storagePrefix, storageKey, learnedKey]);
 
   const persist = useCallback(
     (d: Detent) => {
@@ -124,8 +142,17 @@ export function ImmersiveBuySheet({
       setDetent(d);
       setDragHeight(null);
       persist(d);
+      // Only user gestures (drag, flick, pill tap, photo tap) reach here —
+      // the guest has now moved the sheet themselves, so the breathe hint
+      // has done its job for good.
+      setHinting(false);
+      try {
+        localStorage.setItem(learnedKey, "1");
+      } catch {
+        /* blocked storage — they'll just see the hint again next visit */
+      }
     },
-    [persist],
+    [persist, learnedKey],
   );
 
   // Pixel heights for snap math, derived from the live viewport (read only
@@ -136,6 +163,9 @@ export function ImmersiveBuySheet({
   // ── drag: pointer-capture means move/up land on this element ──
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
+      // Grabbing the sheet mid-breath: the finger takes over instantly —
+      // a hint animation must never fight a real gesture.
+      setHinting(false);
       const h = rootRef.current?.clientHeight ?? window.innerHeight;
       drag.current = {
         startY: e.clientY,
@@ -316,8 +346,15 @@ export function ImmersiveBuySheet({
           !dragging && styles[detent],
           dragging && styles.dragging,
           reduced && styles.reduced,
+          hinting && styles.hinting,
         )}
         style={dragging ? { height: `${dragHeight}px` } : undefined}
+        onAnimationEnd={(e) => {
+          // animationend BUBBLES — the content's own fade-in inside the
+          // sheet would clear the hint before it even played. Only the
+          // sheet's breathe (target === this div) counts.
+          if (e.target === e.currentTarget) setHinting(false);
+        }}
       >
         {/* Drag handle (and, collapsed, the whole tappable pill) */}
         <div

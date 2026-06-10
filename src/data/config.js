@@ -54,6 +54,13 @@ export const CONFIG = {
     // sheet collapsed → tap opens the zoomable full-photo lightbox
     // (object-contain + pinch/double-tap zoom up to this factor).
     LIGHTBOX_MAX_ZOOM:    4,
+    // The "breathe" teaching hint: when a product opens, the sheet does a
+    // soft rise-and-settle to show it's draggable. Plays on EVERY product
+    // open until the guest moves the sheet themselves once (drag, flick,
+    // or pill tap) — then never again, permanently (localStorage). Seen
+    // isn't learned; used once is. Honors prefers-reduced-motion.
+    BREATHE_HINT:         true,
+    HINT_LEARNED_KEY:     "lusik_sheet_gesture_learned_v1",
   },
 
   // ============================================================
