@@ -21,6 +21,7 @@
     "pretypecheck": "npm run gen:data",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:unit && npm run test:e2e",
+    "pretest:unit": "npm run gen:data",
     "test:unit": "node --test --test-reporter=spec netlify/functions/_lib/__tests__/*.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
