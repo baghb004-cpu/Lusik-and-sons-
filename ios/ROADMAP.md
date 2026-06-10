@@ -130,11 +130,25 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       REDUCED MOTION — audited: tab lens, breathe hint, sheet
       snapping, chat dots/autoscroll all honor it. Drive-by: the bag
       footer now says Buena Park (matches the June-10 copy commits).
-- [ ] **Chunk 9 — App Store prep.** App icon set (from `public/icon.svg`),
-      launch screen, `PrivacyInfo.xcprivacy` (Required Reason API +
-      data-collection declarations: purchases via Stripe, no tracking),
-      App Store screenshots checklist, age rating, support URL
-      (lusikandsons.com/contact).
+- [x] **Chunk 9 — App Store prep.** Shipped: Assets.xcassets with the
+      1024×1024 opaque AppIcon (upscaled from the website's icon set —
+      swap `AppIcon.png` when final brand art exists) + a
+      LaunchBackground colorset (cream / warm-dark) wired into
+      `UILaunchScreen`, so launch blends into the app;
+      `PrivacyInfo.xcprivacy` (no tracking, UserDefaults CA92.1,
+      collected-data declarations for the guest-checkout flow:
+      email/name/address/payment-via-Stripe/purchases/user content —
+      all app-functionality, none tracking); `ASSETCATALOG_COMPILER_
+      APPICON_NAME` in project.yml; and `ios/APP_STORE.md` — the
+      paste-ready listing pack: identity (name/subtitle/SKU/category),
+      age rating answers (→ 4+), privacy-questionnaire table mirroring
+      the manifest, the 6.9" screenshot shot list, description +
+      keywords drafts, support/marketing URLs. ⚠️ ONE BLOCKER flagged:
+      the site has no standalone privacy-policy URL (it's a footer
+      modal) — App Store Connect requires one; needs a small `/privacy`
+      route via a normal website PR before submission. Re-run
+      `xcodegen` after pulling so the assets + manifest join the
+      project.
 - [ ] **Chunk 10 — TestFlight & submission guide.** Step-by-step doc:
       Apple Developer Program enrollment ($99/yr), bundle id
       `com.lusikandsons.app`, signing, archive → TestFlight, App Review

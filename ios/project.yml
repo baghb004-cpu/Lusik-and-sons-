@@ -17,7 +17,10 @@ targets:
       path: LusikSons/Info.plist
       properties:
         CFBundleDisplayName: Lusik & Sons
-        UILaunchScreen: {}
+        # Branded launch: the cream page color (dark-aware via the
+        # LaunchBackground colorset) so launch blends into the app.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         # Landscape is on for the iPhone Fold's opened, 4:3 book posture
         # (and reads naturally on Max phones); layouts adapt via size
         # classes — see Theme/FoldLayout.swift.
@@ -36,3 +39,4 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_KEY_UIUserInterfaceStyle: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
