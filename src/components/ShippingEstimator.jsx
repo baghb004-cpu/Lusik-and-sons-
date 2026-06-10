@@ -39,7 +39,7 @@ export function ShippingEstimator({ subtotalCents }) {
   if (!expanded) {
     return (
       <div className="text-xs mb-3 leading-relaxed">
-        <span className="opacity-70">Shipping from ${SHIPPING_FROM_DOLLARS.toFixed(2)} — priced by distance from Cypress, CA. </span>
+        <span className="opacity-70">Shipping from ${SHIPPING_FROM_DOLLARS.toFixed(2)} — priced by distance from Lusik's workshop in Buena Park, CA. </span>
         <button
           type="button"
           onClick={() => setExpanded(true)}

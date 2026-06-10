@@ -710,7 +710,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 </p>
               ) : (
                 <p className="text-xs opacity-60 mt-2 leading-relaxed">
-                  Shipping is priced by distance from Lusik's home in Cypress, CA — ${SHIPPING_FROM_DOLLARS.toFixed(2)}–${SHIPPING_TO_DOLLARS.toFixed(2)} in the lower 48. Enter the ZIP this order ships to.
+                  Shipping is priced by distance from Lusik's workshop in Buena Park, CA — ${SHIPPING_FROM_DOLLARS.toFixed(2)}–${SHIPPING_TO_DOLLARS.toFixed(2)} in the lower 48. Enter the ZIP this order ships to.
                 </p>
               )}
             </div>

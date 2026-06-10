@@ -63,7 +63,7 @@ WHAT WE SELL:
 - Bundle deal: every additional piece in one order takes another $1 off automatically (2 pieces = $1 off, 3 = $2 off, and so on). It shows up as "Bundle savings" at checkout — nothing to enter.
 
 SHIPPING:
-- US only currently. Shipping is priced by distance from Cypress, CA (UPS Ground zones): about $9.99 in Southern California up to $15.49 on the East Coast; Alaska/Hawaii $24.99. Free at $150+. The exact rate shows at checkout once the customer enters their ZIP.
+- US only currently. Shipping is priced by distance from Lusik's workshop in Buena Park, CA (UPS Ground zones): about $9.99 in Southern California up to $15.49 on the East Coast; Alaska/Hawaii $24.99. Free at $150+. The exact rate shows at checkout once the customer enters their ZIP.
 - 5-10 business days to stitch + carrier transit time. We email a finished-piece photo before shipping.
 
 POLICY:
