@@ -33,9 +33,13 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       for the 7 live products with live photo URLs, API client skeleton
       (checkout request shape incl. `ship_zip`, inventory). First Mac step:
       `brew install xcodegen && cd ios && xcodegen && open LusikSons.xcodeproj`.
-- [ ] **Chunk 1 — Shop.** Category grid → product grid (AsyncImage photos,
-      prices, "from $X"), pull real layout language from `src/components/shop/`.
-      Acceptance: browse all 7 live products with photos on simulator.
+- [x] **Chunk 1 — Shop.** Category index (4 cards — Blankets/Bibs live,
+      Towels/For Baby coming-soon) → category product grid → classic product
+      detail: swipeable photo pager, brand eyebrow/tagline copy, cap-variant
+      toggle on the hy-em + bari sets (correct per-variant checkout keys),
+      Add to Bag with haptic + tab badge, shipping/free-over-$150 note.
+      Acceptance: browse all 7 live products with photos on simulator;
+      adding to bag bumps the Bag tab badge.
 - [ ] **Chunk 2 — Immersive product page (the pill sheet).** Full-screen photo
       pager behind a draggable bottom sheet with three detents
       (collapsed pill / medium / expanded) — native SwiftUI drag gesture w/

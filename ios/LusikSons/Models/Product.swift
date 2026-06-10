@@ -40,3 +40,10 @@ struct Product: Identifiable, Codable {
 
     var pagePath: String { "/shop/\(categorySlug)/\(productSlug)" }
 }
+
+// Hashable by id only — photo arrays don't belong in a hash, and ids are
+// unique by construction (catalog keys). Needed for navigationDestination.
+extension Product: Hashable {
+    static func == (lhs: Product, rhs: Product) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}
