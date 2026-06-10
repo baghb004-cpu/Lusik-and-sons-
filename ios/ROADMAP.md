@@ -40,13 +40,17 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       Add to Bag with haptic + tab badge, shipping/free-over-$150 note.
       Acceptance: browse all 7 live products with photos on simulator;
       adding to bag bumps the Bag tab badge.
-- [ ] **Chunk 2 — Immersive product page (the pill sheet).** Full-screen photo
-      pager behind a draggable bottom sheet with three detents
-      (collapsed pill / medium / expanded) — native SwiftUI drag gesture w/
-      spring snapping, mirroring `ImmersiveBuySheet.tsx` (incl. tap-to-cycle
-      and the photo-tap contract: card up → tap photo collapses; collapsed →
-      tap opens lightbox). Configurator products (alphabet blanket, name bib)
-      get a classic scroll page (parity with `SHEET.EXCLUDE_KEYS`).
+- [x] **Chunk 2 — Immersive product page (the pill sheet).** Shipped:
+      ImmersiveProductView — full-screen photo pager behind a draggable
+      sheet with three detents (collapsed 76pt pill / 46% / 86%), spring
+      snapping + 600pt/s flick threshold, tap-the-pill cycles detents,
+      photo-tap contract (sheet up → collapse; collapsed → full-photo
+      viewer placeholder that Chunk 3 makes zoomable), custom page dots
+      riding the sheet top, per-product detent memory + the global
+      gesture-learned flag (UserDefaults) for Chunk 6's breathe hint,
+      reduced-motion honored, custom back button. Buy controls extracted
+      to ProductBuyControls — ONE buy surface shared with the classic
+      page (web parity). Routing switches on Product.presentation.
 - [ ] **Chunk 3 — Lightbox.** Zoomable full-photo viewer: pinch (anchored),
       double-tap zoom/reset, pan clamped to edges, swipe between photos,
       swipe-down to close. Native gestures make this MUCH easier than web.
