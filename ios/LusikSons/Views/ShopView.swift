@@ -36,15 +36,9 @@ struct ShopView: View {
                 }
             }
             .navigationDestination(for: Product.self) { product in
-                // Same split as the website (CONFIG.SHEET.EXCLUDE_KEYS):
-                // photo-led products get the immersive pill sheet,
-                // configurator products keep the classic page.
-                switch product.presentation {
-                case .immersiveSheet:
-                    ImmersiveProductView(product: product)
-                case .classicConfigurator:
-                    ProductDetailView(product: product)
-                }
+                // ProductRoute owns the presentation split (web
+                // SHEET.EXCLUDE_KEYS parity) — shared with the bag.
+                ProductRoute(product: product)
             }
         }
     }

@@ -57,10 +57,15 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       paging between photos when unzoomed, pull-down-to-close (bounce
       threshold), ✕ button, hint line + counter (web copy parity). Wired
       into the immersive sheet's photo-tap contract; placeholder deleted.
-- [ ] **Chunk 4 — Bag.** CartStore (ObservableObject + persistence), qty
-      stepper, swipe-to-delete, bundle-savings line ($1/extra piece — mirror
-      `_lib/bundle-discount.mjs` math), free-shipping-at-$150 progress, tap
-      row → product page (parity with the web bag).
+- [x] **Chunk 4 — Bag.** Shipped: CartStore persistence (UserDefaults
+      JSON, restored on launch) + the display mirrors of the server math
+      (bundle savings: $1/extra unit, $25 cap, subtotal floor — exact
+      bundle-discount.mjs parity; free-shipping progress at $150).
+      BagView: rows with photo/title tapping back to the product page
+      (ProductRoute — ONE presentation switch shared with the shop),
+      qty stepper (1..99 clamp, accessibility-adjustable), swipe-to-
+      delete, bundle-savings row + add-another nudge, free-shipping
+      progress bar, empty state, Checkout button (Chunk-5 alert stub).
 - [ ] **Chunk 5 — Checkout.** ZIP field → zone-rate estimate (mirror
       `_lib/shipping-zones.mjs` table), gift options + notes, POST
       `create-checkout-session` with the EXACT body shape (productKey, qty,

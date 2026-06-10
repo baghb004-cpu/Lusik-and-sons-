@@ -19,8 +19,7 @@ struct RootTabView: View {
                 .font(Brand.fontDisplay(22))
                 .tabItem { Label("Journal", systemImage: "book") }
 
-            Text("Bag — Chunk 4")
-                .font(Brand.fontDisplay(22))
+            BagView()
                 .tabItem { Label("Bag", systemImage: "bag") }
                 .badge(cart.unitCount > 0 ? cart.unitCount : 0)
         }
