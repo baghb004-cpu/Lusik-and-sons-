@@ -20,6 +20,7 @@ import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
 import { estimateShippingForZip, SHIPPING_FROM_DOLLARS, SHIPPING_TO_DOLLARS } from "../data/shippingZones.js";
 import { bundleSavingsForCart } from "../lib/bundleDiscount.js";
 import { auth } from "../lib/auth.js";
+import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { mapLegacyId } from "../lib/cartId";
 import { CartItemThumb } from "./CartItemThumb.jsx";
@@ -129,6 +130,28 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const freeShipping = Math.round(subtotal * 100) >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
   const shipEstimate = !freeShipping && shipZipValid ? estimateShippingForZip(shipZip) : null;
   const zipNeeded = !freeShipping && !shipZipValid;
+
+  // City/state confirmation for the typed ZIP ("Cypress, CA" echoes as
+  // they finish typing) — catches a typo'd ZIP before it prices the
+  // wrong shipping zone. First-party lookup via db.lookupZip; display
+  // only and NEVER blocks payment: an unknown ZIP gets a gentle
+  // double-check note, a failed lookup shows nothing at all.
+  const [zipPlace, setZipPlace] = useState(null);          // { city, state } | null
+  const [zipUnrecognized, setZipUnrecognized] = useState(false);
+  useEffect(() => {
+    setZipPlace(null);
+    setZipUnrecognized(false);
+    if (!shipZipValid) return undefined;
+    let stale = false;
+    const timer = setTimeout(() => {
+      db.lookupZip(shipZip).then(({ place, notFound }) => {
+        if (stale) return;
+        setZipPlace(place);
+        setZipUnrecognized(notFound);
+      });
+    }, 220);
+    return () => { stale = true; clearTimeout(timer); };
+  }, [shipZip, shipZipValid]);
 
   // Bundle savings (display mirror — the server attaches the real
   // Stripe coupon). $1 off per piece beyond the first, storewide.
@@ -661,11 +684,25 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 maxLength={5}
                 value={shipZip}
                 onChange={(e) => setShipZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                placeholder="90630"
+                placeholder="90620"
                 className="w-full px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
                 style={{ border: "1px solid rgba(26,22,18,0.15)" }}
                 aria-label="Shipping ZIP code"
               />
+              {/* City/state echo — confirms the typed ZIP is the one they
+                  meant ("Buena Park, CA 90620") before it prices the zone.
+                  Unknown ZIP = gentle nudge, never a blocker; failed
+                  lookup = silence (the estimate below still works). */}
+              {zipPlace && (
+                <p className="text-xs mt-2" style={{ color: "var(--accent)", fontWeight: 500 }} aria-live="polite">
+                  ✓ {zipPlace.city}, {zipPlace.state} {shipZip}
+                </p>
+              )}
+              {zipUnrecognized && (
+                <p className="text-xs mt-2 leading-relaxed" style={{ color: "#8B5A2B" }} aria-live="polite">
+                  We don't recognize that ZIP — double-check it? You can still continue if it's right.
+                </p>
+              )}
               {shipEstimate ? (
                 <p className="text-xs mt-2 leading-relaxed">
                   <span style={{ fontWeight: 500 }}>{shipEstimate.label} — ${shipEstimate.dollars.toFixed(2)}</span>
@@ -673,7 +710,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 </p>
               ) : (
                 <p className="text-xs opacity-60 mt-2 leading-relaxed">
-                  Shipping is priced by distance from Lusik's home in Cypress, CA — ${SHIPPING_FROM_DOLLARS.toFixed(2)}–${SHIPPING_TO_DOLLARS.toFixed(2)} in the lower 48. Enter the ZIP this order ships to.
+                  Shipping is priced by distance from Lusik's workshop in Buena Park, CA — ${SHIPPING_FROM_DOLLARS.toFixed(2)}–${SHIPPING_TO_DOLLARS.toFixed(2)} in the lower 48. Enter the ZIP this order ships to.
                 </p>
               )}
             </div>

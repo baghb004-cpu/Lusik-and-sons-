@@ -1,7 +1,7 @@
 ---
 slug: why-glendale
 title: "Why Glendale"
-excerpt: "The largest Armenian community in the United States lives in a stretch of suburban Los Angeles between the 5 and the 134. Here's how that happened, and why a workshop in Cypress is part of it."
+excerpt: "The largest Armenian community in the United States lives in a stretch of suburban Los Angeles between the 5 and the 134. Here's how that happened, and why a workshop in Buena Park is part of it."
 publishedAt: 2026-05-17
 readMinutes: 5
 ---
@@ -12,6 +12,6 @@ The community got here in three waves. The first arrived after 1915 -- survivors
 
 Why Glendale specifically? Partly the climate -- Mediterranean weather, just like Yerevan. Partly the network effect -- once a few thousand Armenians settled there, more followed, drawn by the schools, the Apostolic and Catholic churches, the cultural organizations like the AGBU, and the simple fact that you could buy lavash and apricots without driving an hour. By the 2000s, Glendale was so visibly Armenian that the public schools offered Armenian as a foreign language credit.
 
-Lusik works out of Cypress, in northern Orange County, about forty-five minutes south of Glendale. That's part of the same diaspora geography -- there are smaller Armenian communities in Orange County, Pasadena, La Crescenta, Burbank, and increasingly the Valley. The kids she stitches blankets for are mostly second- or third-generation Armenian-Americans. Their parents, in their thirties and forties, grew up in the United States but want their American-born children to have something in the house that connects them -- a soft, durable, daily object with their first letter on it, in the alphabet their great-great-grandparents read.
+Lusik works out of Buena Park, in northern Orange County, about forty-five minutes south of Glendale. That's part of the same diaspora geography -- there are smaller Armenian communities in Orange County, Pasadena, La Crescenta, Burbank, and increasingly the Valley. The kids she stitches blankets for are mostly second- or third-generation Armenian-Americans. Their parents, in their thirties and forties, grew up in the United States but want their American-born children to have something in the house that connects them -- a soft, durable, daily object with their first letter on it, in the alphabet their great-great-grandparents read.
 
 That's the quiet thing the blanket does. It's a thread back across the diaspora.

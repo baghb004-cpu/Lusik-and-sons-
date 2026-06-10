@@ -1,14 +1,25 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CONFIG } from "../data/config.js";
+import { db } from "../lib/db.js";
 import { estimateShippingForZip, SHIPPING_FROM_DOLLARS } from "../data/shippingZones.js";
 
 export function ShippingEstimator({ subtotalCents }) {
   const [zip, setZip]               = useState("");
   const [expanded, setExpanded]     = useState(false);
   const [submitted, setSubmitted]   = useState(false);
+  // City/state echo for the submitted ZIP ("Cypress, CA") — same
+  // first-party lookup checkout uses; silent when unavailable.
+  const [place, setPlace]           = useState(null);
+  useEffect(() => {
+    setPlace(null);
+    if (!submitted || !/^\d{5}$/.test(zip.trim())) return undefined;
+    let stale = false;
+    db.lookupZip(zip.trim()).then(({ place: p }) => { if (!stale) setPlace(p); });
+    return () => { stale = true; };
+  }, [submitted, zip]);
 
   const earnsFreeShipping = CONFIG.FREE_SHIPPING_ENABLED
                           && subtotalCents >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
@@ -28,7 +39,7 @@ export function ShippingEstimator({ subtotalCents }) {
   if (!expanded) {
     return (
       <div className="text-xs mb-3 leading-relaxed">
-        <span className="opacity-70">Shipping from ${SHIPPING_FROM_DOLLARS.toFixed(2)} — priced by distance from Cypress, CA. </span>
+        <span className="opacity-70">Shipping from ${SHIPPING_FROM_DOLLARS.toFixed(2)} — priced by distance from Lusik's workshop in Buena Park, CA. </span>
         <button
           type="button"
           onClick={() => setExpanded(true)}
@@ -48,7 +59,7 @@ export function ShippingEstimator({ subtotalCents }) {
     return (
       <div className="text-xs mb-3 leading-relaxed p-3" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.18)" }}>
         <p className="opacity-70 mb-2">
-          Shipping to <span style={{ fontWeight: 500 }}>ZIP {zip}</span>:
+          Shipping to <span style={{ fontWeight: 500 }}>{place ? `${place.city}, ${place.state} ${zip}` : `ZIP ${zip}`}</span>:
         </p>
         <div className="flex justify-between tabular-nums mb-2">
           <span className="opacity-85">{est.label}</span>
@@ -83,7 +94,7 @@ export function ShippingEstimator({ subtotalCents }) {
           maxLength={5}
           value={zip}
           onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-          placeholder="90630"
+          placeholder="90620"
           className="flex-1 px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
           style={{ border: "1px solid rgba(26,22,18,0.15)" }}
           aria-label="ZIP code for shipping estimate"
