@@ -127,3 +127,22 @@ Cache-Control = "public, max-age=86400, stale-while-revalidate=2592000"
 for = "/img/hero/*"
 [headers.values]
 Cache-Control = "public, max-age=2592000, stale-while-revalidate=31536000"
+
+# ============================================================
+# IMMERSIVE BUY SHEET — per-context feature flag
+# ============================================================
+# The mobile photo-immersive product sheet is gated on the build-time env
+# var NEXT_PUBLIC_IMMERSIVE_SHEET, read in src/data/config.js as `=== "true"`.
+# NEXT_PUBLIC_* vars are inlined PER BUILD, and Netlify builds each context
+# with that context's environment — so the PRODUCTION deploy of main is
+# compiled with "false" baked in and can NEVER inherit the preview value,
+# even if this branch is merged. Turning it on live requires intentionally
+# changing the production value below (visible in code review).
+[context.production.environment]
+  NEXT_PUBLIC_IMMERSIVE_SHEET = "false"
+
+[context.deploy-preview.environment]
+  NEXT_PUBLIC_IMMERSIVE_SHEET = "true"
+
+[context.branch-deploy.environment]
+  NEXT_PUBLIC_IMMERSIVE_SHEET = "false"

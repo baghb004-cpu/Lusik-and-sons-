@@ -30,6 +30,31 @@ export const CONFIG = {
   },
 
   // ============================================================
+  // SHEET — the mobile photo-immersive product sheet (Apple-style)
+  // ============================================================
+  // Drives <ImmersiveBuySheet>: on phones a live product page becomes a
+  // full-screen swipeable photo backdrop with a draggable bottom sheet
+  // (the real buy controls) that snaps between three detents, like Apple
+  // Maps / Find My. It layers BELOW the bottom-nav island and stops above
+  // it, so the nav stays usable.
+  //
+  // IMMERSIVE_ENABLED is an ENVIRONMENT flag, not a code literal, so the
+  // same code ships everywhere but only turns on where the env says so.
+  // It reads the build-time var NEXT_PUBLIC_IMMERSIVE_SHEET (inlined per
+  // build by Next). netlify.toml sets it PER CONTEXT:
+  //   production     → "false"  (live site stays on the normal page)
+  //   deploy-preview → "true"   (PR previews show the sheet, for testing)
+  // Because Netlify builds each context separately, production CANNOT
+  // inherit the preview value — merging this branch does not enable it
+  // live. Unset / anything-but-"true" ⇒ false (fail-safe off).
+  SHEET: {
+    IMMERSIVE_ENABLED:    process.env.NEXT_PUBLIC_IMMERSIVE_SHEET === "true",
+    DEFAULT_DETENT:       "medium", // opening detent: "expanded" | "medium" | "collapsed"
+    FLICK_VELOCITY_PX_MS: 0.6,    // |drag speed| past this = a flick (jumps a detent)
+    STORAGE_PREFIX:       "lusik_sheet_detent_v1", // localStorage key prefix (per product)
+  },
+
+  // ============================================================
   // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
   // ============================================================
   // No URLs or anon keys live here anymore. Identity reads its
