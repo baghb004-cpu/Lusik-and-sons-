@@ -207,6 +207,39 @@ function _initDb() {
     }
   };
 
+  // --- ZIP LOOKUP (public, no auth) ---
+  // First-party ZIP → { city, state } confirmation for the checkout
+  // page ("Cypress, CA" echoes as the guest finishes typing, catching
+  // typos before they price the wrong shipping zone). Display only —
+  // an unknown ZIP NEVER blocks checkout; the server prices shipping
+  // from its own zone table regardless. Cached per ZIP for the session
+  // (the CDN caches server-side too). Three distinct outcomes so the UI
+  // can tell "we don't recognize that ZIP" (404) apart from "lookup
+  // unavailable" (network/5xx — show nothing, never a scary warning).
+  const _zipCache = new Map();
+  const lookupZip = async (zip) => {
+    if (!/^\d{5}$/.test(zip)) return { place: null, notFound: false };
+    if (_zipCache.has(zip)) return _zipCache.get(zip);
+    let result;
+    try {
+      const res = await fetch(`${CONFIG.FN_BASE}/zip-lookup?zip=${zip}`);
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        result = data?.city
+          ? { place: { city: data.city, state: data.state }, notFound: false }
+          : { place: null, notFound: false };
+      } else if (res.status === 404) {
+        result = { place: null, notFound: true };
+      } else {
+        return { place: null, notFound: false }; // transient — don't cache
+      }
+    } catch {
+      return { place: null, notFound: false };   // offline — don't cache
+    }
+    _zipCache.set(zip, result);
+    return result;
+  };
+
   // --- WAITLIST (public, no auth) ---
   // "Notify me when this placeholder product is available." Posts the
   // email → product_key pairing for the admin Notify sweep. botField is
@@ -235,6 +268,7 @@ function _initDb() {
 
   return {
     getInventory,
+    lookupZip,
     joinWaitlist, sendChat,
     getProfile, updateProfile, uploadAvatar,
     listAddresses, insertAddress, deleteAddress,

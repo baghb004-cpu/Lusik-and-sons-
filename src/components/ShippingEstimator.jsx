@@ -1,14 +1,25 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CONFIG } from "../data/config.js";
+import { db } from "../lib/db.js";
 import { estimateShippingForZip, SHIPPING_FROM_DOLLARS } from "../data/shippingZones.js";
 
 export function ShippingEstimator({ subtotalCents }) {
   const [zip, setZip]               = useState("");
   const [expanded, setExpanded]     = useState(false);
   const [submitted, setSubmitted]   = useState(false);
+  // City/state echo for the submitted ZIP ("Cypress, CA") — same
+  // first-party lookup checkout uses; silent when unavailable.
+  const [place, setPlace]           = useState(null);
+  useEffect(() => {
+    setPlace(null);
+    if (!submitted || !/^\d{5}$/.test(zip.trim())) return undefined;
+    let stale = false;
+    db.lookupZip(zip.trim()).then(({ place: p }) => { if (!stale) setPlace(p); });
+    return () => { stale = true; };
+  }, [submitted, zip]);
 
   const earnsFreeShipping = CONFIG.FREE_SHIPPING_ENABLED
                           && subtotalCents >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
@@ -48,7 +59,7 @@ export function ShippingEstimator({ subtotalCents }) {
     return (
       <div className="text-xs mb-3 leading-relaxed p-3" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.18)" }}>
         <p className="opacity-70 mb-2">
-          Shipping to <span style={{ fontWeight: 500 }}>ZIP {zip}</span>:
+          Shipping to <span style={{ fontWeight: 500 }}>{place ? `${place.city}, ${place.state} ${zip}` : `ZIP ${zip}`}</span>:
         </p>
         <div className="flex justify-between tabular-nums mb-2">
           <span className="opacity-85">{est.label}</span>

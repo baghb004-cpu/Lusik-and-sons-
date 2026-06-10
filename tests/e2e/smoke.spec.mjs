@@ -209,6 +209,13 @@ test.describe("checkout view", () => {
         body: JSON.stringify({ url: null }),
       });
     });
+    // The ZIP→city/state confirmation echo (first-party zip-lookup).
+    await page.route("**/.netlify/functions/zip-lookup*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ zip: "90630", city: "Cypress", state: "CA" }),
+      }));
 
     // Direct-nav to the blanket PDP (same reason as the test above).
     await page.goto("/shop/blankets/armenian-alphabet-blanket");
@@ -222,6 +229,8 @@ test.describe("checkout view", () => {
     // (it prices the zone-based rate) — the Pay button stays disabled
     // until a valid ZIP is in.
     await page.getByLabel(/shipping zip code/i).first().fill("90630");
+    // The city/state echo confirms the typed ZIP before paying.
+    await expect(page.getByText(/Cypress, CA 90630/)).toBeVisible({ timeout: 5_000 });
     await page.getByRole("button", { name: /pay with stripe/i }).first().click();
 
     // Wait for the route handler to capture the request.

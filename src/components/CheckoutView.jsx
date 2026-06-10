@@ -20,6 +20,7 @@ import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
 import { estimateShippingForZip, SHIPPING_FROM_DOLLARS, SHIPPING_TO_DOLLARS } from "../data/shippingZones.js";
 import { bundleSavingsForCart } from "../lib/bundleDiscount.js";
 import { auth } from "../lib/auth.js";
+import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { mapLegacyId } from "../lib/cartId";
 import { CartItemThumb } from "./CartItemThumb.jsx";
@@ -129,6 +130,28 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const freeShipping = Math.round(subtotal * 100) >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
   const shipEstimate = !freeShipping && shipZipValid ? estimateShippingForZip(shipZip) : null;
   const zipNeeded = !freeShipping && !shipZipValid;
+
+  // City/state confirmation for the typed ZIP ("Cypress, CA" echoes as
+  // they finish typing) — catches a typo'd ZIP before it prices the
+  // wrong shipping zone. First-party lookup via db.lookupZip; display
+  // only and NEVER blocks payment: an unknown ZIP gets a gentle
+  // double-check note, a failed lookup shows nothing at all.
+  const [zipPlace, setZipPlace] = useState(null);          // { city, state } | null
+  const [zipUnrecognized, setZipUnrecognized] = useState(false);
+  useEffect(() => {
+    setZipPlace(null);
+    setZipUnrecognized(false);
+    if (!shipZipValid) return undefined;
+    let stale = false;
+    const timer = setTimeout(() => {
+      db.lookupZip(shipZip).then(({ place, notFound }) => {
+        if (stale) return;
+        setZipPlace(place);
+        setZipUnrecognized(notFound);
+      });
+    }, 220);
+    return () => { stale = true; clearTimeout(timer); };
+  }, [shipZip, shipZipValid]);
 
   // Bundle savings (display mirror — the server attaches the real
   // Stripe coupon). $1 off per piece beyond the first, storewide.
@@ -666,6 +689,20 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 style={{ border: "1px solid rgba(26,22,18,0.15)" }}
                 aria-label="Shipping ZIP code"
               />
+              {/* City/state echo — confirms the typed ZIP is the one they
+                  meant ("Cypress, CA 90630") before it prices the zone.
+                  Unknown ZIP = gentle nudge, never a blocker; failed
+                  lookup = silence (the estimate below still works). */}
+              {zipPlace && (
+                <p className="text-xs mt-2" style={{ color: "var(--accent)", fontWeight: 500 }} aria-live="polite">
+                  ✓ {zipPlace.city}, {zipPlace.state} {shipZip}
+                </p>
+              )}
+              {zipUnrecognized && (
+                <p className="text-xs mt-2 leading-relaxed" style={{ color: "#8B5A2B" }} aria-live="polite">
+                  We don't recognize that ZIP — double-check it? You can still continue if it's right.
+                </p>
+              )}
               {shipEstimate ? (
                 <p className="text-xs mt-2 leading-relaxed">
                   <span style={{ fontWeight: 500 }}>{shipEstimate.label} — ${shipEstimate.dollars.toFixed(2)}</span>
