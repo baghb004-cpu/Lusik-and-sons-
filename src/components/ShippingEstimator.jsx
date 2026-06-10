@@ -3,7 +3,7 @@
 import React from "react";
 import { useState } from "react";
 import { CONFIG } from "../data/config.js";
-import { SHIPPING_CARRIERS } from "../data/shippingCarriers";
+import { estimateShippingForZip, SHIPPING_FROM_DOLLARS } from "../data/shippingZones.js";
 
 export function ShippingEstimator({ subtotalCents }) {
   const [zip, setZip]               = useState("");
@@ -28,7 +28,7 @@ export function ShippingEstimator({ subtotalCents }) {
   if (!expanded) {
     return (
       <div className="text-xs mb-3 leading-relaxed">
-        <span className="opacity-70">Shipping from $9.99 — calculated at checkout. </span>
+        <span className="opacity-70">Shipping from ${SHIPPING_FROM_DOLLARS.toFixed(2)} — priced by distance from Cypress, CA. </span>
         <button
           type="button"
           onClick={() => setExpanded(true)}
@@ -40,25 +40,22 @@ export function ShippingEstimator({ subtotalCents }) {
     );
   }
 
-  // State 3 — submitted, valid ZIP, show rates.
+  // State 3 — submitted, valid ZIP, show the zone rate. The estimate
+  // comes from src/data/shippingZones.js, the drift-tested mirror of
+  // the zone table checkout actually charges from.
   if (submitted && zipValid) {
-    const t = getTransitDaysByZip(zip);
+    const est = estimateShippingForZip(zip);
     return (
       <div className="text-xs mb-3 leading-relaxed p-3" style={{ background: "rgba(176,136,66,0.06)", border: "1px solid rgba(176,136,66,0.18)" }}>
         <p className="opacity-70 mb-2">
-          Estimated rates to <span style={{ fontWeight: 500 }}>ZIP {zip}</span>
-          {" "}<span className="opacity-70">· {t.min}–{t.max} business days transit:</span>
+          Shipping to <span style={{ fontWeight: 500 }}>ZIP {zip}</span>:
         </p>
-        <div className="space-y-1 mb-2">
-          {SHIPPING_RATES_DISPLAY.map((r) => (
-            <div key={r.name} className="flex justify-between tabular-nums">
-              <span className="opacity-85">{r.name}</span>
-              <span style={{ fontWeight: 500 }}>${r.cost.toFixed(2)}</span>
-            </div>
-          ))}
+        <div className="flex justify-between tabular-nums mb-2">
+          <span className="opacity-85">{est.label}</span>
+          <span style={{ fontWeight: 500 }}>${est.dollars.toFixed(2)}</span>
         </div>
         <p className="opacity-55 italic mt-1.5">
-          Add Lusik's production time (5–10 business days) for the full lead. You'll pick a carrier on the next page.
+          {est.daysMin}–{est.daysMax} business days transit once it ships — add Lusik's production time (5–10 business days) for the full lead. Free over ${(CONFIG.FREE_SHIPPING_THRESHOLD_CENTS / 100).toFixed(0)}.
         </p>
         <button
           type="button"

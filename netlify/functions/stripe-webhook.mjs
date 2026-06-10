@@ -24,6 +24,7 @@ import { getStore } from "@netlify/blobs";
 import { sql }      from "./_lib/db.mjs";
 import { TRUSTED_PRODUCTS }    from "./_lib/trusted-products.mjs";
 import { GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
+import { upsZoneForZip, ZONE_RATE_CENTS } from "./_lib/shipping-zones.mjs";
 import {
   sendAdminOrderEmail,
   sendCustomerOrderConfirmation,
@@ -274,6 +275,35 @@ export default async (req) => {
   const reconstructedNote = reconstructed
     ? "RECONSTRUCTED FROM STRIPE — original cart stash was lost. Custom blanket metadata (alphabet, layout, colors, personalization) is missing; reach out to the customer for those details before stitching."
     : null;
+
+  // Shipping-zone audit. The zone rate was quoted from the ZIP the
+  // customer typed on OUR checkout page, but Stripe collects the real
+  // shipping address afterwards — a customer can quote a SoCal ZIP
+  // and ship to Florida (innocently: gifts). When the shipped-to zone
+  // differs from the quoted zone on a paid-shipping order, flag it
+  // for Lusik with the dollar difference so she can decide whether to
+  // absorb it or follow up. Display-only; never blocks the order.
+  const zoneMismatchNote = (() => {
+    try {
+      const quote = pending.shipping_quote;
+      if (!quote || quote.free === true || !quote.zone) return null;
+      const shippedZip = shippingAddr?.postal_code ?? null;
+      const shippedZone = upsZoneForZip(shippedZip);
+      if (!shippedZone || shippedZone === quote.zone) return null;
+      const shippedCents = ZONE_RATE_CENTS[shippedZone];
+      const diff = (shippedCents - quote.amountCents) / 100;
+      const dollars = (c) => `$${(c / 100).toFixed(2)}`;
+      return `SHIPPING ZONE MISMATCH — customer quoted ZIP ${quote.zip ?? "(none)"} `
+        + `(zone ${quote.zone}, charged ${dollars(quote.amountCents)}) but the order ships to `
+        + `${shippedZip} (zone ${shippedZone}, rate ${dollars(shippedCents)}). `
+        + (diff > 0
+          ? `Shipping is under-collected by $${diff.toFixed(2)}.`
+          : `Shipping is over-collected by $${Math.abs(diff).toFixed(2)} — consider a partial refund.`);
+    } catch {
+      return null; // the audit must never break the order write
+    }
+  })();
+  const adminNotes = [reconstructedNote, zoneMismatchNote].filter(Boolean).join("\n\n") || null;
   const giftReminderOptIn = pending.gift_reminder_opt_in === true;
   // Atomic insert. ON CONFLICT (stripe_session_id) DO NOTHING +
   // RETURNING * means: if a concurrent webhook retry already wrote
@@ -307,7 +337,7 @@ export default async (req) => {
       ${shippingAddr ? JSON.stringify(shippingAddr) : null}::jsonb,
       ${pending.social_consent ? JSON.stringify(pending.social_consent) : null}::jsonb,
       ${pending.gift ? JSON.stringify(pending.gift) : null}::jsonb,
-      ${reconstructedNote},
+      ${adminNotes},
       ${giftReminderOptIn}, ${customerNotes}
     )
     ON CONFLICT (stripe_session_id) DO NOTHING

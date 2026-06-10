@@ -74,7 +74,7 @@ export const CONFIG = {
   FREE_SHIPPING_ENABLED: true,
   // 0 = free U.S. shipping on every order (no minimum). Mirrors
   // FREE_SHIPPING_THRESHOLD_CENTS in netlify/functions/_lib/pricing.mjs.
-  FREE_SHIPPING_THRESHOLD_CENTS: 0,
+  FREE_SHIPPING_THRESHOLD_CENTS: 15000,
 
   // ============================================================
   // GIFT WRAP (optional add-on at checkout)

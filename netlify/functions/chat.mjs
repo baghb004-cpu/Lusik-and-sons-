@@ -62,7 +62,7 @@ WHAT WE SELL:
 - Other items (towels, swaddles, bathrobes) are coming soon — direct them to the waitlist.
 
 SHIPPING:
-- US only currently. Free shipping at $150+, otherwise USPS/UPS/FedEx options at checkout.
+- US only currently. Shipping is priced by distance from Cypress, CA (UPS Ground zones): about $9.99 in Southern California up to $15.49 on the East Coast; Alaska/Hawaii $24.99. Free at $150+. The exact rate shows at checkout once the customer enters their ZIP.
 - 5-10 business days to stitch + carrier transit time. We email a finished-piece photo before shipping.
 
 POLICY:

@@ -21,10 +21,13 @@
 
 // Free U.S. shipping at or above this subtotal. Mirrored in
 // src/data/config.js as CONFIG.FREE_SHIPPING_THRESHOLD_CENTS.
-// Set to 0 so EVERY order ships free — surprise shipping at the
-// final checkout step was the biggest small-cart abandonment
-// driver. Shipping cost is absorbed into product pricing instead.
-export const FREE_SHIPPING_THRESHOLD_CENTS = 0;
+// Paid shipping below this is zone-priced by distance from Cypress,
+// CA (see _lib/shipping-zones.mjs) — re-enabled June 2026 alongside
+// the bib price drop; the home page, FAQ, and chat copy all quote
+// "free over $150", so keep them in sync if this number changes.
+// (It briefly sat at 0 — free shipping for every order — while
+// shipping cost was absorbed into product pricing.)
+export const FREE_SHIPPING_THRESHOLD_CENTS = 15000;
 
 // Gift-wrap add-on charge. Mirrored in src/data/config.js as
 // CONFIG.GIFT_WRAP_PRICE_CENTS. The browser shows
