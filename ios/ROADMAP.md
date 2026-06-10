@@ -78,10 +78,19 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       detection, card payments work) over SFSafariViewController (Apple Pay
       but no return visibility); upgrading to Apple Pay later needs a tiny
       server-side app-return redirect = a website PR with explicit approval.
-- [ ] **Chunk 6 — Liquid Glass chrome.** Floating tab pill with `.ultraThinMaterial`
-      + the lens highlight over the active tab; breathe hint on first product
-      open until first sheet interaction (UserDefaults flag — port the
-      "seen isn't learned" rule).
+- [x] **Chunk 6 — Liquid Glass chrome.** Shipped: GlassTabBar — floating
+      pill on .ultraThinMaterial with the warm cream tint (--lg-tint-island
+      parity), bevel stroke + depth shadow, gliding lens capsule over the
+      active tab (matchedGeometryEffect), bag count bubble, light haptic on
+      switch, reduced-motion + a11y (selected traits). RootTabView keeps
+      all four tabs ALIVE (ZStack) so nav state survives switching; every
+      tab reserves GlassTabBar.clearance as a bottom safe-area inset so
+      content scrolls UNDER the glass (photos bleed beneath it on the
+      immersive pages — the web aesthetic, no band fix needed natively).
+      Breathe hint ported to ImmersiveProductView: rise-and-settle on every
+      product open until the guest moves the sheet once (the Chunk-2
+      gesture-learned flag), canceled instantly by any real gesture,
+      skipped under reduced motion.
 - [ ] **Chunk 7 — Journal + chat.** Journal list/post rendering (port
       `journalPostsData` content nodes), "Text Lusik" chat via POST `/chat`.
 - [ ] **Chunk 8 — Niceties.** Waitlist for placeholders, haptics

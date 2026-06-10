@@ -49,6 +49,11 @@ struct ImmersiveProductView: View {
     @State private var dragHeight: CGFloat?    // live height mid-drag
     @State private var photoIndex = 0
     @State private var viewerIndex: ViewerIndex?
+    // The "breathe" teaching hint: a soft rise-and-settle on open, played
+    // on EVERY product until the guest moves the sheet themselves once —
+    // then never again (seen isn't learned; used is). Web parity.
+    @State private var breatheOffset: CGFloat = 0
+    @State private var breatheTask: Task<Void, Never>?
 
     private struct ViewerIndex: Identifiable { let id: Int }
 
@@ -72,7 +77,11 @@ struct ImmersiveProductView: View {
         }
         .background(Brand.ink)
         .toolbar(.hidden, for: .navigationBar)
-        .onAppear(perform: restoreDetent)
+        .onAppear {
+            restoreDetent()
+            startBreatheIfNeeded()
+        }
+        .onDisappear { breatheTask?.cancel() }
         .fullScreenCover(item: $viewerIndex) { idx in
             PhotoViewer(photos: product.photoURLs, title: product.name, startIndex: idx.id)
         }
@@ -155,6 +164,37 @@ struct ImmersiveProductView: View {
         .background(.background)
         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22))
         .shadow(color: .black.opacity(0.25), radius: 18, y: -4)
+        .offset(y: breatheOffset)
+    }
+
+    // ── breathe hint ──
+    private func startBreatheIfNeeded() {
+        guard !reduceMotion,
+              !UserDefaults.standard.bool(forKey: Self.gestureLearnedKey)
+        else { return }
+        breatheTask?.cancel()
+        breatheTask = Task { @MainActor in
+            // A beat after the page lands, so it reads as an invitation,
+            // not a glitch — then rise 16pt and settle (web keyframes).
+            let steps: [(CGFloat, Double, Double)] = [   // (offset, duration, pause)
+                (-16, 0.34, 0), (5, 0.26, 0), (-3, 0.2, 0), (0, 0.22, 0),
+            ]
+            try? await Task.sleep(for: .seconds(0.45))
+            guard !Task.isCancelled else { return }
+            for (offset, duration, _) in steps {
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: duration)) { breatheOffset = offset }
+                try? await Task.sleep(for: .seconds(duration))
+            }
+        }
+    }
+
+    // A real gesture takes over instantly — the hint must never fight it.
+    private func cancelBreathe() {
+        breatheTask?.cancel()
+        if breatheOffset != 0 {
+            withAnimation(.easeOut(duration: 0.12)) { breatheOffset = 0 }
+        }
     }
 
     // Grabber + pill row. Drag lives HERE (not the body — it scrolls);
@@ -192,6 +232,7 @@ struct ImmersiveProductView: View {
     private func dragGesture(total: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 6)
             .onChanged { value in
+                cancelBreathe()
                 let start = detent.height(in: total)
                 dragHeight = min(total * 0.92, max(SheetDetent.collapsed.height(in: total),
                                                    start - value.translation.height))
@@ -219,6 +260,7 @@ struct ImmersiveProductView: View {
     }
 
     private func snap(to target: SheetDetent) {
+        cancelBreathe()
         let animation: Animation? = reduceMotion
             ? nil
             : .spring(response: 0.42, dampingFraction: 0.82)
