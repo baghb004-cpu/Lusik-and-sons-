@@ -74,9 +74,7 @@ struct ImmersiveProductView: View {
         .toolbar(.hidden, for: .navigationBar)
         .onAppear(perform: restoreDetent)
         .fullScreenCover(item: $viewerIndex) { idx in
-            // Chunk-3 placeholder viewer: whole photo inside the screen
-            // (every edge visible). Pinch/double-tap zoom replaces this.
-            PhotoViewerPlaceholder(photos: product.photoURLs, startIndex: idx.id)
+            PhotoViewer(photos: product.photoURLs, title: product.name, startIndex: idx.id)
         }
     }
 
@@ -240,61 +238,6 @@ struct ImmersiveProductView: View {
            let restored = SheetDetent(rawValue: saved) {
             detent = restored
         }
-    }
-}
-
-// Minimal full-photo viewer (object-contain on black, every edge visible).
-// Chunk 3 replaces this with the zoomable lightbox — pinch, double-tap,
-// pan, photo paging.
-struct PhotoViewerPlaceholder: View {
-    let photos: [URL]
-    let startIndex: Int
-    @Environment(\.dismiss) private var dismiss
-    @State private var index: Int = 0
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-
-            TabView(selection: $index) {
-                ForEach(Array(photos.enumerated()), id: \.offset) { i, url in
-                    AsyncImage(url: url) { phase in
-                        if case .success(let image) = phase {
-                            image.resizable().scaledToFit()
-                        } else {
-                            ProgressView().tint(.white)
-                        }
-                    }
-                    .tag(i)
-                    .padding(.horizontal, 12)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 42, height: 42)
-                    .background(.white.opacity(0.15), in: Circle())
-            }
-            .padding(.trailing, 14)
-            .accessibilityLabel("Close photo viewer")
-
-            VStack {
-                Spacer()
-                Text("\(index + 1) / \(photos.count)")
-                    .font(Brand.fontBody(12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(.white.opacity(0.14), in: Capsule())
-                    .padding(.bottom, 18)
-            }
-        }
-        .onAppear { index = startIndex }
     }
 }
 

@@ -51,9 +51,12 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       reduced-motion honored, custom back button. Buy controls extracted
       to ProductBuyControls — ONE buy surface shared with the classic
       page (web parity). Routing switches on Product.presentation.
-- [ ] **Chunk 3 — Lightbox.** Zoomable full-photo viewer: pinch (anchored),
-      double-tap zoom/reset, pan clamped to edges, swipe between photos,
-      swipe-down to close. Native gestures make this MUCH easier than web.
+- [x] **Chunk 3 — Lightbox.** Shipped: PhotoViewer — UIScrollView-backed
+      zoomable pages (anchored pinch 1×–4×, double-tap 2.5× into the tapped
+      spot / double-tap reset, pan clamped + centered by UIKit), sideways
+      paging between photos when unzoomed, pull-down-to-close (bounce
+      threshold), ✕ button, hint line + counter (web copy parity). Wired
+      into the immersive sheet's photo-tap contract; placeholder deleted.
 - [ ] **Chunk 4 — Bag.** CartStore (ObservableObject + persistence), qty
       stepper, swipe-to-delete, bundle-savings line ($1/extra piece — mirror
       `_lib/bundle-discount.mjs` math), free-shipping-at-$150 progress, tap
