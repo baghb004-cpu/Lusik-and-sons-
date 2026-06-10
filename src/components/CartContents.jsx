@@ -36,6 +36,7 @@ import { ShippingEstimator } from "./ShippingEstimator.jsx";
 import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { StillHaveQuestionsCard } from "./shop/HelpDecidingSection.jsx";
 import { PRODUCT } from "../data/product.js";
+import { bundleSavingsForCart } from "../lib/bundleDiscount.js";
 import { CartItemThumb } from "./CartItemThumb.jsx";
 import { X, ShoppingBag, ArrowRight, Check, ChevronDown } from "./icons.jsx";
 import { useT } from "../i18n/LangContext.jsx";
@@ -259,6 +260,28 @@ export function CartContents({
               <span className="opacity-70">{t("cart.subtotal")}</span>
               <span style={{ fontWeight: 500 }}>${subtotal.toFixed(2)}</span>
             </div>
+            {/* Bundle savings — display mirror of the Stripe coupon the
+                server attaches at checkout ($1 off per piece after the
+                first). The nudge line markets the next dollar. */}
+            {(() => {
+              const bundle = bundleSavingsForCart(cart, subtotal);
+              if (bundle.cents > 0) {
+                return (
+                  <div className="flex justify-between mb-3 text-sm">
+                    <span className="opacity-70">Bundle savings ({bundle.units} pieces)</span>
+                    <span className="tabular-nums" style={{ color: "var(--accent)", fontWeight: 500 }}>−${bundle.dollars.toFixed(2)}</span>
+                  </div>
+                );
+              }
+              if (bundle.enabled && cart.length > 0) {
+                return (
+                  <p className="text-[0.65rem] opacity-55 italic leading-relaxed mb-3">
+                    Add another piece and save ${bundle.perExtraDollars.toFixed(2)} — every additional piece takes another ${bundle.perExtraDollars.toFixed(2)} off.
+                  </p>
+                );
+              }
+              return null;
+            })()}
             <ShippingEstimator subtotalCents={Math.round(subtotal * 100)} />
             <p className="text-[0.65rem] opacity-55 italic leading-relaxed mb-4">{t("bag.madeToOrderNote")}</p>
             {/* Plain-language consent line above the pay button —

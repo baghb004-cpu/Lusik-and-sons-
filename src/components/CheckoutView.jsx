@@ -18,6 +18,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { CONFIG } from "../data/config.js";
 import { SOCIAL_CONSENT_PLATFORMS } from "../data/socialConsentPlatforms";
 import { estimateShippingForZip, SHIPPING_FROM_DOLLARS, SHIPPING_TO_DOLLARS } from "../data/shippingZones.js";
+import { bundleSavingsForCart } from "../lib/bundleDiscount.js";
 import { auth } from "../lib/auth.js";
 import { track } from "../lib/analytics.js";
 import { mapLegacyId } from "../lib/cartId";
@@ -128,6 +129,10 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   const freeShipping = Math.round(subtotal * 100) >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
   const shipEstimate = !freeShipping && shipZipValid ? estimateShippingForZip(shipZip) : null;
   const zipNeeded = !freeShipping && !shipZipValid;
+
+  // Bundle savings (display mirror — the server attaches the real
+  // Stripe coupon). $1 off per piece beyond the first, storewide.
+  const bundle = bundleSavingsForCart(cart, subtotal);
 
   // --- SOCIAL-SHARE CONSENT (optional, opt-in) ---
   // Default everything OFF — affirmative opt-in is the only thing
@@ -613,6 +618,17 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
           </div>
           <div className="pt-2 space-y-1 text-sm">
             <div className="flex justify-between"><span className="opacity-70">Subtotal</span><span className="tabular-nums">${subtotal.toFixed(2)}</span></div>
+            {bundle.cents > 0 && (
+              <div className="flex justify-between">
+                <span className="opacity-70">Bundle savings ({bundle.units} pieces)</span>
+                <span className="tabular-nums" style={{ color: "var(--accent)", fontWeight: 500 }}>−${bundle.dollars.toFixed(2)}</span>
+              </div>
+            )}
+            {bundle.enabled && bundle.cents === 0 && cart.length > 0 && (
+              <p className="text-[0.65rem] opacity-55 italic leading-relaxed">
+                Add another piece and save ${bundle.perExtraDollars.toFixed(2)} — every additional piece takes another ${bundle.perExtraDollars.toFixed(2)} off.
+              </p>
+            )}
             {giftIsGift && giftWrap && (
               <div className="flex justify-between"><span className="opacity-70">Gift wrap</span><span className="tabular-nums">+${(CONFIG.GIFT_WRAP_PRICE_CENTS / 100).toFixed(2)}</span></div>
             )}
