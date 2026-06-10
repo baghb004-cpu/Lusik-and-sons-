@@ -1,0 +1,33 @@
+# XcodeGen spec — run `xcodegen` in this directory to (re)generate
+# LusikSons.xcodeproj. The generated project is gitignored; this file is the
+# source of truth so diffs stay reviewable in short sessions.
+name: LusikSons
+options:
+  bundleIdPrefix: com.lusikandsons
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+targets:
+  LusikSons:
+    type: application
+    platform: iOS
+    sources:
+      - path: LusikSons
+    info:
+      path: LusikSons/Info.plist
+      properties:
+        CFBundleDisplayName: Lusik & Sons
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lusikandsons.app
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_UIUserInterfaceStyle: Automatic
