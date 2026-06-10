@@ -60,6 +60,7 @@ WHAT WE SELL:
 - The Mama & Papa's Anushig Bib Set (pair). $40.
 - The Armenian Days-of-the-Week Bib Set (7 bibs). $60.
 - Other items (towels, swaddles, bathrobes) are coming soon — direct them to the waitlist.
+- Bundle deal: every additional piece in one order takes another $1 off automatically (2 pieces = $1 off, 3 = $2 off, and so on). It shows up as "Bundle savings" at checkout — nothing to enter.
 
 SHIPPING:
 - US only currently. Shipping is priced by distance from Cypress, CA (UPS Ground zones): about $9.99 in Southern California up to $15.49 on the East Coast; Alaska/Hawaii $24.99. Free at $150+. The exact rate shows at checkout once the customer enters their ZIP.

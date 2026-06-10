@@ -130,6 +130,22 @@ export const CONFIG = {
   },
 
   // ============================================================
+  // BUNDLE DISCOUNT — "every extra piece saves $1"
+  // ============================================================
+  // DISPLAY mirror of netlify/functions/_lib/bundle-discount.mjs (the
+  // server attaches the real Stripe coupon at checkout; this drives the
+  // savings row in the bag + checkout summary). Kept in lockstep by
+  // bundle-discount-drift.test.mjs. Storewide; the first unit is full
+  // price, every unit after it takes PER_EXTRA_ITEM_CENTS off, capped
+  // at MAX_DISCOUNT_CENTS. Gift wrap never counts. Tune the per-item
+  // amount or flip ENABLED in BOTH files together.
+  BUNDLE_DISCOUNT: {
+    ENABLED: true,
+    PER_EXTRA_ITEM_CENTS: 100,
+    MAX_DISCOUNT_CENTS: 2500,
+  },
+
+  // ============================================================
   // PRIVACY-FIRST ANALYTICS (opt-in, empty by default)
   // ============================================================
   // Both values empty = no script loaded, no requests made, no

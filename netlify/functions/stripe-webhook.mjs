@@ -303,7 +303,18 @@ export default async (req) => {
       return null; // the audit must never break the order write
     }
   })();
-  const adminNotes = [reconstructedNote, zoneMismatchNote].filter(Boolean).join("\n\n") || null;
+  // Bundle-discount note — the orders row stores the pre-discount
+  // subtotal (trusted prices) while total_cents reflects what Stripe
+  // actually charged, so spell out the delta for Lusik's bookkeeping.
+  const bundleNote = (() => {
+    const cents = Number(pending.bundle_discount_cents) || 0;
+    if (cents <= 0) return null;
+    const units = Number(pending.bundle_units) || 0;
+    return `BUNDLE DISCOUNT — $${(cents / 100).toFixed(2)} off applied at checkout`
+      + (units > 1 ? ` (${units} pieces; every piece after the first saves $1)` : "")
+      + `. Total reflects the discount; subtotal is pre-discount.`;
+  })();
+  const adminNotes = [reconstructedNote, zoneMismatchNote, bundleNote].filter(Boolean).join("\n\n") || null;
   const giftReminderOptIn = pending.gift_reminder_opt_in === true;
   // Atomic insert. ON CONFLICT (stripe_session_id) DO NOTHING +
   // RETURNING * means: if a concurrent webhook retry already wrote

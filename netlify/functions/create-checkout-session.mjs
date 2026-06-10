@@ -16,6 +16,7 @@ import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
 import { buildShippingOptionsForZip, rateForZip } from "./_lib/shipping-zones.mjs";
+import { bundleDiscountCents } from "./_lib/bundle-discount.mjs";
 import { effectiveCents } from "./_lib/launch-promo.mjs";
 import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { findInventoryViolation } from "./_lib/inventory.mjs";
@@ -61,6 +62,35 @@ function getStripe() {
 // ZIP Stripe actually collected against the quoted zone and flags
 // mismatches in admin_notes.
 // ============================================================
+
+// Get-or-create the reusable Stripe coupon for a given bundle-discount
+// amount. Deterministic id (`bundle-<cents>`) so the same amount reuses
+// one coupon object instead of minting clutter per checkout; `duration:
+// "once"` applies it to the single payment. Coupons are mode-scoped
+// (test vs live), so each mode lazily creates its own on first use.
+async function getOrCreateBundleCoupon(stripe, cents) {
+  const id = `bundle-${cents}`;
+  try {
+    await stripe.coupons.retrieve(id);
+    return id;
+  } catch {
+    /* not found — create below */
+  }
+  try {
+    const c = await stripe.coupons.create({
+      id,
+      amount_off: cents,
+      currency: "usd",
+      duration: "once",
+      name: "Bundle savings",
+    });
+    return c.id;
+  } catch (err) {
+    // Raced another checkout creating the same coupon — it exists now.
+    if (err?.code === "resource_already_exists") return id;
+    throw err;
+  }
+}
 
 // Where Stripe sends the customer after pay/cancel. We append the
 // ?order=success|cancelled flag that the app's post-checkout
@@ -319,6 +349,25 @@ async function handle(req, context) {
     : null;
   const shippingOptions = buildShippingOptionsForZip(shipZip, subtotalCents, FREE_SHIPPING_THRESHOLD_CENTS);
   const freeShippingApplied = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
+
+  // Bundle discount: $1 off per unit beyond the first, storewide.
+  // Counted from the line items built off TRUSTED prices (so before
+  // gift wrap is appended — wrap is an add-on, not a product). The
+  // discount rides as a Stripe coupon attached to the session; the
+  // free-shipping threshold above deliberately uses the PRE-discount
+  // subtotal so bundling never costs a customer their free shipping.
+  const totalUnits = lineItems.reduce((sum, li) => sum + li.quantity, 0);
+  const bundleCents = bundleDiscountCents(totalUnits, subtotalCents);
+  let bundleCouponId = null;
+  if (bundleCents > 0) {
+    try {
+      bundleCouponId = await getOrCreateBundleCoupon(stripe, bundleCents);
+    } catch (err) {
+      // Coupon plumbing must never block a paying customer — worst
+      // case they pay the undiscounted (normal) price.
+      console.error("Bundle coupon unavailable (continuing without):", err?.message || err);
+    }
+  }
   // What we quoted, for the webhook's zone-mismatch audit (compares
   // against the address Stripe actually collected).
   const shippingQuote = freeShippingApplied
@@ -381,13 +430,16 @@ async function handle(req, context) {
       // biggest conversion lever for our mostly-mobile (Instagram)
       // traffic vs. the old card-only flow.
       line_items: lineItems,
-      // Show Stripe's "Add promotion code" field on the hosted checkout
-      // page. Codes themselves (and their discount, redemption caps,
-      // expiry, and minimum-order restrictions) are created + managed in
-      // the Stripe Dashboard / API — this flag just lets customers enter
-      // one. Stripe validates it and applies the discount; the webhook
-      // already records session.amount_total as the true paid amount.
-      allow_promotion_codes: true,
+      // Bundle discount vs promotion codes: Stripe rejects a session
+      // that sets BOTH `discounts` and `allow_promotion_codes`, so a
+      // multi-item cart gets the automatic bundle coupon (shown as
+      // "Bundle savings" on the hosted page) and single-item carts
+      // keep the "Add promotion code" field. Codes themselves are
+      // managed in the Stripe Dashboard; the webhook records
+      // session.amount_total as the true paid amount either way.
+      ...(bundleCouponId
+        ? { discounts: [{ coupon: bundleCouponId }] }
+        : { allow_promotion_codes: true }),
       customer_email: customerEmail || undefined,
       success_url: returnUrls.success_url,
       cancel_url:  returnUrls.cancel_url,
@@ -405,6 +457,8 @@ async function handle(req, context) {
         freeShippingApplied: String(freeShippingApplied),
         shipZipQuoted: shippingQuote.zip ?? "",
         shipZoneQuoted: shippingQuote.zone ?? "",
+        bundleDiscountCents: String(bundleCouponId ? bundleCents : 0),
+        bundleUnits: String(totalUnits),
         automaticTaxEnabled: String(automaticTaxEnabled),
       },
     }, stripeOpts);
@@ -453,6 +507,8 @@ async function handle(req, context) {
         gift_reminder_opt_in: gift_reminder_opt_in === true,
         customer_notes: customer_notes ?? null,
         shipping_quote: shippingQuote,
+        bundle_discount_cents: bundleCouponId ? bundleCents : 0,
+        bundle_units: totalUnits,
         createdAt: new Date().toISOString(),
       });
     })();
