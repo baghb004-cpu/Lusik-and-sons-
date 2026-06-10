@@ -76,6 +76,10 @@ struct BagView: View {
             .listRowBackground(Brand.surface)
         }
         .scrollContentBackground(.hidden)
+        // Unfolded: bag rows hold a readable column instead of
+        // stretching across the open canvas.
+        .frame(maxWidth: FoldLayout.contentWidth)
+        .frame(maxWidth: .infinity)
     }
 
     private var summary: some View {

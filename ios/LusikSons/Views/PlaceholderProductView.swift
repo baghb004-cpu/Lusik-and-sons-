@@ -60,6 +60,9 @@ struct PlaceholderProductView: View {
                         .multilineTextAlignment(.leading)
                 }
             }
+            // Readable column, centered on wide/unfolded canvases.
+            .frame(maxWidth: FoldLayout.readableWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .padding(18)
         }
         .background(Brand.cream)

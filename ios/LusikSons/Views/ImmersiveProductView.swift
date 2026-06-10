@@ -44,6 +44,7 @@ struct ImmersiveProductView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     @State private var detent: SheetDetent = .medium
     @State private var dragHeight: CGFloat?    // live height mid-drag
@@ -60,20 +61,18 @@ struct ImmersiveProductView: View {
     private static let detentKeyPrefix = "lusik.sheetDetent."
     static let gestureLearnedKey = "lusik.sheetGestureLearned"
 
+    /// The open-book posture (iPhone Fold inner display, iPads, landscape
+    /// Max): photos become the left page, buying the right page — there is
+    /// no pill sheet to drag because nothing needs uncovering.
+    private var isSpread: Bool { sizeClass == .regular }
+
     var body: some View {
         GeometryReader { geo in
-            let total = geo.size.height
-            let sheetHeight = dragHeight ?? detent.height(in: total)
-
-            ZStack(alignment: .bottom) {
-                photoBackdrop
-
-                pageDots
-                    .padding(.bottom, sheetHeight + 12)
-
-                sheet(height: sheetHeight, total: total)
+            if isSpread {
+                spread(size: geo.size)
+            } else {
+                compact(size: geo.size)
             }
-            .overlay(alignment: .topLeading) { backButton }
         }
         .background(Brand.ink)
         .toolbar(.hidden, for: .navigationBar)
@@ -87,8 +86,46 @@ struct ImmersiveProductView: View {
         }
     }
 
-    // ── full-bleed photo pager ──
-    private var photoBackdrop: some View {
+    // ── compact: the pill-sheet experience (phones, the Fold's cover) ──
+    private func compact(size: CGSize) -> some View {
+        let total = size.height
+        let sheetHeight = dragHeight ?? detent.height(in: total)
+
+        return ZStack(alignment: .bottom) {
+            photoPager.ignoresSafeArea()
+
+            pageDots
+                .padding(.bottom, sheetHeight + 12)
+
+            sheet(height: sheetHeight, total: total)
+        }
+        .overlay(alignment: .topLeading) { backButton }
+    }
+
+    // ── unfolded: the two-page spread ──
+    private func spread(size: CGSize) -> some View {
+        HStack(spacing: 0) {
+            ZStack(alignment: .bottom) {
+                photoPager
+                pageDots
+                    .padding(.bottom, 18)
+            }
+            .frame(width: size.width * FoldLayout.spreadPhotoFraction)
+            .clipped()
+
+            ScrollView {
+                ProductBuyControls(product: product)
+                    .padding(24)
+                    .frame(maxWidth: FoldLayout.readableWidth, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .background(Brand.surface)
+        }
+        .overlay(alignment: .topLeading) { backButton }
+    }
+
+    // ── photo pager (shared by both postures) ──
+    private var photoPager: some View {
         TabView(selection: $photoIndex) {
             ForEach(Array(product.photoURLs.enumerated()), id: \.offset) { i, url in
                 AsyncImage(url: url) { phase in
@@ -104,14 +141,16 @@ struct ImmersiveProductView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .ignoresSafeArea()
         .accessibilityLabel("\(product.name) photos")
     }
 
     // The detent-aware tap: card up → show me the photos; card already
-    // down → show me EVERYTHING (the viewer).
+    // down → show me EVERYTHING (the viewer). On the spread there's no
+    // sheet covering anything — a tap goes straight to the viewer.
     private func photoTapped() {
-        if detent != .collapsed {
+        if isSpread {
+            viewerIndex = ViewerIndex(id: photoIndex)
+        } else if detent != .collapsed {
             snap(to: .collapsed)
         } else {
             viewerIndex = ViewerIndex(id: photoIndex)
@@ -169,7 +208,9 @@ struct ImmersiveProductView: View {
 
     // ── breathe hint ──
     private func startBreatheIfNeeded() {
-        guard !reduceMotion,
+        // No sheet on the spread — nothing to teach.
+        guard !isSpread,
+              !reduceMotion,
               !UserDefaults.standard.bool(forKey: Self.gestureLearnedKey)
         else { return }
         breatheTask?.cancel()

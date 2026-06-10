@@ -101,6 +101,9 @@ struct CheckoutView: View {
                     .font(Brand.fontBody(11))
                     .foregroundStyle(Brand.ink.opacity(0.5))
             }
+            // Unfolded: the form holds a centered column.
+            .frame(maxWidth: FoldLayout.contentWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .padding(18)
         }
     }

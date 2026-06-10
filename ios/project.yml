@@ -18,8 +18,13 @@ targets:
       properties:
         CFBundleDisplayName: Lusik & Sons
         UILaunchScreen: {}
+        # Landscape is on for the iPhone Fold's opened, 4:3 book posture
+        # (and reads naturally on Max phones); layouts adapt via size
+        # classes — see Theme/FoldLayout.swift.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         ITSAppUsesNonExemptEncryption: false
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false

@@ -86,6 +86,7 @@ struct ForYouView: View {
                 }
                 .padding(.top, 2)
             }
+            .frame(maxWidth: FoldLayout.readableWidth)
             .padding(.horizontal, 24)
         }
         .sheet(isPresented: $showChat) {

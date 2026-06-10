@@ -142,6 +142,22 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
 
 ## Standing decisions (so future sessions don't re-litigate)
 
+- **iPhone Fold readiness (June 2026, baked in).** The app is laid out for
+  the book-style iPhone Fold ahead of launch: 7.8" 4:3 inner display +
+  5.5" cover screen, horizontal fold, wider passport-like form factor.
+  Mechanism: the inner display lands in the iPad-mini ballpark, so the
+  opened posture arrives as the REGULAR horizontal size class — all
+  adaptive rules key off that (no fold-specific API needed; they also
+  light up on iPads/landscape Max today, which doubles as the test rig).
+  The rules live in `Theme/FoldLayout.swift` ("the open book"): glass
+  island stays a centered pill (max 430pt); immersive product pages
+  become a two-page SPREAD (photos = left page, buy column = right page,
+  no pill sheet/breathe hint — nothing is covered); shop/journal grids
+  gain columns; prose/forms cap at readable column widths. Landscape was
+  enabled in project.yml for the opened posture. The cover screen is just
+  a small compact iPhone — the existing layouts. Test in any iPad
+  simulator or iPad-mini-sized window until Apple ships Fold simulators.
+
 - iOS 17 minimum, SwiftUI only, no third-party dependencies until Stripe
   return-handling forces a decision (it likely won't — physical goods).
 - `ProductKey` raw values MUST equal `_lib/trusted-products.mjs` keys — the

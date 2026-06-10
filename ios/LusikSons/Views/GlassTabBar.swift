@@ -57,6 +57,9 @@ struct GlassTabBar: View {
                 .overlay(Capsule().strokeBorder(Brand.glassBevel, lineWidth: 1))
                 .shadow(color: Brand.shadow.opacity(0.22), radius: 16, y: 8)
         }
+        // Unfolded / wide canvases: the island stays a centered pill,
+        // never a full-width runway (FoldLayout rule).
+        .frame(maxWidth: FoldLayout.islandMaxWidth)
         .padding(.horizontal, 24)
         .padding(.bottom, 6)
         // Chrome is capped — the island must stay an island at accessibility

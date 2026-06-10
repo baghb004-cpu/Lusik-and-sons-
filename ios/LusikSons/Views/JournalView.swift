@@ -11,6 +11,8 @@ import SwiftUI
 // Data/JournalPosts.swift.
 
 struct JournalTabView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -20,11 +22,20 @@ struct JournalTabView: View {
                         .foregroundStyle(Brand.ink)
                         .padding(.bottom, 2)
 
-                    ForEach(JournalPosts.all) { post in
-                        NavigationLink(value: post) {
-                            JournalCard(post: post)
+                    // Unfolded: the editorial cards pair up across the
+                    // open canvas, magazine-style.
+                    LazyVGrid(
+                        columns: sizeClass == .regular
+                            ? [GridItem(.flexible(), spacing: 18), GridItem(.flexible())]
+                            : [GridItem(.flexible())],
+                        spacing: 18
+                    ) {
+                        ForEach(JournalPosts.all) { post in
+                            NavigationLink(value: post) {
+                                JournalCard(post: post)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 18)
@@ -148,7 +159,9 @@ struct JournalPostView: View {
                     keepReading
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // Readable column, centered on wide/unfolded canvases.
+            .frame(maxWidth: FoldLayout.readableWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 22)
             .padding(.top, 10)
             .padding(.bottom, 28)

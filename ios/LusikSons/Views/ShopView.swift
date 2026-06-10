@@ -9,10 +9,19 @@ import SwiftUI
 // (Product.presentation already carries that decision).
 
 struct ShopView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                // Unfolded (regular width): the four category cards sit
+                // two-by-two across the open canvas instead of stacking.
+                LazyVGrid(
+                    columns: sizeClass == .regular
+                        ? [GridItem(.flexible(), spacing: 16), GridItem(.flexible())]
+                        : [GridItem(.flexible())],
+                    spacing: 16
+                ) {
                     // Coming-soon categories are browsable too (web
                     // "Browse {Category}" parity) — inside, their
                     // placeholder products carry the waitlist.
@@ -111,7 +120,9 @@ struct CategoryView: View {
         ScrollView {
             VStack(spacing: 18) {
                 if !category.products.isEmpty {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible())], spacing: 18) {
+                    // Adaptive columns: two-up on phones, three-to-four-up
+                    // across the Fold's open 4:3 canvas.
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 168), spacing: 14)], spacing: 18) {
                         ForEach(category.products) { product in
                             NavigationLink(value: product) {
                                 ProductCard(product: product)
@@ -126,6 +137,7 @@ struct CategoryView: View {
                         PlaceholderCard(placeholder: placeholder)
                     }
                     .buttonStyle(.plain)
+                    .frame(maxWidth: FoldLayout.contentWidth)
                 }
             }
             .padding(.horizontal, 18)
