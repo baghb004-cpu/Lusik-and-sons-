@@ -27,23 +27,23 @@
 // ============================================================
 
 export const LAUNCH_PROMO = Object.freeze({
-  enabled: true,                        // LIVE — founding prices active in the window below
-  startsAt: "2026-06-05T00:00:00Z",     // launch window start (UTC) — sale starts today
-  endsAt:   "2026-06-12T00:00:00Z",     // launch window end (UTC) — 7 days
+  // RETIRED June 2026 — superseded by a permanent base-price drop on the
+  // bibs (see TRUSTED_PRODUCTS), which took the new everyday prices BELOW
+  // the old founding prices. FOUNDING_CENTS must stay empty while base
+  // prices sit under the old promo values: the drift test requires every
+  // promo entry to be strictly cheaper than its trusted price. To run a
+  // future promo: re-populate FOUNDING_CENTS (strictly below the current
+  // trusted prices), set the window, flip enabled in BOTH files.
+  enabled: false,
+  startsAt: "2026-06-05T00:00:00Z",     // historical window (kept for the record)
+  endsAt:   "2026-06-12T00:00:00Z",
   label: "Founding price",              // badge text shown in the UI
 
   // productKey -> founding price in CENTS. MUST be strictly less than the
   // product's normal TRUSTED_PRODUCTS priceCents (a guard rejects any
   // entry that isn't, so a fat-fingered higher value can never raise a
-  // price). Bibs only — blankets and the 7-bib set are intentionally absent.
-  FOUNDING_CENTS: Object.freeze({
-    "bib":                              1900,  // Custom Name Bib   $22 -> $19
-    "bib-hy-em":                        2900,  // Hye Em Yes Bib    $35 -> $29
-    "bib-hy-em-with-cap":               4500,  // + matching cap    $52 -> $45
-    "bib-anushig-pair":                 4700,  // Mama & Papa set   $54 -> $47
-    "bib-bari-akhorzhak-set":           4200,  // Bari Akhorzhak    $48 -> $42
-    "bib-bari-akhorzhak-set-with-cap":  5700,  // + matching cap    $65 -> $57
-  }),
+  // price).
+  FOUNDING_CENTS: Object.freeze({}),
 });
 
 // Is the promo live at instant `now` (ms epoch)? Off unless enabled AND

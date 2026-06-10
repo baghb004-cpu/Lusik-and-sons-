@@ -80,7 +80,7 @@ export const TRUSTED_PRODUCTS = {
   "bib-days-of-week": {
     name:        "The Armenian Days-of-the-Week Bib Set",
     variant:     "Seven hand cross-stitched bibs, Armenian day names",
-    priceCents:  12900,
+    priceCents:  6000,
   },
 
   // The Mama & Papa's Anushig Bib Set (pair: Mama's + Papa's "sweetheart").
@@ -88,7 +88,7 @@ export const TRUSTED_PRODUCTS = {
   "bib-anushig-pair": {
     name:        "The Mama & Papa's Anushig Bib Set",
     variant:     "Pair of hand cross-stitched bibs — Mama's + Papa's",
-    priceCents:  5400,
+    priceCents:  4000,
   },
 
   // The Bari Akhorzhak Bib & Burp Cloth Set. Hand cross-stitched. Two
@@ -98,12 +98,12 @@ export const TRUSTED_PRODUCTS = {
   "bib-bari-akhorzhak-set": {
     name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
     variant:     "Bib + burp cloth",
-    priceCents:  4800,
+    priceCents:  4000,
   },
   "bib-bari-akhorzhak-set-with-cap": {
     name:        "The Bari Akhorzhak Bib & Burp Cloth Set",
     variant:     "Bib + burp cloth + matching cap (with name)",
-    priceCents:  6500,
+    priceCents:  5800,
   },
 
   // The Hye Em Yes Bib ("I am Armenian"). Hand cross-stitched in the three
@@ -113,12 +113,12 @@ export const TRUSTED_PRODUCTS = {
   "bib-hy-em": {
     name:        "The Hye Em Yes Bib",
     variant:     "Bib alone",
-    priceCents:  3500,
+    priceCents:  2000,
   },
   "bib-hy-em-with-cap": {
     name:        "The Hye Em Yes Bib",
     variant:     "Bib + matching baby cap",
-    priceCents:  5200,
+    priceCents:  3800,
   },
 
   // ----- TOWELS -----

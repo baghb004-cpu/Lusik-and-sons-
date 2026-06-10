@@ -115,21 +115,18 @@ export const CONFIG = {
   // To run it: set enabled: true HERE AND in launch-promo.mjs, set the
   // startsAt/endsAt window, and deploy. Prices auto-revert at endsAt.
   //
-  // FOUNDING_CENTS: productKey -> founding price in cents (bibs only).
+  // FOUNDING_CENTS: productKey -> founding price in cents.
   // Must match the server file exactly.
+  //
+  // RETIRED June 2026 — superseded by a permanent base-price drop on the
+  // bibs that took everyday prices below the old founding prices, so the
+  // map is empty and the promo is off (must match launch-promo.mjs).
   LAUNCH_PROMO: {
-    enabled: true,
+    enabled: false,
     startsAt: "2026-06-05T00:00:00Z",
     endsAt:   "2026-06-12T00:00:00Z",
     label: "Founding price",
-    FOUNDING_CENTS: {
-      "bib":                              1900,  // $22 -> $19
-      "bib-hy-em":                        2900,  // $35 -> $29
-      "bib-hy-em-with-cap":               4500,  // $52 -> $45
-      "bib-anushig-pair":                 4700,  // $54 -> $47
-      "bib-bari-akhorzhak-set":           4200,  // $48 -> $42
-      "bib-bari-akhorzhak-set-with-cap":  5700,  // $65 -> $57
-    },
+    FOUNDING_CENTS: {},
   },
 
   // ============================================================
