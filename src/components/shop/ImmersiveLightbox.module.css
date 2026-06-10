@@ -1,0 +1,108 @@
+/* ============================================================
+   ImmersiveLightbox.module.css — SCOPED styles for the zoomable
+   photo lightbox the immersive sheet opens on photo tap. CSS-module
+   hashed class names; nothing global. The lightbox PORTALS to
+   document.body with z-index 70 (above the bottom-nav island's 60 —
+   it's a true modal, everything else waits).
+   ============================================================ */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(26, 22, 18, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The gesture surface. touch-action:none so pinch/pan are OURS —
+   otherwise the browser zooms the page instead of the photo. */
+.stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  overflow: hidden;
+}
+
+/* The photo: object-contain inside an inset frame, so the WHOLE
+   piece is visible — corners, edges, border and all (the backdrop
+   crops with cover; this is the "see everything" view). */
+.img {
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 140px);
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  will-change: transform;
+  transform-origin: center center;
+}
+.imgAnimated {
+  transition: transform 0.22s ease;
+}
+.reduced .imgAnimated {
+  transition: none;
+}
+
+.closeBtn {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 239, 227, 0.15);
+  border: 1px solid rgba(245, 239, 227, 0.3);
+  color: #f5efe3;
+  border-radius: 999px;
+  z-index: 2;
+}
+
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 239, 227, 0.15);
+  border: 1px solid rgba(245, 239, 227, 0.3);
+  color: #f5efe3;
+  border-radius: 999px;
+  z-index: 2;
+}
+.navPrev { left: 12px; }
+.navNext { right: 12px; }
+
+.counter {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  background: rgba(245, 239, 227, 0.15);
+  color: #f5efe3;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hint {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(245, 239, 227, 0.55);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
+}

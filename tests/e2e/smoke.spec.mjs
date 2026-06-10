@@ -383,6 +383,32 @@ test.describe("shop hierarchy navigation", () => {
     }
   });
 
+  test("immersive sheet: photo tap collapses the card, second tap opens the zoom viewer", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "The immersive pill sheet is mobile-only (touch taps required).");
+    // The pill-sheet products (bib sets + crib blanket) open with the buy
+    // card at medium height over the photo backdrop. Tapping the photo
+    // behind the card collapses it to the pill; tapping the photo again
+    // opens the zoomable full-photo lightbox (object-contain, all edges
+    // visible). This is the detent-aware tap contract.
+    await page.goto("/shop/bibs/bari-akhorzhak-bib-burp-cloth-set");
+    const gallery = page.locator('[class*="ImmersiveBuySheet_gallery"]').first();
+    await expect(gallery).toBeVisible({ timeout: 10_000 });
+
+    // Tap the photo peeking above the medium sheet → collapses to the
+    // pill (whose accessible name flips to "Expand product details").
+    await gallery.tap({ position: { x: 196, y: 150 } });
+    await expect(
+      page.getByRole("button", { name: /expand product details/i })
+    ).toBeVisible({ timeout: 5_000 });
+
+    // Tap the photo again → the zoom viewer opens; close it via the X.
+    await gallery.tap({ position: { x: 196, y: 300 } });
+    const dialog = page.getByRole("dialog", { name: /photo viewer/i });
+    await expect(dialog).toBeVisible({ timeout: 5_000 });
+    await page.getByRole("button", { name: /close photo viewer/i }).click();
+    await expect(dialog).not.toBeVisible();
+  });
+
   test("a sold-out product shows the graceful sold-out state + notify", async ({ page }) => {
     // Stub the public availability snapshot so the Days-of-the-Week set
     // reads as sold out (remaining 0). The real cap is server-enforced at

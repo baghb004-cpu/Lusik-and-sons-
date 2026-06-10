@@ -35,6 +35,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { ChevronUp, ChevronDown, ChevronLeft } from "../icons.jsx";
 import { CONFIG } from "../../data/config.js";
+import { ImmersiveLightbox } from "./ImmersiveLightbox";
 import styles from "./ImmersiveBuySheet.module.css";
 
 type Detent = "collapsed" | "medium" | "expanded";
@@ -70,6 +71,7 @@ export function ImmersiveBuySheet({
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const [reduced, setReduced] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   // Portal mount gate — also our SSR guard (document isn't available on
   // the server; the first client render returns null, then the portal
   // mounts). See the createPortal note at the bottom for WHY a portal.
@@ -209,6 +211,44 @@ export function ImmersiveBuySheet({
     setActiveIdx(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   }, []);
 
+  // ── tap on the photo backdrop, detent-aware ──
+  // The card can hide the photos, and the most natural instinct (watch
+  // anyone's grandparent) is to tap the picture peeking out behind it.
+  // So: sheet up → a photo tap COLLAPSES the sheet to the pill ("show me
+  // the photos"); sheet already collapsed → a photo tap opens the
+  // zoomable lightbox (the full-photo, see-the-corners view). A real
+  // swipe (horizontal photo browsing, or any honest scroll) is never
+  // mistaken for a tap: we require <8px finger travel AND an unmoved
+  // scroll position AND a short press.
+  const galleryTap = useRef<{ x: number; y: number; t: number; scrollLeft: number } | null>(null);
+  const onGalleryPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    galleryTap.current = {
+      x: e.clientX,
+      y: e.clientY,
+      t: Date.now(),
+      scrollLeft: galleryRef.current?.scrollLeft ?? 0,
+    };
+  }, []);
+  const onGalleryPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const start = galleryTap.current;
+    galleryTap.current = null;
+    if (!start) return;
+    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    const scrolled = Math.abs((galleryRef.current?.scrollLeft ?? 0) - start.scrollLeft);
+    if (moved >= 8 || scrolled >= 2 || Date.now() - start.t >= 450) return;
+    if (detent !== "collapsed") snapTo("collapsed");
+    else setLightboxOpen(true);
+  }, [detent, snapTo]);
+
+  // Closing the lightbox hands back the photo they were on, so the
+  // backdrop + dots pick up exactly where they left off.
+  const onLightboxClose = useCallback((lastIndex: number) => {
+    setLightboxOpen(false);
+    setActiveIdx(lastIndex);
+    const el = galleryRef.current;
+    if (el) el.scrollTo({ left: lastIndex * el.clientWidth, behavior: "instant" as ScrollBehavior });
+  }, []);
+
   // Rendered through a PORTAL to document.body: the route subtree sits
   // inside a page-transition wrapper with `will-change: transform`, which
   // (per spec) makes that wrapper the containing block for position:fixed
@@ -220,8 +260,15 @@ export function ImmersiveBuySheet({
   if (!mounted) return null;
   return createPortal(
     <div ref={rootRef} className={cx(styles.root, reduced && styles.reduced)}>
-      {/* Full-screen swipeable photo backdrop (next/image, optimized) */}
-      <div ref={galleryRef} className={styles.gallery} onScroll={onGalleryScroll}>
+      {/* Full-screen swipeable photo backdrop (next/image, optimized).
+          Tap behavior is detent-aware — see onGalleryPointerUp. */}
+      <div
+        ref={galleryRef}
+        className={styles.gallery}
+        onScroll={onGalleryScroll}
+        onPointerDown={onGalleryPointerDown}
+        onPointerUp={onGalleryPointerUp}
+      >
         {photos.map((src, i) => (
           <div key={i} className={styles.slide}>
             <Image
@@ -295,6 +342,17 @@ export function ImmersiveBuySheet({
           {children}
         </div>
       </div>
+
+      {/* Zoomable full-photo viewer (its own body portal, z 70) */}
+      {lightboxOpen && (
+        <ImmersiveLightbox
+          photos={photos}
+          startIndex={activeIdx}
+          title={title}
+          reduced={reduced}
+          onClose={onLightboxClose}
+        />
+      )}
     </div>,
     document.body,
   );
