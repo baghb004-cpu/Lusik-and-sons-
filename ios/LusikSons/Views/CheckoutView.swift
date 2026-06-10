@@ -144,7 +144,7 @@ struct CheckoutView: View {
                 Text("You've earned free U.S. shipping — your address is collected on the Stripe page.")
                     .font(Brand.fontBody(12)).foregroundStyle(Brand.ink.opacity(0.6))
             } else {
-                TextField("90630", text: $shipZip)
+                TextField("90620", text: $shipZip)
                     .keyboardType(.numberPad)
                     .textContentType(.postalCode)
                     .font(Brand.fontBody(16, weight: .medium))
