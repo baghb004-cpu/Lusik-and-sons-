@@ -358,7 +358,15 @@ test.describe("shop hierarchy navigation", () => {
     // Founding-Price promo is retired). Then drive the same in-app
     // add → Checkout → Pay path the blanket checkout test uses, so the
     // in-memory cart survives (a hard nav would wipe it).
-    await page.getByRole("button", { name: /add to bag.*40/i }).first().click();
+    // Scope to the VISIBLE instance: on phones this product renders in
+    // the immersive pill sheet, which keeps the (hidden) MobilePurchaseBar
+    // add button in the DOM — .first() alone would resolve to that hidden
+    // twin and wait forever.
+    await page
+      .getByRole("button", { name: /add to bag.*40/i })
+      .filter({ visible: true })
+      .first()
+      .click();
     // Add opens the "You may also like" sheet → Continue opens the bag.
     await page.getByRole("button", { name: /^continue$/i }).first().click();
     await page.getByRole("button", { name: /^checkout/i }).click();

@@ -33,6 +33,10 @@ import { BibSetCard } from "./BibSetCard.jsx";
 import { CribBlanketCard } from "./CribBlanketCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
+import { ImmersiveBuySheet } from "./ImmersiveBuySheet";
+import { getProductPhotos, BIB_CUSTOMER_EXAMPLES } from "../../lib/productPhotos";
+import { CONFIG } from "../../data/config.js";
+import { useIsMobile } from "../../lib/useIsMobile";
 import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
 import { useSite } from "../../state/SiteProvider.jsx";
@@ -65,6 +69,7 @@ export function ProductView({
   const t = useT();
   const { lang } = useLang();
   const { isSoldOut } = useSite();
+  const isMobile = useIsMobile();
   const inventoryKey = inventoryKeyForCatalog(product.key);
   const soldOut = isSoldOut(inventoryKey);
   const trail = [
@@ -94,10 +99,12 @@ export function ProductView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.slug]);
 
-  // Each product surface is built below, then wrapped once with the
-  // mobile-only "Still need help deciding?" contact block so it
-  // appears at the bottom of every product page (Apple Store style).
-  const surface = (() => {
+  // Each product surface is built by renderSurface(immersive). When the
+  // immersive flag is on AND we're on a phone, the live surface renders
+  // inside <ImmersiveBuySheet> with immersive=true (its own photo gallery +
+  // outer chrome + MobilePurchaseBar suppressed, its PurchaseCard un-hidden).
+  // Otherwise it renders exactly as before (the normal product page).
+  const renderSurface = (immersive = false) => {
   // Placeholder products: render the "coming soon" template
   // with the catalog description and a Notify-me button. No buy
   // flow — there's nothing to add to cart yet.
@@ -118,9 +125,11 @@ export function ProductView({
   if (product.key === "blanket-alphabet") {
     return (
       <div className="fade-in">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-8 lg:pt-10">
-          <Breadcrumbs trail={trail} />
-        </div>
+        {!immersive && (
+          <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-8 lg:pt-10">
+            <Breadcrumbs trail={trail} />
+          </div>
+        )}
         <ProductShowcase
           product={productData}
           onAdd={onAdd}
@@ -131,22 +140,34 @@ export function ProductView({
           onStickyCtaShown={onStickyCtaShown}
           soldOut={soldOut}
           notifyKey={inventoryKey}
+          immersive={immersive}
         />
       </div>
     );
   }
 
   if (product.key === "bib-single") {
-    // Real past-customer bib photos. Lives next to the live SVG
-    // preview in the configurator above -- the configurator shows
-    // the customer's chosen design, this gallery shows what other
-    // customers actually received. Trust + inspiration cues.
-    const customerExamples = [
-      "/img/bib-examples/01.jpg",  // teddy bear + Armenian name on white bib
-      "/img/bib-examples/02.jpg",  // "Armig" + daffodils on white bib
-      "/img/bib-examples/03.jpg",  // tulip + Armenian name on pink bib
-      "/img/bib-examples/04.jpg",  // giraffe + Armenian name on light blue bib
-    ];
+    // Real past-customer bib photos (shared constant — also the immersive
+    // backdrop source). The configurator shows the customer's chosen design
+    // (live SVG); this gallery shows what others received.
+    const customerExamples = BIB_CUSTOMER_EXAMPLES;
+
+    // Immersive (mobile sheet): the example photos ARE the backdrop, so the
+    // sheet body is just the customizer (its live SVG preview stays).
+    if (immersive) {
+      return (
+        <CustomProductCard
+          config={customProductData}
+          onAddCustom={onAddCustom}
+          onBuyNow={onBuyNowCustom}
+          onCartFeedback={onCartFeedback}
+          soldOut={soldOut}
+          notifyKey={inventoryKey}
+          immersive
+        />
+      );
+    }
+
     return (
       <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
         <Breadcrumbs trail={trail} />
@@ -203,6 +224,7 @@ export function ProductView({
         onCartFeedback={onCartFeedback}
         soldOut={soldOut}
         notifyKey={inventoryKey}
+        immersive={immersive}
       />
     );
   }
@@ -217,6 +239,7 @@ export function ProductView({
         onCartFeedback={onCartFeedback}
         soldOut={soldOut}
         notifyKey={inventoryKey}
+        immersive={immersive}
       />
     );
   }
@@ -232,7 +255,45 @@ export function ProductView({
       onOpenWaitlist={onOpenWaitlist}
     />
   );
-  })();
+  };
+
+  // ── Mobile photo-immersive sheet (flag-gated, mobile-only) ──
+  // Single-mount: useIsMobile is SSR-safe (false on the server + first client
+  // render, synced before paint), so we render EITHER the normal layout OR the
+  // immersive sheet — never both. The immersive sheet only appears when the
+  // CONFIG.SHEET.IMMERSIVE_ENABLED flag is on, on a phone, for a live product
+  // with photos that isn't sold out — and isn't in SHEET.EXCLUDE_KEYS (the
+  // configurator-led products, whose live design preview + option pickers
+  // would be buried behind a collapsed pill). Otherwise the normal product
+  // page (the fallback) renders exactly as before.
+  const photos = getProductPhotos(product);
+  const immersive =
+    CONFIG.SHEET.IMMERSIVE_ENABLED &&
+    !(CONFIG.SHEET.EXCLUDE_KEYS || []).includes(product.key) &&
+    isMobile &&
+    product.status === "live" &&
+    !soldOut &&
+    photos.length > 0;
+
+  if (immersive) {
+    const specForPrice = customProducts?.[product.key];
+    const priceNum =
+      product.key === "blanket-alphabet" ? productData?.price
+      : product.key === "bib-single" ? customProductData?.price
+      : specForPrice?.price ?? product.priceFrom ?? null;
+    return (
+      <ImmersiveBuySheet
+        photos={photos}
+        title={loc(product, "name", lang)}
+        priceLabel={priceNum != null ? `$${priceNum}` : undefined}
+        storageKey={product.key}
+        onBack={() => onNavigateCategory(category.slug)}
+      >
+        {renderSurface(true)}
+        <StillHaveQuestionsCard className="mt-10 mb-4" />
+      </ImmersiveBuySheet>
+    );
+  }
 
   return (
     // Mobile gets generous bottom padding so the last element ("Still have
@@ -240,7 +301,7 @@ export function ProductView({
     // (delivery details + Add-to-Bag) and never gets cut off. Desktop has no
     // sheet, so no extra padding there.
     <div className="pb-[340px] lg:pb-0">
-      {surface}
+      {renderSurface(false)}
       {/* The "delivery and pickup details" disclosure lives INSIDE each
           product's PurchaseCard / MobilePurchaseBar (Apple-style). This is
           the last thing on the page — it should rest just above the sheet. */}

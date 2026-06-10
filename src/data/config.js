@@ -30,6 +30,29 @@ export const CONFIG = {
   },
 
   // ============================================================
+  // SHEET — the mobile photo-immersive product sheet (Apple-style)
+  // ============================================================
+  // Drives <ImmersiveBuySheet>: on phones a live product page becomes a
+  // full-screen swipeable photo backdrop with a draggable bottom sheet
+  // (the real buy controls) that snaps between three detents — collapsed
+  // pill / medium / expanded — like Apple Maps / Find My. It layers BELOW
+  // the bottom-nav island and stops above it, so the nav stays usable.
+  //
+  // LIVE since June 2026 for the photo-led products. EXCLUDE_KEYS keeps
+  // the configurator-led products on the classic page: their value is the
+  // live design preview + option pickers (alphabet/thread/name), which a
+  // photo backdrop would bury behind a collapsed pill. New catalog
+  // products get the sheet automatically once they have `images` — add
+  // their key here to opt them out instead.
+  SHEET: {
+    IMMERSIVE_ENABLED:    true,
+    EXCLUDE_KEYS:         ["blanket-alphabet", "bib-single"], // configurator products keep the classic page
+    DEFAULT_DETENT:       "medium", // opening detent: "expanded" | "medium" | "collapsed"
+    FLICK_VELOCITY_PX_MS: 0.6,    // |drag speed| past this = a flick (jumps a detent)
+    STORAGE_PREFIX:       "lusik_sheet_detent_v1", // localStorage key prefix (per product)
+  },
+
+  // ============================================================
   // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
   // ============================================================
   // No URLs or anon keys live here anymore. Identity reads its
