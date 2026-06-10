@@ -262,11 +262,14 @@ export function ProductView({
   // render, synced before paint), so we render EITHER the normal layout OR the
   // immersive sheet — never both. The immersive sheet only appears when the
   // CONFIG.SHEET.IMMERSIVE_ENABLED flag is on, on a phone, for a live product
-  // with photos that isn't sold out. Otherwise the normal product page (the
-  // fallback) renders exactly as before.
+  // with photos that isn't sold out — and isn't in SHEET.EXCLUDE_KEYS (the
+  // configurator-led products, whose live design preview + option pickers
+  // would be buried behind a collapsed pill). Otherwise the normal product
+  // page (the fallback) renders exactly as before.
   const photos = getProductPhotos(product);
   const immersive =
     CONFIG.SHEET.IMMERSIVE_ENABLED &&
+    !(CONFIG.SHEET.EXCLUDE_KEYS || []).includes(product.key) &&
     isMobile &&
     product.status === "live" &&
     !soldOut &&

@@ -34,21 +34,19 @@ export const CONFIG = {
   // ============================================================
   // Drives <ImmersiveBuySheet>: on phones a live product page becomes a
   // full-screen swipeable photo backdrop with a draggable bottom sheet
-  // (the real buy controls) that snaps between three detents, like Apple
-  // Maps / Find My. It layers BELOW the bottom-nav island and stops above
-  // it, so the nav stays usable.
+  // (the real buy controls) that snaps between three detents — collapsed
+  // pill / medium / expanded — like Apple Maps / Find My. It layers BELOW
+  // the bottom-nav island and stops above it, so the nav stays usable.
   //
-  // IMMERSIVE_ENABLED is an ENVIRONMENT flag, not a code literal, so the
-  // same code ships everywhere but only turns on where the env says so.
-  // It reads the build-time var NEXT_PUBLIC_IMMERSIVE_SHEET (inlined per
-  // build by Next). netlify.toml sets it PER CONTEXT:
-  //   production     → "false"  (live site stays on the normal page)
-  //   deploy-preview → "true"   (PR previews show the sheet, for testing)
-  // Because Netlify builds each context separately, production CANNOT
-  // inherit the preview value — merging this branch does not enable it
-  // live. Unset / anything-but-"true" ⇒ false (fail-safe off).
+  // LIVE since June 2026 for the photo-led products. EXCLUDE_KEYS keeps
+  // the configurator-led products on the classic page: their value is the
+  // live design preview + option pickers (alphabet/thread/name), which a
+  // photo backdrop would bury behind a collapsed pill. New catalog
+  // products get the sheet automatically once they have `images` — add
+  // their key here to opt them out instead.
   SHEET: {
-    IMMERSIVE_ENABLED:    process.env.NEXT_PUBLIC_IMMERSIVE_SHEET === "true",
+    IMMERSIVE_ENABLED:    true,
+    EXCLUDE_KEYS:         ["blanket-alphabet", "bib-single"], // configurator products keep the classic page
     DEFAULT_DETENT:       "medium", // opening detent: "expanded" | "medium" | "collapsed"
     FLICK_VELOCITY_PX_MS: 0.6,    // |drag speed| past this = a flick (jumps a detent)
     STORAGE_PREFIX:       "lusik_sheet_detent_v1", // localStorage key prefix (per product)
