@@ -50,6 +50,10 @@ export const CONFIG = {
     DEFAULT_DETENT:       "medium", // opening detent: "expanded" | "medium" | "collapsed"
     FLICK_VELOCITY_PX_MS: 0.6,    // |drag speed| past this = a flick (jumps a detent)
     STORAGE_PREFIX:       "lusik_sheet_detent_v1", // localStorage key prefix (per product)
+    // Tap-the-photo behavior: sheet up → tap collapses it to the pill;
+    // sheet collapsed → tap opens the zoomable full-photo lightbox
+    // (object-contain + pinch/double-tap zoom up to this factor).
+    LIGHTBOX_MAX_ZOOM:    4,
   },
 
   // ============================================================

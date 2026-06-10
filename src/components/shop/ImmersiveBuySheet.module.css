@@ -89,6 +89,9 @@
   display: flex;
   justify-content: center;
   gap: 7px;
+  /* Decorative — must never eat a tap meant for the photo behind it
+     (photo taps collapse the sheet / open the lightbox). */
+  pointer-events: none;
   z-index: 2;
   pointer-events: none;
   transition: bottom 0.42s cubic-bezier(0.32, 1.4, 0.5, 1);
