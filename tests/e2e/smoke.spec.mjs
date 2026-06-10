@@ -214,7 +214,7 @@ test.describe("checkout view", () => {
       route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ zip: "90630", city: "Cypress", state: "CA" }),
+        body: JSON.stringify({ zip: "90620", city: "Buena Park", state: "CA" }),
       }));
 
     // Direct-nav to the blanket PDP (same reason as the test above).
@@ -228,9 +228,9 @@ test.describe("checkout view", () => {
     // Below the free-shipping threshold the shipping ZIP is required
     // (it prices the zone-based rate) — the Pay button stays disabled
     // until a valid ZIP is in.
-    await page.getByLabel(/shipping zip code/i).first().fill("90630");
+    await page.getByLabel(/shipping zip code/i).first().fill("90620");
     // The city/state echo confirms the typed ZIP before paying.
-    await expect(page.getByText(/Cypress, CA 90630/)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/Buena Park, CA 90620/)).toBeVisible({ timeout: 5_000 });
     await page.getByRole("button", { name: /pay with stripe/i }).first().click();
 
     // Wait for the route handler to capture the request.
@@ -239,7 +239,7 @@ test.describe("checkout view", () => {
     expect(receivedBody.cart.length).toBeGreaterThan(0);
     // The destination ZIP must ride along — it's what the server
     // prices the zone-based shipping option from.
-    expect(receivedBody.ship_zip).toBe("90630");
+    expect(receivedBody.ship_zip).toBe("90620");
     // Every cart item must carry a productKey, and it must be in the
     // shape TRUSTED_PRODUCTS recognizes (starts with "blanket-" or
     // "bib"). This is the assertion that would have failed during
@@ -288,7 +288,7 @@ test.describe("checkout view", () => {
     await buyNow.click();
 
     await expect(page.getByRole("heading", { name: /almost in lusik's hands/i })).toBeVisible({ timeout: 5_000 });
-    await page.getByLabel(/shipping zip code/i).first().fill("90630");
+    await page.getByLabel(/shipping zip code/i).first().fill("90620");
     await page.getByRole("button", { name: /pay with stripe/i }).first().click();
 
     await expect.poll(() => receivedBody, { timeout: 5_000 }).not.toBeNull();
@@ -381,7 +381,7 @@ test.describe("shop hierarchy navigation", () => {
     await page.getByRole("button", { name: /^checkout/i }).click();
     // Shipping ZIP is required below the free-shipping threshold —
     // it prices the zone-based rate before the Stripe hand-off.
-    await page.getByLabel(/shipping zip code/i).first().fill("90630");
+    await page.getByLabel(/shipping zip code/i).first().fill("90620");
     await page.getByRole("button", { name: /pay with stripe/i }).first().click();
 
     await expect.poll(() => receivedBody, { timeout: 8_000 }).not.toBeNull();

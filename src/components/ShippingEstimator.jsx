@@ -94,7 +94,7 @@ export function ShippingEstimator({ subtotalCents }) {
           maxLength={5}
           value={zip}
           onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
-          placeholder="90630"
+          placeholder="90620"
           className="flex-1 px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
           style={{ border: "1px solid rgba(26,22,18,0.15)" }}
           aria-label="ZIP code for shipping estimate"

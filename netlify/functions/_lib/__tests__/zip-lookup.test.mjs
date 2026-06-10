@@ -21,6 +21,12 @@ test("known ZIP → 200 with city/state and a long-lived public cache", async ()
   assert.match(res.headers.get("Netlify-CDN-Cache-Control") ?? "", /durable/);
 });
 
+test("the placeholder example resolves (Buena Park)", async () => {
+  const res = await get("?zip=90620");
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { zip: "90620", city: "Buena Park", state: "CA" });
+});
+
 test("territories are covered (San Juan, PR)", async () => {
   const res = await get("?zip=00901");
   assert.equal(res.status, 200);
