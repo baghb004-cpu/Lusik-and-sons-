@@ -31,6 +31,7 @@
 // ============================================================
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { ChevronUp, ChevronDown, ChevronLeft } from "../icons.jsx";
 import { CONFIG } from "../../data/config.js";
@@ -69,11 +70,22 @@ export function ImmersiveBuySheet({
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const [reduced, setReduced] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  // Portal mount gate — also our SSR guard (document isn't available on
+  // the server; the first client render returns null, then the portal
+  // mounts). See the createPortal note at the bottom for WHY a portal.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const galleryRef = useRef<HTMLDivElement | null>(null);
   // Live drag bookkeeping (refs, never state — no re-render per move frame).
-  const drag = useRef<{ startY: number; startH: number; lastY: number; lastT: number; vel: number } | null>(null);
+  // `moved` tracks the largest |Δy| of the gesture so pointer-up can tell a
+  // TAP from a drag. lastCycleAt debounces cycle() because a tap can reach it
+  // twice: once from the pointer-up tap branch and once from the pill
+  // button's own click event (whether the click fires depends on pointer
+  // capture retargeting, which varies by input type).
+  const drag = useRef<{ startY: number; startH: number; lastY: number; lastT: number; vel: number; moved: number } | null>(null);
+  const lastCycleAt = useRef(0);
 
   const dragging = dragHeight != null;
   const collapsed = detent === "collapsed" && !dragging;
@@ -129,6 +141,7 @@ export function ImmersiveBuySheet({
         lastY: e.clientY,
         lastT: Date.now(),
         vel: 0,
+        moved: 0,
       };
       setDragHeight(detentPx(detent, h));
       e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -144,16 +157,36 @@ export function ImmersiveBuySheet({
     const now = Date.now();
     const dt = now - d.lastT;
     if (dt > 0) d.vel = (d.lastY - e.clientY) / dt; // +up / -down
+    d.moved = Math.max(d.moved, Math.abs(e.clientY - d.startY));
     d.lastY = e.clientY;
     d.lastT = now;
     setDragHeight(next);
   }, []);
+
+  // Tap-to-cycle the detents. Debounced because a tap can arrive twice
+  // (pointer-up tap branch + the pill button's click) — see drag ref note.
+  const cycle = useCallback(() => {
+    const now = Date.now();
+    if (now - lastCycleAt.current < 350) return;
+    lastCycleAt.current = now;
+    snapTo(detent === "collapsed" ? "medium" : detent === "medium" ? "expanded" : "collapsed");
+  }, [detent, snapTo]);
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       const d = drag.current;
       if (!d) return;
       e.currentTarget.releasePointerCapture?.(e.pointerId);
+      drag.current = null;
+      // A press that never really moved is a TAP, not a drag — treat it as
+      // tap-to-cycle (Find My behavior). Pointer capture on this handle can
+      // retarget the click away from the pill button, so the button's own
+      // onClick can't be relied on for touch; this branch covers it.
+      if (d.moved < 6) {
+        setDragHeight(null);
+        cycle();
+        return;
+      }
       const h = rootRef.current?.clientHeight ?? window.innerHeight;
       const cur = dragHeight ?? detentPx(detent, h);
       const px = { collapsed: COLLAPSED_PX, medium: h * 0.46, expanded: h * 0.86 };
@@ -165,15 +198,10 @@ export function ImmersiveBuySheet({
           Math.abs(px[name] - cur) < Math.abs(px[best] - cur) ? name : best,
         );
       }
-      drag.current = null;
       snapTo(target);
     },
-    [dragHeight, detent, flickVel, snapTo],
+    [dragHeight, detent, flickVel, snapTo, cycle],
   );
-
-  const cycle = useCallback(() => {
-    snapTo(detent === "collapsed" ? "medium" : detent === "medium" ? "expanded" : "collapsed");
-  }, [detent, snapTo]);
 
   const onGalleryScroll = useCallback(() => {
     const el = galleryRef.current;
@@ -181,7 +209,16 @@ export function ImmersiveBuySheet({
     setActiveIdx(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   }, []);
 
-  return (
+  // Rendered through a PORTAL to document.body: the route subtree sits
+  // inside a page-transition wrapper with `will-change: transform`, which
+  // (per spec) makes that wrapper the containing block for position:fixed
+  // descendants — the sheet would anchor to the wrapper's box instead of
+  // the viewport and render hundreds of px off-screen. Portaling out of
+  // the route subtree restores true viewport anchoring, immune to any
+  // future ancestor transform/filter. `mounted` gates SSR (no document on
+  // the server; the parent's isMobile gate already implies client-side).
+  if (!mounted) return null;
+  return createPortal(
     <div ref={rootRef} className={cx(styles.root, reduced && styles.reduced)}>
       {/* Full-screen swipeable photo backdrop (next/image, optimized) */}
       <div ref={galleryRef} className={styles.gallery} onScroll={onGalleryScroll}>
@@ -258,6 +295,7 @@ export function ImmersiveBuySheet({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
