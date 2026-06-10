@@ -66,12 +66,18 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       qty stepper (1..99 clamp, accessibility-adjustable), swipe-to-
       delete, bundle-savings row + add-another nudge, free-shipping
       progress bar, empty state, Checkout button (Chunk-5 alert stub).
-- [ ] **Chunk 5 — Checkout.** ZIP field → zone-rate estimate (mirror
-      `_lib/shipping-zones.mjs` table), gift options + notes, POST
-      `create-checkout-session` with the EXACT body shape (productKey, qty,
-      ship_zip, gift, social_consent, idempotency_key), open `session.url`
-      in SFSafariViewController, handle the `?order=success` return via a
-      custom URL scheme or just detect navigation. Clear bag on success.
+- [x] **Chunk 5 — Checkout.** Shipped: ShippingZones (exact Swift mirror
+      of the server zone table/rates/transit), CheckoutView — summary with
+      bundle savings + gift wrap line, REQUIRED ship ZIP w/ live zone
+      estimate (Pay disabled without it; free-over-$150 skips it), gift
+      options (message 140 / hide prices / wrap +$5), one-year reminder
+      opt-in, notes (280), POST create-checkout-session with the exact web
+      body shape + per-attempt idempotency key, Stripe hosted page in an
+      in-app WKWebView watched for the ?order=success return → clear bag →
+      thank-you state. DECISION RECORDED: WKWebView (reliable success
+      detection, card payments work) over SFSafariViewController (Apple Pay
+      but no return visibility); upgrading to Apple Pay later needs a tiny
+      server-side app-return redirect = a website PR with explicit approval.
 - [ ] **Chunk 6 — Liquid Glass chrome.** Floating tab pill with `.ultraThinMaterial`
       + the lens highlight over the active tab; breathe hint on first product
       open until first sheet interaction (UserDefaults flag — port the

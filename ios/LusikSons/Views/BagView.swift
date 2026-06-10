@@ -26,7 +26,7 @@ struct ProductRoute: View {
 
 struct BagView: View {
     @EnvironmentObject private var cart: CartStore
-    @State private var checkoutComingSoon = false
+    @State private var showCheckout = false
 
     var body: some View {
         NavigationStack {
@@ -40,11 +40,7 @@ struct BagView: View {
             .background(Brand.cream)
             .navigationTitle("Bag")
             .navigationDestination(for: Product.self) { ProductRoute(product: $0) }
-            .alert("Checkout arrives in Chunk 5", isPresented: $checkoutComingSoon) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("The Stripe hand-off (with ZIP-based shipping) is the next chunk on the roadmap.")
-            }
+            .navigationDestination(isPresented: $showCheckout) { CheckoutView() }
         }
     }
 
@@ -121,7 +117,7 @@ struct BagView: View {
             .padding(.top, 2)
 
             Button {
-                checkoutComingSoon = true
+                showCheckout = true
             } label: {
                 Text("Checkout")
                     .font(Brand.fontBody(14, weight: .semibold))
