@@ -41,15 +41,18 @@
 import { getStore } from "@netlify/blobs";
 
 /**
- * Extract the caller's IP from a Netlify request context. Tries the
- * Netlify-injected `context.ip` first, then the standard headers.
- * Returns null when no IP is recoverable (treat as "deny" upstream).
+ * Extract the caller's IP from a Netlify request context. Only sources Netlify
+ * sets itself are trusted: `context.ip` and the `x-nf-client-connection-ip`
+ * header (the platform overwrites the latter at the edge). We deliberately do
+ * NOT fall back to `x-forwarded-for` — that header is fully client-controlled,
+ * so an attacker could rotate it to mint unlimited rate-limit buckets and slip
+ * every per-IP cap. Returns null when no trusted IP is recoverable;
+ * checkRateLimit treats a null IP as "deny" (fail closed).
  */
 export function ipFromRequest(req, context) {
   return (
     context?.ip ??
     req.headers.get("x-nf-client-connection-ip") ??
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     null
   );
 }

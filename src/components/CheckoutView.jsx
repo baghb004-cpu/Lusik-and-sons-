@@ -144,6 +144,12 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
     setSocialHandles((prev) => ({ ...prev, [id]: value }));
   };
 
+  // NOTE: this is the one deliberate exception to the "all Function calls go
+  // through src/lib/db" rule. Checkout needs two things the generic db.call()
+  // wrapper drops: the cache-bust query param below, and the rich error body
+  // ({ code, param, message }) the catch block renders for hands-free debugging
+  // on branch deploys. Keep it inline.
+  //
   // Relative path — works in `netlify dev` locally and in production
   // with zero changes. The Function reads the Identity JWT from the
   // Authorization header (set below) when present, otherwise treats
@@ -264,6 +270,17 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
       }
       const { url } = await res.json();
       if (!url) throw new Error("No checkout URL returned");
+      // Stash the order value so the Meta Pixel Purchase event can report a
+      // real conversion value on the /?order=success return — by then the cart
+      // is cleared, so there's nothing left to read. sessionStorage survives
+      // the Stripe round-trip in the same tab; consumed + removed in
+      // app/providers.tsx. Best-effort: a $0 Purchase is better than no render.
+      try {
+        sessionStorage.setItem(
+          "lusik_purchase_value_v1",
+          JSON.stringify({ value: Math.round(subtotal * 100) / 100, currency: "USD" }),
+        );
+      } catch { /* storage blocked — Purchase fires without value */ }
       window.location.href = url; // hand off to Stripe
     } catch (err) {
       setError(err?.message || "Couldn't start checkout. Please try again or contact us.");

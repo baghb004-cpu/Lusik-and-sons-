@@ -101,11 +101,16 @@ async function verifyTokenViaIdentity(token, context) {
     if (!u || !u.id) return null;
     // GoTrue's /user returns { id, email, app_metadata, user_metadata, ... }.
     // Normalize to the JWT-payload shape shapeUser() expects (sub = id).
+    // confirmed_at / email_verified are passed through because link-guest-order
+    // gates on them (email-verified check) — dropping them here made that
+    // check always read `undefined` and silently never link any guest order.
     return {
       sub: u.id,
       email: u.email,
       app_metadata: u.app_metadata || {},
       user_metadata: u.user_metadata || {},
+      confirmed_at: u.confirmed_at ?? null,
+      email_verified: u.email_verified ?? u.app_metadata?.email_verified ?? null,
     };
   } catch {
     return null; // network error or timeout → fail closed

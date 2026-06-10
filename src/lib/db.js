@@ -207,8 +207,35 @@ function _initDb() {
     }
   };
 
+  // --- WAITLIST (public, no auth) ---
+  // "Notify me when this placeholder product is available." Posts the
+  // email → product_key pairing for the admin Notify sweep. botField is
+  // the honeypot value (empty for real users).
+  const joinWaitlist = async ({ email, productKey, productName, botField }) => {
+    const { error } = await call("/waitlist", {
+      method: "POST",
+      auth: false,
+      body: { "bot-field": botField ?? "", email, product_key: productKey, product_name: productName },
+    });
+    return { error };
+  };
+
+  // --- CHAT ASSISTANT (public, no auth) ---
+  // Sends the running message list + a client session id; returns the
+  // assistant reply. A non-OK response surfaces as `error`; a network
+  // failure throws (callers catch it to show a "couldn't reach" state).
+  const sendChat = async (messages, sessionId) => {
+    const { error, data } = await call("/chat", {
+      method: "POST",
+      auth: false,
+      body: { messages, sessionId },
+    });
+    return { error, reply: data?.reply ?? "", turnsUsed: data?.turnsUsed };
+  };
+
   return {
     getInventory,
+    joinWaitlist, sendChat,
     getProfile, updateProfile, uploadAvatar,
     listAddresses, insertAddress, deleteAddress,
     getSavedCart, saveCart,

@@ -1,20 +1,23 @@
 // ============================================================
 // Scheduled-function HTTP gate
 // ============================================================
-// Netlify scheduled functions live at /.netlify/functions/<name>
-// just like every other function — they're reachable over HTTP by
-// anyone unless the handler checks the caller.
+// A function declared with `export const config = { schedule }` is a
+// Netlify SCHEDULED function, and Netlify does NOT expose those at a
+// public URL: per the docs, "You can't invoke scheduled functions
+// directly with a URL." So in production this gate is defense-in-depth
+// — the platform already blocks external HTTP invocation. What it
+// actively buys us is (a) the operator manual-trigger path below, and
+// (b) safety if the function were ever redeployed WITHOUT its schedule
+// config, which would drop the platform protection.
 //
 // This module exports `isScheduledInvocation(req)` — call it as
 // the first line of any scheduled-function handler. Returns true
-// when the request came from one of two trusted sources:
+// when the request came from one of two sources:
 //
-//   1. Netlify's internal scheduler.  Netlify's scheduler POSTs a
-//      JSON body containing a `next_run` ISO timestamp. An attacker
-//      can of course forge a body, but they cannot forge it from
-//      inside Netlify's network — the request still arrives at our
-//      function with no Netlify edge-only headers, but the body
-//      shape is good signal-of-intent.
+//   1. Netlify's internal scheduler.  It POSTs a JSON body containing a
+//      `next_run` ISO timestamp — the only signal Netlify gives. Since
+//      the platform blocks public URL access to scheduled functions,
+//      trusting that body shape is safe.
 //
 //   2. An operator manually triggering via curl with a Bearer
 //      token matching SCHEDULED_FN_SECRET. Use this for one-off

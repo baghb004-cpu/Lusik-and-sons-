@@ -16,7 +16,7 @@
 // ============================================================
 
 import React, { useState } from "react";
-import { CONFIG } from "../data/config.js";
+import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { useToast } from "./ToastProvider.jsx";
 import { X } from "./icons.jsx";
@@ -38,21 +38,16 @@ export function WaitlistModal({ product, onClose }) {
     }
     setBusy(true);
     try {
-      // Posts to a Netlify Function that persists the email →
-      // product_key pairing in our own DB (was Netlify Forms before;
-      // moved so the admin Notify sweep can actually email everyone
-      // when a placeholder product goes live).
-      const res = await fetch(`${CONFIG.FN_BASE}/waitlist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          "bot-field": bot,
-          email:        value,
-          product_key:  product.key,
-          product_name: product.name,
-        }),
+      // Persists the email → product_key pairing in our own DB via the
+      // waitlist Function, so the admin Notify sweep can email everyone
+      // when a placeholder product goes live.
+      const { error } = await db.joinWaitlist({
+        email:       value,
+        productKey:  product.key,
+        productName: product.name,
+        botField:    bot,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (error) throw new Error(error.message || "waitlist failed");
       track("waitlist-signup", { productKey: product.key });
       toast({
         kind: "success",

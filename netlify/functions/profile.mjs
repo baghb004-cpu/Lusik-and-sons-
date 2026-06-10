@@ -55,11 +55,18 @@ export default async (req, context) => {
     const fullName  = cap(body.full_name, 120);
     const phone     = cap(body.phone,      32);
     const rawAvatar = cap(body.avatar_url, 512);
-    // Reject avatar_url shapes we didn't generate. Allow null (to
-    // clear the avatar) or our own canonical avatar-get URL.
-    const avatarUrl = rawAvatar === null || rawAvatar === ""
-      ? null
-      : (rawAvatar.startsWith("/.netlify/functions/avatar-get?key=") ? rawAvatar : null);
+    // Reject avatar_url shapes we didn't generate. Allow null (to clear the
+    // avatar) or our own canonical avatar-get URL — AND require the blob key to
+    // belong to THIS user. Avatar keys are `<user_id>/avatar-…`; without the
+    // ownership check a caller could store a URL pointing at another user's key
+    // (unguessable nonce aside), which account-delete would then delete.
+    const AVATAR_PREFIX = "/.netlify/functions/avatar-get?key=";
+    let avatarUrl = null;
+    if (rawAvatar && rawAvatar.startsWith(AVATAR_PREFIX)) {
+      let keyParam = rawAvatar.slice(AVATAR_PREFIX.length);
+      try { keyParam = decodeURIComponent(keyParam); } catch { keyParam = ""; }
+      avatarUrl = keyParam.startsWith(`${user.id}/`) ? rawAvatar : null;
+    }
 
     const rows = await sql`
       UPDATE profiles

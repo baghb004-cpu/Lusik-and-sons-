@@ -63,8 +63,22 @@ export function Providers({ children }: { children: ReactNode }) {
       const params = new URLSearchParams(window.location.search);
       if (params.get("order") === "success") {
         const sid = params.get("session_id") || undefined;
+        // Recover the order value stashed by CheckoutView before the Stripe
+        // redirect so the conversion reports a real value (not $0). One-shot:
+        // remove it so a refresh / back-button doesn't re-read a stale amount.
+        let purchase: { value: number; currency: string } = { value: 0, currency: "USD" };
+        try {
+          const raw = sessionStorage.getItem("lusik_purchase_value_v1");
+          if (raw) {
+            const parsed = JSON.parse(raw) as { value?: number; currency?: string };
+            if (typeof parsed?.value === "number" && Number.isFinite(parsed.value)) {
+              purchase = { value: parsed.value, currency: parsed.currency || "USD" };
+            }
+          }
+          sessionStorage.removeItem("lusik_purchase_value_v1");
+        } catch { /* storage blocked — fall back to the $0 value */ }
         (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.(
-          "track", "Purchase", { currency: "USD" },
+          "track", "Purchase", purchase,
           sid ? { eventID: sid } : undefined,
         );
       }

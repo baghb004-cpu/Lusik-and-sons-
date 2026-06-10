@@ -6,7 +6,8 @@
 #   2. Runs the unit test suite (Node's built-in test runner;
 #      no extra install needed)
 #   3. Installs Playwright's Chromium binary (cached)
-#   4. Runs the E2E smoke tests against a static-served index.html
+#   4. Runs the E2E smoke tests against a production Next build
+#      (playwright.config.mjs webServer: next build && next start)
 #
 # If either step fails the workflow fails, which blocks merging
 # the PR (assuming branch protection is configured to require

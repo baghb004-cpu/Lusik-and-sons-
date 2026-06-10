@@ -55,12 +55,20 @@ status = 200
 # /workshop, /faq, /contact, /shipping, /newsletter, /account, /admin, /gallery.
 
 # ============================================================
-# SECURITY HEADERS — unchanged from the Vite config
+# SECURITY HEADERS
 # ============================================================
+# NOTE: this block only applies to STATIC files served off the Netlify CDN
+# (/_next/static, /img, /fonts, the public/ tree). Pages rendered through the
+# Next.js runtime get their headers from next.config.mjs `headers()` instead —
+# the two CSPs are kept identical on purpose (the /studio/* block below is the
+# one intentional exception). If you change the policy here, change it there too.
+# The ad-pixel hosts (connect.facebook.net, googletagmanager.com, …) are needed
+# by the consent-gated Meta Pixel + Google Ads tags; api.anthropic.com was
+# removed (the chat assistant calls our own /chat Function, not Anthropic).
 [[headers]]
 for = "/*"
 [headers.values]
-Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://cloud.umami.is; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://api.anthropic.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; child-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'; upgrade-insecure-requests"
+Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://cloud.umami.is https://connect.facebook.net https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://*.sentry.io https://connect.facebook.net https://www.facebook.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google.com https://googleads.g.doubleclick.net https://www.googleadservices.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://*.doubleclick.net; child-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://*.doubleclick.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'; upgrade-insecure-requests"
 Strict-Transport-Security = "max-age=63072000; includeSubDomains"
 X-Frame-Options = "DENY"
 X-Content-Type-Options = "nosniff"

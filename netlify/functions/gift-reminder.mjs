@@ -38,13 +38,12 @@ const MAX_PER_RUN = 50;
 const ELIGIBILITY_INTERVAL = "11 months";
 
 export default async (req) => {
-  // HTTP gate — Netlify scheduled functions are reachable at the
-  // public function URL. Without this check an attacker could
-  // race-trigger reminder sends and burn Resend quota at the
-  // tier's daily/monthly limits. The atomic claim below makes
-  // double-sends impossible per-order, but a public endpoint
-  // still wastes function invocations + email quota. See
-  // _lib/scheduled.mjs for trigger paths.
+  // HTTP gate (defense-in-depth). Netlify blocks public URL access to
+  // scheduled functions, so the platform already prevents an outside
+  // caller from race-triggering reminder sends; this keeps the handler
+  // safe even so, and enables the operator manual-trigger path. The
+  // atomic claim below independently makes double-sends impossible
+  // per-order. See _lib/scheduled.mjs for trigger paths.
   if (!(await isScheduledInvocation(req))) return forbidden();
 
   const baseUrl = process.env.URL || "https://lusikandsons.com";
