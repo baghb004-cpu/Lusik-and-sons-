@@ -18,10 +18,25 @@ export {
   resolveBlocks,
   listStaleOverrides,
   pruneStaleOverrides,
+  overridePath,
+  emptyLayer,
+  setOverridePatch,
+  clearOverridePatch,
+  addMobileOnlyBlock,
+  removeMobileOnlyBlock,
   type Device,
   type ResolveResult,
   type StaleEntry,
 } from "./overrides.ts";
+
+export {
+  auditTapTargets,
+  findSmallTargets,
+  findOverlaps,
+  MIN_TAP_PX,
+  type TargetRect,
+  type TapIssue,
+} from "./hitbox.ts";
 
 export { validatePage, type ValidationIssue, type ValidatePageResult } from "./validate.ts";
 

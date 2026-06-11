@@ -164,6 +164,63 @@ export function listStaleOverrides(base: Block[], layer: OverrideLayer): StaleEn
   return stale;
 }
 
+/** Document path for a page's override layer. */
+export function overridePath(pageSlug: string, breakpoint: Breakpoint): string {
+  return `builder/overrides/${pageSlug}.${breakpoint}.json`;
+}
+
+/** An empty layer for a page (the editor materializes these lazily). */
+export function emptyLayer(pageId: string, bp: Breakpoint): OverrideLayer {
+  return { schemaVersion: 1, pageId, breakpoint: bp, patches: {}, mobileOnlyBlocks: [] };
+}
+
+/** Merge a partial patch onto a block's existing patch (immutable). */
+export function setOverridePatch(layer: OverrideLayer, blockId: string, patch: BlockPatch): OverrideLayer {
+  const prev = layer.patches[blockId] ?? {};
+  const next: BlockPatch = {
+    ...prev,
+    ...patch,
+    style: patch.style !== undefined ? { ...prev.style, ...patch.style } : prev.style,
+  };
+  // Normalize: drop empty style objects / cleared visibility so a fully
+  // reset patch disappears instead of lingering as {}.
+  if (next.style && Object.values(next.style).every((v) => v === undefined)) delete next.style;
+  if (next.visibility === undefined) delete next.visibility;
+  if (next.props && Object.keys(next.props).length === 0) delete next.props;
+  const patches = { ...layer.patches };
+  if (Object.keys(next).length === 0) delete patches[blockId];
+  else patches[blockId] = next;
+  return { ...layer, patches };
+}
+
+/** Remove a block's patch entirely ("reset to desktop"). */
+export function clearOverridePatch(layer: OverrideLayer, blockId: string): OverrideLayer {
+  if (!(blockId in layer.patches)) return layer;
+  const patches = { ...layer.patches };
+  delete patches[blockId];
+  return { ...layer, patches };
+}
+
+/** Append a device-only block anchored to an existing one. */
+export function addMobileOnlyBlock(
+  layer: OverrideLayer,
+  anchorBlockId: string,
+  position: "before" | "after",
+  block: Block
+): OverrideLayer {
+  return {
+    ...layer,
+    mobileOnlyBlocks: [...layer.mobileOnlyBlocks, { anchorBlockId, position, block }],
+  };
+}
+
+export function removeMobileOnlyBlock(layer: OverrideLayer, blockId: string): OverrideLayer {
+  return {
+    ...layer,
+    mobileOnlyBlocks: layer.mobileOnlyBlocks.filter((a) => a.block.id !== blockId),
+  };
+}
+
 /** Drop stale patches/additions (run after base edits; keeps layers from rotting). */
 export function pruneStaleOverrides(base: Block[], layer: OverrideLayer): OverrideLayer {
   const stale = listStaleOverrides(base, layer);

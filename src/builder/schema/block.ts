@@ -115,6 +115,18 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
 
+  // Mobile search entry point (plan §6 item 5). Progressive v1: an
+  // anchor styled as a search pill/bar pointing at a search page; the
+  // drawer/overlay open-modes wire up with the pill-nav phase.
+  searchLauncher: z
+    .object({
+      label: z.string().min(1),
+      placeholder: z.string().optional(),
+      href: safeHref,
+      style: z.enum(["pill", "bar"]).optional(),
+    })
+    .strict(),
+
   // CMS-bound blocks: render existing gate-checked content surfaces.
   // `binding` points at a content collection; inline overrides allowed
   // where the surface supports it.

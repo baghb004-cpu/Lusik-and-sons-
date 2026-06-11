@@ -28,12 +28,28 @@ import {
   pagePath,
   templatePath,
   suggestSlug,
+  updateBlock,
+  overridePath,
+  emptyLayer,
+  listStaleOverrides,
+  pruneStaleOverrides,
   EngineError,
   type Device,
   type ValidationIssue,
 } from "../engine/index.ts";
-import { templateSchema, migrateDocument, type Page, type Template } from "../schema/index.ts";
+import {
+  templateSchema,
+  overrideLayerSchema,
+  migrateDocument,
+  type Page,
+  type Template,
+  type Block,
+  type Breakpoint,
+  type OverrideLayer,
+} from "../schema/index.ts";
 import { BlockRenderer } from "../renderer/index.ts";
+import { Inspector } from "./Inspector.tsx";
+import { HitboxOverlay, type HitboxReport } from "./HitboxOverlay.tsx";
 import { DocForm } from "./Form.tsx";
 import { ThemeEditor } from "./ThemeEditor.tsx";
 import { themeSchema } from "../schema/index.ts";
@@ -135,6 +151,17 @@ export function BuilderShell() {
   const [dlgTitle, setDlgTitle] = useState("");
   const [dlgSlug, setDlgSlug] = useState("");
   const [dlgTemplate, setDlgTemplate] = useState("");
+  // Phase 7 — the mobile editing layer
+  const [layers, setLayers] = useState<Record<Breakpoint, OverrideLayer>>({
+    tablet: emptyLayer("b_none00000000", "tablet"),
+    mobile: emptyLayer("b_none00000000", "mobile"),
+  });
+  const [layersDirty, setLayersDirty] = useState(false);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [hitboxOn, setHitboxOn] = useState(false);
+  const [safeAreaOn, setSafeAreaOn] = useState(true);
+  const [tapReport, setTapReport] = useState<HitboxReport | null>(null);
+  const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null);
 
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
@@ -202,12 +229,36 @@ export function BuilderShell() {
   const openDoc = async (path: string) => {
     setStatus("");
     setIssues([]);
+    setSelectedBlockId(null);
+    setTapReport(null);
     const res = await api(`/api/builder/docs?path=${encodeURIComponent(path)}`);
     if (!res.ok) { setStatus("Could not open document"); return; }
     const body = await res.json();
     setDoc({ path, content: body.content as Obj, dirty: false });
     setJsonText(JSON.stringify(body.content, null, 2));
     setRawMode(false);
+
+    // Builder pages: pull their override layers (absent → fresh empty).
+    if (path.startsWith("builder/pages/")) {
+      const page = body.content as { id?: string; slug?: string };
+      const pageId = typeof page.id === "string" ? page.id : "b_none00000000";
+      const slug = typeof page.slug === "string" ? page.slug : "";
+      const loaded: Record<Breakpoint, OverrideLayer> = {
+        tablet: emptyLayer(pageId, "tablet"),
+        mobile: emptyLayer(pageId, "mobile"),
+      };
+      for (const bp of ["tablet", "mobile"] as Breakpoint[]) {
+        try {
+          const r = await api(`/api/builder/docs?path=${encodeURIComponent(overridePath(slug, bp))}`);
+          if (r.ok) {
+            const parsed = overrideLayerSchema.safeParse(migrateDocument((await r.json()).content));
+            if (parsed.success) loaded[bp] = parsed.data;
+          }
+        } catch { /* absent or invalid → empty layer */ }
+      }
+      setLayers(loaded);
+      setLayersDirty(false);
+    }
   };
 
   const editContent = (next: Obj) => {
@@ -243,6 +294,27 @@ export function BuilderShell() {
       return;
     }
     if (!res.ok) { setStatus(body.error || "Save failed"); return; }
+
+    // Builder pages: persist dirty override layers alongside the page.
+    if (layersDirty && doc.path.startsWith("builder/pages/")) {
+      const slug = String((content as Obj).slug ?? "");
+      for (const bp of ["tablet", "mobile"] as Breakpoint[]) {
+        const layer = layers[bp];
+        const empty = Object.keys(layer.patches).length === 0 && layer.mobileOnlyBlocks.length === 0;
+        const path = overridePath(slug, bp);
+        if (empty) {
+          await api(`/api/builder/docs?path=${encodeURIComponent(path)}`, { method: "DELETE" }).catch(() => null);
+        } else {
+          await api("/api/builder/docs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path, content: layer }),
+          });
+        }
+      }
+      setLayersDirty(false);
+    }
+
     setDoc({ path: doc.path, content, dirty: false });
     setJsonText(JSON.stringify(content, null, 2));
     setIssues([]);
@@ -379,10 +451,46 @@ export function BuilderShell() {
     return result.page;
   }, [doc]);
 
-  const previewBlocks = useMemo(() => {
+  const resolved = useMemo(() => {
     if (!parsedPage) return null;
-    return resolveBlocks(parsedPage.sections, [], device).blocks;
-  }, [parsedPage, device]);
+    return resolveBlocks(parsedPage.sections, [layers.tablet, layers.mobile], device);
+  }, [parsedPage, layers, device]);
+  const previewBlocks = resolved?.blocks ?? null;
+
+  const staleOverrides = useMemo(() => {
+    if (!parsedPage) return [];
+    return [
+      ...listStaleOverrides(parsedPage.sections, layers.tablet),
+      ...listStaleOverrides(parsedPage.sections, layers.mobile),
+    ];
+  }, [parsedPage, layers]);
+
+  const setLayer = (bp: Breakpoint, next: OverrideLayer) => {
+    setLayers((prev) => ({ ...prev, [bp]: next }));
+    setLayersDirty(true);
+  };
+
+  const setBaseVisibility = (id: string, dev: Device, visible: boolean) => {
+    if (!doc || !parsedPage) return;
+    try {
+      const sections = updateBlock(parsedPage.sections, id, (b: Block) => ({
+        ...b,
+        visibility: { ...b.visibility, [dev]: visible ? undefined : false },
+      }));
+      editContent({ ...doc.content, sections });
+    } catch (err) {
+      setStatus(err instanceof EngineError ? err.message : String(err));
+    }
+  };
+
+  const pruneStale = () => {
+    if (!parsedPage) return;
+    setLayers((prev) => ({
+      tablet: pruneStaleOverrides(parsedPage.sections, prev.tablet),
+      mobile: pruneStaleOverrides(parsedPage.sections, prev.mobile),
+    }));
+    setLayersDirty(true);
+  };
 
   const formFields = doc ? fieldsForPath(doc.path) : null;
   const collection = doc ? collectionForPath(doc.path) : null;
@@ -453,7 +561,7 @@ export function BuilderShell() {
           <h1 className="font-display text-2xl">Builder</h1>
           <p className="text-xs text-muted">storage: {backend || "…"} · saves run the build’s own validators</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(["desktop", "tablet", "mobile"] as Device[]).map((d) => (
             <button
               key={d}
@@ -468,6 +576,36 @@ export function BuilderShell() {
               {d}
             </button>
           ))}
+          {isBuilderPage ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setHitboxOn(!hitboxOn)}
+                className={
+                  hitboxOn
+                    ? "rounded-full bg-accent px-3 py-1 text-sm text-cream"
+                    : "rounded-full border border-ink/20 px-3 py-1 text-sm"
+                }
+                title="Show tap targets — red = under 44px or overlapping"
+              >
+                ◎ Hit boxes
+              </button>
+              {device === "mobile" ? (
+                <button
+                  type="button"
+                  onClick={() => setSafeAreaOn(!safeAreaOn)}
+                  className={
+                    safeAreaOn
+                      ? "rounded-full bg-ink/80 px-3 py-1 text-sm text-cream"
+                      : "rounded-full border border-ink/20 px-3 py-1 text-sm"
+                  }
+                  title="Simulate the notch + home-indicator zones"
+                >
+                  ▭ Safe areas
+                </button>
+              ) : null}
+            </>
+          ) : null}
         </div>
       </header>
 
@@ -524,11 +662,41 @@ export function BuilderShell() {
         <main className="min-h-[60vh] overflow-auto rounded-xl border border-ink/10 bg-white/40 p-4">
           {previewBlocks ? (
             <div
-              className="bt-theme-scope mx-auto min-h-full border border-dashed border-ink/10 bg-cream/40 transition-[max-width]"
+              ref={setPreviewEl}
+              className="bt-theme-scope relative mx-auto min-h-full border border-dashed border-ink/10 bg-cream/40 transition-[max-width]"
               style={{ maxWidth: DEVICE_WIDTH[device] }}
+              onClick={(e) => {
+                const hit = (e.target as HTMLElement).closest("[data-block-id]");
+                if (hit) {
+                  e.preventDefault();
+                  setSelectedBlockId(hit.getAttribute("data-block-id"));
+                }
+              }}
             >
               {themeCss ? <style>{themeCss}</style> : null}
+              {selectedBlockId ? (
+                <style>{`[data-block-id="${selectedBlockId}"]{outline:2px solid #B08842;outline-offset:2px;border-radius:4px}`}</style>
+              ) : null}
+              {device === "mobile" && safeAreaOn ? (
+                <>
+                  <div className="pointer-events-none sticky top-0 z-10 h-8 bg-ink/15 text-center text-[10px] leading-8 text-ink/60" aria-hidden="true">
+                    status bar / notch — keep tappables out
+                  </div>
+                </>
+              ) : null}
               <BlockRenderer blocks={previewBlocks} editing />
+              {device === "mobile" && safeAreaOn ? (
+                <div className="pointer-events-none sticky bottom-0 z-10 h-7 bg-ink/15 text-center text-[10px] leading-7 text-ink/60" aria-hidden="true">
+                  home indicator — env(safe-area-inset-bottom)
+                </div>
+              ) : null}
+              {hitboxOn ? (
+                <HitboxOverlay
+                  container={previewEl}
+                  refreshKey={`${device}|${jsonText.length}|${layersDirty}|${selectedBlockId}`}
+                  onReport={setTapReport}
+                />
+              ) : null}
             </div>
           ) : (
             <Centered>
@@ -553,7 +721,7 @@ export function BuilderShell() {
                   {doc.dirty ? <span className="ml-1 text-accent">•</span> : null}
                 </h2>
                 <div className="flex shrink-0 gap-2">
-                  {formFields || isThemeDoc ? (
+                  {formFields || isThemeDoc || isBuilderPage ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -590,7 +758,19 @@ export function BuilderShell() {
                 </div>
               ) : null}
 
-              {isThemeDoc && !rawMode ? (
+              {isBuilderPage && !rawMode && parsedPage ? (
+                <div className="max-h-[62vh] overflow-y-auto">
+                  <Inspector
+                    blocks={previewBlocks ?? parsedPage.sections}
+                    layers={layers}
+                    device={device}
+                    selectedId={selectedBlockId}
+                    onSelect={setSelectedBlockId}
+                    onLayerChange={setLayer}
+                    onBlockVisibility={setBaseVisibility}
+                  />
+                </div>
+              ) : isThemeDoc && !rawMode ? (
                 <div className="max-h-[62vh] overflow-y-auto">
                   <ThemeEditor value={doc.content} onChange={editContent} />
                 </div>
@@ -620,6 +800,29 @@ export function BuilderShell() {
                     ))}
                   </ul>
                 )}
+                {staleOverrides.length > 0 ? (
+                  <div className="mt-2 rounded bg-accent/10 p-2 text-xs">
+                    {staleOverrides.length} override(s) point at blocks that no longer exist.{" "}
+                    <button type="button" onClick={pruneStale} className="font-medium underline">Prune them</button>
+                  </div>
+                ) : null}
+                {hitboxOn && tapReport ? (
+                  <div className="mt-2 text-xs">
+                    <h4 className="mb-1 uppercase tracking-wide text-muted">Tap targets ({device})</h4>
+                    {tapReport.issues.length === 0 ? (
+                      <p className="text-muted">{tapReport.rects.length} target(s), all comfortable ✓</p>
+                    ) : (
+                      <ul className="space-y-0.5">
+                        {tapReport.issues.map((t, n) => (
+                          <li key={n} className="text-red-700">{t.message}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : null}
+                {layersDirty ? (
+                  <p className="mt-2 text-xs text-accent">Device overrides changed — Save writes them with the page.</p>
+                ) : null}
               </div>
             </>
           ) : (

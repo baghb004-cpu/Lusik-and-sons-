@@ -59,6 +59,13 @@ const ROTATE_CLASS: Record<number, string> = {
   270: "-rotate-90",
 };
 
+const SearchIcon = () => (
+  <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" aria-hidden="true">
+    <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
 const chevron = (
   <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true">
     <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -289,6 +296,24 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
           </div>
         ))}
       </div>
+    );
+  },
+
+  searchLauncher: (block) => {
+    const p = block.props as { label: string; placeholder?: string; href: string; style?: string };
+    if (p.style === "bar") {
+      return (
+        <a href={p.href} aria-label={p.label} className="flex items-center gap-2 rounded-xl border border-ink/15 bg-white/70 px-4 py-2.5 text-sm text-muted hover:border-accent">
+          <SearchIcon />
+          {p.placeholder ?? p.label}
+        </a>
+      );
+    }
+    return (
+      <a href={p.href} aria-label={p.label} className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-ink/15 bg-white/70 px-4 text-sm hover:border-accent">
+        <SearchIcon />
+        <span>{p.label}</span>
+      </a>
     );
   },
 
