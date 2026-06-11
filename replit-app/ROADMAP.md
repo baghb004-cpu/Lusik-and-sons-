@@ -225,11 +225,25 @@ port its behavior.
       drive the chrome-headless-shell — the one-command run on a real
       machine is documented in SHIP.md (the bundle is ~68 KB gzip JS +
       lazy remote images, so the score has room to be good).
-- [ ] **Chunk 10 — Ship guide.** Step-by-step doc: Replit deployment
-      (autoscale config is already in `.replit`), custom domain
-      (app.lusikandsons.com), and the CORS note (if the Netlify
-      Functions ever lock down origins, the Replit domain must be
-      allowed — a website PR with explicit approval).
+- [x] **Chunk 10 — Ship guide.** Shipped: `SHIP.md` — import-and-Run,
+      Autoscale deployment (the committed `.replit` [deployment] block
+      does the work), the app.lusikandsons.com custom-domain steps,
+      the read-once explanation of the same-origin proxy in production
+      and the Stripe-return allowlist consequence (in-app
+      ?order=success on the deployed app = a two-line website PR
+      adding the domain to _lib/origin.mjs), the deployed-URL
+      pre-flight checklist (A2HS, persistence, the chat-503-is-correct
+      note, the real-order-then-refund checkout test, the Lighthouse
+      one-liner), and the maintenance map (posts regen, catalog sync,
+      placeholder promotion, icon swap).
+
+**🎉 All eleven chunks complete.** The Replit app is feature-complete:
+the same store as the iOS app — browse, pill sheet, lightbox, bag with
+real math, Stripe checkout, journal, chat with live fallback, waitlist,
+refraction-grade glass, PWA-installable, fold-ready — runnable with one
+click and deployable per SHIP.md. Remaining human steps live in SHIP.md
+§5; the only optional server-side follow-ups are the origin-allowlist
+PR (in-app Stripe return when hosted) and turning the chat on.
 
 ## Standing decisions (so future sessions don't re-litigate)
 

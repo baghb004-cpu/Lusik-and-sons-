@@ -25,10 +25,10 @@ npm run dev        # http://localhost:3000
 ## Working model
 
 All planning state lives in [`ROADMAP.md`](./ROADMAP.md) — eleven chunks
-(0–10) mirroring the iOS roadmap one-for-one, each sized for a short
-session. The matching Swift file in `ios/` is the spec for every chunk.
-To resume, tell any session: *"Continue the Replit app —
-replit-app/ROADMAP.md on the `replit` branch, next unchecked chunk."*
+(0–10) mirroring the iOS roadmap one-for-one. **All eleven are
+complete.** The matching Swift file in `ios/` remains the design spec
+for any future change. Deployment, custom domain, and the launch
+pre-flight live in [`SHIP.md`](./SHIP.md).
 
 ## Fold readiness
 
