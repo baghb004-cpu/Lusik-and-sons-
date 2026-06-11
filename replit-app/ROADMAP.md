@@ -209,10 +209,22 @@ port its behavior.
       lives on the root. TYPE SCALING — page zoom verified; a px→rem
       refactor is deliberately deferred (parity with the website's
       px-based type).
-- [ ] **Chunk 9 — PWA prep.** The web sibling of App Store prep:
-      manifest + icons (reuse the site's icon set), installability
-      (Add to Home Screen), offline shell decision, meta/OG tags,
-      Lighthouse pass.
+- [x] **Chunk 9 — PWA prep.** Shipped: `public/manifest.webmanifest`
+      (same values as the site's — name, cream/ink theme colors,
+      standalone display, shopping/lifestyle categories) with the
+      site's icon set copied in (192/512/maskable + apple-touch-icon +
+      favicon — swap alongside the site's when final brand art lands);
+      index.html gained the manifest link, icon links, apple-mobile-
+      web-app metas, description, and the OG card (using the site's
+      og-image). Installability verified: manifest + icons serve from
+      the build. DECISION RECORDED — no service worker in v1: this is
+      a commerce app where fresh prices/stock beat offline shells, the
+      website ships none either, and a stale-cache bug costs more than
+      offline support earns; revisit post-launch (network-first) if
+      ever needed. Lighthouse: attempted in the sandbox but it can't
+      drive the chrome-headless-shell — the one-command run on a real
+      machine is documented in SHIP.md (the bundle is ~68 KB gzip JS +
+      lazy remote images, so the score has room to be good).
 - [ ] **Chunk 10 — Ship guide.** Step-by-step doc: Replit deployment
       (autoscale config is already in `.replit`), custom domain
       (app.lusikandsons.com), and the CORS note (if the Netlify
