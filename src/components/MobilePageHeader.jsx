@@ -68,7 +68,7 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack })
           </p>
         )}
         <h1
-          className="font-mobile-title leading-tight"
+          className="font-mobile-title gold-shimmer leading-tight"
           style={{
             // clamp: 320px phones get ~1.8rem so the title never collides
             // with the theme/lang/account chips; ≥400px gets the full 2.4.

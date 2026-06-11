@@ -1976,3 +1976,153 @@
 @container (min-width: 560px) {
   .cart-line-thumb { width: 6.5rem !important; height: 7.75rem !important; }
 }
+
+/* ============================================================
+   THEATER — scroll-driven set pieces (zero JavaScript)
+   ============================================================
+   Every effect here runs on CSS scroll-driven animations
+   (animation-timeline) or plain keyframes: GPU-composited
+   transform/opacity only, no listeners, no layout work, nothing
+   added to any route's JS. Two gates wrap everything:
+
+     @supports (animation-timeline: view())  → browsers without
+       scroll timelines render the finished state (fully visible,
+       static) — never a hidden element.
+     prefers-reduced-motion: no-preference   → reduced-motion
+       guests get the quiet site they asked for.
+
+   The cast:
+     .vt-rise           cards rise + settle as they enter the view
+     .journal-progress  a gold reading bar that fills as you read
+     .gold-shimmer      a slow specular sweep across display titles
+     .stitch-divider    a cross-stitch rule that sews itself in
+     .alpha-marquee     the 38 letters, drifting like a loom band
+   ============================================================ */
+
+/* --- cards rise as they enter (their own scroll position is the
+       timeline, so vertical grids stagger themselves naturally) --- */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .vt-rise {
+      animation: vtRise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 75%;
+    }
+  }
+}
+@keyframes vtRise {
+  from { opacity: 0; transform: translateY(26px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --- journal reading progress: a gold thread across the very top,
+       spun from scroll position alone --- */
+.journal-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 70;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--accent), #d8b56b);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .journal-progress {
+      animation: readProgress linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+}
+@keyframes readProgress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* --- the gold shimmer: titles stay ink; a narrow gold glint sweeps
+       through every few seconds, like light catching thread --- */
+@media (prefers-reduced-motion: no-preference) {
+  .gold-shimmer {
+    background-image: linear-gradient(
+      105deg,
+      currentColor 42%,
+      var(--accent) 50%,
+      currentColor 58%
+    );
+    background-size: 300% 100%;
+    background-position: 130% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmerSweep 7s ease-in-out infinite;
+  }
+  @keyframes shimmerSweep {
+    0%, 45%   { background-position: 130% 0; }
+    75%, 100% { background-position: -70% 0; }
+  }
+}
+
+/* --- the stitch divider: a row of cross-stitch X's that sews itself
+       in as it scrolls into view (pathLength-normalized dash) --- */
+.stitch-divider {
+  display: block;
+  width: min(220px, 60%);
+  margin-inline: auto;
+  color: var(--accent);
+  opacity: 0.85;
+}
+.stitch-divider path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0; /* finished state — the sewing is the enhancement */
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .stitch-divider path {
+      animation: sewIn linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 90%;
+    }
+  }
+}
+@keyframes sewIn {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* --- the alphabet marquee: all 38 letters drifting by at loom
+       speed. Decorative (aria-hidden), giant Fraunces at whisper
+       opacity, soft-masked edges. Reduced motion: a still band. --- */
+.alpha-marquee {
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.alpha-marquee-track {
+  display: flex;
+  width: max-content;
+  white-space: nowrap;
+}
+.alpha-marquee-track > span {
+  font-family: var(--font-display, "Fraunces", Georgia, serif);
+  font-size: clamp(56px, 9vw, 104px);
+  line-height: 1.3;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  opacity: 0.14;
+  padding-right: 0.18em; /* keeps the loop seam letter-spaced */
+}
+@media (prefers-reduced-motion: no-preference) {
+  .alpha-marquee-track {
+    animation: loomDrift 90s linear infinite;
+    will-change: transform;
+  }
+}
+@keyframes loomDrift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
