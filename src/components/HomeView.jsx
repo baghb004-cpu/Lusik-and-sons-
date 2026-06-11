@@ -43,6 +43,7 @@ import { CategoryCardImage } from "./CategoryCardImage.jsx";
 import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Plus, Heart, Instagram, Mail, Phone, Shield, ShoppingBag, Truck, Store, BookOpen, Sparkles, Send } from "./icons.jsx";
 import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import { getRecentlyViewed } from "../lib/recentActivity.js";
+import { AlphabetMarquee } from "./Theater.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 // FAQ copy is CMS-managed (Content Studio /studio → "Site Content"), compiled
 // from content/pages/faq.json by scripts/gen-pages.mjs. Static at build time.
@@ -193,7 +194,7 @@ export function HomeView({
         <div className="grid book:grid-cols-12 gap-8 lg:gap-16 items-center">
           <div className="book:col-span-5 slide-up min-w-0">
             <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--text-primary)" }}>Southern California</p>
-            <h1 className="font-display text-5xl lg:text-7xl leading-[0.95] mb-6" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
+            <h1 className="font-display gold-shimmer text-5xl lg:text-7xl leading-[0.95] mb-6" style={{ fontWeight: 400, letterSpacing: "-0.02em" }}>
               {t("hero.headline")} <em style={{ fontWeight: 400 }}>{t("hero.headlineEm")}</em>.
             </h1>
             {/* Rotating caption — one short italic line per hero
@@ -355,7 +356,7 @@ export function HomeView({
               onClick={go}
               onPointerEnter={() => onPrefetch?.(`/${key}`)}
               onFocus={() => onPrefetch?.(`/${key}`)}
-              className="snap-start flex-shrink-0 w-[156px] h-[156px] book:w-auto text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
+              className="vt-rise snap-start flex-shrink-0 w-[156px] h-[156px] book:w-auto text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${title} — ${blurb}`}
             >
@@ -379,7 +380,7 @@ export function HomeView({
               onClick={go}
               onPointerEnter={() => onPrefetch?.(`/${key}`)}
               onFocus={() => onPrefetch?.(`/${key}`)}
-              className="lg-button lg-shine text-left rounded-2xl p-6 flex flex-col gap-4 transition"
+              className="vt-rise lg-button lg-shine text-left rounded-2xl p-6 flex flex-col gap-4 transition"
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
               aria-label={`${title} — ${blurb}`}
             >
@@ -395,6 +396,10 @@ export function HomeView({
           ))}
         </div>
       </section>
+
+      {/* The loom band — all thirty-eight letters drifting by at whisper
+          opacity (Theater.jsx; pure CSS motion, still under reduced motion). */}
+      <AlphabetMarquee className="py-2" />
 
       {/* Trust badges. Hidden on the simplified mobile return-visit
           (hidden lg:block) so the "For You" flow goes straight from
@@ -559,6 +564,9 @@ export function HomeView({
           </div>
         </div>
       </section>
+
+      {/* The loom band again — the story page earns the letters most. */}
+      <AlphabetMarquee className="py-3" />
 
       {/* ============================================================
           TESTIMONIALS

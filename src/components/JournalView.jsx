@@ -19,6 +19,7 @@
 import React, { useEffect } from "react";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { BookOpen } from "./icons.jsx";
+import { StitchDivider } from "./Theater.jsx";
 
 function formatPublishedDate(iso) {
   if (!iso) return "";
@@ -49,7 +50,7 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
             <article
               key={post.slug}
               onClick={() => onSelectPost(post.slug)}
-              className="w-full text-left overflow-hidden block cursor-pointer"
+              className="vt-rise w-full text-left overflow-hidden block cursor-pointer"
               style={{ borderRadius: 22, background: "var(--bg-surface, #FFFFFF)", border: "1px solid var(--border-soft, rgba(26,22,18,0.08))" }}
             >
               {/* "Cover" band — the title set large, like the media art
@@ -165,6 +166,9 @@ export function JournalPostView({ post, onBack, onSelectPost }) {
 
   return (
     <div className="fade-in max-w-3xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
+      {/* The reading thread — a gold bar across the top of the screen
+          spun from scroll position alone (CSS scroll(root) timeline). */}
+      <div className="journal-progress" aria-hidden="true" />
       {/* Escape `<` so a future post body containing "</script>" can't
           break out of the JSON-LD block — same hardening as src/lib/seo.js. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
@@ -185,6 +189,7 @@ export function JournalPostView({ post, onBack, onSelectPost }) {
           <h1 className="font-display text-4xl lg:text-5xl leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
             {post.title}
           </h1>
+          <StitchDivider className="mt-8" style={{ marginInline: 0 }} />
         </header>
 
         <div className="prose-journal space-y-6 max-w-none">

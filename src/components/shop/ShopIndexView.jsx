@@ -185,7 +185,7 @@ function FeaturedPieceCard({ piece, onTap, onPrefetch }) {
       onPointerEnter={onPrefetch}
       onFocus={onPrefetch}
       aria-label={t("shop.viewAria", { name: piece.name })}
-      className="block w-full text-left"
+      className="vt-rise block w-full text-left"
       style={{
         background: "var(--bg-surface, #FFFFFF)",
         border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
