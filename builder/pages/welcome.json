@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "id": "b_pagewelcome1",
+  "slug": "builder-welcome",
+  "kind": "landing",
+  "title": "Builder demo page",
+  "order": 0,
+  "seo": {
+    "title": "Builder demo",
+    "description": "A sample document proving the block renderer end to end."
+  },
+  "status": "draft",
+  "sections": [
+    {
+      "id": "b_demosection1",
+      "type": "section",
+      "props": {
+        "eyebrow": "The builder works",
+        "heading": "Every block on this page is data",
+        "container": true
+      },
+      "children": [
+        {
+          "id": "b_demorichtxt1",
+          "type": "richText",
+          "props": {
+            "doc": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    { "type": "text", "text": "This page lives at " },
+                    { "type": "text", "text": "builder/pages/welcome.json", "marks": [{ "type": "italic" }] },
+                    { "type": "text", "text": " — edit the JSON on the right and the preview updates. Saving runs the schema gate: try a " },
+                    { "type": "text", "text": "javascript:", "marks": [{ "type": "bold" }] },
+                    { "type": "text", "text": " link and watch it refuse." }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "b_democolumns1",
+          "type": "columns",
+          "props": { "count": 2 },
+          "children": [
+            {
+              "id": "b_democard0001",
+              "type": "card",
+              "props": {
+                "title": "Cards are blocks",
+                "href": "/shop",
+                "ctaLabel": "Visit the shop",
+                "body": {
+                  "type": "doc",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [{ "type": "text", "text": "Links are validated, styles come from theme tokens." }]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "b_demomobonly1",
+              "type": "card",
+              "props": {
+                "title": "This card hides on mobile",
+                "body": {
+                  "type": "doc",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [{ "type": "text", "text": "Switch the device preview to mobile and it disappears — per-device visibility, no JavaScript." }]
+                    }
+                  ]
+                }
+              },
+              "visibility": { "mobile": false }
+            }
+          ]
+        },
+        {
+          "id": "b_demoaccord01",
+          "type": "accordion",
+          "props": {
+            "items": [
+              {
+                "id": "b_demoaccitem1",
+                "title": "Why is this an accordion?",
+                "body": {
+                  "type": "doc",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [{ "type": "text", "text": "It renders as a plain <details> element — CSS-only, server-rendered, static-export friendly." }]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

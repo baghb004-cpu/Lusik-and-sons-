@@ -68,3 +68,32 @@ if (failures.length) {
     `intentional, raise PER_ROUTE_BUDGET_KB in scripts/check-bundle-budget.mjs in the same PR.`
   );
 }
+
+// ── builder isolation gate ──────────────────────────────────
+// The visual builder's editor chunk must NEVER ship to a public
+// route. BuilderShell.tsx embeds a sentinel string; if it shows
+// up in any first-load chunk of a route other than /builder,
+// someone added a static import from src/builder/editor — fail
+// the build with the offender named. (The /builder route itself
+// loads the editor via next/dynamic, so even ITS first-load
+// chunks should stay clean.)
+const SENTINEL = "BUILDER_EDITOR_SENTINEL_9f3acaa1";
+const offenders = [];
+for (const [route, files] of Object.entries(manifest.pages)) {
+  if (!route.endsWith("/page") || route === "/builder/page") continue;
+  for (const file of files.filter((f) => f.endsWith(".js"))) {
+    try {
+      if (readFileSync(join(NEXT_DIR, file), "utf8").includes(SENTINEL)) {
+        offenders.push(`${route} ← ${file}`);
+      }
+    } catch { /* chunk listed but absent — nothing to scan */ }
+  }
+}
+if (offenders.length) {
+  throw new Error(
+    `[bundle-budget] builder editor code leaked into public-route first-load JS:\n  ` +
+    offenders.join("\n  ") +
+    `\nThe editor must only be reached via the dynamic import in src/builder/editor/BuilderRoute.tsx.`
+  );
+}
+console.log("bundle-budget: builder editor isolation ✓ (no public route ships editor code)");
