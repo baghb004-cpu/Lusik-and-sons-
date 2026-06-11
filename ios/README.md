@@ -27,16 +27,22 @@ unchecked chunk."*
    ```
 4. Pick an iPhone simulator, press ⌘R. Report anything red to the next session.
 
-## App Store path (the short version)
+## App Store path
 
-1. Enroll in the Apple Developer Program ($99/yr) — needs your legal/business
-   identity (matches your LLC if you have one).
-2. TestFlight first: archive → upload → install on your own iPhone.
-3. Physical-goods checkout via Stripe's hosted page is allowed by App Review
-   Guideline **3.1.3(e)** — the app never needs In-App Purchase. We'll cite
-   this in the review notes (Chunk 10 writes that doc).
-4. Submission needs: icon, screenshots, privacy declarations, support URL —
-   all produced in Chunks 9–10.
+The full path is documented, step by step:
+
+1. **[`SUBMISSION.md`](./SUBMISSION.md)** — enrollment ($99/yr), signing,
+   archive → TestFlight, the App Review notes to paste (with the
+   Guideline **3.1.3(e)** physical-goods citation), submission, and the
+   likely reviewer pushbacks with prepared responses.
+2. **[`APP_STORE.md`](./APP_STORE.md)** — the paste-ready listing pack:
+   identity, age rating, privacy questionnaire, screenshot shot list,
+   description + keywords.
+
+Physical-goods checkout via Stripe's hosted page is allowed by App
+Review Guideline 3.1.3(e) — the app never needs In-App Purchase.
+Internal TestFlight works today; full App Store submission waits on one
+website-side item (a public `/privacy` URL — see SUBMISSION.md step 6).
 
 ## Fonts
 

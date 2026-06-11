@@ -149,10 +149,27 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       route via a normal website PR before submission. Re-run
       `xcodegen` after pulling so the assets + manifest join the
       project.
-- [ ] **Chunk 10 — TestFlight & submission guide.** Step-by-step doc:
-      Apple Developer Program enrollment ($99/yr), bundle id
-      `com.lusikandsons.app`, signing, archive → TestFlight, App Review
-      notes (physical-goods checkout explanation), the 3.1.3(e) citation.
+- [x] **Chunk 10 — TestFlight & submission guide.** Shipped:
+      `ios/SUBMISSION.md` — the start-to-store walkthrough: program
+      enrollment (individual vs organization trade-off), one-time
+      signing wired through project.yml (a commented DEVELOPMENT_TEAM
+      slot now lives there so `xcodegen` regenerations never lose the
+      team), app-record creation, archive → upload mechanics (build-
+      number bumping, the pre-answered encryption question), internal
+      TestFlight (no review needed) with a real-hardware test list and
+      the LIVE-Stripe warning (test with one real refunded order — it
+      exercises the refund-email path too), the paste-ready App Review
+      notes citing Guideline 3.1.3(e) physical goods + guest checkout +
+      the chat-503 fallback, the three likely rejection pushbacks with
+      prepared responses, release/update cadence, and the identifier
+      cheat-sheet. README's App Store section now points at
+      SUBMISSION.md + APP_STORE.md. Remaining external blocker
+      (website-side, tracked in both docs): the public `/privacy` URL.
+
+**🎉 All eleven chunks complete.** The app is feature-complete,
+fold-ready, and submission-ready end to end. What's left is on the
+human side: enroll, TestFlight on real hardware, ship the website's
+`/privacy` page, replace the placeholder icon art if desired, submit.
 
 ## Standing decisions (so future sessions don't re-litigate)
 
