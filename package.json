@@ -11,7 +11,7 @@
     "gen:journal": "node scripts/gen-journal-posts.mjs",
     "gen:products": "node scripts/gen-products.mjs",
     "gen:pages": "node scripts/gen-pages.mjs",
-    "gen:data": "node scripts/gen-journal-posts.mjs && node scripts/gen-products.mjs && node scripts/gen-pages.mjs",
+    "gen:data": "node scripts/gen-journal-posts.mjs && node scripts/gen-categories.mjs && node scripts/gen-products.mjs && node scripts/gen-pages.mjs",
     "gen:sitemap": "node scripts/gen-journal-posts.mjs && node scripts/gen-sitemap.mjs",
     "prenext:dev": "npm run gen:data",
     "next:dev": "next dev",
@@ -27,7 +27,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:install": "playwright install --with-deps chromium",
     "postnext:build": "node scripts/check-bundle-budget.mjs",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "gen:categories": "node scripts/gen-categories.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.9",

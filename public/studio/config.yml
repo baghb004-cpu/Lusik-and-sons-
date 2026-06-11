@@ -61,6 +61,32 @@ collections:
       - { label: "Read minutes", name: "readMinutes", widget: "number", default: 3, min: 1, max: 30, valueType: "int" }
       - { label: "Body",         name: "body",        widget: "markdown", hint: "Use ## for section headings. Plain paragraphs become regular text." }
 
+  # Categories — the shop's four shelves, compiled by scripts/gen-categories.mjs
+  # into the CATALOG skeleton. Slugs are LOAD-BEARING (URLs + every product
+  # file names one) — edit labels/copy freely, never the slug of a category
+  # that has products. The build fails loudly if a product references a
+  # category that doesn't exist.
+  - name: "categories"
+    label: "Categories"
+    label_singular: "Category"
+    folder: "content/categories"
+    create: true
+    delete: false
+    identifier_field: "label"
+    slug: "{{slug}}"
+    extension: "json"
+    format: "json"
+    summary: "{{label}} ({{slug}})"
+    fields:
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL: /shop/<slug>. NEVER change on a category with products." }
+      - { label: "Label", name: "label", widget: "string" }
+      - { label: "Label (Armenian)", name: "label_hy", widget: "string", required: false }
+      - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false, hint: "Small line above the category title." }
+      - { label: "Eyebrow (Armenian)", name: "eyebrow_hy", widget: "string", required: false }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Description (Armenian)", name: "description_hy", widget: "text", required: false }
+      - { label: "Display order", name: "displayOrder", widget: "number", required: false, valueType: "int", hint: "Shop order (lower = first)." }
+
   # Products — compiled at build time by scripts/gen-products.mjs into the
   # storefront catalog (content/products/*.json → CATALOG). The fields below
   # MUST match the schema the generator validates (content/products/README.md);
