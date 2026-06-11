@@ -10,6 +10,7 @@
 // bib) stay hardcoded here for now.
 //
 import { CMS_PRODUCTS } from "./cmsProductsData.generated.js";
+import { CMS_CATEGORIES } from "./cmsCategoriesData.generated.js";
 //
 // ============================================================
 // Drives the shop mega-menu and the entire /shop/* route hierarchy:
@@ -49,80 +50,18 @@ import { CMS_PRODUCTS } from "./cmsProductsData.generated.js";
 //      CUSTOM_PRODUCTS data + trusted-products.mjs entry
 // ============================================================
 
-export const CATALOG = {
-  blankets: {
-    slug: "blankets",
-    label: "Blankets",
-    label_hy: "Ծածկոցներ",
-    // Rewritten to recap WHAT'S inside the category (two distinct
-    // pieces, not one) and lead with the heritage angle. Same
-    // 2026-voice as the homepage rewrite -- maker + heirloom +
-    // search-friendly hooks ("Armenian alphabet", "heritage",
-    // "christening", "passed down").
-    description: "Lusik's signature work — the pieces she sits with on her kitchen table for thirty hours at a time. Two crib blankets, both Armenian by heritage: a personalized one cross-stitched with the first three letters a child will ever learn, and a full-alphabet one that carries every letter from Ա to Ք. Each one stitched by hand, picked up and checked by Lusik before it ships. Made to order. Made to last for the next baby in the family, and the one after that.",
-    description_hy: "Լուսիկի ստորագիր գործը՝ այն կտորները, որոնց հետ նա ժամերով նստում է իր խոհանոցի սեղանի մոտ։ Երկու օրորոցի ծածկոց, երկուսն էլ՝ հայկական ժառանգությամբ. մեկը՝ անհատականացված, խաչաձև կարկատված այն առաջին երեք տառերով, որ երեխան սովորում է, և մյուսը՝ ամբողջ այբուբենով՝ Ա-ից մինչև Ք։ Յուրաքանչյուրը ձեռքով կարկատված, Լուսիկի կողմից ստուգված նախքան առաքելը։ Պատվերով։ Պատրաստված տևելու՝ ընտանիքի հաջորդ մանկան և նրանից հետո եկողի համար։",
-    eyebrow: "Lusik's signature work",
-    eyebrow_hy: "Լուսիկի ստորագիր գործը",
-    // CMS-managed (Content Studio /studio): both blankets live in
-    // content/products/{armenian-alphabet-blanket,full-alphabet-crib-blanket}
-    // .json and are merged into this category at build (see the CMS merge
-    // below). They are LIVE products: the generator's trusted-products
-    // reconciliation guarantees each one's displayed priceFrom matches the
-    // server-side checkout price to the cent. displayOrder keeps the
-    // signature alphabet blanket first.
-    products: /** @type {any[]} */ ([]),
-  },
-  bibs: {
-    slug: "bibs",
-    label: "Bibs",
-    label_hy: "Թքակալներ",
-    // Recap-the-category copy. Three products, three different gift
-    // moments. Names them all in one line so customers landing here
-    // from a search ("Armenian baby bib", "personalized name bib",
-    // "Hye em yes bib") see all three options.
-    description: "The small pieces that hold the biggest hours of a baby's day — first food, first words, first photographs. Five bibs in Lusik's hand: a custom-name bib for the everyday, a seven-day Armenian set for the baby shower, the Հայ եմ ես (\"I am Armenian\") heritage bib stitched in the colors of the flag, a Mama-and-Papa pair that says sweetheart twice in Armenian, and the Bari Akhorzhak meal-time set that carries a grandmother's table blessing on the bib and answers it on the matching burp cloth.",
-    eyebrow: "Small pieces, biggest hours",
-    eyebrow_hy: "Փոքր կտորներ, ամենաերկար ժամեր",
-    // CMS-managed (Content Studio /studio): all five bib products live in
-    // content/products/*.json and are merged into this category at build —
-    // baby-bib, days-of-the-week-bib-set, hy-em-armenian-bib,
-    // anushig-bib-set, bari-akhorzhak-bib-burp-cloth-set. All LIVE, all
-    // price-reconciled against trusted-products.mjs by the generator.
-    // displayOrder preserves the original order (name bib first).
-    products: /** @type {any[]} */ ([]),
-  },
-  towels: {
-    slug: "towels",
-    label: "Towels",
-    label_hy: "Սրբիչներ",
-    description: "The Armenian textiles a family pulls out for the days that count. A hand towel for the guest bath, a powder room, the table set for a holiday meal. And the white baptism towel — the one canon asks the godparents to bring, the one the priest lifts the child onto, the one the family keeps folded in a chest for the rest of their lives.",
-    description_hy: "Հայկական գործվածքները, որ ընտանիքը հանում է կարևոր օրերի համար։ Ձեռքի սրբիչ՝ հյուրասենյակի լոգարանի, սանհանգույցի կամ տոնական սեղանի համար։ Եվ սպիտակ մկրտության սրբիչը՝ այն, որ կանոնը խնդրում է կնքահայրերին բերել, այն, որի վրա քահանան բարձրացնում է մանկանը, այն, որ ընտանիքը պահում է ծալած՝ ողջ կյանքի ընթացքում։",
-    eyebrow: "For the days that count",
-    eyebrow_hy: "Կարևոր օրերի համար",
-    // CMS-managed (Content Studio /studio): both towels live in
-    // content/products/{embroidered-hand-towel,armenian-baptism-towel}.json
-    // and are merged into this category at build (see the CMS merge below).
-    products: /** @type {any[]} */ ([]),
-  },
-  baby: {
-    slug: "baby",
-    label: "For Baby",
-    label_hy: "Մանուկի համար",
-    // Reframed -- "Swaddles, bathrobes, and other early-infant items"
-    // is descriptive but doesn't sell. The new line names the
-    // emotional buying context (the first weeks home from the
-    // hospital, the bath ritual that becomes the day's anchor).
-    description: "Soft pieces for the days before the rest of the world meets a new baby. A swaddle for the going-home photograph from the hospital. A hooded bathrobe for the bath ritual that becomes the day's anchor. Small fabric objects that are around for the first weeks of a life, and that — if they're made the right way, by the right hands — get folded into a drawer to wait for the next one.",
-    description_hy: "Փափուկ կտորներ՝ այն օրերի համար, երբ աշխարհը դեռ չի ծանոթացել նոր մանկան հետ։ Փաթաթան՝ հիվանդանոցից տուն վերադարձի լուսանկարի համար, գլխարկով լոգարոբ՝ լողանալու ծեսի համար, որ դառնում է օրվա խարիսխը։ Մանր գործվածքե իրեր, որ ուղեկցում են կյանքի առաջին շաբաթներին և, եթե ճիշտ ձեռքերով են պատրաստված, ծալվում ու պահվում են հաջորդի համար։",
-    eyebrow: "From the very first day",
-    eyebrow_hy: "Առաջին իսկ օրվանից",
-    // CMS-managed (Content Studio /studio): both baby items live in
-    // content/products/{baby-swaddle,baby-bathrobe}.json and are merged into
-    // this category at build (see the CMS merge below). displayOrder in those
-    // files keeps swaddle before bathrobe.
-    products: /** @type {any[]} */ ([]),
-  },
-};
+// The CATALOG skeleton is CMS-managed too (Content Studio /studio →
+// "Categories"): content/categories/*.json → cmsCategoriesData.generated.js
+// (an ordered array; gen-categories.mjs validates and sorts it). Rebuilt
+// here as the slug-keyed object the rest of the site reads. Products are
+// merged in below from the products generator. Category slugs are
+// LOAD-BEARING — URLs, product files, and the sitemap reference them.
+export const CATALOG = Object.fromEntries(
+  CMS_CATEGORIES.map((category) => [
+    category.slug,
+    { ...category, products: /** @type {any[]} */ ([]) },
+  ]),
+);
 
 // ============================================================
 // CMS MERGE — fold Content-Studio products into CATALOG

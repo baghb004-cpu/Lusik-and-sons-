@@ -68,4 +68,10 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// `npm run analyze` wraps the build with @next/bundle-analyzer (treemaps in
+// .next/analyze) for diagnosing bundle-budget failures. Zero cost otherwise.
+const withAnalyzer = process.env.ANALYZE === "true"
+  ? (await import("@next/bundle-analyzer")).default({ enabled: true })
+  : (c) => c;
+
+export default withAnalyzer(nextConfig);

@@ -30,7 +30,9 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { useT } from "../i18n/LangContext.jsx";
+import { useT, useLang } from "../i18n/LangContext.jsx";
+import { loc } from "../i18n/localize.js";
+import { getProductBySlugs } from "../data/catalog.js";
 import { TrackingForm } from "./TrackingForm.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
 import { TestimonialsSection } from "./TestimonialsSection.jsx";
@@ -53,6 +55,24 @@ import {
   PHOTO_PURPLE_SIDE,
   PHOTO_YELLOWGREEN_2,
 } from "../images/photos.js";
+
+// The story prose is CMS-managed plain text (content/pages/story.json) —
+// this keeps the one piece of rich styling it had: the alphabet triads
+// ("Ա, Բ, Գ" / "A, B, C") render in the accent gold wherever they appear,
+// exactly as the hardcoded copy styled them.
+const LETTER_TRIADS = /(Ա, Բ, Գ|A, B, C)/;
+function accentLetterTriads(text) {
+  // split() with a capturing group keeps the matched triads as their own
+  // array entries — exact string comparison then decides the styling
+  // (never RegExp.test on a /g regex: its lastIndex makes it stateful).
+  return text.split(LETTER_TRIADS).map((part, i) =>
+    part === "Ա, Բ, Գ" || part === "A, B, C" ? (
+      <span key={i} style={{ fontWeight: 500, color: "var(--accent)" }}>{part}</span>
+    ) : (
+      part
+    )
+  );
+}
 
 // Big, obvious "‹ For You" back control shown at the top of every promoted
 // section page (Our Story, FAQ, …) on both mobile and desktop. Kept static
@@ -131,6 +151,14 @@ export function HomeView({
     { key: "newsletter", title: t("explore.newsletter.title"), blurb: t("explore.newsletter.blurb"), Icon: Send,     go: () => onNavigatePage?.("newsletter") },
   ];
   const [contactMenuOpen, setContactMenuOpen] = useState(false);
+  const { lang } = useLang();
+  // The Studio-chosen featured product (validated to exist + be live at
+  // build time, so the fallback to the blanket can only fire if the
+  // catalog and pages files change in the same deploy window).
+  const featuredPick =
+    getProductBySlugs(CMS_PAGES.home.featured.category, CMS_PAGES.home.featured.slug) ??
+    getProductBySlugs("blankets", "armenian-alphabet-blanket");
+  const featuredPath = `/shop/${featuredPick.category.slug}/${featuredPick.product.slug}`;
   // Mirrors HeroSlideshow's activeIdx so the rotating caption in
   // the left-column text block stays in sync with the photo on
   // the right. Updated via the onIndexChange callback.
@@ -246,22 +274,25 @@ export function HomeView({
             {t("forYou.weThink")}
           </p>
         </div>
+        {/* The featured product is a Studio choice (content/pages/home.json,
+            resolved + live-checked at build by gen-pages) — Lusik can point
+            this card at any live product seasonally without a code change. */}
         <button
           type="button"
-          onClick={() => onNavigateProduct?.("blankets", "armenian-alphabet-blanket")}
-          onPointerEnter={() => onPrefetch?.("/shop/blankets/armenian-alphabet-blanket")}
-          onFocus={() => onPrefetch?.("/shop/blankets/armenian-alphabet-blanket")}
+          onClick={() => onNavigateProduct?.(featuredPick.category.slug, featuredPick.product.slug)}
+          onPointerEnter={() => onPrefetch?.(featuredPath)}
+          onFocus={() => onPrefetch?.(featuredPath)}
           className="w-full flex items-center gap-4 text-left rounded-2xl p-3"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 10px 26px -14px rgba(26,22,18,0.24)" }}
-          aria-label={`${t("forYou.featuredName")} — ${t("forYou.selectedForYou")}`}
+          aria-label={`${loc(featuredPick.product, "name", lang)} — ${t("forYou.selectedForYou")}`}
         >
           <div
             className="flex-shrink-0 overflow-hidden rounded-xl"
             style={{ width: 72, height: 72, background: "var(--bg-subtle, #F5EFE3)" }}
           >
             <Image
-              src={product.gallery[0]}
-              alt="The Armenian Alphabet Blanket"
+              src={featuredPick.product.coverImage ?? featuredPick.product.images?.[0] ?? product.gallery[0]}
+              alt={featuredPick.product.name}
               width={72}
               height={72}
               className="w-full h-full object-cover"
@@ -272,9 +303,9 @@ export function HomeView({
               ✦ {t("forYou.selectedForYou")}
             </p>
             <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
-              {t("forYou.featuredName")}
+              {loc(featuredPick.product, "name", lang)}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-primary)", fontWeight: 500 }}>{t("search.from", { price: 65 })}</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-primary)", fontWeight: 500 }}>{t("search.from", { price: featuredPick.product.priceFrom })}</p>
           </div>
           <ChevronRight size={18} strokeWidth={1.5} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
         </button>
@@ -512,27 +543,18 @@ export function HomeView({
             </div>
           </div>
           <div className="lg:col-span-6 lg:order-1 min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--accent)" }}>Our Story</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--accent)" }}>{CMS_PAGES.story.eyebrow}</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-8 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-              From Armenia, to Little Armenia, to a quiet house in Southern California.
+              {CMS_PAGES.story.heading}
             </h2>
             <div className="space-y-5 text-base lg:text-lg leading-relaxed opacity-90">
-              <p>
-                Lusik came to Los Angeles from Armenia in the late 1970s, with a cross-stitch hoop and the way of working her mother and grandmother had taught her. She lived in East Hollywood — what people there call Little Armenia — and later moved south to Orange County, where she lives and stitches today.
-              </p>
-              <p>
-                What she does is cross-stitch by hand. On every blanket, the first three letters of the alphabet — <span style={{ fontWeight: 500, color: "var(--accent)" }}>Ա, Բ, Գ</span> in Armenian, or <span style={{ fontWeight: 500, color: "var(--accent)" }}>A, B, C</span> in English — placed one tiny X at a time onto soft cloth woven through with the Armenian pomegranate. For other letters, or a name you'd like spelled out, please write her directly. She always says yes.
-              </p>
-              <p>
-                The bib is different. The bib is machine-embroidered with a personalized name — five or six letters, no more — because a bib lives in the washing machine three times a week and the name has to survive. The blanket goes in the crib. The bib goes to the table. Each piece gets the technique that fits the life it's going to have.
-              </p>
-              <p>
-                Her sons built this website. Mom does the stitching. We do the typing.
-              </p>
+              {CMS_PAGES.story.paragraphs.map((para, i) => (
+                <p key={i}>{accentLetterTriads(para)}</p>
+              ))}
             </div>
             <div className="mt-10 pt-8" style={{ borderTop: "1px solid rgba(245,239,227,0.15)" }}>
-              <p className="font-display text-2xl italic" style={{ fontWeight: 300 }}>— Lusik's sons</p>
-              <p className="text-sm opacity-70 mt-1">Sons of the maker</p>
+              <p className="font-display text-2xl italic" style={{ fontWeight: 300 }}>{CMS_PAGES.story.signature}</p>
+              <p className="text-sm opacity-70 mt-1">{CMS_PAGES.story.signatureSub}</p>
             </div>
           </div>
         </div>
