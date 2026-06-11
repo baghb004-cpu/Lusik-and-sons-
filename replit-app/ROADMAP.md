@@ -82,13 +82,22 @@ port its behavior.
       buy surface (eyebrow/name/tagline, cap-variant toggle on hy-em +
       bari sets with correct per-variant checkout keys, Added ✓ state,
       Buena Park shipping note) that Chunk 2's sheet reuses.
-- [ ] **Chunk 2 — Immersive product page (the pill sheet).** Port
-      `ImmersiveProductView.swift`: full-screen photo pager behind a
-      draggable sheet with three detents, spring snapping + flick
-      threshold (pointer events + CSS spring curves), tap-the-pill
-      cycles detents, photo-tap contract, per-product detent memory
-      (localStorage), reduced-motion honored. **Unfolded: the two-page
-      spread instead — photos left, buy column right, no sheet.**
+- [x] **Chunk 2 — Immersive product page (the pill sheet).** Shipped:
+      ImmersiveProduct — full-screen scroll-snap photo backdrop behind
+      a pointer-captured draggable sheet with three detents (collapsed
+      64px pill / 46% / 86%), spring snapping (the web's 0.32,1.4,0.5,1
+      curve) + 0.6 px/ms flick threshold, tap-the-pill cycles detents
+      (double-fire debounced), photo-tap contract (sheet up → collapse;
+      collapsed → viewer — Chunk-3 placeholder for now), per-product
+      detent memory + the gesture-learned flag on the WEB's localStorage
+      keys (lusik_sheet_detent_v1 / _gesture_learned_v1 — a guest who
+      learned the sheet on the site has learned it here too), breathe
+      hint (one-shot keyframe, canceled by any real gesture, skipped
+      under reduced motion), nav-clear band so the island keeps a light
+      backdrop. ProductRoute is the ONE presentation switch (immersive
+      vs classic) shared with the future bag. THE OPEN BOOK: two-page
+      spread — photos left page, buy column right page, detents
+      neutralized, taps go straight to the viewer, no hint.
 - [ ] **Chunk 3 — Lightbox.** Port `PhotoViewer.swift`: zoomable photo
       viewer (pinch via pointer events, double-tap zoom, pan clamped,
       sideways paging when unzoomed, pull-down-to-close, ✕, counter).

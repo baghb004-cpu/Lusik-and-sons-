@@ -12,6 +12,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { CATEGORIES, productsInCategory, findProduct, categoryCover } from "../data/catalog.js";
 import { useHashRoute } from "../lib/useHashRoute.js";
 import { ProductBuyControls } from "../components/ProductBuyControls.jsx";
+import { ImmersiveProduct } from "../components/ImmersiveProduct.jsx";
 
 export function Shop() {
   const { segments, navigate, back } = useHashRoute();
@@ -22,9 +23,19 @@ export function Shop() {
   const product = categorySlug && productSlug ? findProduct(categorySlug, productSlug) : null;
   const category = categorySlug ? CATEGORIES.find((c) => c.slug === categorySlug) : null;
 
-  if (product) return <ProductDetail product={product} onBack={back} />;
+  if (product) return <ProductRoute product={product} onBack={back} />;
   if (category && !category.comingSoon) return <CategoryGrid category={category} onOpen={(p) => navigate(`products/${p.categorySlug}/${p.productSlug}`)} onBack={back} />;
   return <CategoryIndex onOpen={(c) => navigate(`products/${c.slug}`)} />;
+}
+
+// Routes a product to the right page — the ONE presentation switch
+// (BagView.swift's ProductRoute parity), so the rules can't drift when
+// the bag links back to products in Chunk 4.
+export function ProductRoute({ product, onBack }) {
+  if (product.presentation === "immersiveSheet") {
+    return <ImmersiveProduct product={product} onBack={onBack} />;
+  }
+  return <ProductDetail product={product} onBack={onBack} />;
 }
 
 // ── index: the four category cards ──
