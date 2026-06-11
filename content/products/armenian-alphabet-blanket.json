@@ -1,0 +1,14 @@
+{
+  "category": "blankets",
+  "displayOrder": 10,
+  "trustedKey": "blanket-double_diag_br",
+  "key": "blanket-alphabet",
+  "slug": "armenian-alphabet-blanket",
+  "name": "The Armenian Alphabet Blanket",
+  "name_hy": "Հայկական այբուբենով ծածկոց",
+  "status": "live",
+  "priceFrom": 65,
+  "tagline": "Lusik's signature blanket — Ա Բ Գ, the first three letters a child will learn, stitched corner to corner.",
+  "tagline_hy": "Լուսիկի ստորագիր ծածկոցը՝ Ա Բ Գ, առաջին երեք տառերը, որ երեխան կսովորի, կարկատված անկյունից անկյուն։",
+  "coverImage": "/img/abc-blanket/cover.jpg"
+}

@@ -1,0 +1,62 @@
+{
+  "category": "bibs",
+  "displayOrder": 30,
+  "trustedKey": "bib-hy-em",
+  "key": "bib-hy-em",
+  "slug": "hy-em-armenian-bib",
+  "name": "The Hye Em Yes Bib",
+  "name_hy": "«Հայ եմ ես» թքակալ",
+  "status": "live",
+  "priceFrom": 20,
+  "tagline": "Հայ եմ ես — \"I am Armenian,\" stitched in the colors of the flag.",
+  "description": "Three Armenian words said by a baby who can't yet speak any: Հայ եմ ես — Hye em yes, \"I am Armenian.\" Each word embroidered on a soft white bib in one of the three colors of the Armenian flag — red for Հայ, blue for Եմ, orange for Ես — so the sentence itself wears the flag while the baby wears the sentence. A heritage statement piece for a christening, a baby shower, the first Easter at the Armenian Apostolic church, or any Sunday a grandmother is going to see her grandchild for the first time. Sold as the bib alone, or paired with a matching baby cap that carries the same tricolor motif. Lusik hand cross-stitches each one from her home in Southern California. Made to order, made to last.",
+  "coverImage": "/img/hye-em-bib/cover.jpg",
+  "images": [
+    "/img/hye-em-bib/01.jpg",
+    "/img/hye-em-bib/02.jpg",
+    "/img/hye-em-bib/03.jpg"
+  ],
+  "colorways": [
+    {
+      "label": "Armenian flag",
+      "indices": [
+        0,
+        1,
+        2
+      ],
+      "swatch": {
+        "gradient": [
+          "#D90012",
+          "#0033A0",
+          "#F2A800"
+        ]
+      }
+    }
+  ],
+  "details": [
+    {
+      "label": "Set",
+      "value": "Bib alone, or add a matching baby cap that carries the same tricolor motif — choose on this page. The cap is an add-on."
+    },
+    {
+      "label": "Colors",
+      "value": "Hand cross-stitched in the three colors of the Armenian flag — red Հայ, blue Եմ, orange Ես. The flag is the design, so the colors are fixed."
+    },
+    {
+      "label": "Materials",
+      "value": "Soft terry bib body with satin trim. Hand cross-stitched lettering. Matching cap when added."
+    },
+    {
+      "label": "Sizing",
+      "value": "One size, fits most babies 0–24 months."
+    },
+    {
+      "label": "Care",
+      "value": "We recommend professional dry cleaning to preserve the cross-stitch for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the stitching. We can't guarantee against wear from washing-machine cycles."
+    },
+    {
+      "label": "Made",
+      "value": "By Lusik herself, in Southern California. Made to order — about 2 weeks."
+    }
+  ]
+}

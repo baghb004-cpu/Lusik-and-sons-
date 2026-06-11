@@ -66,9 +66,12 @@ collections:
   # MUST match the schema the generator validates (content/products/README.md);
   # the build FAILS on bad data, so it can't silently ship broken products.
   #
-  # NOTE: "Status" intentionally omits "live" — a CMS price must not become a
-  # checkout price. New products stay "Coming soon" (placeholder) until the
-  # Stripe trusted-products reconciliation phase. "Price from" is display-only.
+  # ALL products are managed here now — the live ones included. Live status
+  # is protected by the generator's trusted-products reconciliation: a live
+  # product must name the server-side price entry that vouches for it
+  # ("Trusted key"), and its displayed price must match that entry to the
+  # cent, or the build refuses. A CMS edit can never change what a customer
+  # is charged — checkout prices live ONLY in trusted-products.mjs.
   - name: "products"
     label: "Products"
     label_singular: "Product"
@@ -86,9 +89,10 @@ collections:
         widget: "select"
         options: ["blankets", "bibs", "towels", "baby"]
         hint: "Which shop category this product belongs to."
-      - { label: "Internal key", name: "key",  widget: "string", hint: "Stable internal id, e.g. baby-bathrobe." }
+      - { label: "Internal key", name: "key",  widget: "string", hint: "Stable internal id, e.g. baby-bathrobe. NEVER change on a live product — carts and Stripe key off it." }
       - { label: "Slug",         name: "slug", widget: "string", hint: "URL: /shop/<category>/<slug>. Lowercase kebab-case. NEVER change once shared." }
       - { label: "Name",         name: "name", widget: "string" }
+      - { label: "Name (Armenian)", name: "name_hy", widget: "string", required: false, hint: "Optional Armenian display name." }
       - label: "Status"
         name: "status"
         widget: "select"
@@ -96,14 +100,45 @@ collections:
         options:
           - { label: "Draft (hidden from the site)", value: "draft" }
           - { label: "Coming soon (placeholder page)", value: "placeholder" }
-        hint: "Live/buyable products are not managed here yet — keep new products Coming soon."
-      - { label: "Price from ($)", name: "priceFrom", widget: "number", required: false, default: null, valueType: "int", min: 1, hint: "DISPLAY ONLY — not the checkout price. Leave blank for 'price coming soon'." }
+          - { label: "Live (buyable)", value: "live" }
+        hint: "Live requires a Trusted key (below) whose server-side price matches Price from exactly — the build refuses otherwise. New products stay Coming soon until they're priced server-side."
+      - { label: "Trusted key", name: "trustedKey", widget: "string", required: false, hint: "LIVE PRODUCTS ONLY: the netlify/functions/_lib/trusted-products.mjs key that vouches for the price (ask a developer — e.g. 'bib' for the name bib). Not needed for Coming soon products." }
+      - { label: "Price from ($)", name: "priceFrom", widget: "number", required: false, default: null, valueType: "int", min: 1, hint: "DISPLAY ONLY — never the checkout price. For live products it MUST equal the trusted server-side price. Leave blank for 'price coming soon'." }
       - { label: "Tagline",     name: "tagline",     widget: "string" }
-      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Tagline (Armenian)", name: "tagline_hy", widget: "string", required: false }
+      - { label: "Description", name: "description", widget: "text", required: false, hint: "Required for Coming soon products (the placeholder page shows it). Optional for live products with their own page." }
+      - { label: "Description (Armenian)", name: "description_hy", widget: "text", required: false }
       - { label: "Cover image", name: "coverImage",  widget: "image", required: false, hint: "Optional category-card thumbnail." }
-      - { label: "Gallery",     name: "images",      widget: "list", required: false, field: { label: "Image", name: "image", widget: "image" }, hint: "Optional gallery photos." }
-      # Reserved for the future Stripe reconciliation phase — NOT used for checkout yet.
-      - { label: "Stripe Price ID (reserved)", name: "stripePriceId", widget: "string", required: false, hint: "Reserved. Not connected to checkout yet." }
+      - { label: "Gallery",     name: "images",      widget: "list", required: false, field: { label: "Image", name: "image", widget: "image" }, hint: "Gallery photos, in display order — colorways reference these by position (first photo = 0)." }
+      - label: "Colorways"
+        name: "colorways"
+        widget: "list"
+        required: false
+        summary: "{{fields.label}}"
+        hint: "The color filter under the gallery. Indices are positions in the Gallery list, counting from 0."
+        fields:
+          - { label: "Label", name: "label", widget: "string" }
+          - { label: "Photo indices", name: "indices", widget: "list", field: { label: "Index", name: "index", widget: "number", valueType: "int", min: 0 } }
+          - label: "Swatch"
+            name: "swatch"
+            widget: "object"
+            hint: "Fill exactly ONE of these: a solid color, a two-color split, or a gradient."
+            fields:
+              - { label: "Solid color (hex)", name: "color", widget: "string", required: false }
+              - { label: "Two-color split (2 hexes)", name: "dual", widget: "list", required: false, field: { label: "Hex", name: "hex", widget: "string" } }
+              - { label: "Gradient (hex list)", name: "gradient", widget: "list", required: false, field: { label: "Hex", name: "hex", widget: "string" } }
+      - label: "Details rows"
+        name: "details"
+        widget: "list"
+        required: false
+        summary: "{{fields.label}}"
+        hint: "The Materials / Size / Care / Made rows on the product page."
+        fields:
+          - { label: "Label", name: "label", widget: "string" }
+          - { label: "Value", name: "value", widget: "text" }
+      - { label: "Display order", name: "displayOrder", widget: "number", required: false, valueType: "int", hint: "Sort within the category (lower = first)." }
+      # Reserved for a future Stripe linkage — NOT used for checkout.
+      - { label: "Stripe Price ID (reserved)", name: "stripePriceId", widget: "string", required: false, hint: "Reserved. Not connected to checkout." }
 
   # Site content — editable copy for specific pages, compiled by
   # scripts/gen-pages.mjs (content/pages/*.json → what the storefront renders).

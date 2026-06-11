@@ -1,0 +1,13 @@
+{
+  "category": "bibs",
+  "displayOrder": 10,
+  "trustedKey": "bib",
+  "key": "bib-single",
+  "slug": "baby-bib",
+  "name": "The Custom Name Bib",
+  "name_hy": "Անհատական անունով թքակալ",
+  "status": "live",
+  "priceFrom": 22,
+  "tagline": "Your child's name, embroidered by Lusik — in Armenian or English, the way it'll be said for the rest of their life.",
+  "tagline_hy": "Ձեր երեխայի անունը՝ ասեղնագործված Լուսիկի կողմից, հայերեն կամ անգլերեն, այնպես, ինչպես այն կասվի ողջ կյանքում։"
+}
