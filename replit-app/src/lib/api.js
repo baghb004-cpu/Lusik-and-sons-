@@ -4,7 +4,10 @@
 // client sends keys and quantities, never trusted amounts.
 // ============================================================
 
-const FUNCTIONS_BASE = "https://lusikandsons.com/.netlify/functions";
+// RELATIVE base: the backend is same-origin-only (no CORS), so the
+// app's dev/preview server proxies /.netlify/* to production —
+// see vite.config.js.
+const FUNCTIONS_BASE = "/.netlify/functions";
 
 /**
  * POST /create-checkout-session → the Stripe-hosted checkout URL.
@@ -31,4 +34,34 @@ export async function createCheckoutSession(body) {
     throw new Error(data?.error || "Checkout unavailable. Please try again.");
   }
   return data.url;
+}
+
+/** The /chat Function exists but the assistant isn't configured yet
+ *  (no ANTHROPIC_API_KEY server-side) — the UI falls back to the real
+ *  channels (SMS + email). */
+export class ChatOfflineError extends Error {
+  constructor() {
+    super("The assistant isn't online yet.");
+    this.name = "ChatOfflineError";
+  }
+}
+
+/**
+ * POST /chat → the assistant's reply (netlify/functions/chat.mjs, the
+ * same Anthropic proxy the website uses — the key never reaches any
+ * client). The full visible history goes up each turn (the server
+ * holds no state); `sessionId` feeds its per-session daily cap.
+ */
+export async function sendChat(messages, sessionId) {
+  const res = await fetch(`${FUNCTIONS_BASE}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, sessionId }),
+  });
+  if (res.status === 503) throw new ChatOfflineError();
+  const data = await res.json().catch(() => null);
+  if (!res.ok || typeof data?.reply !== "string") {
+    throw new Error(data?.error || "The assistant is having trouble right now. Please try again in a moment.");
+  }
+  return data.reply;
 }

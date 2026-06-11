@@ -1153,3 +1153,258 @@ body {
 }
 .thanks h2 { font-size: 24px; }
 .thanks p { max-width: 420px; line-height: 1.55; }
+
+/* ============================================================
+   Journal (Chunk 7) — editorial cards + the post page.
+   ============================================================ */
+
+.journal-page { padding: 18px; max-width: 1100px; margin-inline: auto; }
+.journal-lead {
+  margin: -6px 0 14px;
+  font-size: 15px;
+  opacity: 0.6;
+}
+.journal-cards { display: grid; gap: 18px; }
+.journal-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 22px;
+  background: var(--surface);
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  font: inherit;
+  color: var(--ink);
+}
+.journal-card-band {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 172px;
+  padding: 20px;
+  background: linear-gradient(150deg,
+    color-mix(in srgb, var(--accent) 22%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 7%, transparent) 55%,
+    color-mix(in srgb, var(--ink) 4%, transparent) 100%);
+}
+.journal-eyebrow {
+  font: 600 10px var(--font-body);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.journal-card-band .journal-eyebrow { position: absolute; top: 18px; left: 20px; }
+.journal-card-title {
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+.journal-card-body { display: block; padding: 16px 20px 20px; }
+.journal-card-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.55;
+  opacity: 0.7;
+}
+.journal-card-meta { display: block; margin-top: 12px; font-size: 12px; opacity: 0.55; }
+
+/* the open book: cards pair up magazine-style */
+@media (min-width: 700px), (horizontal-viewport-segments: 2) {
+  .journal-cards { grid-template-columns: 1fr 1fr; }
+}
+
+.journal-post { padding: 18px 22px 28px; }
+.journal-post-head { margin: 10px 0 0; }
+.journal-post-meta {
+  margin: 0 0 10px;
+  font: 500 10px var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.journal-post-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.12;
+}
+.journal-post-body {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.journal-p { margin: 0; font-size: 17px; line-height: 1.65; color: var(--ink-soft); }
+.journal-h2 { margin: 12px 0 0; font-size: 24px; font-weight: 400; }
+.journal-quote {
+  margin: 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--accent);
+  font-size: 19px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.journal-keep {
+  margin-top: 44px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.journal-keep-card {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.journal-keep-date {
+  display: block;
+  font: 400 10px var(--font-body);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.journal-keep-title { display: block; margin-top: 7px; font-size: 18px; font-weight: 500; line-height: 1.2; }
+.journal-keep-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.55;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   ChatPanel (Chunk 7) — the website's ChatAssistant, app edition.
+   ============================================================ */
+
+.chat {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+}
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 14px) 18px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
+}
+.chat-spark { color: var(--accent); font-size: 15px; }
+.chat-title { font-size: 16px; font-weight: 500; }
+.chat-ai {
+  font: 600 9px var(--font-body);
+  letter-spacing: 0.2em;
+  opacity: 0.55;
+}
+.chat-close {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  opacity: 0.7;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px;
+}
+.chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chat-bubble {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.chat-user {
+  align-self: flex-end;
+  background: var(--ink);
+  color: var(--text-on-ink);
+}
+.chat-assistant {
+  align-self: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+}
+.chat-typing { font-size: 10px; opacity: 0.6; animation: chat-pulse 0.9s ease-in-out infinite alternate; }
+@keyframes chat-pulse { from { opacity: 0.35; } to { opacity: 0.9; } }
+@media (prefers-reduced-motion: reduce) {
+  .chat-typing { animation: none; }
+}
+.chat-error { margin: 0; font-size: 12px; font-style: italic; color: #8b2c2c; }
+.chat-composer {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-top: 1px solid var(--border-soft);
+}
+.chat-composer input {
+  flex: 1;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--ink);
+  font: 400 15px var(--font-body);
+  padding: 10px 12px;
+}
+.chat-composer button {
+  width: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--text-on-ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+.chat-composer button:disabled { opacity: 0.4; cursor: default; }
+.chat-disclaimer {
+  margin: 0;
+  padding: 7px 0 calc(env(safe-area-inset-bottom) + 7px);
+  text-align: center;
+  font: 500 9px var(--font-body);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  background: var(--surface);
+}
+.chat-offline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px calc(env(safe-area-inset-bottom) + 16px);
+  background: var(--surface);
+  border-top: 1px solid var(--border-soft);
+  text-align: center;
+}
+.chat-offline .pill { justify-content: center; }
+.chat-offline-title { margin: 0; font-size: 17px; font-weight: 500; }
+.chat-offline-sub { margin: 0; font-size: 13px; opacity: 0.65; }
+
+/* the open book: the chat holds a centered column, not a 4:3 stretch */
+@media (min-width: 700px), (horizontal-viewport-segments: 2) {
+  .chat-scroll, .chat-composer, .chat-offline { width: 100%; max-width: 640px; margin-inline: auto; }
+}

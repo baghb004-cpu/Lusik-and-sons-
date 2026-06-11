@@ -167,12 +167,29 @@ port its behavior.
       feedback, reduced-motion paths for all of it. The breathe hint +
       gesture-learned flag shipped early in Chunk 2 — audited here,
       nothing further needed.
-- [ ] **Chunk 7 — Journal + chat.** Port `JournalView.swift` +
-      `ChatView.swift`: journal data generated from the markdown posts
-      (reuse `ios/scripts/gen-journal-swift.mjs`'s parse as a JS
-      module), card list (pairs up on the open book), post pages with
-      typed nodes, Keep-reading aside; the chat sheet over POST /chat
-      with the 503 → real-channels fallback.
+- [x] **Chunk 7 — Journal + chat.** Shipped: `scripts/gen-journal.mjs`
+      (the same parse as the web + iOS generators) emits
+      `data/journalPosts.js` from the 7 markdown posts; Journal tab —
+      card list ("Read something new", gold-wash bands, pairs up on
+      the open book) → post pages (#/journal/<slug>) rendering the
+      typed p/h2/blockquote nodes with the gold-bar quotes + the
+      Keep-reading aside pushing the two other newest posts (scroll-to-
+      top on slug change). Chat: ChatPanel — the website's
+      ChatAssistant natively (welcome seed, ink/surface bubbles,
+      typing pulse, optimistic send with rollback-that-respects-new-
+      typing, per-install session id on the WEB's ls_chat_session key,
+      AI disclaimer), `sendChat` in lib/api.js with a typed
+      ChatOfflineError; a real 503 from production was driven in a
+      browser and the panel swapped to the live channels (Text /
+      email — CONTACT now lives in data/contact.js, shared with For
+      You, whose "Ask us anything" launcher is wired). ALSO: the
+      backend turned out to be same-origin-only (no CORS, by design) —
+      the app now calls RELATIVE /.netlify/functions/* URLs through a
+      dev/preview proxy in vite.config.js (the app's own `netlify dev`
+      equivalent), which is what hosted Replit deployments use too;
+      bonus, local dev presents a localhost Origin, which is on the
+      server's return-URL allowlist, so the Stripe ?order=success
+      return works end-to-end in dev.
 - [ ] **Chunk 8 — Niceties.** Port the Chunk-8 iOS set: waitlist for the
       four placeholder products (same /waitlist Function + keys), haptic
       pass, dark mode audit (tokens already pair — verify every
@@ -203,6 +220,11 @@ port its behavior.
 - Haptics: `navigator.vibrate` (Android real, iOS Safari silently
   no-ops). Visual feedback must always accompany a buzz so iPhones lose
   nothing.
+- **The backend is same-origin-only** (no CORS headers — deliberate;
+  the website calls it same-origin). The app therefore calls RELATIVE
+  `/.netlify/functions/*` URLs and the Vite dev/preview proxy forwards
+  them to production (vite.config.js) — never switch api.js back to
+  absolute URLs, browsers will block the cross-origin POSTs.
 - Fold rules are non-optional: every new surface ships its compact AND
   expanded ("open book") layout in the same chunk.
 - Accounts/sign-in deferred, guest checkout first — same call as iOS.
