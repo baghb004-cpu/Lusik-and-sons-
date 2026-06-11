@@ -36,6 +36,7 @@ add("/contact", "0.7", "monthly");
 add("/shipping", "0.7", "monthly");
 add("/newsletter", "0.5", "monthly");
 add("/gallery", "0.6", "monthly");
+add("/privacy", "0.3", "yearly");
 
 // Shop hierarchy — every category + product page
 for (const category of Object.values(CATALOG)) {
