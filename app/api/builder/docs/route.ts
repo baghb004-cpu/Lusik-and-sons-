@@ -16,13 +16,7 @@
 
 import { requireBuilderAdmin } from "../../../../src/builder/server/auth.ts";
 import { getBuilderStorage, DocPathError } from "../../../../src/builder/storage/index.ts";
-import { validatePage } from "../../../../src/builder/engine/index.ts";
-import {
-  templateSchema,
-  overrideLayerSchema,
-  themeSchema,
-  migrateDocument,
-} from "../../../../src/builder/schema/index.ts";
+import { validateDocument } from "../../../../src/builder/server/validateDoc.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -31,39 +25,6 @@ function json(status: number, body: unknown): Response {
     status,
     headers: { "Content-Type": "application/json", "X-Content-Type-Options": "nosniff" },
   });
-}
-
-type Issueish = { level: string; code: string; message: string; path?: string };
-
-/** Schema-gate a document by where it lives. Returns issues; [] = clean. */
-function validateForPath(path: string, content: unknown): Issueish[] {
-  if (path.startsWith("builder/pages/")) {
-    const result = validatePage(content);
-    return result.publishable ? [] : result.issues.filter((i) => i.level === "error");
-  }
-  const family = path.startsWith("builder/templates/")
-    ? templateSchema
-    : path.startsWith("builder/overrides/")
-      ? overrideLayerSchema
-      : path === "builder/theme.json"
-        ? themeSchema
-        : null;
-  if (!family) {
-    // builder/data/** (Phase 13) and future families: structural JSON only for now.
-    return [];
-  }
-  try {
-    const parsed = family.safeParse(migrateDocument(content));
-    if (parsed.success) return [];
-    return parsed.error.issues.map((zi) => ({
-      level: "error",
-      code: "schema",
-      message: zi.message,
-      path: zi.path.join("."),
-    }));
-  } catch (err) {
-    return [{ level: "error", code: "schema_version", message: err instanceof Error ? err.message : String(err) }];
-  }
 }
 
 async function guard(req: Request): Promise<Response | null> {
@@ -104,7 +65,7 @@ export async function POST(req: Request): Promise<Response> {
     return json(400, { error: "Expected { path, content, message? }" });
   }
   try {
-    const issues = validateForPath(body.path, body.content);
+    const issues = await validateDocument(body.path, body.content);
     if (issues.length > 0) {
       return json(422, { error: "Document failed validation", issues });
     }

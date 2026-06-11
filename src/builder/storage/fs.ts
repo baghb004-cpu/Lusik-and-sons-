@@ -12,15 +12,18 @@ import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 
 import type { BuilderStorage } from "./types.ts";
-import { assertDocDir, assertDocPath, DocPathError } from "./paths.ts";
+import { assertDocDir, assertDocPath, DocPathError, DOC_ROOTS } from "./paths.ts";
 
 export function createFsStorage(rootDir: string = process.cwd()): BuilderStorage {
   const root = resolve(rootDir);
 
   const toAbs = (relPath: string): string => {
     const abs = resolve(root, relPath);
-    if (abs !== join(root, "builder") && !abs.startsWith(join(root, "builder") + sep)) {
-      throw new DocPathError(`Path escapes the document root: ${relPath}`);
+    const contained = [...DOC_ROOTS].some(
+      (docRoot) => abs === join(root, docRoot) || abs.startsWith(join(root, docRoot) + sep)
+    );
+    if (!contained) {
+      throw new DocPathError(`Path escapes the document roots: ${relPath}`);
     }
     return abs;
   };

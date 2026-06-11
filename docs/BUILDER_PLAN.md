@@ -506,6 +506,8 @@ budget green at every merge. **L** = Lusik-usable value ships.
 | **11. Export: static + Next** | Export package format + manifest; Next adapter (scaffold + renderer); static SSG adapter (progressive interactive blocks); ZIP | Builder becomes standalone-capable |
 | **12. Ship & hardenings** | Vite adapter (optional), GitHub connect (reuses storage adapter), backup/restore, revision UI, perf passes, docs, the standalone builder's project-creation flow | |
 | **13. Offline ZIP / address / shipping data module** | Dataset manager (licensing-safe), ZIP→city/state lookup, local-delivery + blocked lists, shipping rule editor, zone tables, trimmed per-site export (§14) | Generalizes what Lusik already ships |
+| **14. Local AI engine** | llama.cpp/Ollama adapter, model manager + Local AI settings panel, assistant tasks behind the deterministic gates (§15) | Local-first; no weights bundled by default |
+| **15. App Developer Mode** | Guided questionnaire → project plan, app screen templates, PWA/manifest export, App Store / Play Store checklist generators (§15) | PWA first; native export later if practical |
 
 **Recommended first build step (next session): Phase 2** — schemas + engine
 with tests. It's the foundation everything else type-checks against, it
@@ -610,7 +612,122 @@ Lusik adapter writes drafts to branches or a drafts/ directory in fs mode;
 LFS adoption threshold; whether journal moves from `src/data` into
 `content/` as part of collection binding (recommended: yes).*
 
+---
+
+## 15. Local LLM engine + App Developer Mode (Phases 14–15)
+
+Researched June 2026 (web-verified; re-verify model/license specifics at
+implementation time — this space moves quarterly).
+
+### What the AI can and cannot guarantee — read first
+No LLM, local or cloud, produces correct code 100% of the time. The
+guarantee in this architecture comes from the **deterministic layer**: the
+assistant *proposes* (documents, blocks, copy, code), and every proposal
+passes the same gates as a human edit — schema validation, the
+trusted-products price gate, contrast/tap/collision validators, typecheck,
+tests, bundle budget. The AI is never an authority over Stripe/payment
+logic, pricing, shipping math, auth, env vars, security headers, or HTML
+injection surfaces (the §5 "never editable" tier applies to the assistant
+exactly as it applies to the visual editor). **LLM proposes; gates dispose.**
+
+### Runner recommendation (verified licenses)
+- **Bundle `llama.cpp`** (`llama-server`) — MIT, freely redistributable,
+  OpenAI-compatible local HTTP API, prebuilt Windows binaries (ship the
+  AVX2 CPU build + Vulkan for iGPU/dGPU coverage without CUDA bloat).
+  Grammar-constrained sampling (JSON-schema) guarantees parseable
+  structured output from ANY model — worth more to a builder than native
+  tool-training.
+- **Auto-detect Ollama** (MIT; `localhost:11434`) and prefer it when
+  installed — best programmatic model management (`pull/list/delete`).
+- **Rejected:** LM Studio (proprietary, no redistribution — fine to *point
+  at*, never bundle), Jan (AGPL-3.0 — contagious for a commercial bundle),
+  GPT4All (effectively unmaintained since Feb 2025).
+
+### Model tiers (license-vetted)
+| Tier | Hardware | Models | License | Q4 disk |
+| --- | --- | --- | --- | --- |
+| **CPU / low** (the owner's 10th-gen i5, 8–16 GB RAM) | ~5–15 tok/s CPU-only | **Qwen3-4B** (or **Phi-4-mini 3.8B** for pure MIT); 16 GB → Qwen2.5-Coder-7B / Qwen3-8B | Apache-2.0 / MIT | 2–2.5 GB (7–8B: ~5 GB) |
+| **Mid** (32 GB RAM or 8–12 GB VRAM) | usable agentic coding | **Qwen3-Coder-30B-A3B** (MoE, 3B active — fast even RAM-offloaded) or **Devstral Small 2 (24B)** | Apache-2.0 | 14.5–18.5 GB |
+| **High** (24 GB+ VRAM / 64 GB RAM) | near-frontier local | **Qwen3-Coder-Next (80B-A3B)**, 256k ctx | Apache-2.0 | ~45–50 GB |
+| **Cloud fallback** (optional, off by default) | — | provider adapter (same interface) | per provider | — |
+
+**License traps (do NOT bundle):** Codestral-22B (Mistral Non-Production
+License — no commercial use/redistribution), Qwen2.5-Coder-**3B**
+specifically (research license, unlike its Apache siblings — re-check the
+model card). Gemma 3 / Llama 3.x are *conditionally* redistributable
+(terms passthrough, attribution/naming, use policies) — prefer the
+unconditional Apache/MIT picks above.
+
+**Honest expectation for the i5 laptop:** a 4B Q4 model at ~5–10 tok/s is
+genuinely useful for planning, specs, copy drafts, schema generation, and
+explain-this-error; it is *slow* for large multi-file code generation. The
+settings panel must say so (speed/RAM warnings, "switch to a smaller
+model" suggestion) rather than overpromise.
+
+### Weights: bundled vs downloaded
+Default = **download-on-first-run** (SHA-checksummed GGUFs, resumable)
+even where bundling is legal — disk cost dominates. Apache/MIT weights
+(Qwen, Phi, Devstral, nomic, bge) MAY ship on an offline-install USB for
+the full thumb-drive story; the model manager records name/source/license/
+version/sha per model (same manifest discipline as §14 datasets), supports
+"bring your own model path," and shows license notes in the UI.
+
+### Local AI architecture
+```
+src/builder/ai/
+├── adapter.ts        # one interface: chat(messages, {schema?, tools?}) →
+│                     #   llama.cpp | Ollama | (optional) cloud provider
+├── models.ts         # model manager: detect/download/verify/remove, tier advice
+├── tasks/            # prompt library: plan, spec, blocks, copy, schema,
+│                     #   a11y/SEO review, explain-error, README, checklists
+├── guardrails.ts     # output → validateDocument()/engine gates before ANY apply;
+│                     #   protected-zone refusals; diff-preview before write
+└── index.ts          # settings panel state (runner, model, ctx, temp, modes)
+```
+Project-aware context (local RAG): **no vector DB v1** — builder projects
+are small; a structured index (page/screen/component schemas, theme,
+templates, package files, README, recent build/error logs, user notes) +
+BM25/keyword retrieval (e.g. minisearch) fits the context window and is
+deterministic. Add a local embedding model (nomic-embed-text v1.5
+Apache-2.0 / bge MIT, ~270 MB) only when multi-project libraries demand it.
+
+**The LLM powers the editor, never the exported site.** No model, no
+weights, no AI runtime in any export unless the user explicitly adds an
+AI feature and acknowledges size/privacy/hosting tradeoffs.
+
+### App Developer Mode (original workflow — inspired by the category, copying no one)
+- **Project creation:** plain-English description / template / existing
+  website project → the assistant asks the §23 question list (audience,
+  screens, login, payments, offline, accounts, admin, store release,
+  privacy, UGC/moderation…) → emits a **project plan document** (a builder
+  doc, schema-validated, versioned in git) before anything is generated.
+- **App types, safest-first:** PWA / app-like website (the engine already
+  has manifest + service-worker patterns from the Lusik site) → installable
+  PWA export → React Native/Expo **later and only if practical** → native
+  store binaries last. Screens are the same Block documents with a
+  `screen` page kind + app chrome blocks (tab bar, drawer nav, onboarding,
+  settings, login, checkout screens) rendered in device frames.
+- **Store guidance = generated checklist documents,** not promises: Apple
+  (developer account, bundle ID, icons, screenshots, privacy details, age
+  rating, TestFlight, common rejection risks) and Google Play (console,
+  app signing, AAB, Data Safety, content rating, release tracks, common
+  rejections). The compliance questionnaire (data collected, deletion,
+  moderation, IAP, ads/tracking) feeds both checklists and the privacy-
+  policy scaffold. **Explicitly no "guaranteed approval" claims.** The
+  easy path (mobile-web/PWA first, decide native later) is presented
+  before the hard path, always.
+
+### Milestones
+- **Easiest first:** Local AI settings panel + llama.cpp adapter +
+  plan/spec/copy tasks behind the gates; PWA export of a builder project
+  (manifest + icons + offline shell) with its README/deploy checklist.
+- **Hardest (defer, may cut):** native iOS/Android project generation and
+  signing flows; store-submission automation; multi-file agentic
+  refactoring at CPU-tier speeds; screenshot/icon generation helpers.
+
+---
+
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
-preview/build, and all data (documents, templates, themes, datasets) as
-plain files inside the project.*
+preview/build, and all data (documents, templates, themes, datasets, and
+downloaded models) as plain files inside the project.*

@@ -17,7 +17,7 @@
 // ============================================================
 
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -32,7 +32,7 @@ function reqStr(file, obj, k, where) {
 }
 
 // Per-page-type validators (keyed by filename without .json).
-const VALIDATORS = {
+export const PAGE_VALIDATORS = {
   faq(file, data) {
     reqStr(file, data, "eyebrow");
     reqStr(file, data, "title");
@@ -119,7 +119,7 @@ async function main() {
     } catch (e) {
       fail(file, `invalid JSON — ${e.message}`);
     }
-    const validate = VALIDATORS[name];
+    const validate = PAGE_VALIDATORS[name];
     if (!validate) fail(file, `no validator for page "${name}" — add one in scripts/gen-pages.mjs before shipping this content`);
     await validate(file, data);
     pages[name] = data;
@@ -136,4 +136,9 @@ async function main() {
   console.log(`gen-pages: wrote ${Object.keys(pages).length} page(s) → src/data/pagesData.generated.js`);
 }
 
-await main();
+
+// Run only when invoked directly (`node scripts/gen-X.mjs`) — the exported
+// validator above is also imported by the builder's save gate
+// (src/builder/server/validateDoc.ts), and importing must never regenerate.
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) await main();

@@ -9,7 +9,11 @@
 // can save documents" and "the editor can write files".
 // ============================================================
 
+// Two document roots: the builder's own documents, and (Phase 4 —
+// the Lusik CMS adapter) the site's content collections, which are
+// the JSON files the existing generators compile + gate at build.
 export const DOC_ROOT = "builder";
+export const DOC_ROOTS: ReadonlySet<string> = new Set(["builder", "content"]);
 
 const SEGMENT_RE = /^[a-z0-9][a-z0-9._-]*$/;
 
@@ -33,17 +37,17 @@ function checkSegments(path: string, label: string): string[] {
       throw new DocPathError(`${label} contains an invalid segment: "${seg}"`);
     }
   }
-  if (segments[0] !== DOC_ROOT) {
-    throw new DocPathError(`${label} must live under ${DOC_ROOT}/`);
+  if (!DOC_ROOTS.has(segments[0])) {
+    throw new DocPathError(`${label} must live under ${[...DOC_ROOTS].join("/ or ")}/`);
   }
   return segments;
 }
 
-/** A readable/writable document: builder/**.json */
+/** A readable/writable document: builder/**.json or content/**.json */
 export function assertDocPath(path: string): string {
   const segments = checkSegments(path, "Document path");
   if (segments.length < 2 || !segments[segments.length - 1].endsWith(".json")) {
-    throw new DocPathError("Document path must point at a .json file under builder/");
+    throw new DocPathError("Document path must point at a .json file under a document root");
   }
   return path;
 }
