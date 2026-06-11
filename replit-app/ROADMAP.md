@@ -68,12 +68,20 @@ port its behavior.
       cluster (sms:/mailto, CONFIG.TEXT_US strings). Run: import repo on
       Replit → `replit` branch → Run. Local: `cd replit-app && npm
       install && npm run dev`.
-- [ ] **Chunk 1 — Shop.** Port `ShopView.swift`: category index (2×2 on
-      the open book), category product grids (adaptive columns), classic
-      product detail with photo pager, cap-variant toggle, Add to Bag.
-      Catalog data ports from `Catalog.swift` (live photo URLs from
-      production). Client-side routing decision lands here (likely
-      hash-based, no router dependency).
+- [x] **Chunk 1 — Shop.** Shipped: `data/catalog.js` (Catalog.swift +
+      ShopCategories.swift mirror — 7 live products, trusted checkout
+      keys, presentation field, production photo URLs), the ROUTING
+      DECISION — hash routes (`#/products/<cat>/<slug>`), no router
+      dependency, first segment = tab, with per-tab stack memory in
+      App.jsx (kept-alive NavigationStacks parity); `CartContext`
+      (in-memory add + unitCount, haptics inside the store mutations —
+      the iOS Chunk-8 rule — live bag badge); Shop tab: category index
+      (coming-soon dimmed; 2×2 on the open book) → product grid
+      (adaptive columns) → classic PDP (scroll-snap photo pager + dots,
+      readable column on the open book); `ProductBuyControls` — the ONE
+      buy surface (eyebrow/name/tagline, cap-variant toggle on hy-em +
+      bari sets with correct per-variant checkout keys, Added ✓ state,
+      Buena Park shipping note) that Chunk 2's sheet reuses.
 - [ ] **Chunk 2 — Immersive product page (the pill sheet).** Port
       `ImmersiveProductView.swift`: full-screen photo pager behind a
       draggable sheet with three detents, spring snapping + flick

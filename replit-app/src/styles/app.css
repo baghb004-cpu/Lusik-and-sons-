@@ -223,3 +223,260 @@ body {
     font-size: 28px;
   }
 }
+
+/* ============================================================
+   Shop (Chunk 1) — index cards, product grids, classic PDP,
+   and the ONE buy surface (ProductBuyControls).
+   ============================================================ */
+
+.shop-page {
+  padding: 18px 18px 24px;
+  max-width: 1100px;
+  margin-inline: auto;
+}
+
+.page-title {
+  font-family: var(--font-body);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 4px 0 16px;
+}
+
+.back-link {
+  border: 0;
+  background: none;
+  font: 500 14px var(--font-body);
+  color: var(--ink);
+  opacity: 0.7;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.back-link:hover { opacity: 1; }
+
+/* ── category index cards ── */
+.shop-cats {
+  display: grid;
+  gap: 16px;
+}
+.shop-cat-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 10px 24px -16px var(--shadow);
+  font: inherit;
+  color: var(--ink);
+}
+.shop-cat-card:disabled { cursor: default; }
+.shop-cat-photo {
+  position: relative;
+  display: block;
+  height: 168px;
+  background: var(--cream-subtle);
+}
+.shop-cat-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shop-cat-card:disabled .shop-cat-photo img { opacity: 0.55; }
+.shop-cat-empty { display: block; width: 100%; height: 100%; }
+.shop-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 5px 10px;
+  font: 600 10px var(--font-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--ink) 75%, transparent);
+  color: var(--text-on-ink);
+  border-radius: 4px;
+}
+.shop-cat-text {
+  display: block;
+  padding: 14px;
+}
+.shop-cat-label {
+  display: block;
+  font-size: 22px;
+  font-weight: 500;
+}
+.shop-cat-blurb {
+  display: block;
+  font-size: 13px;
+  opacity: 0.65;
+  margin-top: 4px;
+}
+
+/* ── category product grid ── */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 18px 14px;
+}
+.shop-product-card {
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.shop-product-photo {
+  display: block;
+  height: 190px;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--cream-subtle);
+}
+.shop-product-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shop-product-name {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  margin-top: 8px;
+  min-height: 2.5em;
+}
+.shop-product-price {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+/* ── classic product detail ── */
+.pdp { padding-bottom: 24px; }
+.pdp-back {
+  margin: 14px 0 0 18px;
+}
+.pdp-pager-wrap { position: relative; margin-top: 10px; }
+.pdp-pager {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.pdp-pager::-webkit-scrollbar { display: none; }
+.pdp-pager img {
+  flex: 0 0 100%;
+  width: 100%;
+  height: min(58vh, 520px);
+  object-fit: cover;
+  scroll-snap-align: center;
+  user-select: none;
+}
+.pdp-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  pointer-events: none;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.dot-active { background: #fff; }
+.pdp-body { padding: 20px 18px 0; }
+
+/* ── the ONE buy surface ── */
+.buy-controls { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.buy-eyebrow {
+  margin: 0;
+  font: 600 10px var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.buy-name {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.buy-tagline { margin: 0; font-size: 15px; opacity: 0.7; line-height: 1.45; }
+.buy-cap-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-card);
+  background: var(--cream-subtle);
+  cursor: pointer;
+}
+.buy-cap-title { display: block; font-size: 14px; font-weight: 500; }
+.buy-cap-prices { display: block; font-size: 12px; opacity: 0.55; margin-top: 2px; }
+.buy-cap-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.buy-cap-switch {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 27px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 22%, transparent);
+  position: relative;
+  transition: background 0.18s ease;
+}
+.buy-cap-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: left 0.18s ease;
+}
+.buy-cap-toggle input:checked ~ .buy-cap-switch { background: var(--accent); }
+.buy-cap-toggle input:checked ~ .buy-cap-switch::after { left: 21px; }
+@media (prefers-reduced-motion: reduce) {
+  .buy-cap-switch, .buy-cap-switch::after { transition: none; }
+}
+.buy-price {
+  margin: 2px 0 0;
+  font-size: 30px;
+  font-weight: 600;
+}
+.buy-add {
+  width: 100%;
+  justify-content: center;
+  padding: 16px;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+}
+.buy-shipnote { margin: 4px 0 0; font-size: 12px; opacity: 0.55; line-height: 1.5; }
+
+/* ── the open book (fold inner display / tablets) ── */
+@media (min-width: 700px), (horizontal-viewport-segments: 2) {
+  /* Category cards pair up two-by-two across the open canvas. */
+  .shop-cats { grid-template-columns: 1fr 1fr; }
+  /* The classic PDP holds a readable column; the pager calms down. */
+  .pdp-pager img { height: min(48vh, 560px); }
+  .pdp-body { max-width: 640px; margin-inline: auto; }
+  .pdp-back { margin-left: 24px; }
+}

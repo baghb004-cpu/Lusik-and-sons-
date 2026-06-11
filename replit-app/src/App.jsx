@@ -1,13 +1,20 @@
 // ============================================================
-// App — the shell (Chunk 0): four kept-alive tab surfaces + the
-// Liquid Glass island. The web sibling of ios/LusikSons/Views/
+// App — the shell: four kept-alive tab surfaces + the Liquid
+// Glass island. The web sibling of ios/LusikSons/Views/
 // RootTabView.swift + GlassTabBar.swift — same tabs, same clearance
 // rule (content scrolls UNDER the glass), same gliding lens, same
 // haptic on switch.
+//
+// Routing (Chunk 1): the hash carries the location — the first
+// segment is the tab, the rest is that tab's own stack. Each tab's
+// last path is remembered, so switching tabs preserves per-tab
+// navigation state (RootTabView's kept-alive NavigationStacks).
 // ============================================================
 
-import React, { useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { haptics } from "./lib/haptics.js";
+import { useHashRoute } from "./lib/useHashRoute.js";
+import { CartProvider, useCart } from "./state/CartContext.jsx";
 import { ForYou } from "./tabs/ForYou.jsx";
 import { Shop } from "./tabs/Shop.jsx";
 import { Journal } from "./tabs/Journal.jsx";
@@ -21,9 +28,24 @@ const TABS = [
 ];
 
 export function App() {
-  const [active, setActive] = useState("forYou");
-  // The real store arrives with Chunk 4; the badge plumbing is live now.
-  const [bagCount] = useState(0);
+  return (
+    <CartProvider>
+      <Shell />
+    </CartProvider>
+  );
+}
+
+function Shell() {
+  const { segments, navigate } = useHashRoute();
+  const { unitCount: bagCount } = useCart();
+
+  const active = TABS.some((t) => t.id === segments[0]) ? segments[0] : "forYou";
+
+  // Per-tab stack memory: returning to a tab restores where you were.
+  const lastPath = useRef({ forYou: "forYou", products: "products", journal: "journal", bag: "bag" });
+  useEffect(() => {
+    lastPath.current[active] = segments.length ? segments.join("/") : "forYou";
+  }, [segments, active]);
 
   const activeIndex = TABS.findIndex((t) => t.id === active);
 
@@ -52,7 +74,7 @@ export function App() {
               aria-label={id === "bag" && bagCount > 0 ? `Bag, ${bagCount} items` : label}
               onClick={() => {
                 if (id === active) return;
-                setActive(id);
+                navigate(lastPath.current[id] ?? id);
                 haptics.tap();
               }}
             >
