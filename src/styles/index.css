@@ -1879,3 +1879,100 @@
    query in lockstep. The floating nav island needs nothing: it
    is already width-capped (min(92vw, 430px)) and centered.
    ============================================================ */
+
+/* ============================================================
+   RESPONSIVE FOUNDATION — the height/aspect/safe-area system
+   ============================================================
+   The width tiers (sm / book / md / lg) live in Tailwind; this block
+   is everything width alone can't express: small-viewport units so
+   iOS Safari's collapsing URL bar never clips a panel, safe-area
+   insets so notches and home indicators never cover controls, and
+   height/aspect rules so short-landscape phones stop being treated
+   like tall portrait ones. Conventions:
+
+   • vh-cap-* utilities double-declare (vh fallback, then svh) —
+     use them instead of max-h-[NNvh] for anything anchored to the
+     bottom of the screen.
+   • Fixed bottom chrome stacks bottom-up: island (safe+12) →
+     purchase/sticky bars (safe+88/96) → toasts live at the TOP so
+     they can never cover a buy action.
+   • Short screens (max-height: 600px) compact the PDP chrome;
+     spreads take over in landscape (see ImmersiveBuySheet.module.css).
+   ============================================================ */
+
+/* --- small-viewport caps (vh fallback first, svh where supported) --- */
+.vh-cap-88 { max-height: 88vh; max-height: 88svh; }
+.vh-cap-90 { max-height: 90vh; max-height: 90svh; }
+.vh-cap-92 { max-height: 92vh; max-height: 92svh; }
+
+/* The mobile canvas: svh keeps the fog background exactly viewport-
+   height under iOS Safari's collapsing chrome (vh overshoots). */
+@media (max-width: 1023px) {
+  #main-content { min-height: 100svh; }
+}
+
+/* Desktop PDP sticky column — dvh tracks the real viewport. */
+@media (min-width: 1024px) {
+  .pdp-sticky-col { max-height: calc(100vh - 7rem); max-height: calc(100dvh - 7rem); }
+}
+
+/* --- toasts: safe-area aware, top-anchored (never over buy actions),
+       compact on small phones --- */
+.toast-viewport {
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+}
+@media (max-width: 640px) {
+  .toast-viewport { left: max(1rem, env(safe-area-inset-left, 0px)); }
+}
+@media (max-width: 374px) {
+  /* Small iPhones/Androids: tighter toast so it reads as a chip, not a
+     banner. The inner padding is a Tailwind class, so override here. */
+  .toast-item > div { padding: 0.55rem 0.75rem; }
+  .toast-item .text-sm { font-size: 0.8rem; }
+}
+
+/* --- the chat widget (when enabled): sits above the home indicator
+       and sizes against the dynamic viewport --- */
+.chat-anchored { bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
+.chat-panel.chat-anchored {
+  height: min(560px, calc(100vh - 8rem));
+  height: min(560px, calc(100dvh - 8rem));
+}
+
+/* --- product gallery frames: on short viewports the 4:5 frame may
+       not exceed ~56% of the screen, so the title/price/options
+       surface without a full flick. object-contain inside keeps the
+       whole photo visible at the reduced height. --- */
+@media (max-width: 1023px) and (max-height: 700px) {
+  .gallery-frame { max-height: 56svh; }
+}
+
+/* --- MobilePurchaseBar: the pinned buy sheet on PDPs ---
+   The delivery drawer opens to at most 38dvh (a fixed 320px could
+   reach past the top of a short screen), and on short viewports the
+   details toggle row hides entirely — the CTA is the one thing that
+   must always fit. */
+.mpb-drawer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.mpb-drawer[data-open="true"] { max-height: min(320px, 38dvh); }
+@media (prefers-reduced-motion: reduce) {
+  .mpb-drawer { transition: none; }
+}
+@media (max-height: 600px) {
+  .mpb-toggle { display: none; }
+  .mpb-cta { padding-top: 0.7rem; padding-bottom: 0.7rem; }
+}
+
+/* --- bag rows adapt to their CONTAINER, not the viewport ---
+   CartContents renders in two hosts (the desktop drawer ≈ 26rem and
+   the mobile/tablet page). A container query sizes the row art to
+   the panel it actually lives in — the same component reads roomier
+   on an open-book/tablet bag page without JS or prop plumbing. */
+.cart-lines { container-type: inline-size; }
+@container (min-width: 560px) {
+  .cart-line-thumb { width: 6.5rem !important; height: 7.75rem !important; }
+}

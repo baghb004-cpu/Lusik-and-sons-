@@ -42,9 +42,9 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
           Read something new
         </p>
         {/* Single column on phones; the editorial cards pair up
-            magazine-style on the open-book canvas (iPhone Fold inner
-            display / 768–1023px) — desktop has its own layout below. */}
-        <div className="space-y-5 md:space-y-0 md:grid md:grid-cols-2 md:gap-5">
+            magazine-style on the open-book tier (book: ≥700px — Fold
+            inner display, iPad mini portrait). Desktop is below. */}
+        <div className="space-y-5 book:space-y-0 book:grid book:grid-cols-2 book:gap-5">
           {posts.map((post) => (
             <article
               key={post.slug}

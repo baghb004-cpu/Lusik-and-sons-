@@ -701,7 +701,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           {/* Stacked on phones; paired up on the open-book canvas (iPhone
               Fold inner display / 768–1023px) so the big feature cards
               share the 4:3 width instead of each stretching across it. */}
-          <div className="md:grid md:grid-cols-2 md:gap-5 md:items-start">
+          <div className="book:grid book:grid-cols-2 book:gap-5 book:items-start">
             {featuredPieces.map((piece) => (
               <FeaturedPieceCard
                 key={`${piece.categorySlug}/${piece.slug}`}

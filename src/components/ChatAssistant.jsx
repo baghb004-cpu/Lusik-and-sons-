@@ -95,7 +95,7 @@ export function ChatAssistant() {
             setMessages([{ role: "assistant", content: cfg.WELCOME }]);
           }
         }}
-        className="fixed bottom-6 left-6 z-40 px-4 py-3 flex items-center gap-2 shadow-lg transition hover:opacity-90 chat-fab"
+        className="fixed left-6 z-40 px-4 py-3 flex items-center gap-2 shadow-lg transition hover:opacity-90 chat-fab chat-anchored"
         style={{
           background: "var(--ink)",
           color: "var(--text-on-ink)",
@@ -114,10 +114,9 @@ export function ChatAssistant() {
 
   return (
     <div
-      className="fixed bottom-6 left-6 z-40 flex flex-col chat-panel theme-surface"
+      className="fixed left-6 z-40 flex flex-col chat-panel chat-anchored theme-surface"
       style={{
         width: "min(360px, calc(100vw - 3rem))",
-        height: "min(560px, calc(100vh - 8rem))",
         background: "var(--bg-surface)",
         border: "1px solid var(--border-strong)",
         boxShadow: "0 12px 40px rgba(0,0,0,0.18)",

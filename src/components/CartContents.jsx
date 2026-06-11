@@ -187,7 +187,7 @@ export function CartContents({
         </div>
       ) : (
         <>
-          <div className={isPage ? "flex-1 overflow-y-auto px-6 pt-2 space-y-3" : "flex-1 overflow-y-auto"}>
+          <div className={isPage ? "cart-lines flex-1 overflow-y-auto px-6 pt-2 space-y-3" : "cart-lines flex-1 overflow-y-auto"}>
             {cart.map((item) => (
               <SwipeableRow key={item.id} onSwipeDelete={() => removeFromCart(item.id)}>
                 <div
@@ -215,7 +215,7 @@ export function CartContents({
                     className="relative block flex-shrink-0"
                     aria-label={`View ${item.name} product page`}
                   >
-                    <CartItemThumb src={item.image || PRODUCT.gallery[0]} alt={item.name} width={80} height={96} className="w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                    <CartItemThumb src={item.image || PRODUCT.gallery[0]} alt={item.name} width={80} height={96} className="cart-line-thumb w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                     {item.isCustom && (
                       <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "var(--accent)", color: "#fff", fontWeight: 500 }}>{t("bag.custom")}</span>
                     )}

@@ -26,6 +26,18 @@ export default {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
+    // Default Tailwind scale + the 700px "book" tier between sm and md —
+    // the open-book canvas (iPhone Fold inner display, iPad mini portrait,
+    // big landscape phones). Declared in FULL so the cascade order stays
+    // sm < book < md < lg and a book: utility can never out-cascade md:.
+    screens: {
+      sm: "640px",
+      book: "700px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+    },
     extend: {
       fontFamily: {
         // Match the Google Fonts pulled in <head>. Listed in the
