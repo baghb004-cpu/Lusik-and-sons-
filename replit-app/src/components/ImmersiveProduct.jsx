@@ -50,17 +50,24 @@ export function ImmersiveProduct({ product, onBack }) {
   const [viewerAt, setViewerAt] = useState(null); // photo index | null
   const [hinting, setHinting] = useState(false);
 
-  // Restore the product's remembered detent + decide the breathe hint.
+  // Per-product entry state. Hash navigation between two immersive
+  // products KEEPS this component instance (same type, same position),
+  // so every product change must restore its own remembered detent
+  // (or the default — never the previous product's), rewind the
+  // pager, and re-decide the breathe hint. iOS gets this for free
+  // from fresh NavigationStack pushes.
   useEffect(() => {
+    let saved = null;
+    let learned = false;
     try {
-      const saved = localStorage.getItem(`${STORAGE_PREFIX}:${product.id}`);
-      if (saved && DETENTS.includes(saved)) setDetent(saved);
-    } catch { /* blocked storage — keep default */ }
-    try {
-      if (!reduced && !spread && localStorage.getItem(LEARNED_KEY) !== "1") setHinting(true);
-    } catch {
-      if (!reduced && !spread) setHinting(true);
-    }
+      saved = localStorage.getItem(`${STORAGE_PREFIX}:${product.id}`);
+      learned = localStorage.getItem(LEARNED_KEY) === "1";
+    } catch { /* blocked storage — defaults below */ }
+    setDetent(saved && DETENTS.includes(saved) ? saved : "medium");
+    setDragHeight(null);
+    setPhotoIndex(0);
+    galleryRef.current?.scrollTo({ left: 0, behavior: "instant" });
+    setHinting(!reduced && !spread && !learned);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
 

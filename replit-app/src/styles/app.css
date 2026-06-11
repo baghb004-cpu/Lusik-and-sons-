@@ -932,3 +932,130 @@ body {
   font-size: 14px;
 }
 .bag-footnote { margin: 0; font-size: 11px; opacity: 0.5; line-height: 1.5; }
+
+/* ============================================================
+   Checkout (Chunk 5) — "Almost in Lusik's hands"
+   ============================================================ */
+
+.checkout {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+}
+.checkout .back-link { align-self: flex-start; }
+.checkout-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.ck-card {
+  background: var(--cream-subtle);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ck-item {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  align-items: baseline;
+}
+.ck-qty { opacity: 0.5; flex: 0 0 auto; }
+.ck-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-rule {
+  border: 0;
+  border-top: 1px solid var(--border-soft);
+  margin: 2px 0;
+}
+.ck-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.ck-row-label { opacity: 0.7; }
+.ck-row-value { font-weight: 500; }
+.ck-row-accent { font-weight: 600; color: var(--accent); }
+.ck-row-muted { opacity: 0.5; font-weight: 500; }
+
+.ck-label {
+  margin: 0;
+  font: 600 10px var(--font-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.ck-note { margin: 0; font-size: 12px; opacity: 0.6; line-height: 1.5; }
+.ck-note-strong { opacity: 1; }
+.ck-input {
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 14px var(--font-body);
+  padding: 11px 12px;
+  width: 100%;
+  resize: vertical;
+}
+.ck-zip {
+  font-size: 16px;
+  font-weight: 500;
+  max-width: 160px;
+  letter-spacing: 0.06em;
+}
+
+.ck-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+}
+.ck-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.ck-toggle-label { font-size: 13px; }
+.ck-toggle-strong { font-size: 14px; font-weight: 500; }
+.ck-toggle input:checked ~ .buy-cap-switch { background: var(--accent); }
+.ck-toggle input:checked ~ .buy-cap-switch::after { left: 21px; }
+
+.ck-error {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: #8b2c2c;
+}
+.ck-pay {
+  justify-content: center;
+  padding: 16px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+.ck-pay:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ck-footnote { margin: 0; font-size: 11px; opacity: 0.5; line-height: 1.5; }
+
+/* ── thank-you ── */
+.thanks-seal {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+}
+.thanks h2 { font-size: 24px; }
+.thanks p { max-width: 420px; line-height: 1.55; }

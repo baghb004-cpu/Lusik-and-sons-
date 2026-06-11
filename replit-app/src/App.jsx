@@ -37,7 +37,28 @@ export function App() {
 
 function Shell() {
   const { segments, navigate } = useHashRoute();
-  const { unitCount: bagCount } = useCart();
+  const cart = useCart();
+  const { unitCount: bagCount } = cart;
+
+  // ── the Stripe return (Chunk 5) ──
+  // Stripe redirects to <origin>/?order=success|cancelled (the server
+  // builds the URL from our Origin when allowlisted — see lib/api.js).
+  // Success: clear the bag, celebrate, show the thank-you. Cancelled:
+  // back to checkout, bag intact. Strip the query either way so a
+  // refresh can't re-trigger it.
+  useEffect(() => {
+    const order = new URLSearchParams(window.location.search).get("order");
+    if (!order) return;
+    window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    if (order === "success") {
+      cart.clear();
+      haptics.success();
+      navigate("bag/thanks");
+    } else if (order === "cancelled") {
+      navigate("bag/checkout");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const active = TABS.some((t) => t.id === segments[0]) ? segments[0] : "forYou";
 

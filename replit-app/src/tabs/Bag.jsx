@@ -11,10 +11,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useCart } from "../state/CartContext.jsx";
 import { useHashRoute } from "../lib/useHashRoute.js";
+import { CheckoutView } from "../components/CheckoutView.jsx";
 
 export function Bag() {
   const cart = useCart();
-  const { navigate } = useHashRoute();
+  const { navigate, segments } = useHashRoute();
+
+  // The tab's own stack: #/bag, #/bag/checkout, #/bag/thanks.
+  if (segments[1] === "checkout") return <CheckoutView onBack={() => navigate("bag")} />;
+  if (segments[1] === "thanks") return <ThanksView onDone={() => navigate("forYou")} />;
 
   if (cart.items.length === 0) {
     return (
@@ -172,6 +177,23 @@ function BagRow({ item, onOpen, onQty, onRemove }) {
           <span className="bag-row-price">${item.priceDollars * item.qty}</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── post-payment thank-you (the ?order=success landing) ──
+function ThanksView({ onDone }) {
+  return (
+    <div className="placeholder-panel thanks">
+      <span className="thanks-seal" aria-hidden="true">✓</span>
+      <h2 className="brand-display">Lusik is starting on your order.</h2>
+      <p>
+        A confirmation email is on its way. Hand-stitching takes about two
+        weeks — you'll get a photo of the finished piece before it ships.
+      </p>
+      <button type="button" className="pill pill-ink" onClick={onDone}>
+        Done
+      </button>
     </div>
   );
 }

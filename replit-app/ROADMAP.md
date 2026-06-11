@@ -128,12 +128,31 @@ port its behavior.
       add-another nudge, progress bar, empty state with a Browse
       button, Checkout button → the bag/checkout route Chunk 5 fills,
       Buena Park footnote.
-- [ ] **Chunk 5 — Checkout.** Port `CheckoutView.swift` +
-      `ShippingZones.swift`: zone table mirror, required ship ZIP with
-      live estimate, gift options, reminder opt-in, notes, POST
-      create-checkout-session (same body shape + idempotency key),
-      Stripe hosted page via redirect, `?order=success` return clears
-      the bag → thank-you state (success haptic).
+- [x] **Chunk 5 — Checkout.** Shipped: `data/shippingZones.js` (exact
+      Swift/server zone-table mirror: prefixes, rates, transit),
+      CheckoutView — "Almost in Lusik's hands", summary with bundle
+      savings + gift-wrap line, REQUIRED ship ZIP with the live zone
+      estimate (Pay disabled without it; free-over-$150 skips it), gift
+      options (message 140 / hide prices / wrap +$5), one-year reminder
+      opt-in, notes (280), POST create-checkout-session with the exact
+      web body shape + per-attempt idempotency key (`lib/api.js`),
+      same-tab redirect to Stripe's hosted page; `?order=success`
+      return → clear bag → success haptic → `#/bag/thanks` ("Lusik is
+      starting on your order."), `?order=cancelled` → back to checkout,
+      bag intact. Verified by driving the real flow in a browser (two
+      adds → bag → ZIP 10001 → zone-8 $15.49 estimate → success return
+      cleared the badge). DECISION RECORDED: the server builds Stripe's
+      return URLs from the request Origin via an allowlist
+      (_lib/origin.mjs: production, deploy previews, localhost) — so
+      LOCAL dev gets the full in-app return today, while a
+      Replit-hosted origin falls back to the website's success page
+      (order + emails fine; the in-app thank-you needs the Replit
+      domain added to the allowlist = a tiny website PR with explicit
+      approval, same pattern as the iOS Apple-Pay note). Driving the
+      flow also caught + fixed a hash-routing parity gap: same-document
+      navigation keeps the React component instance, so ImmersiveProduct
+      now restores per-product detent/pager/hint state on every product
+      change (iOS got this free from fresh NavigationStack pushes).
 - [ ] **Chunk 6 — Liquid Glass polish.** Finish the chrome to match
       `GlassTabBar.swift` + the breathe hint: refraction-grade glass,
       lens spring tuning, the sheet's rise-and-settle teaching hint
