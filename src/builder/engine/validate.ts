@@ -63,6 +63,7 @@ export function validatePage(raw: unknown): ValidatePageResult {
   checkDuplicateIds(page.sections, issues);
   checkImageAlt(page.sections, issues);
   checkHiddenEverywhere(page.sections, issues);
+  checkPillNav(page.sections, issues);
   if (page.sections.length === 0) {
     issues.push({ level: "warning", code: "empty_page", message: "Page has no sections" });
   }
@@ -116,6 +117,49 @@ function checkHiddenEverywhere(blocks: Block[], issues: ValidationIssue[]): void
       });
     }
   });
+}
+
+// Pill-menu publish rules (plan §6): exactly one per page, top-level
+// only (a pill inside a drawer/column is a layout accident), and it
+// shouldn't share an edge with another fixed-position pill. The
+// geometric checkout/ATC collision check is the editor's hit-box
+// overlay; these are the structural rules a document alone can prove.
+function checkPillNav(blocks: Block[], issues: ValidationIssue[]): void {
+  const all: Block[] = [];
+  walk(blocks, (b) => {
+    if (b.type === "pillNav") all.push(b);
+  });
+  if (all.length === 0) return;
+
+  if (all.length > 1) {
+    for (const b of all.slice(1)) {
+      issues.push({
+        level: "error",
+        code: "pill_multiple",
+        message: "Only one pill menu per page — two fixed navs would fight for the same thumb space",
+        blockId: b.id,
+      });
+    }
+  }
+  const topLevelIds = new Set(blocks.map((b) => b.id));
+  for (const b of all) {
+    if (!topLevelIds.has(b.id)) {
+      issues.push({
+        level: "error",
+        code: "pill_nested",
+        message: "The pill menu must be a top-level block — inside a container its fixed positioning escapes the layout",
+        blockId: b.id,
+      });
+    }
+    if (b.visibility?.mobile === false) {
+      issues.push({
+        level: "warning",
+        code: "pill_hidden_mobile",
+        message: "This pill menu is hidden on mobile — phones are what it exists for",
+        blockId: b.id,
+      });
+    }
+  }
 }
 
 function walk(blocks: Block[], visit: (b: Block) => void): void {

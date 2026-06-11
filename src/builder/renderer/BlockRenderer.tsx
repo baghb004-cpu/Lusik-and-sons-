@@ -11,21 +11,25 @@
 // ============================================================
 
 import type { ReactNode } from "react";
-import type { Block } from "../schema/index.ts";
+import type { Block, GlassPreset } from "../schema/index.ts";
 import { BLOCK_COMPONENTS, type RenderContext } from "./blocks.tsx";
 import { cx, resolveStyle, visibilityClasses } from "./style.ts";
 
 export interface BlockRendererProps {
   blocks: Block[];
   cms?: RenderContext["cms"];
+  /** Theme glass presets for glass-styled blocks (pillNav). */
+  glass?: GlassPreset[];
   /** Editor preview mode: show placeholders for unknown types + block ids. */
   editing?: boolean;
 }
 
-export function BlockRenderer({ blocks, cms, editing = false }: BlockRendererProps) {
+export function BlockRenderer({ blocks, cms, glass, editing = false }: BlockRendererProps) {
   const ctx: RenderContext = {
     cms,
-    renderChildren: (children) => <BlockRenderer blocks={children} cms={cms} editing={editing} />,
+    glass,
+    editing,
+    renderChildren: (children) => <BlockRenderer blocks={children} cms={cms} glass={glass} editing={editing} />,
   };
 
   return <>{blocks.map((block) => renderOne(block, ctx, editing))}</>;

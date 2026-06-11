@@ -15,11 +15,12 @@
 // stays data-source-agnostic.
 // ============================================================
 
-import type { ReactNode } from "react";
-import type { Block, RichTextDoc } from "../schema/index.ts";
+import type { CSSProperties, ReactNode } from "react";
+import type { Block, GlassPreset, RichTextDoc } from "../schema/index.ts";
 import { RichText } from "./RichText.tsx";
 import { cx } from "./style.ts";
 import { tokenToCss } from "./style.ts";
+import { glassPresetToCss } from "../theme/css.ts";
 
 export interface RenderContext {
   /** CMS surfaces for bound blocks, injected by the caller (Phase 4). */
@@ -27,6 +28,12 @@ export interface RenderContext {
     announcement?: { enabled: boolean; message: string; link?: string; linkLabel?: string };
     faq?: Array<{ q: string; a: RichTextDoc }>;
   };
+  /** Theme glass presets (Phase 5) for glass-styled blocks like pillNav. */
+  glass?: GlassPreset[];
+  /** True inside the editor preview — fixed-position blocks render sticky
+   *  so they stay inside the preview frame instead of escaping to the
+   *  editor's own viewport. */
+  editing?: boolean;
   /** Render children — provided by BlockRenderer to avoid an import cycle. */
   renderChildren: (blocks: Block[]) => ReactNode;
 }
@@ -57,6 +64,37 @@ const ROTATE_CLASS: Record<number, string> = {
   90: "rotate-90",
   180: "rotate-180",
   270: "-rotate-90",
+};
+
+// One SVG per PILL_ICONS name (schema/block.ts) — a unit test asserts
+// the two stay in lockstep. 24px grid, stroke-based, currentColor.
+const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+export const PILL_ICON_SVGS: Record<string, ReactNode> = {
+  home: <path d="M4 11l8-7 8 7v9a1 1 0 01-1 1h-5v-6h-4v6H5a1 1 0 01-1-1z" {...stroke} />,
+  shop: <path d="M5 8h14l-1 12H6L5 8zm4 0a3 3 0 016 0" {...stroke} />,
+  journal: <path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" {...stroke} />,
+  bag: <path d="M6 9h12l-1 11H7L6 9zm3 0V7a3 3 0 016 0v2" {...stroke} />,
+  search: <><circle cx="11" cy="11" r="6" {...stroke} /><path d="M15.5 15.5L20 20" {...stroke} /></>,
+  heart: <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z" {...stroke} />,
+  user: <><circle cx="12" cy="8" r="3.5" {...stroke} /><path d="M5 20a7 7 0 0114 0" {...stroke} /></>,
+  phone: <path d="M6 3h4l1 5-2.5 1.5a12 12 0 006 6L16 13l5 1v4a2 2 0 01-2 2A16 16 0 014 5a2 2 0 012-2z" {...stroke} />,
+  star: <path d="M12 3l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2L12 17l-5.6 3 1.2-6.2L3 9.5l6.3-.8z" {...stroke} />,
+  gift: <path d="M4 9h16v3H4zm2 3v8h12v-8M12 9v11M12 9s-4 0-5-2 1-4 3-3 2 5 2 5zm0 0s4 0 5-2-1-4-3-3-2 5-2 5z" {...stroke} />,
+};
+
+const PillIcon = ({ name }: { name: string }) => (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+    {PILL_ICON_SVGS[name] ?? PILL_ICON_SVGS.star}
+  </svg>
+);
+
+// Conservative fallback when no theme presets reach the renderer.
+const FALLBACK_GLASS: CSSProperties = {
+  background: "#F5EFE3E0",
+  backdropFilter: "blur(14px) saturate(1.15)",
+  WebkitBackdropFilter: "blur(14px) saturate(1.15)",
+  border: "1px solid #FFFFFF8C",
+  boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
 };
 
 const SearchIcon = () => (
@@ -296,6 +334,57 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
           </div>
         ))}
       </div>
+    );
+  },
+
+  pillNav: (block, ctx) => {
+    const p = block.props as {
+      items: Array<{ id: string; icon: string; label: string; href: string }>;
+      position: "bottom" | "top";
+      preset?: string;
+      showLabels?: boolean;
+      heightPx?: number;
+      radiusPx?: number;
+    };
+    const preset = ctx.glass?.find((g) => g.name === p.preset) ?? ctx.glass?.[0];
+    const glass: CSSProperties = preset ? (glassPresetToCss(preset) as CSSProperties) : FALLBACK_GLASS;
+    const height = p.heightPx ?? 56;
+    const radius = p.radiusPx ?? 28;
+
+    // Published pages: fixed to the viewport with safe-area breathing
+    // room. Editor preview: sticky inside the frame (same geometry).
+    const positionClass = ctx.editing
+      ? p.position === "top"
+        ? "sticky top-2 z-30"
+        : "sticky bottom-2 z-30"
+      : p.position === "top"
+        ? "fixed inset-x-0 top-0 z-40 pt-[max(0.5rem,env(safe-area-inset-top))]"
+        : "fixed inset-x-0 bottom-0 z-40 pb-[max(0.75rem,env(safe-area-inset-bottom))]";
+
+    return (
+      <nav aria-label="Mobile navigation" className={cx(positionClass, "pointer-events-none px-4")}>
+        <div
+          className="pointer-events-auto mx-auto flex w-fit max-w-full items-stretch justify-center gap-1 px-2"
+          style={{ ...glass, height, borderRadius: radius }}
+        >
+          {p.items.map((item, i) => (
+            <a
+              key={item.id}
+              href={item.href}
+              aria-label={item.label}
+              className="flex min-w-[52px] flex-col items-center justify-center gap-0.5 rounded-full px-3 text-ink transition hover:opacity-80"
+              style={
+                i === 0 && preset && preset.activeGlow > 0
+                  ? { boxShadow: `0 0 ${Math.round(16 * preset.activeGlow)}px rgba(176,136,66,${(0.7 * preset.activeGlow).toFixed(2)})` }
+                  : undefined
+              }
+            >
+              <PillIcon name={item.icon} />
+              {p.showLabels !== false ? <span className="text-[10px] font-medium leading-none">{item.label}</span> : null}
+            </a>
+          ))}
+        </div>
+      </nav>
     );
   },
 

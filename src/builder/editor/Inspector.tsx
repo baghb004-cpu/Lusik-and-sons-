@@ -12,8 +12,9 @@
 // patch and the base shines through again.
 // ============================================================
 
-import type { Block, Breakpoint, OverrideLayer, StyleProps } from "../schema/index.ts";
+import type { Block, Breakpoint, GlassPreset, OverrideLayer, StyleProps } from "../schema/index.ts";
 import { newId } from "../schema/index.ts";
+import { PillNavEditor, type PillNavProps } from "./PillNavEditor.tsx";
 import {
   setOverridePatch,
   clearOverridePatch,
@@ -31,10 +32,13 @@ export interface InspectorProps {
   layers: Record<Breakpoint, OverrideLayer>;
   device: Device;
   selectedId: string | null;
+  glass: GlassPreset[];
   onSelect: (id: string | null) => void;
   onLayerChange: (bp: Breakpoint, next: OverrideLayer) => void;
   /** Base-document edits (desktop visibility). */
   onBlockVisibility: (id: string, device: Device, visible: boolean) => void;
+  /** Base-document prop edits (dedicated block editors, e.g. pillNav). */
+  onBlockProps: (id: string, props: Record<string, unknown>) => void;
 }
 
 function blockLabel(b: Block): string {
@@ -52,14 +56,23 @@ export function Inspector({
   layers,
   device,
   selectedId,
+  glass,
   onSelect,
   onLayerChange,
   onBlockVisibility,
+  onBlockProps,
 }: InspectorProps) {
+  const selected = selectedId ? findIn(blocks, selectedId) : null;
   return (
     <div className="space-y-3">
       <BlockTree blocks={blocks} layers={layers} selectedId={selectedId} onSelect={onSelect} depth={0} />
-      {selectedId ? (
+      {selected && selected.type === "pillNav" && device === "desktop" ? (
+        <PillNavEditor
+          value={selected.props as unknown as PillNavProps}
+          glass={glass}
+          onChange={(next) => onBlockProps(selected.id, next as unknown as Record<string, unknown>)}
+        />
+      ) : selectedId ? (
         <BlockControls
           blocks={blocks}
           layers={layers}

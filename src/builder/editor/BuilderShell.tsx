@@ -41,6 +41,7 @@ import {
   templateSchema,
   overrideLayerSchema,
   migrateDocument,
+  newId as newBlockId,
   type Page,
   type Template,
   type Block,
@@ -511,6 +512,45 @@ export function BuilderShell() {
     return parsed.success ? themeToCssVars(parsed.data).replace(":root", ".bt-theme-scope") : "";
   }, [themeDoc]);
 
+  // Glass presets for pillNav rendering + the pill editor's picker.
+  const glassPresets = useMemo(() => {
+    if (!themeDoc) return [];
+    const parsed = themeSchema.safeParse(themeDoc);
+    return parsed.success ? parsed.data.tokens.glass : [];
+  }, [themeDoc]);
+
+  const setBaseProps = (id: string, props: Record<string, unknown>) => {
+    if (!doc || !parsedPage) return;
+    try {
+      const sections = updateBlock(parsedPage.sections, id, (b: Block) => ({ ...b, props }));
+      editContent({ ...doc.content, sections });
+    } catch (err) {
+      setStatus(err instanceof EngineError ? err.message : String(err));
+    }
+  };
+
+  const addPillNav = () => {
+    if (!doc || !parsedPage) return;
+    const pill: Block = {
+      id: newBlockId(),
+      type: "pillNav",
+      props: {
+        items: [
+          { id: newBlockId(), icon: "home", label: "For You", href: "/" },
+          { id: newBlockId(), icon: "shop", label: "Shop", href: "/shop" },
+          { id: newBlockId(), icon: "journal", label: "Journal", href: "/journal" },
+          { id: newBlockId(), icon: "bag", label: "Bag", href: "/cart" },
+        ],
+        position: "bottom",
+        preset: glassPresets[0]?.name,
+      },
+      visibility: { desktop: false, tablet: false }, // phones are what it's for
+    };
+    editContent({ ...doc.content, sections: [...parsedPage.sections, pill] });
+    setSelectedBlockId(pill.id);
+    setDevice("mobile");
+  };
+
   // ── render ────────────────────────────────────────────────
   if (authStatus === "checking") {
     return <Centered>Checking access…</Centered>;
@@ -684,7 +724,7 @@ export function BuilderShell() {
                   </div>
                 </>
               ) : null}
-              <BlockRenderer blocks={previewBlocks} editing />
+              <BlockRenderer blocks={previewBlocks} glass={glassPresets} editing />
               {device === "mobile" && safeAreaOn ? (
                 <div className="pointer-events-none sticky bottom-0 z-10 h-7 bg-ink/15 text-center text-[10px] leading-7 text-ink/60" aria-hidden="true">
                   home indicator — env(safe-area-inset-bottom)
@@ -760,14 +800,25 @@ export function BuilderShell() {
 
               {isBuilderPage && !rawMode && parsedPage ? (
                 <div className="max-h-[62vh] overflow-y-auto">
+                  {!parsedPage.sections.some((b) => b.type === "pillNav") ? (
+                    <button
+                      type="button"
+                      onClick={addPillNav}
+                      className="mb-2 w-full rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium hover:bg-accent/20"
+                    >
+                      + Add Liquid Glass pill menu
+                    </button>
+                  ) : null}
                   <Inspector
                     blocks={previewBlocks ?? parsedPage.sections}
                     layers={layers}
                     device={device}
                     selectedId={selectedBlockId}
+                    glass={glassPresets}
                     onSelect={setSelectedBlockId}
                     onLayerChange={setLayer}
                     onBlockVisibility={setBaseVisibility}
+                    onBlockProps={setBaseProps}
                   />
                 </div>
               ) : isThemeDoc && !rawMode ? (

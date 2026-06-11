@@ -29,6 +29,21 @@ export function newId(prefix = "b"): string {
 // ── shared fragments ────────────────────────────────────────
 const galleryImage = z.object({ src: imageSrc, alt: z.string() }).strict();
 
+// Icon names the renderer ships SVGs for (renderer/blocks.tsx PILL_ICON_SVGS
+// must cover every name here — locked together by a unit test).
+export const PILL_ICONS = [
+  "home",
+  "shop",
+  "journal",
+  "bag",
+  "search",
+  "heart",
+  "user",
+  "phone",
+  "star",
+  "gift",
+] as const;
+
 // ── the type registry ───────────────────────────────────────
 export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
   // Layout containers
@@ -112,6 +127,35 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
         .array(z.object({ id: blockId, label: z.string().min(1), body: richTextDoc }).strict())
         .min(2)
         .max(6),
+    })
+    .strict(),
+
+  // The Liquid Glass pill menu (plan §6 items 2–3). Items cap at 5 —
+  // thumb reach and the 44px tap floor stop being satisfiable past
+  // that on a 390px phone. Appearance comes from a THEME glass preset
+  // by name (the §5 slider set), so restyling the pill never edits
+  // the nav structure. Renders mobile-only by default (it's the
+  // phone bottom nav); per-device visibility can override.
+  pillNav: z
+    .object({
+      items: z
+        .array(
+          z
+            .object({
+              id: blockId,
+              icon: z.enum(PILL_ICONS),
+              label: z.string().min(1).max(14),
+              href: safeHref,
+            })
+            .strict()
+        )
+        .min(2)
+        .max(5),
+      position: z.enum(["bottom", "top"]),
+      preset: z.string().min(1).optional(), // theme glass preset name; falls back to first
+      showLabels: z.boolean().optional(),
+      heightPx: z.number().int().min(48).max(80).optional(),
+      radiusPx: z.number().int().min(8).max(40).optional(),
     })
     .strict(),
 

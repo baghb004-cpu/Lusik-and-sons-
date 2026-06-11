@@ -22,6 +22,7 @@ export {
   BLOCK_TYPES,
   CONTAINER_TYPES,
   BLOCK_ID_RE,
+  PILL_ICONS,
   type Block,
 } from "./block.ts";
 

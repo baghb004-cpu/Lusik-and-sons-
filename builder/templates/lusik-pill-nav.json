@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "b_tplpillnav01",
+  "name": "Lusik bottom nav",
+  "kind": "pillNav",
+  "root": {
+    "id": "b_pillnavroot1",
+    "type": "pillNav",
+    "props": {
+      "items": [
+        { "id": "b_pillforyou01", "icon": "home", "label": "For You", "href": "/" },
+        { "id": "b_pillshop0001", "icon": "shop", "label": "Shop", "href": "/shop" },
+        { "id": "b_pilljournal1", "icon": "journal", "label": "Journal", "href": "/journal" },
+        { "id": "b_pillbag00001", "icon": "bag", "label": "Bag", "href": "/cart" }
+      ],
+      "position": "bottom",
+      "preset": "Liquid Glass",
+      "showLabels": true,
+      "heightPx": 56,
+      "radiusPx": 28
+    },
+    "visibility": { "desktop": false, "tablet": false }
+  }
+}
