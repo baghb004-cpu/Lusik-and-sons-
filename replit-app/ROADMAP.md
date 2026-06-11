@@ -153,10 +153,20 @@ port its behavior.
       navigation keeps the React component instance, so ImmersiveProduct
       now restores per-product detent/pager/hint state on every product
       change (iOS got this free from fresh NavigationStack pushes).
-- [ ] **Chunk 6 — Liquid Glass polish.** Finish the chrome to match
-      `GlassTabBar.swift` + the breathe hint: refraction-grade glass,
-      lens spring tuning, the sheet's rise-and-settle teaching hint
-      until first use (gesture-learned flag), reduced-motion paths.
+- [x] **Chunk 6 — Liquid Glass polish.** Shipped: the website's
+      refraction-grade material ported verbatim — the island is the
+      .lg-nav-pill recipe (near-clear body + top-down sheen, real
+      blur(18px)/saturate(175%)/contrast/brightness backdrop, crisp rim
+      light, layered float shadows, warm-dark variant) and the lens is
+      the .lg-lens recipe (mostly-clear dome so the backdrop reads
+      THROUGH it, compounding backdrop-filter so the active slot is
+      visibly brighter, chromatic blue/pink/green refraction pooling
+      along the bottom edge via screen blend, the spectral bottom-rim
+      fringe, dark variant), full .lg-* glass token set in tokens.css,
+      lens glide tuned (0.38s overshoot spring curve), tab press-dip
+      feedback, reduced-motion paths for all of it. The breathe hint +
+      gesture-learned flag shipped early in Chunk 2 — audited here,
+      nothing further needed.
 - [ ] **Chunk 7 — Journal + chat.** Port `JournalView.swift` +
       `ChatView.swift`: journal data generated from the markdown posts
       (reuse `ios/scripts/gen-journal-swift.mjs`'s parse as a JS

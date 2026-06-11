@@ -19,10 +19,14 @@
   --border-default: rgba(26, 22, 18, 0.12);
   --shadow: rgba(0, 0, 0, 1); /* shadows stay black in both modes */
 
-  /* Liquid Glass island */
-  --glass-tint: rgba(245, 239, 227, 0.42);
-  --glass-bevel: rgba(255, 255, 255, 0.55);
-  --lens-fill: rgba(255, 255, 255, 0.35);
+  /* Liquid Glass island — the website's .lg-* token set (Chunk 6) */
+  --glass-bg: rgba(252, 249, 244, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.78);
+  --glass-shadow: rgba(26, 22, 18, 0.3);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-chromatic-blue: rgba(0, 122, 255, 0.55);
+  --glass-chromatic-pink: rgba(255, 55, 95, 0.46);
+  --glass-chromatic-green: rgba(52, 199, 89, 0.4);
 
   --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-body: "DM Sans", system-ui, -apple-system, sans-serif;
@@ -50,9 +54,13 @@
     --border-soft: rgba(245, 239, 227, 0.08);
     --border-default: rgba(245, 239, 227, 0.12);
 
-    --glass-tint: rgba(21, 17, 14, 0.42);
-    --glass-bevel: rgba(255, 255, 255, 0.16);
-    --lens-fill: rgba(255, 255, 255, 0.22);
+    --glass-bg: rgba(34, 27, 21, 0.12);
+    --glass-border: rgba(245, 239, 227, 0.24);
+    --glass-shadow: rgba(0, 0, 0, 0.62);
+    --glass-highlight: rgba(245, 239, 227, 0.55);
+    --glass-chromatic-blue: rgba(70, 150, 255, 0.52);
+    --glass-chromatic-pink: rgba(255, 95, 135, 0.44);
+    --glass-chromatic-green: rgba(80, 210, 120, 0.38);
 
     color-scheme: dark;
   }

@@ -74,11 +74,36 @@ body {
   padding: 6px;
   border-radius: var(--radius-pill);
   position: relative;
-  background: var(--glass-tint);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
-  border: 1px solid var(--glass-bevel);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
+  isolation: isolate; /* contain the lens' blend mode + compounding blur */
+  overflow: hidden;
+  /* The website's .lg-nav-pill material (Chunk 6): a near-clear body
+     with a top-down sheen, a REAL backdrop blur/saturate/contrast so
+     page content refracts through it, a crisp rim light, and layered
+     float shadows. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.03) 55%, rgba(255, 255, 255, 0.1)),
+    var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(18px) saturate(175%) contrast(110%) brightness(103%);
+  backdrop-filter: blur(18px) saturate(175%) contrast(110%) brightness(103%);
+  box-shadow:
+    inset 0 1px 1px var(--glass-highlight),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.45),
+    inset 0 -12px 24px rgba(255, 255, 255, 0.08),
+    0 14px 38px -10px var(--glass-shadow),
+    0 5px 14px -4px var(--glass-shadow);
+}
+@media (prefers-color-scheme: dark) {
+  .island {
+    background:
+      linear-gradient(180deg, rgba(245, 239, 227, 0.16), rgba(245, 239, 227, 0.04)),
+      rgba(31, 24, 19, 0.52);
+    box-shadow:
+      inset 0 1px 1px rgba(245, 239, 227, 0.22),
+      inset 0 -10px 22px rgba(0, 0, 0, 0.18),
+      0 12px 34px -10px rgba(0, 0, 0, 0.62),
+      0 4px 12px -4px rgba(0, 0, 0, 0.4);
+  }
 }
 
 .island button {
@@ -119,25 +144,94 @@ body {
   height: 20px;
 }
 
-/* The lens — the bright frost dome gliding under the active tab
-   (matchedGeometryEffect parity, done with a transform). */
+/* THE LIVE SELECTOR LENS (Chunk 6 — the website's .lg-lens, verbatim
+   recipe): a magnifying-glass / refraction bubble that always hovers
+   over the active tab and glides as the route changes. Mostly-clear
+   body — only a bright top-left dome shine is painted, so the
+   saturated + blurred backdrop shows THROUGH it (the magnifier look);
+   its backdrop-filter compounds with the island's, so content reads
+   visibly brighter and more vivid right under the active tab. */
 .lens {
   position: absolute;
-  top: 6px;
-  bottom: 6px;
+  top: 5px;
+  bottom: 5px;
   left: 6px;
   width: calc((100% - 12px) / 4);
   border-radius: var(--radius-pill);
-  background: var(--lens-fill);
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  transition: transform 0.35s cubic-bezier(0.3, 1.25, 0.45, 1);
+  pointer-events: none;
   z-index: 0;
+  isolation: isolate; /* keep the chromatic screen-blend predictable */
+  overflow: hidden;   /* keep the colour fringes inside the capsule */
+  will-change: transform;
+  background:
+    radial-gradient(135% 105% at 27% 4%,
+      rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.2) 40%,
+      rgba(255, 255, 255, 0.05) 66%, transparent 84%);
+  -webkit-backdrop-filter: blur(5px) saturate(210%) brightness(112%) contrast(112%);
+  backdrop-filter: blur(5px) saturate(210%) brightness(112%) contrast(112%);
+  border: 1px solid var(--glass-highlight);
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.98),
+    inset 0 9px 16px -9px rgba(255, 255, 255, 0.65),
+    inset 0 -8px 13px -5px rgba(26, 22, 18, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 6px 16px -3px rgba(26, 22, 18, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.75);
+  transition: transform 0.38s cubic-bezier(0.3, 1.25, 0.45, 1);
+}
+/* Chromatic refraction — blue/pink/green light separation pooling along
+   the bottom + side edges, screened so it reads as light bending
+   through glass. */
+.lens::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(62% 72% at 20% 120%, var(--glass-chromatic-blue), transparent 60%),
+    radial-gradient(60% 70% at 54% 124%, var(--glass-chromatic-pink), transparent 60%),
+    radial-gradient(56% 66% at 92% 72%, var(--glass-chromatic-green), transparent 58%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.65), transparent 32%);
+  mix-blend-mode: screen;
+  opacity: 0.9;
+  pointer-events: none;
+}
+/* Bright spectral line riding the bottom rim — the signature fringe. */
+.lens::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 2.5px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent,
+    var(--glass-chromatic-blue), var(--glass-chromatic-pink),
+    var(--glass-chromatic-green), transparent);
+  opacity: 0.8;
+  filter: blur(0.4px);
+  pointer-events: none;
+}
+@media (prefers-color-scheme: dark) {
+  .lens {
+    background:
+      radial-gradient(135% 105% at 27% 4%,
+        rgba(245, 239, 227, 0.42), rgba(245, 239, 227, 0.12) 42%, transparent 72%);
+    border-color: rgba(245, 239, 227, 0.4);
+    box-shadow:
+      inset 0 2px 1px rgba(245, 239, 227, 0.5),
+      inset 0 -8px 13px -5px rgba(0, 0, 0, 0.34),
+      0 6px 16px -3px rgba(0, 0, 0, 0.5);
+  }
 }
 
+/* Tab press feedback — the lens dips with the finger (web press-lift). */
+.island button { transition: transform 0.15s ease, opacity 0.2s ease, color 0.2s ease; }
+.island button:active { transform: scale(0.94); }
+
 @media (prefers-reduced-motion: reduce) {
-  .lens {
+  .lens,
+  .island button {
     transition: none;
   }
 }
