@@ -22,7 +22,12 @@ import { auth } from "../../lib/auth.js";
 import { validatePage, resolveBlocks, type Device, type ValidationIssue } from "../engine/index.ts";
 import { BlockRenderer } from "../renderer/index.ts";
 import { DocForm } from "./Form.tsx";
+import { ThemeEditor } from "./ThemeEditor.tsx";
+import { themeSchema } from "../schema/index.ts";
+import { themeToCssVars } from "../theme/css.ts";
 import { LUSIK_COLLECTIONS, fieldsForPath, collectionForPath } from "../adapters/lusik/collections.ts";
+
+const THEME_PATH = "builder/theme.json";
 
 // Unique marker the bundle-budget gate greps public-route chunks
 // for — if this string ever lands in a public route's first-load
@@ -92,6 +97,7 @@ export function BuilderShell() {
   const [device, setDevice] = useState<Device>("desktop");
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [status, setStatus] = useState<string>("");
+  const [themeDoc, setThemeDoc] = useState<Obj | null>(null);
 
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
@@ -148,8 +154,12 @@ export function BuilderShell() {
   useEffect(() => {
     if (authStatus === "in") {
       refreshList().catch((e) => setStatus(String(e.message || e)));
+      // Load the theme once so page previews render with real tokens.
+      api(`/api/builder/docs?path=${encodeURIComponent(THEME_PATH)}`)
+        .then(async (res) => (res.ok ? setThemeDoc((await res.json()).content as Obj) : null))
+        .catch(() => null);
     }
-  }, [authStatus, refreshList]);
+  }, [authStatus, refreshList, api]);
 
   // ── open / edit / save ────────────────────────────────────
   const openDoc = async (path: string) => {
@@ -167,6 +177,7 @@ export function BuilderShell() {
     if (!doc) return;
     setDoc({ ...doc, content: next, dirty: true });
     setJsonText(JSON.stringify(next, null, 2));
+    if (doc.path === THEME_PATH) setThemeDoc(next); // page preview re-tokens live
   };
 
   const applyRawJson = (): Obj | null => {
@@ -216,7 +227,16 @@ export function BuilderShell() {
 
   const formFields = doc ? fieldsForPath(doc.path) : null;
   const collection = doc ? collectionForPath(doc.path) : null;
+  const isThemeDoc = doc?.path === THEME_PATH;
   const groups = useMemo(() => groupFiles(files), [files]);
+
+  // Compiled theme variables for the preview pane (invalid mid-edit
+  // themes just keep the last good variables).
+  const themeCss = useMemo(() => {
+    if (!themeDoc) return "";
+    const parsed = themeSchema.safeParse(themeDoc);
+    return parsed.success ? themeToCssVars(parsed.data).replace(":root", ".bt-theme-scope") : "";
+  }, [themeDoc]);
 
   // ── render ────────────────────────────────────────────────
   if (authStatus === "checking") {
@@ -321,9 +341,10 @@ export function BuilderShell() {
         <main className="min-h-[60vh] overflow-auto rounded-xl border border-ink/10 bg-white/40 p-4">
           {previewBlocks ? (
             <div
-              className="mx-auto min-h-full border border-dashed border-ink/10 bg-cream/40 transition-[max-width]"
+              className="bt-theme-scope mx-auto min-h-full border border-dashed border-ink/10 bg-cream/40 transition-[max-width]"
               style={{ maxWidth: DEVICE_WIDTH[device] }}
             >
+              {themeCss ? <style>{themeCss}</style> : null}
               <BlockRenderer blocks={previewBlocks} editing />
             </div>
           ) : (
@@ -349,7 +370,7 @@ export function BuilderShell() {
                   {doc.dirty ? <span className="ml-1 text-accent">•</span> : null}
                 </h2>
                 <div className="flex shrink-0 gap-2">
-                  {formFields ? (
+                  {formFields || isThemeDoc ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -371,7 +392,11 @@ export function BuilderShell() {
                 </div>
               </div>
 
-              {formFields && !rawMode ? (
+              {isThemeDoc && !rawMode ? (
+                <div className="max-h-[62vh] overflow-y-auto">
+                  <ThemeEditor value={doc.content} onChange={editContent} />
+                </div>
+              ) : formFields && !rawMode ? (
                 <div className="max-h-[62vh] overflow-y-auto rounded-xl border border-ink/10 bg-white/50 p-3">
                   <DocForm fields={formFields} value={doc.content} onChange={editContent} />
                 </div>

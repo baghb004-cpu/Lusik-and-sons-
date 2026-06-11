@@ -508,6 +508,7 @@ budget green at every merge. **L** = Lusik-usable value ships.
 | **13. Offline ZIP / address / shipping data module** | Dataset manager (licensing-safe), ZIP→city/state lookup, local-delivery + blocked lists, shipping rule editor, zone tables, trimmed per-site export (§14) | Generalizes what Lusik already ships |
 | **14. Local AI engine** | llama.cpp/Ollama adapter, model manager + Local AI settings panel, assistant tasks behind the deterministic gates (§15) | Local-first; no weights bundled by default |
 | **15. App Developer Mode** | Guided questionnaire → project plan, app screen templates, PWA/manifest export, App Store / Play Store checklist generators (§15) | PWA first; native export later if practical |
+| **16. Portable desktop app (.exe)** | Package the builder as a double-click Windows app (§16): Tauri shell (MIT, ~10 MB) wrapping the local Next server + fs storage, portable USB layout, optional llama.cpp sidecar + offline model folder | The thumb-drive end-state |
 
 **Recommended first build step (next session): Phase 2** — schemas + engine
 with tests. It's the foundation everything else type-checks against, it
@@ -726,6 +727,28 @@ AI feature and acknowledges size/privacy/hosting tradeoffs.
   refactoring at CPU-tier speeds; screenshot/icon generation helpers.
 
 ---
+
+## 16. The portable `.exe` (Phase 16) — what it is and what already exists
+
+The thumb-drive end-state is a **double-click Windows app**: a small
+desktop shell that starts the builder's local server (fs storage), opens
+the editor window, and needs nothing installed on the host machine.
+
+- **Already built toward it (Phases 2–5):** everything that matters runs
+  fully offline today — fs storage, `BUILDER_LOCAL_TOKEN` auth, the save
+  gates, forms, theme panel. On any machine with Node 22, the folder on a
+  USB stick IS the builder (`npm ci` once, `next start`, open `/builder`).
+- **What Phase 16 adds:** the no-Node-required packaging. Recommended:
+  **Tauri** (MIT, ~10 MB shell, proper Windows webview) wrapping a
+  Node-SEA-bundled or sidecar server binary; a portable USB layout
+  (`builder.exe` + `project/` + `models/` + `data/`); first-run checks
+  (disk space, RAM tier advice); optional llama.cpp sidecar + offline
+  model folder per §15. Electron is the fallback if Tauri's sidecar
+  ergonomics fight us (cost: ~100 MB heavier).
+- **Sequencing:** packaging is orthogonal to editor features — it can be
+  scheduled any time after Phase 6–7 makes the .exe worth handing to
+  someone; doing it sooner is possible if the owner wants the portable
+  shell before the visual editor lands.
 
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
