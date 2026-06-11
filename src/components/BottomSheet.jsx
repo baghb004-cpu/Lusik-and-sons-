@@ -154,12 +154,11 @@ export function BottomSheet({ open, onClose, children, ariaLabel = "Dialog", pee
         style={{ opacity: closing ? 0 : 1, transition: "opacity 0.3s ease" }}
       />
       <div
-        className="lg-panel-tall account-sheet relative w-full flex flex-col"
+        className="lg-panel-tall account-sheet vh-cap-92 relative w-full flex flex-col"
         style={{
           transform: `translateY(${translateY}px)`,
           transition,
           touchAction: "pan-y",
-          maxHeight: "92vh",
           borderRadius: "26px 26px 0 0",
         }}
         onClick={(e) => e.stopPropagation()}

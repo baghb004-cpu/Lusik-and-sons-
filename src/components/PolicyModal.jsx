@@ -60,7 +60,7 @@ export function PolicyModal({ policyKey, onClose }) {
       aria-labelledby={`policy-${policyKey}-title`}
     >
       <div
-        className="lg-panel-tall w-full max-w-2xl max-h-[90vh] flex flex-col"
+        className="lg-panel-tall w-full max-w-2xl vh-cap-90 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
