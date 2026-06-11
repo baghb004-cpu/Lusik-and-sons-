@@ -41,7 +41,10 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
         <p className="leading-tight mb-5" style={{ fontSize: "1.55rem", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
           Read something new
         </p>
-        <div className="space-y-5">
+        {/* Single column on phones; the editorial cards pair up
+            magazine-style on the open-book canvas (iPhone Fold inner
+            display / 768–1023px) — desktop has its own layout below. */}
+        <div className="space-y-5 md:space-y-0 md:grid md:grid-cols-2 md:gap-5">
           {posts.map((post) => (
             <article
               key={post.slug}

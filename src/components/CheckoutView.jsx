@@ -336,7 +336,10 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   };
 
   return (
-    <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 pt-10 lg:pt-16 pb-[150px] lg:pb-16">
+    // max-w: 5xl on desktop (the 2-col grid), but the single-column form
+    // narrows to a readable 2xl on the open-book canvas (iPhone Fold inner
+    // display / 768–1023px) instead of stretching inputs across 4:3.
+    <div className="fade-in max-w-5xl md:max-w-2xl lg:max-w-5xl mx-auto px-6 lg:px-12 pt-10 lg:pt-16 pb-[150px] lg:pb-16">
       <button onClick={onBack} className="text-sm tracking-wide opacity-70 hover:opacity-100 mb-8">← Continue shopping</button>
       {/* min-w-0 on both grid children is load-bearing: CSS Grid items
           default to min-width: auto, which means they refuse to shrink

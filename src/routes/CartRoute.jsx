@@ -14,7 +14,10 @@ export function CartRoute() {
   const nav = useSiteNav();
   const [editMode, setEditMode] = useState(false);
   return (
-    <div className="lg:hidden flex flex-col" style={{ minHeight: "100vh", paddingBottom: 24 }}>
+    // Full-bleed on phones; on the open-book canvas (iPhone Fold inner
+    // display, 768–1023px) the bag holds a readable centered column
+    // instead of stretching rows across the 4:3 width.
+    <div className="lg:hidden flex flex-col w-full md:max-w-2xl md:mx-auto" style={{ minHeight: "100vh", paddingBottom: 24 }}>
       <CartContents
         variant="page"
         cart={site.cart}

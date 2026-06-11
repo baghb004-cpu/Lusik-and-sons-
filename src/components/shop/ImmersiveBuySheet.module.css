@@ -225,3 +225,71 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* ============================================================
+   THE OPEN BOOK — iPhone Fold readiness (7.8" 4:3 inner display;
+   the 5.5" cover screen keeps the pill sheet above).
+
+   The unfolded device reads like a book, so the page splits along
+   the fold: photos become the LEFT page, the buy column the RIGHT
+   page. The detent machinery still runs in JS but is visually
+   neutralized here — the sheet is a full-height right column at
+   every detent (height gets !important so even the mid-drag inline
+   height can't move it; the dots' JS-positioned bottom likewise).
+   Matching behavior (photo taps go straight to the lightbox, no
+   breathe hint, body never hidden) lives in the SPREAD_QUERY block
+   of ImmersiveBuySheet.tsx — keep the two queries identical. The
+   viewport-segments clause catches browsers that report fold
+   posture directly; ≥1024px never mounts this component at all.
+   ============================================================ */
+@media (min-width: 700px) and (max-width: 1023.98px),
+  (horizontal-viewport-segments: 2) {
+  .gallery {
+    right: 45%;
+  }
+  .topbar {
+    right: 45%; /* the scrim belongs to the photo page only */
+  }
+  .dots {
+    right: 45%;
+    bottom: calc(var(--imm-nav-clear) + 16px) !important;
+  }
+
+  .sheet {
+    top: 0;
+    left: 55%;
+    right: 0;
+    bottom: var(--imm-nav-clear);
+    height: auto !important;
+    border-radius: 0;
+    box-shadow: -14px 0 44px -18px rgba(0, 0, 0, 0.38);
+    transition: none;
+  }
+
+  /* Nothing is covered, so there is nothing to drag or teach. The pill
+     row stays as the column's header (name + price); the affordances go. */
+  .grab {
+    pointer-events: none;
+  }
+  .grabber,
+  .chevron {
+    display: none;
+  }
+  .pillRow {
+    padding: 18px 24px 8px;
+    cursor: default;
+  }
+  .pillName {
+    font-size: 1.2rem;
+  }
+  .body {
+    padding: 0 24px;
+  }
+  .bodyHidden {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .hinting {
+    animation: none;
+  }
+}

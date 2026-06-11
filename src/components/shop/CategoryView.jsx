@@ -84,7 +84,9 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
         {loc(category, "description", lang)}
       </p>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+      {/* md (the iPhone Fold's open 4:3 canvas / tablets) gets the full
+          3-up grid a row early — 2-up at 768–1023px stretches the cards. */}
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5 lg:gap-6">
         {category.products.map((p, i) => {
           const isLive = p.status === "live";
           const soldOut = isLive && isSoldOut(inventoryKeyForCatalog(p.key));

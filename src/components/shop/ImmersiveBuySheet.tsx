@@ -42,6 +42,16 @@ type Detent = "collapsed" | "medium" | "expanded";
 const ORDER: Detent[] = ["collapsed", "medium", "expanded"];
 const COLLAPSED_PX = 64;
 
+// "The open book" — the iPhone Fold's 7.8" 4:3 inner display (and any
+// 700–1023px canvas; ≥1024 never mounts this component). The module CSS
+// splits the page along the fold: photos = left page, buy column = right
+// page, detents visually neutralized. This query MUST stay in lockstep
+// with the media query at the bottom of ImmersiveBuySheet.module.css.
+// The viewport-segments clause catches browsers that report fold posture
+// directly. The Fold's 5.5" cover screen stays on the pill sheet.
+const SPREAD_QUERY =
+  "(min-width: 700px) and (max-width: 1023.98px), (horizontal-viewport-segments: 2)";
+
 export interface ImmersiveBuySheetProps {
   photos: string[];
   title: string;
@@ -70,6 +80,9 @@ export function ImmersiveBuySheet({
   const [detent, setDetent] = useState<Detent>(defaultDetent);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const [reduced, setReduced] = useState(false);
+  // Open-book posture (see SPREAD_QUERY). SSR-safe: false on the server +
+  // first client render; synced in the effect below.
+  const [spread, setSpread] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   // "Breathe" teaching hint: plays on every product open UNTIL the guest
@@ -96,7 +109,10 @@ export function ImmersiveBuySheet({
   const lastCycleAt = useRef(0);
 
   const dragging = dragHeight != null;
-  const collapsed = detent === "collapsed" && !dragging;
+  // On the spread the buy column is always fully visible — "collapsed"
+  // must not hide the body or mislead assistive tech, whatever detent a
+  // phone session left behind in storage.
+  const collapsed = detent === "collapsed" && !dragging && !spread;
 
   // ── browser-only setup: restore detent + read reduced-motion ──
   useEffect(() => {
@@ -104,6 +120,13 @@ export function ImmersiveBuySheet({
     setReduced(!!mq?.matches);
     const onMq = (e: MediaQueryListEvent) => setReduced(e.matches);
     mq?.addEventListener?.("change", onMq);
+
+    // Open-book posture (iPhone Fold inner display / 700–1023px canvas).
+    // Live-updates so folding/unfolding mid-visit re-lays-out correctly.
+    const spreadMq = window.matchMedia?.(SPREAD_QUERY);
+    setSpread(!!spreadMq?.matches);
+    const onSpreadMq = (e: MediaQueryListEvent) => setSpread(e.matches);
+    spreadMq?.addEventListener?.("change", onSpreadMq);
 
     try {
       const saved = localStorage.getItem(`${storagePrefix}:${storageKey}`);
@@ -115,15 +138,19 @@ export function ImmersiveBuySheet({
       if (
         CONFIG.SHEET?.BREATHE_HINT &&
         !mq?.matches &&
+        !spreadMq?.matches &&   // no sheet to teach on the spread
         localStorage.getItem(learnedKey) !== "1"
       ) {
         setHinting(true);
       }
     } catch {
       /* blocked storage — hint anyway; it's harmless and self-clearing */
-      if (CONFIG.SHEET?.BREATHE_HINT && !mq?.matches) setHinting(true);
+      if (CONFIG.SHEET?.BREATHE_HINT && !mq?.matches && !spreadMq?.matches) setHinting(true);
     }
-    return () => mq?.removeEventListener?.("change", onMq);
+    return () => {
+      mq?.removeEventListener?.("change", onMq);
+      spreadMq?.removeEventListener?.("change", onSpreadMq);
+    };
   }, [storagePrefix, storageKey, learnedKey]);
 
   const persist = useCallback(
@@ -266,9 +293,11 @@ export function ImmersiveBuySheet({
     const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
     const scrolled = Math.abs((galleryRef.current?.scrollLeft ?? 0) - start.scrollLeft);
     if (moved >= 8 || scrolled >= 2 || Date.now() - start.t >= 450) return;
-    if (detent !== "collapsed") snapTo("collapsed");
+    // On the spread nothing covers the photos, so the collapse step is
+    // meaningless — a photo tap goes straight to the lightbox.
+    if (!spread && detent !== "collapsed") snapTo("collapsed");
     else setLightboxOpen(true);
-  }, [detent, snapTo]);
+  }, [detent, snapTo, spread]);
 
   // Closing the lightbox hands back the photo they were on, so the
   // backdrop + dots pick up exactly where they left off.
