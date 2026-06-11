@@ -93,7 +93,7 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick, disab
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="w-full flex items-center justify-between gap-4 px-5 py-4"
+          className="mpb-toggle w-full flex items-center justify-between gap-4 px-5 py-4"
           style={{ color: "var(--text-primary)" }}
         >
           <span className="text-sm" style={{ fontWeight: 600 }}>
@@ -103,7 +103,9 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick, disab
         </button>
 
         {/* Drawer — slides up (grows the sheet upward; button stays pinned) */}
-        <div style={{ maxHeight: open ? 320 : 0, overflow: "hidden", transition: "max-height 0.3s ease" }}>
+        {/* Height caps in CSS (.mpb-drawer) — min(320px, 38dvh) so the
+            open drawer can never reach past the top on short screens. */}
+        <div className="mpb-drawer" data-open={open ? "true" : "false"}>
           <div className="px-5 pb-4 flex flex-col gap-3.5" style={{ borderTop: "1px solid var(--border-soft)" }}>
             {pickupOn && (
               <Row icon={<PinIcon />} title="Local pickup"
@@ -121,7 +123,7 @@ export function MobilePurchaseBar({ visible = true, label, price, onClick, disab
             onClick={onClick}
             disabled={disabled}
             aria-disabled={disabled}
-            className="w-full py-4 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2"
+            className="mpb-cta w-full py-4 text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2"
             style={{
               background: disabled ? "var(--bg-subtle)" : "var(--ink)",
               color: disabled ? "var(--text-muted)" : "var(--text-on-ink)",

@@ -70,7 +70,9 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack })
         <h1
           className="font-mobile-title leading-tight"
           style={{
-            fontSize: "2.4rem",
+            // clamp: 320px phones get ~1.8rem so the title never collides
+            // with the theme/lang/account chips; ≥400px gets the full 2.4.
+            fontSize: "clamp(1.8rem, 1rem + 3.6vw, 2.4rem)",
             fontWeight: 700,
             letterSpacing: "-0.02em",
             color: "var(--text-primary)",

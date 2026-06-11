@@ -197,7 +197,7 @@ export function ProductImageGallery({
           inside another interactive element (WCAG nested-interactive). */}
       {!photosHidden && (
       <div
-        className="relative aspect-[4/5] overflow-hidden mb-4"
+        className="relative aspect-[4/5] gallery-frame overflow-hidden mb-4"
         style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}
         onClick={() => { if (!glide.swiped.current) setZoomOpen(true); }}
         {...glide.handlers}

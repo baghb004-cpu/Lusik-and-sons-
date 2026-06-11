@@ -430,7 +430,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             `top-24` (~96px) clears the sticky nav (~80px) with breathing
             room. `max-h-[calc(100vh-7rem)]` + `overflow-y-auto` is a safety
             net for short laptop screens. */}
-        <div className="lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <div className="lg:sticky lg:top-24 lg:self-start pdp-sticky-col lg:overflow-y-auto">
           {/* View toggle — "Your design" (live SVG preview) | "Real photos".
               Hidden in immersive mode: the real photos are the full-screen
               backdrop, so the left pane locks to the live design preview. */}
@@ -469,7 +469,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   current configuration: alphabet, layout, colors, optional text.
                   Wrapped in a square frame matching the photo gallery's
                   aspect-ratio so the layout doesn't jump when toggling modes. */}
-              <div className="aspect-[4/5] overflow-hidden mb-4 flex items-center justify-center p-6 lg:p-8" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}>
+              <div className="aspect-[4/5] gallery-frame overflow-hidden mb-4 flex items-center justify-center p-6 lg:p-8" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="w-full max-w-[420px]">
                   <BlanketLayoutPreview
                     letters={alphabet.letters}
@@ -496,7 +496,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   The next/prev arrow buttons stop click propagation so they don't
                   also trigger the zoom open. */}
               <div
-                className="relative aspect-[4/5] overflow-hidden mb-4"
+                className="relative aspect-[4/5] gallery-frame overflow-hidden mb-4"
                 style={{ background: "rgba(26,22,18,0.04)", cursor: "zoom-in", touchAction: "pan-y" }}
                 role="button"
                 aria-label={t("pdp.zoomPhotoAria", { n: activeImg + 1, m: product.gallery.length })}
@@ -541,7 +541,11 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   <ZoomIn size={11} strokeWidth={2} /> {t("pdp.tapToZoom")}
                 </div>
               </div>
-              <div className="grid grid-cols-6 gap-2">
+              {/* Thumbnails are desktop-only — on phones the main image is
+                  swipeable with a visible counter, so the strip only pushed
+                  the price + options further below the fold (same call as
+                  ProductImageGallery's strip). */}
+              <div className="hidden lg:grid grid-cols-6 gap-2">
                 {product.gallery.map((src, i) => (
                   <button key={i} onClick={() => setActiveImg(i)} className={`relative aspect-square overflow-hidden ${activeImg === i ? "" : "opacity-50 hover:opacity-100"}`} style={{ outline: activeImg === i ? "1.5px solid #1A1612" : "none", outlineOffset: "1px" }}>
                     {/* next/image fill + tiny sizes → the CDN serves a
@@ -1298,7 +1302,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             src={product.gallery[activeImg]}
             alt={product.name}
             onClick={(e) => e.stopPropagation()}
-            className="max-w-[92vw] max-h-[88vh] object-contain"
+            className="max-w-[92vw] vh-cap-88 object-contain"
             style={{ ...galleryRotationStyle(activeImg), touchAction: "pinch-zoom", cursor: "zoom-out" }}
           />
 

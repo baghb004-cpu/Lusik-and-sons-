@@ -49,8 +49,11 @@ const COLLAPSED_PX = 64;
 // with the media query at the bottom of ImmersiveBuySheet.module.css.
 // The viewport-segments clause catches browsers that report fold posture
 // directly. The Fold's 5.5" cover screen stays on the pill sheet.
+// The second clause is the SHORT-LANDSCAPE catch: phones rotated
+// sideways (e.g. 667×375, 844×390) have no room for a stacked pill
+// sheet — the spread is the right shape there too.
 const SPREAD_QUERY =
-  "(min-width: 700px) and (max-width: 1023.98px), (horizontal-viewport-segments: 2)";
+  "(min-width: 700px) and (max-width: 1023.98px), (min-width: 560px) and (max-height: 480px), (horizontal-viewport-segments: 2)";
 
 export interface ImmersiveBuySheetProps {
   photos: string[];
@@ -362,8 +365,11 @@ export function ImmersiveBuySheet({
           className={styles.dots}
           style={{ bottom: `calc(var(--imm-nav-clear) + ${collapsed ? "76px" : dragging ? `${dragHeight}px` : detent === "medium" ? "46dvh" : "86dvh"} + 12px)` }}
         >
-          {photos.map((_, i) => (
-            <span key={i} className={cx(styles.dot, i === activeIdx && styles.dotActive)} />
+          {/* Cap the row at 12 dots — a 61-photo set would otherwise paint
+              a full-width dotted line (the counter in the lightbox carries
+              exact position; dots are a gesture cue, not a scrubber). */}
+          {photos.slice(0, 12).map((_, i) => (
+            <span key={i} className={cx(styles.dot, Math.min(activeIdx, 11) === i && styles.dotActive)} />
           ))}
         </div>
       )}
