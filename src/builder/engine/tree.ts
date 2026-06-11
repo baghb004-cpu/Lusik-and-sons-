@@ -161,6 +161,37 @@ export function cloneWithFreshIds(block: Block): Block {
   };
 }
 
+/** Nudge a block up/down among its siblings (delta −1 / +1). No-op at the edges. */
+export function moveBlockBy(blocks: Block[], id: string, delta: -1 | 1): Block[] {
+  const loc = findBlock(blocks, id);
+  if (!loc) throw new EngineError("not_found", `Block ${id} not found`);
+  const siblings = loc.parent ? loc.parent.children! : blocks;
+  const target = loc.index + delta;
+  if (target < 0 || target >= siblings.length) return blocks;
+  return moveBlock(blocks, id, { parentId: loc.parent?.id ?? null, index: target });
+}
+
+/**
+ * Set a block's locks. Deliberately NOT routed through updateBlock —
+ * lock management must work ON locked blocks (otherwise an edit-locked
+ * block could never be unlocked again).
+ */
+export function setBlockLocks(blocks: Block[], id: string, locks: Block["locks"]): Block[] {
+  const loc = findBlock(blocks, id);
+  if (!loc) throw new EngineError("not_found", `Block ${id} not found`);
+  const apply = (list: Block[]): Block[] =>
+    list.map((b) => {
+      if (b.id === id) {
+        const next = { ...b };
+        if (locks && Object.values(locks).some((v) => v !== undefined)) next.locks = locks;
+        else delete next.locks;
+        return next;
+      }
+      return b.children ? { ...b, children: apply(b.children) } : b;
+    });
+  return apply(blocks);
+}
+
 function clampIndex(i: number, len: number): number {
   return Math.max(0, Math.min(Math.trunc(i), len));
 }

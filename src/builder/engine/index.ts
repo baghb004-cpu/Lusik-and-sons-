@@ -7,12 +7,26 @@ export {
   insertBlock,
   removeBlock,
   moveBlock,
+  moveBlockBy,
+  setBlockLocks,
   duplicateBlock,
   cloneWithFreshIds,
   EngineError,
   type BlockLocation,
   type InsertTarget,
 } from "./tree.ts";
+
+export {
+  createHistory,
+  push as pushHistory,
+  replace as replaceHistory,
+  undo,
+  redo,
+  canUndo,
+  canRedo,
+  HISTORY_CAP,
+  type History,
+} from "./history.ts";
 
 export {
   resolveBlocks,

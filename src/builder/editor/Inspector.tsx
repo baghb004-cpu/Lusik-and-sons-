@@ -39,6 +39,8 @@ export interface InspectorProps {
   onBlockVisibility: (id: string, device: Device, visible: boolean) => void;
   /** Base-document prop edits (dedicated block editors, e.g. pillNav). */
   onBlockProps: (id: string, props: Record<string, unknown>) => void;
+  /** Drag-reorder: place dragged block after the drop target. */
+  onMove: (dragId: string, afterId: string) => void;
 }
 
 function blockLabel(b: Block): string {
@@ -61,11 +63,12 @@ export function Inspector({
   onLayerChange,
   onBlockVisibility,
   onBlockProps,
+  onMove,
 }: InspectorProps) {
   const selected = selectedId ? findIn(blocks, selectedId) : null;
   return (
     <div className="space-y-3">
-      <BlockTree blocks={blocks} layers={layers} selectedId={selectedId} onSelect={onSelect} depth={0} />
+      <BlockTree blocks={blocks} layers={layers} selectedId={selectedId} onSelect={onSelect} onMove={onMove} depth={0} />
       {selected && selected.type === "pillNav" && device === "desktop" ? (
         <PillNavEditor
           value={selected.props as unknown as PillNavProps}
@@ -88,17 +91,21 @@ export function Inspector({
   );
 }
 
+const DRAG_MIME = "application/x-builder-block";
+
 function BlockTree({
   blocks,
   layers,
   selectedId,
   onSelect,
+  onMove,
   depth,
 }: {
   blocks: Block[];
   layers: Record<Breakpoint, OverrideLayer>;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onMove: (dragId: string, afterId: string) => void;
   depth: number;
 }) {
   return (
@@ -107,28 +114,52 @@ function BlockTree({
         const patchCount =
           (layers.tablet.patches[b.id] ? 1 : 0) + (layers.mobile.patches[b.id] ? 1 : 0);
         const isMobileOnly = layers.mobile.mobileOnlyBlocks.some((m) => m.block.id === b.id);
+        const draggable = !b.locks?.move;
         return (
           <li key={b.id}>
             <button
               type="button"
               onClick={() => onSelect(b.id)}
+              draggable={draggable}
+              onDragStart={(e) => {
+                e.dataTransfer.setData(DRAG_MIME, b.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes(DRAG_MIME)) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }
+              }}
+              onDrop={(e) => {
+                const dragId = e.dataTransfer.getData(DRAG_MIME);
+                if (dragId && dragId !== b.id) {
+                  e.preventDefault();
+                  onMove(dragId, b.id);
+                }
+              }}
+              title={draggable ? "Drag onto another block to place after it" : b.locks?.reason || "Locked"}
               className={
                 selectedId === b.id
                   ? "flex w-full items-center justify-between gap-1 rounded bg-cream px-2 py-1 text-left text-xs font-medium"
                   : "flex w-full items-center justify-between gap-1 rounded px-2 py-1 text-left text-xs hover:bg-cream/60"
               }
             >
-              <span className="truncate">{blockLabel(b)}</span>
+              <span className="flex min-w-0 items-center gap-1">
+                {draggable ? <span className="cursor-grab text-muted/70" aria-hidden="true">⠿</span> : null}
+                <span className="truncate">{blockLabel(b)}</span>
+              </span>
               <span className="flex shrink-0 gap-1">
                 {isMobileOnly ? <Badge title="Exists only on mobile">📱</Badge> : null}
                 {patchCount > 0 ? <Badge title={`${patchCount} device override(s)`}>{patchCount}</Badge> : null}
+                {b.locks ? <Badge title={b.locks.reason || "Locked"}>🔒</Badge> : null}
                 {b.visibility && Object.values(b.visibility).some((v) => v === false) ? (
                   <Badge title="Hidden on some devices">◐</Badge>
                 ) : null}
               </span>
             </button>
             {b.children?.length ? (
-              <BlockTree blocks={b.children} layers={layers} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />
+              <BlockTree blocks={b.children} layers={layers} selectedId={selectedId} onSelect={onSelect} onMove={onMove} depth={depth + 1} />
             ) : null}
           </li>
         );

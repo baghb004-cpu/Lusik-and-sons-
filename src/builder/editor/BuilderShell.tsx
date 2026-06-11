@@ -17,7 +17,7 @@
 // BUILDER_LOCAL_TOKEN (thumb-drive / home-server mode).
 // ============================================================
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../../lib/auth.js";
 import {
   validatePage,
@@ -29,12 +29,26 @@ import {
   templatePath,
   suggestSlug,
   updateBlock,
+  findBlock,
+  moveBlock,
+  moveBlockBy,
+  removeBlock,
+  duplicateBlock,
+  setBlockLocks,
   overridePath,
   emptyLayer,
   listStaleOverrides,
   pruneStaleOverrides,
+  createHistory,
+  pushHistory,
+  replaceHistory,
+  undo,
+  redo,
+  canUndo,
+  canRedo,
   EngineError,
   type Device,
+  type History,
   type ValidationIssue,
 } from "../engine/index.ts";
 import {
@@ -51,6 +65,16 @@ import {
 import { BlockRenderer } from "../renderer/index.ts";
 import { Inspector } from "./Inspector.tsx";
 import { HitboxOverlay, type HitboxReport } from "./HitboxOverlay.tsx";
+import { CanvasToolbar } from "./CanvasToolbar.tsx";
+import { ResizeOverlay } from "./ResizeOverlay.tsx";
+
+interface PageSnap {
+  content: Obj;
+  layers: Record<Breakpoint, OverrideLayer>;
+}
+
+/** Coalesce window: edits within this gap merge into one undo step. */
+const UNDO_COALESCE_MS = 800;
 import { DocForm } from "./Form.tsx";
 import { ThemeEditor } from "./ThemeEditor.tsx";
 import { themeSchema } from "../schema/index.ts";
@@ -163,6 +187,9 @@ export function BuilderShell() {
   const [safeAreaOn, setSafeAreaOn] = useState(true);
   const [tapReport, setTapReport] = useState<HitboxReport | null>(null);
   const [previewEl, setPreviewEl] = useState<HTMLElement | null>(null);
+  // Phase 9 — undo/redo over page content + override layers
+  const [history, setHistory] = useState<History<PageSnap> | null>(null);
+  const lastPushAt = useRef(0);
 
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
@@ -259,11 +286,66 @@ export function BuilderShell() {
       }
       setLayers(loaded);
       setLayersDirty(false);
+      setHistory(createHistory({ content: body.content as Obj, layers: loaded }));
+      lastPushAt.current = 0;
+    } else {
+      setHistory(null);
     }
   };
 
+  // Central mutation for builder pages: applies the state AND records
+  // the undo step (coalescing rapid edits like keystrokes/sliders).
+  const commitPage = useCallback(
+    (content: Obj, nextLayers: Record<Breakpoint, OverrideLayer>, opts: { coalesce?: boolean } = {}) => {
+      setDoc((d) => (d ? { ...d, content, dirty: true } : d));
+      setJsonText(JSON.stringify(content, null, 2));
+      setLayers(nextLayers);
+      setLayersDirty(true);
+      setHistory((h) => {
+        if (!h) return h;
+        const snap: PageSnap = { content, layers: nextLayers };
+        const now = Date.now();
+        if (opts.coalesce && now - lastPushAt.current < UNDO_COALESCE_MS) {
+          return replaceHistory(h, snap);
+        }
+        lastPushAt.current = now;
+        return pushHistory(h, snap);
+      });
+    },
+    []
+  );
+
+  const undoAction = useCallback(() => {
+    setHistory((h) => {
+      if (!h || !canUndo(h)) return h;
+      const next = undo(h);
+      setDoc((d) => (d ? { ...d, content: next.present.content, dirty: true } : d));
+      setJsonText(JSON.stringify(next.present.content, null, 2));
+      setLayers(next.present.layers);
+      setLayersDirty(true);
+      lastPushAt.current = 0;
+      return next;
+    });
+  }, []);
+  const redoAction = useCallback(() => {
+    setHistory((h) => {
+      if (!h || !canRedo(h)) return h;
+      const next = redo(h);
+      setDoc((d) => (d ? { ...d, content: next.present.content, dirty: true } : d));
+      setJsonText(JSON.stringify(next.present.content, null, 2));
+      setLayers(next.present.layers);
+      setLayersDirty(true);
+      lastPushAt.current = 0;
+      return next;
+    });
+  }, []);
+
   const editContent = (next: Obj) => {
     if (!doc) return;
+    if (doc.path.startsWith("builder/pages/")) {
+      commitPage(next, layers, { coalesce: true });
+      return;
+    }
     setDoc({ ...doc, content: next, dirty: true });
     setJsonText(JSON.stringify(next, null, 2));
     if (doc.path === THEME_PATH) setThemeDoc(next); // page preview re-tokens live
@@ -467,6 +549,10 @@ export function BuilderShell() {
   }, [parsedPage, layers]);
 
   const setLayer = (bp: Breakpoint, next: OverrideLayer) => {
+    if (doc?.path.startsWith("builder/pages/")) {
+      commitPage(doc.content, { ...layers, [bp]: next }, { coalesce: true });
+      return;
+    }
     setLayers((prev) => ({ ...prev, [bp]: next }));
     setLayersDirty(true);
   };
@@ -485,13 +571,114 @@ export function BuilderShell() {
   };
 
   const pruneStale = () => {
-    if (!parsedPage) return;
-    setLayers((prev) => ({
-      tablet: pruneStaleOverrides(parsedPage.sections, prev.tablet),
-      mobile: pruneStaleOverrides(parsedPage.sections, prev.mobile),
-    }));
-    setLayersDirty(true);
+    if (!parsedPage || !doc) return;
+    commitPage(doc.content, {
+      tablet: pruneStaleOverrides(parsedPage.sections, layers.tablet),
+      mobile: pruneStaleOverrides(parsedPage.sections, layers.mobile),
+    });
   };
+
+  // ── Phase 9: canvas actions on the selected block ──────────
+  const withSections = (fn: (sections: Block[]) => Block[]) => {
+    if (!doc || !parsedPage) return;
+    try {
+      commitPage({ ...doc.content, sections: fn(parsedPage.sections) }, layers);
+    } catch (err) {
+      setStatus(err instanceof EngineError ? err.message : String(err));
+    }
+  };
+
+  const selectedBaseBlock = useMemo(() => {
+    if (!parsedPage || !selectedBlockId) return null;
+    return findBlock(parsedPage.sections, selectedBlockId)?.block ?? null;
+  }, [parsedPage, selectedBlockId]);
+
+  const handleMoveBy = (delta: -1 | 1) =>
+    selectedBlockId && withSections((s) => moveBlockBy(s, selectedBlockId, delta));
+
+  const handleDuplicate = () => {
+    if (!selectedBlockId) return;
+    withSections((s) => {
+      const { blocks, copy } = duplicateBlock(s, selectedBlockId);
+      setSelectedBlockId(copy.id);
+      return blocks;
+    });
+  };
+
+  const handleDelete = () => {
+    if (!selectedBlockId) return;
+    withSections((s) => {
+      const { blocks } = removeBlock(s, selectedBlockId);
+      setSelectedBlockId(null);
+      return blocks;
+    });
+  };
+
+  const handleToggleLock = () => {
+    if (!selectedBlockId || !selectedBaseBlock) return;
+    const locked = !!(selectedBaseBlock.locks?.move || selectedBaseBlock.locks?.delete);
+    withSections((s) =>
+      setBlockLocks(s, selectedBlockId, locked ? undefined : { move: true, delete: true, reason: "locked in the editor" })
+    );
+  };
+
+  const handleRotate = () => {
+    if (!selectedBlockId || selectedBaseBlock?.type !== "image") return;
+    const current = Number((selectedBaseBlock.props as { rotate?: number }).rotate ?? 0);
+    const next = ((current + 90) % 360) as 0 | 90 | 180 | 270;
+    withSections((s) =>
+      updateBlock(s, selectedBlockId, (b) => ({ ...b, props: { ...b.props, rotate: next === 0 ? undefined : next } }))
+    );
+  };
+
+  const handleTreeMove = (dragId: string, afterId: string) => {
+    withSections((s) => {
+      const target = findBlock(s, afterId);
+      if (!target) throw new EngineError("not_found", "Drop target vanished");
+      return moveBlock(s, dragId, { parentId: target.parent?.id ?? null, index: target.index + 1 });
+    });
+  };
+
+  const handleResizeCommit = (maxWidth: string) => {
+    if (!selectedBlockId) return;
+    withSections((s) =>
+      updateBlock(s, selectedBlockId, (b) => ({
+        ...b,
+        style: { ...b.style, maxWidth: maxWidth === "full" ? undefined : maxWidth },
+      }))
+    );
+  };
+
+  // Keyboard: undo/redo + block actions (ignored while typing).
+  useEffect(() => {
+    if (!isBuilderPage) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redoAction();
+        else undoAction();
+      } else if (mod && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redoAction();
+      } else if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId) {
+        e.preventDefault();
+        handleDelete();
+      } else if (e.altKey && e.key === "ArrowUp" && selectedBlockId) {
+        e.preventDefault();
+        handleMoveBy(-1);
+      } else if (e.altKey && e.key === "ArrowDown" && selectedBlockId) {
+        e.preventDefault();
+        handleMoveBy(1);
+      } else if (e.key === "Escape") {
+        setSelectedBlockId(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   const formFields = doc ? fieldsForPath(doc.path) : null;
   const collection = doc ? collectionForPath(doc.path) : null;
@@ -620,6 +807,24 @@ export function BuilderShell() {
             <>
               <button
                 type="button"
+                onClick={undoAction}
+                disabled={!history || !canUndo(history)}
+                title="Undo (Ctrl/Cmd+Z)"
+                className="rounded-full border border-ink/20 px-3 py-1 text-sm disabled:opacity-30"
+              >
+                ↩ Undo
+              </button>
+              <button
+                type="button"
+                onClick={redoAction}
+                disabled={!history || !canRedo(history)}
+                title="Redo (Ctrl/Cmd+Shift+Z)"
+                className="rounded-full border border-ink/20 px-3 py-1 text-sm disabled:opacity-30"
+              >
+                ↪ Redo
+              </button>
+              <button
+                type="button"
                 onClick={() => setHitboxOn(!hitboxOn)}
                 className={
                   hitboxOn
@@ -737,6 +942,25 @@ export function BuilderShell() {
                   onReport={setTapReport}
                 />
               ) : null}
+              {selectedBaseBlock ? (
+                <CanvasToolbar
+                  block={selectedBaseBlock}
+                  onMoveBy={handleMoveBy}
+                  onDuplicate={handleDuplicate}
+                  onDelete={handleDelete}
+                  onToggleLock={handleToggleLock}
+                  onRotate={selectedBaseBlock.type === "image" ? handleRotate : undefined}
+                  onClose={() => setSelectedBlockId(null)}
+                />
+              ) : null}
+              {selectedBaseBlock && previewEl && device === "desktop" ? (
+                <ResizeOverlay
+                  container={previewEl}
+                  blockId={selectedBaseBlock.id}
+                  refreshKey={`${jsonText.length}|${device}`}
+                  onCommit={handleResizeCommit}
+                />
+              ) : null}
             </div>
           ) : (
             <Centered>
@@ -819,6 +1043,7 @@ export function BuilderShell() {
                     onLayerChange={setLayer}
                     onBlockVisibility={setBaseVisibility}
                     onBlockProps={setBaseProps}
+                    onMove={handleTreeMove}
                   />
                 </div>
               ) : isThemeDoc && !rawMode ? (
