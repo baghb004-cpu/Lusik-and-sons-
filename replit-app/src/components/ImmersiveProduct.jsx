@@ -188,7 +188,7 @@ export function ImmersiveProduct({ product, onBack }) {
     : `calc(var(--island-clearance) + ${dragging ? `${dragHeight}px` : detent === "collapsed" ? "76px" : detent === "medium" ? "46%" : "86%"} + 12px)`;
 
   return (
-    <div ref={rootRef} className={spread ? "imm-root imm-spread" : "imm-root"}>
+    <div ref={rootRef} className={["imm-root", spread && "imm-spread", reduced && "imm-reduced-root"].filter(Boolean).join(" ")}>
       <div
         ref={galleryRef}
         className="imm-gallery"

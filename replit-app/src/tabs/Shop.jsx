@@ -10,9 +10,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { CATEGORIES, productsInCategory, findProduct, categoryCover } from "../data/catalog.js";
+import { placeholdersInCategory, findPlaceholder } from "../data/placeholders.js";
 import { useHashRoute } from "../lib/useHashRoute.js";
 import { ProductBuyControls } from "../components/ProductBuyControls.jsx";
 import { ImmersiveProduct } from "../components/ImmersiveProduct.jsx";
+import { PlaceholderView, PlaceholderCard } from "../components/PlaceholderView.jsx";
 
 export function Shop() {
   const { segments, navigate, back } = useHashRoute();
@@ -21,10 +23,12 @@ export function Shop() {
   const productSlug = segments[2] ?? null;
 
   const product = categorySlug && productSlug ? findProduct(categorySlug, productSlug) : null;
+  const placeholder = categorySlug && productSlug && !product ? findPlaceholder(categorySlug, productSlug) : null;
   const category = categorySlug ? CATEGORIES.find((c) => c.slug === categorySlug) : null;
 
   if (product) return <ProductRoute product={product} onBack={back} />;
-  if (category && !category.comingSoon) return <CategoryGrid category={category} onOpen={(p) => navigate(`products/${p.categorySlug}/${p.productSlug}`)} onBack={back} />;
+  if (placeholder) return <PlaceholderView placeholder={placeholder} onBack={back} />;
+  if (category) return <CategoryGrid category={category} onOpen={(path) => navigate(path)} onBack={back} />;
   return <CategoryIndex onOpen={(c) => navigate(`products/${c.slug}`)} />;
 }
 
@@ -47,12 +51,13 @@ function CategoryIndex({ onOpen }) {
         {CATEGORIES.map((c) => {
           const cover = categoryCover(c);
           return (
+            // Coming-soon categories are browsable too (Chunk 8) —
+            // inside, their placeholder products carry the waitlist.
             <button
               key={c.slug}
               type="button"
               className="shop-cat-card"
-              disabled={c.comingSoon}
-              onClick={() => !c.comingSoon && onOpen(c)}
+              onClick={() => onOpen(c)}
               aria-label={c.comingSoon ? `${c.label} — coming soon` : `Browse ${c.label}`}
             >
               <span className="shop-cat-photo">
@@ -73,23 +78,44 @@ function CategoryIndex({ onOpen }) {
 
 // ── one category's product grid ──
 function CategoryGrid({ category, onOpen, onBack }) {
+  const live = productsInCategory(category.slug);
+  const placeholders = placeholdersInCategory(category.slug);
   return (
     <div className="shop-page">
       <button type="button" className="back-link" onClick={onBack} aria-label="Back">
         ‹ Shop
       </button>
       <h1 className="page-title">{category.label}</h1>
-      <div className="shop-grid">
-        {productsInCategory(category.slug).map((p) => (
-          <button key={p.id} type="button" className="shop-product-card" onClick={() => onOpen(p)} aria-label={`View ${p.name}`}>
-            <span className="shop-product-photo">
-              <img src={p.photoURLs[0]} alt="" loading="lazy" />
-            </span>
-            <span className="shop-product-name brand-display">{p.name}</span>
-            <span className="shop-product-price">From ${p.priceDollars}</span>
-          </button>
-        ))}
-      </div>
+      {live.length > 0 && (
+        <div className="shop-grid">
+          {live.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="shop-product-card"
+              onClick={() => onOpen(`products/${p.categorySlug}/${p.productSlug}`)}
+              aria-label={`View ${p.name}`}
+            >
+              <span className="shop-product-photo">
+                <img src={p.photoURLs[0]} alt="" loading="lazy" />
+              </span>
+              <span className="shop-product-name brand-display">{p.name}</span>
+              <span className="shop-product-price">From ${p.priceDollars}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {placeholders.length > 0 && (
+        <div className="ph-cards">
+          {placeholders.map((ph) => (
+            <PlaceholderCard
+              key={ph.key}
+              placeholder={ph}
+              onOpen={() => onOpen(`products/${ph.categorySlug}/${ph.slug}`)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

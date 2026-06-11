@@ -692,7 +692,11 @@ body {
 .imm-medium { height: 46%; }
 .imm-expanded { height: 86%; }
 .imm-dragging { transition: none; }
-.imm-reduced, .imm-reduced ~ .imm-dots { transition: none; }
+.imm-reduced { transition: none; }
+/* The dots ride the sheet's top edge — their position transition must
+   stand down with the sheet's (the reduced flag lives on the ROOT
+   because the dots precede the sheet in the DOM, out of ~'s reach). */
+.imm-reduced-root .imm-dots { transition: none; }
 
 /* The breathe teaching hint — transform-only rise-and-settle, one
    shot, retired forever once the guest moves the sheet themselves. */
@@ -1407,4 +1411,113 @@ body {
 /* the open book: the chat holds a centered column, not a 4:3 stretch */
 @media (min-width: 700px), (horizontal-viewport-segments: 2) {
   .chat-scroll, .chat-composer, .chat-offline { width: 100%; max-width: 640px; margin-inline: auto; }
+}
+
+/* ============================================================
+   Placeholders + waitlist (Chunk 8)
+   ============================================================ */
+
+.ph { padding: 18px; display: flex; flex-direction: column; gap: 14px; align-items: stretch; }
+.ph .back-link { align-self: flex-start; }
+.ph-cover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 200px;
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(150deg,
+    color-mix(in srgb, var(--accent) 22%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 7%, transparent) 55%,
+    color-mix(in srgb, var(--ink) 4%, transparent) 100%);
+}
+.ph-cover .journal-eyebrow { position: absolute; top: 18px; left: 20px; }
+.ph-title { margin: 0; font-size: 30px; font-weight: 400; line-height: 1.12; }
+.ph-tagline { margin: 0; font-size: 15px; font-weight: 500; opacity: 0.75; line-height: 1.5; }
+.ph-description { margin: 0; font-size: 15px; line-height: 1.65; color: var(--ink-soft); }
+.ph-unavailable {
+  padding: 15px;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  background: var(--cream-subtle);
+  font: 600 14px var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+.ph-price-soon {
+  margin: -6px 0 0;
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--accent);
+}
+.ph-waitlist {
+  padding: 14px;
+  border-radius: var(--radius-card);
+  background: var(--cream-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ph-form { display: flex; gap: 8px; }
+.ph-form .ck-input { flex: 1; }
+.ph-form .pill { flex: 0 0 auto; }
+.ph-joined { margin: 0; font-size: 13px; font-weight: 500; }
+.ph-mailto {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  opacity: 0.65;
+  text-decoration: underline;
+}
+
+.ph-cards { display: grid; gap: 16px; }
+.ph-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  font: inherit;
+  color: var(--ink);
+}
+.ph-card-band {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 110px;
+  padding: 16px;
+  background: linear-gradient(150deg,
+    color-mix(in srgb, var(--accent) 20%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 6%, transparent) 60%,
+    color-mix(in srgb, var(--ink) 4%, transparent) 100%);
+}
+.ph-card-band .shop-badge { position: absolute; top: 10px; left: 10px; bottom: auto; }
+.ph-card-title { font-size: 20px; font-weight: 500; line-height: 1.15; }
+.ph-card-body { display: block; padding: 14px 16px 16px; }
+.ph-card-tagline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 13px;
+  opacity: 0.7;
+  line-height: 1.5;
+}
+.ph-card-cta {
+  display: block;
+  margin-top: 9px;
+  font: 500 11px var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+/* the open book: placeholder cards hold a readable width */
+@media (min-width: 700px), (horizontal-viewport-segments: 2) {
+  .ph-cards { max-width: 700px; }
 }

@@ -190,10 +190,25 @@ port its behavior.
       bonus, local dev presents a localhost Origin, which is on the
       server's return-URL allowlist, so the Stripe ?order=success
       return works end-to-end in dev.
-- [ ] **Chunk 8 — Niceties.** Port the Chunk-8 iOS set: waitlist for the
-      four placeholder products (same /waitlist Function + keys), haptic
-      pass, dark mode audit (tokens already pair — verify every
-      surface), type scaling audit, reduced-motion audit.
+- [x] **Chunk 8 — Niceties.** Shipped: WAITLIST — the four web
+      placeholder products (towel-hand, towel-baptism, baby-swaddle,
+      baby-bathrobe; keys + copy verbatim, website slugs for the
+      routes) as coming-soon cards inside the now-browsable Towels /
+      For Baby categories → PlaceholderView with the "Currently
+      unavailable / Price coming soon." bar and the one-field signup
+      POSTing to the SAME /waitlist Function the site uses (via the
+      same-origin proxy), success state + haptic, mailto fallback.
+      Verified in a browser down to the validation error; the live
+      POST was deliberately NOT exercised — it would insert a real row
+      in the production waitlist table. HAPTIC PASS — add/remove/step/
+      tap/success all wired through the store + success on waitlist
+      join. DARK MODE — new surfaces screenshotted in both schemes
+      (token pairs hold). REDUCED MOTION — audit found + fixed a real
+      gap: the immersive dots' position transition couldn't be reached
+      by the sheet's reduced flag (DOM order beats ~), so the flag now
+      lives on the root. TYPE SCALING — page zoom verified; a px→rem
+      refactor is deliberately deferred (parity with the website's
+      px-based type).
 - [ ] **Chunk 9 — PWA prep.** The web sibling of App Store prep:
       manifest + icons (reuse the site's icon set), installability
       (Add to Home Screen), offline shell decision, meta/OG tags,

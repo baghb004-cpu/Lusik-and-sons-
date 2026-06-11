@@ -65,3 +65,21 @@ export async function sendChat(messages, sessionId) {
   }
   return data.reply;
 }
+
+/**
+ * POST /waitlist → { ok: true } (netlify/functions/waitlist.mjs).
+ * Public + IP-rate-limited server-side; `productKey` must match the
+ * web CATALOG key, so the admin Notify sweep sees app and website
+ * signups as one list per product.
+ */
+export async function joinWaitlist(email, productKey, productName) {
+  const res = await fetch(`${FUNCTIONS_BASE}/waitlist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, product_key: productKey, product_name: productName }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok || data?.ok !== true) {
+    throw new Error(data?.error || "We couldn't add you just now — please try again, or write to hello@lusikandsons.com.");
+  }
+}
