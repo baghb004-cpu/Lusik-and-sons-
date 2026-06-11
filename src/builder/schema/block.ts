@@ -89,6 +89,31 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
   spacer: z.object({ size: z.string().min(1) }).strict(),
+  button: z
+    .object({
+      label: z.string().min(1),
+      href: safeHref,
+      variant: z.enum(["primary", "secondary", "ghost"]).optional(),
+    })
+    .strict(),
+  breadcrumbs: z
+    .object({
+      items: z
+        .array(z.object({ label: z.string().min(1), href: safeHref.optional() }).strict())
+        .min(1), // last item = current page, no href needed
+    })
+    .strict(),
+  // CSS-only tabs (radio + named-peer pattern — no JS, static-export
+  // safe). Capped at 6 because the peer class names must be static
+  // literals for the Tailwind scanner.
+  tabs: z
+    .object({
+      items: z
+        .array(z.object({ id: blockId, label: z.string().min(1), body: richTextDoc }).strict())
+        .min(2)
+        .max(6),
+    })
+    .strict(),
 
   // CMS-bound blocks: render existing gate-checked content surfaces.
   // `binding` points at a content collection; inline overrides allowed

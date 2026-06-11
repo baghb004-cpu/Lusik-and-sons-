@@ -26,6 +26,16 @@ export {
 export { validatePage, type ValidationIssue, type ValidatePageResult } from "./validate.ts";
 
 export {
+  suggestSlug,
+  pagePath,
+  templatePath,
+  createPage,
+  duplicatePage,
+  pageToTemplate,
+  type NewPageOptions,
+} from "./pages.ts";
+
+export {
   contrastRatio,
   relativeLuminance,
   checkContrast,

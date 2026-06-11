@@ -192,6 +192,106 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
     return <div aria-hidden="true" style={{ height: tokenToCss(p.size) }} />;
   },
 
+  button: (block) => {
+    const p = block.props as { label: string; href: string; variant?: string };
+    const variants: Record<string, string> = {
+      primary: "bg-ink text-cream hover:opacity-90",
+      secondary: "border border-ink/25 text-ink hover:bg-cream",
+      ghost: "text-accent underline decoration-accent/50 underline-offset-2",
+    };
+    return (
+      <a href={p.href} className={cx("inline-block rounded-full px-5 py-2 text-sm font-medium transition", variants[p.variant ?? "primary"])}>
+        {p.label}
+      </a>
+    );
+  },
+
+  breadcrumbs: (block) => {
+    const p = block.props as { items: Array<{ label: string; href?: string }> };
+    return (
+      <nav aria-label="Breadcrumb">
+        <ol className="flex flex-wrap items-center gap-1 text-sm text-muted">
+          {p.items.map((item, i) => {
+            const last = i === p.items.length - 1;
+            return (
+              <li key={i} className="flex items-center gap-1">
+                {item.href && !last ? (
+                  <a href={item.href} className="hover:text-ink hover:underline">{item.label}</a>
+                ) : (
+                  <span aria-current={last ? "page" : undefined} className={last ? "text-ink" : undefined}>{item.label}</span>
+                )}
+                {!last ? (
+                  <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
+                    <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : null}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    );
+  },
+
+  // Radio + named-peer tabs: pure CSS, zero JS, static-export safe.
+  // All radios render first (sr-only) so every label and panel is a
+  // LATER SIBLING the peer selector can reach. The class arrays below
+  // are complete static literals — the Tailwind scanner requirement —
+  // which is why the schema caps tabs at 6.
+  tabs: (block) => {
+    const p = block.props as { items: Array<{ id: string; label: string; body: RichTextDoc }> };
+    const group = `tabs-${block.id}`;
+    const RADIO = ["peer/t0", "peer/t1", "peer/t2", "peer/t3", "peer/t4", "peer/t5"];
+    const LABEL = [
+      "peer-checked/t0:bg-cream peer-checked/t0:text-ink",
+      "peer-checked/t1:bg-cream peer-checked/t1:text-ink",
+      "peer-checked/t2:bg-cream peer-checked/t2:text-ink",
+      "peer-checked/t3:bg-cream peer-checked/t3:text-ink",
+      "peer-checked/t4:bg-cream peer-checked/t4:text-ink",
+      "peer-checked/t5:bg-cream peer-checked/t5:text-ink",
+    ];
+    const PANEL = [
+      "hidden peer-checked/t0:block",
+      "hidden peer-checked/t1:block",
+      "hidden peer-checked/t2:block",
+      "hidden peer-checked/t3:block",
+      "hidden peer-checked/t4:block",
+      "hidden peer-checked/t5:block",
+    ];
+    const items = p.items.slice(0, 6);
+    // ONE flex-wrap container: radios (sr-only), then labels (the tab
+    // strip row), then full-width panels — everything a direct sibling
+    // so the general-sibling peer selector reaches labels AND panels.
+    return (
+      <div className="flex flex-wrap gap-1 rounded-xl border border-ink/10 p-1">
+        {items.map((item, i) => (
+          <input
+            key={item.id}
+            type="radio"
+            id={`${group}-${i}`}
+            name={group}
+            defaultChecked={i === 0}
+            className={cx("sr-only", RADIO[i])}
+          />
+        ))}
+        {items.map((item, i) => (
+          <label
+            key={item.id}
+            htmlFor={`${group}-${i}`}
+            className={cx("cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-muted transition hover:bg-cream", LABEL[i])}
+          >
+            {item.label}
+          </label>
+        ))}
+        {items.map((item, i) => (
+          <div key={item.id} className={cx("w-full border-t border-ink/10 p-4 text-sm", PANEL[i])}>
+            <RichText doc={item.body} />
+          </div>
+        ))}
+      </div>
+    );
+  },
+
   announcementBar: (_block, ctx) => {
     const a = ctx.cms?.announcement;
     if (!a?.enabled || !a.message) return null; // off = renders nothing, same as the live site

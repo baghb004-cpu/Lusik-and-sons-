@@ -103,6 +103,35 @@
               }
             ]
           }
+        },
+        {
+          "id": "b_demobtn00001",
+          "type": "button",
+          "props": { "label": "See what Lusik makes", "href": "/shop", "variant": "primary" }
+        },
+        {
+          "id": "b_demotabs0001",
+          "type": "tabs",
+          "props": {
+            "items": [
+              {
+                "id": "b_demotaba0001",
+                "label": "Tabs are blocks too",
+                "body": {
+                  "type": "doc",
+                  "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "These tabs are pure CSS — radio inputs and peer selectors, no JavaScript, so they survive a static export." }] }]
+                }
+              },
+              {
+                "id": "b_demotabb0001",
+                "label": "And keyboard-friendly",
+                "body": {
+                  "type": "doc",
+                  "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Tab to a label, press space, the panel switches — accessible by construction." }] }]
+                }
+              }
+            ]
+          }
         }
       ]
     }
