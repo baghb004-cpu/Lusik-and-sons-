@@ -26,6 +26,7 @@ import { MobileSearchView } from "./MobileSearchView.jsx";
 import { CartContents } from "./CartContents.jsx";
 import { YouMayAlsoLikeSheet } from "./YouMayAlsoLikeSheet.jsx";
 import { SiteTopNav } from "./SiteTopNav.jsx";
+import { AnnouncementBar } from "./AnnouncementBar.jsx";
 import { SiteFooter } from "./SiteFooter.jsx";
 import { AuthDrawer } from "./AuthDrawer.jsx";
 import { PolicyModal } from "./PolicyModal.jsx";
@@ -161,6 +162,10 @@ export function SiteChrome({ children }) {
   return (
     <>
       {/* Desktop top nav (lg+) */}
+      {/* Studio-controlled announcement strip — renders nothing while
+          disabled in content/pages/announcement.json. Above BOTH navs so
+          one edit reaches phones and desktop alike. */}
+      <AnnouncementBar />
       <SiteTopNav onOpenCart={() => setCartOpen(true)} onSignIn={() => setAuthOpen(true)} />
 
       {/* Mobile per-page header */}

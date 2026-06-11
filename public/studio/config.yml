@@ -27,6 +27,13 @@ backend:
   name: git-gateway
   branch: main
 
+# Editorial workflow: edits save as DRAFTS (a branch + pull request under
+# the hood) and move Draft → In review → Ready before publishing. Because
+# each draft is a real PR, Netlify builds a DEPLOY PREVIEW of it — open the
+# PR's preview link to see unpublished changes on the actual site before
+# anyone else does. Publishing merges; the production build follows.
+publish_mode: editorial_workflow
+
 # Where Decap-uploaded media (images for journal posts) goes.
 # Next serves /public/* as-is at build time, so the URL
 # `/journal-media/foo.jpg` resolves correctly in production.
@@ -173,6 +180,53 @@ collections:
   - name: "site-content"
     label: "Site Content"
     files:
+      - name: "announcement"
+        label: "Announcement bar"
+        file: "content/pages/announcement.json"
+        fields:
+          - { label: "Show the announcement", name: "enabled", widget: "boolean", default: false, hint: "Off = no bar anywhere. On = the strip shows at the very top of every page, phones and desktop." }
+          - { label: "Message", name: "message", widget: "string", required: false, hint: "Required when enabled. Keep it one line — e.g. 'Order by Dec 10 to arrive before Christmas.'" }
+          - { label: "Link", name: "link", widget: "string", required: false, hint: "Optional: a site path (/shop/blankets) or https:// URL." }
+          - { label: "Link label", name: "linkLabel", widget: "string", required: false, hint: "The tappable words — required if Link is set." }
+      - name: "home"
+        label: "Home page"
+        file: "content/pages/home.json"
+        fields:
+          - label: "Featured product (the “We think you'll love” card)"
+            name: "featured"
+            widget: "object"
+            fields:
+              - { label: "Category slug", name: "category", widget: "select", options: ["blankets", "bibs", "towels", "baby"] }
+              - { label: "Product slug", name: "slug", widget: "string", hint: "Must be a LIVE product's slug (e.g. armenian-alphabet-blanket) — the build checks and refuses typos or coming-soon products." }
+      - name: "story"
+        label: "Our Story page"
+        file: "content/pages/story.json"
+        fields:
+          - { label: "Eyebrow", name: "eyebrow", widget: "string" }
+          - { label: "Heading", name: "heading", widget: "string" }
+          - label: "Paragraphs"
+            name: "paragraphs"
+            widget: "list"
+            field: { label: "Paragraph", name: "paragraph", widget: "text" }
+            hint: "Plain text. The alphabet triads 'Ա, Բ, Գ' and 'A, B, C' render in gold automatically wherever they appear."
+          - { label: "Signature", name: "signature", widget: "string" }
+          - { label: "Signature subline", name: "signatureSub", widget: "string" }
+      - name: "testimonials"
+        label: "Testimonials"
+        file: "content/pages/testimonials.json"
+        fields:
+          - { label: "Eyebrow", name: "eyebrow", widget: "string" }
+          - { label: "Title (before italics)", name: "titlePre", widget: "string" }
+          - { label: "Title (italic part)", name: "titleEm", widget: "string" }
+          - label: "Quotes"
+            name: "quotes"
+            widget: "list"
+            summary: "{{fields.name}} — {{fields.quote}}"
+            hint: "THE SITE SHOWS THE FIRST THREE — drag to reorder. Seed quotes are placeholders: replace them with real customers who said yes to being quoted (TODO_LUSIK)."
+            fields:
+              - { label: "Quote", name: "quote", widget: "text" }
+              - { label: "Name", name: "name", widget: "string" }
+              - { label: "Place", name: "place", widget: "string", required: false }
       - name: "faq"
         label: "FAQ page"
         file: "content/pages/faq.json"
