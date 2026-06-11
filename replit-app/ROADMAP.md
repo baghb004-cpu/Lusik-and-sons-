@@ -98,9 +98,22 @@ port its behavior.
       vs classic) shared with the future bag. THE OPEN BOOK: two-page
       spread — photos left page, buy column right page, detents
       neutralized, taps go straight to the viewer, no hint.
-- [ ] **Chunk 3 — Lightbox.** Port `PhotoViewer.swift`: zoomable photo
-      viewer (pinch via pointer events, double-tap zoom, pan clamped,
-      sideways paging when unzoomed, pull-down-to-close, ✕, counter).
+- [x] **Chunk 3 — Lightbox.** Shipped: PhotoLightbox, the zoomable
+      machine replacing the Chunk-2 placeholder in place — pinch 1×–4×
+      anchored on the pinch midpoint, double-tap 2.5× into the tapped
+      spot / double-tap reset, pan clamped to the photo's RENDERED
+      edges (letterboxed photos don't pan their short axis), sideways
+      scroll-snap paging when unzoomed (paging resets zoom), pull-down-
+      to-close past 90px with translate+fade feedback, ✕ / Escape,
+      counter + the web's exact hint copy. Gesture plumbing:
+      `touch-action: pan-x` keeps native horizontal paging while
+      vertical drags + pinches arrive as captured pointer events
+      (zoomed flips to `none` so one finger pans); pinch→pan hand-off
+      when one finger lifts. Portaled to <body> — the immersive root is
+      a lower stacking context under the glass island, so the viewer
+      must escape it to cover the nav (found by driving the real
+      photo-tap contract in a browser). Reduced motion: no animated
+      transitions.
 - [ ] **Chunk 4 — Bag.** Port `Cart.swift` + `BagView.swift`: cart store
       with localStorage persistence, the display mirrors of the server
       math (bundle savings $1/extra capped $25, free shipping at $150),

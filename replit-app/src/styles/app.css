@@ -759,3 +759,12 @@ body {
   font: 400 11px var(--font-body);
   pointer-events: none;
 }
+
+/* ── lightbox zoom states (Chunk 3) ── */
+/* Unzoomed: the browser keeps native horizontal paging; vertical
+   drags + pinches reach JS. Zoomed: all touches reach JS (pan). */
+.lightbox-slide { touch-action: pan-x; }
+.lightbox-zoomed .lightbox-slide { touch-action: none; }
+.lightbox-slide img { will-change: transform; }
+.lightbox-animating .lightbox-slide img { transition: transform 0.24s ease; }
+.lightbox-animating { transition: transform 0.24s ease, opacity 0.24s ease; }
