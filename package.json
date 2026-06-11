@@ -25,7 +25,9 @@
     "test:unit": "node --test --test-reporter=spec netlify/functions/_lib/__tests__/*.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:install": "playwright install --with-deps chromium"
+    "test:install": "playwright install --with-deps chromium",
+    "postnext:build": "node scripts/check-bundle-budget.mjs",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.9",
@@ -41,6 +43,7 @@
   "devDependencies": {
     "@axe-core/react": "^4.11.3",
     "@lhci/cli": "^0.15.1",
+    "@next/bundle-analyzer": "^16.2.9",
     "@playwright/test": "^1.48.0",
     "@types/node": "^25.9.2",
     "@types/react": "^18.3.28",
