@@ -114,11 +114,20 @@ port its behavior.
       must escape it to cover the nav (found by driving the real
       photo-tap contract in a browser). Reduced motion: no animated
       transitions.
-- [ ] **Chunk 4 — Bag.** Port `Cart.swift` + `BagView.swift`: cart store
-      with localStorage persistence, the display mirrors of the server
-      math (bundle savings $1/extra capped $25, free shipping at $150),
-      rows tapping back to products, qty stepper, swipe-to-delete,
-      progress bar, empty state. Haptics in the store mutations.
+- [x] **Chunk 4 — Bag.** Shipped: CartContext persistence
+      (localStorage `lusik.cart.v1`, shape-validated on read so a
+      corrupt blob can't crash the app) + the full mutation set
+      (remove / setQty 1..99 clamp / clear, each owning its haptic) +
+      the display mirrors of the server math: bundle savings ($1 per
+      extra unit, $25 cap, subtotal floor — exact bundle-discount.mjs
+      parity) and free-shipping-at-$150 progress. Bag tab: rows with
+      photo/title tapping back to the product page (productFor strips
+      the -with-cap suffix), qty stepper (minus at 1 removes, website
+      parity), pointer-drag swipe-to-delete (pan-y keeps scrolling
+      native; reduced-motion honored), bundle-savings row + the
+      add-another nudge, progress bar, empty state with a Browse
+      button, Checkout button → the bag/checkout route Chunk 5 fills,
+      Buena Park footnote.
 - [ ] **Chunk 5 — Checkout.** Port `CheckoutView.swift` +
       `ShippingZones.swift`: zone table mirror, required ship ZIP with
       live estimate, gift options, reminder opt-in, notes, POST

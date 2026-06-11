@@ -768,3 +768,167 @@ body {
 .lightbox-slide img { will-change: transform; }
 .lightbox-animating .lightbox-slide img { transition: transform 0.24s ease; }
 .lightbox-animating { transition: transform 0.24s ease, opacity 0.24s ease; }
+
+/* ============================================================
+   Bag (Chunk 4) — swipeable rows, stepper, savings, progress.
+   ============================================================ */
+
+.bag-page {
+  padding: 18px;
+}
+
+.bag-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bag-row-wrap {
+  position: relative;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.bag-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 88px;
+  border: 0;
+  background: #8b2c2c;
+  color: #fff;
+  font: 600 13px var(--font-body);
+  cursor: pointer;
+}
+.bag-row {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  padding: 12px;
+  touch-action: pan-y;
+  transition: transform 0.22s ease;
+}
+.bag-row-dragging { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bag-row { transition: none; }
+}
+.bag-row-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.bag-row-main img,
+.bag-thumb-empty {
+  flex: 0 0 auto;
+  width: 58px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--cream-subtle);
+}
+.bag-row-text { min-width: 0; }
+.bag-row-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.bag-row-sub {
+  display: block;
+  font-size: 11px;
+  opacity: 0.55;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bag-row-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-left: 70px;
+}
+.bag-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--cream-subtle);
+  border-radius: 999px;
+}
+.bag-stepper button {
+  width: 32px;
+  height: 30px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bag-stepper span {
+  min-width: 26px;
+  text-align: center;
+  font: 600 13px var(--font-body);
+}
+.bag-row-price { font: 600 14px var(--font-body); }
+
+/* ── summary ── */
+.bag-summary {
+  margin-top: 18px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bag-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+}
+.bag-muted { opacity: 0.7; }
+.bag-strong { font-weight: 500; }
+.bag-savings { font-weight: 600; color: var(--accent); }
+.bag-nudge {
+  margin: 0;
+  font-size: 11px;
+  font-style: italic;
+  opacity: 0.5;
+  line-height: 1.5;
+}
+.bag-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden;
+}
+.bag-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bag-progress span { transition: none; }
+}
+.bag-progress-note { margin: 5px 0 0; font-size: 11px; opacity: 0.6; }
+.bag-checkout {
+  justify-content: center;
+  padding: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+.bag-footnote { margin: 0; font-size: 11px; opacity: 0.5; line-height: 1.5; }
