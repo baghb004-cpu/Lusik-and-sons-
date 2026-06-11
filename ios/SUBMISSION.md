@@ -6,14 +6,14 @@ table, screenshot list, description). This file is the **how**: from
 "I have a Mac and $99" to "the app is on the App Store," in order,
 with the exact text to paste when Apple asks questions.
 
-> **The two things that can actually block you:**
-> 1. **The privacy policy URL.** App Store submission requires one and
->    the site doesn't have a standalone `/privacy` page yet (it's a
->    footer modal). Internal TestFlight does NOT need it — you can do
->    steps 1–5 today and fix this before step 7.
-> 2. **Stripe is LIVE.** The app talks to the production backend with
->    live Stripe keys. Any checkout you "test" is a real charge — see
->    the boxed note in step 5 for the right way to test it.
+> **The one thing that can actually bite you:**
+> **Stripe is LIVE.** The app talks to the production backend with
+> live Stripe keys. Any checkout you "test" is a real charge — see
+> the boxed note in step 5 for the right way to test it.
+>
+> (The privacy-policy URL used to be the submission blocker — it's
+> resolved: **https://lusikandsons.com/privacy is live**, shipped as
+> website PR #248.)
 
 ---
 
@@ -115,13 +115,13 @@ with the exact text to paste when Apple asks questions.
 testers. Needs Beta App Review (~1 day, much lighter than full
 review). Skippable for a family shop; internal testing is enough.
 
-## 6. Before the real submission — the privacy URL
+## 6. Before the real submission — the privacy URL ✓ DONE
 
-The App Store listing requires a public privacy policy URL. The plan
-of record: add a `/privacy` route to the website that renders the
-existing Privacy Policy content (a small website PR on `main`, NOT
-from this branch). Until that page exists, stop here — everything
-above (TestFlight) works without it.
+The App Store listing requires a public privacy policy URL.
+**Resolved:** the website serves the full Privacy Policy (including
+the live CPRA opt-out switch) at **https://lusikandsons.com/privacy**
+— shipped as website PR #248. Nothing to do here; paste that URL in
+step 7.
 
 ## 7. Fill in the listing
 
@@ -210,6 +210,6 @@ respond in Resolution Center; these are the three plausible ones:
 | SKU | `lusiksons-ios-001` |
 | Support URL | `https://lusikandsons.com/contact` |
 | Marketing URL | `https://lusikandsons.com` |
-| Privacy policy URL | `https://lusikandsons.com/privacy` ⚠️ page must be created first |
+| Privacy policy URL | `https://lusikandsons.com/privacy` ✓ live |
 | Review contact | `hello@lusikandsons.com` · (760) 874-2333 |
 | Versioning | `MARKETING_VERSION` = store version; `CURRENT_PROJECT_VERSION` += 1 every upload |

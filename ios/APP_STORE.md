@@ -26,12 +26,9 @@ you can prepare before touching Apple's site.
 
 - **Support URL:** `https://lusikandsons.com/contact`
 - **Marketing URL** (optional): `https://lusikandsons.com`
-- **Privacy Policy URL:** ⚠️ **TODO_LUSIK — blocking.** The site's privacy
-  policy lives inside the footer modal; there is **no standalone
-  `/privacy` URL**, and App Store Connect requires one. Fix = a small
-  website PR adding a `/privacy` route that renders the existing policy
-  content (normal website-repo workflow, NOT from this branch). Until it
-  exists, submission can't be completed.
+- **Privacy Policy URL:** `https://lusikandsons.com/privacy` ✓ **live**
+  (shipped as website PR #248 — the same policy the footer modal shows,
+  including the CPRA do-not-share switch).
 
 ## Age rating questionnaire
 

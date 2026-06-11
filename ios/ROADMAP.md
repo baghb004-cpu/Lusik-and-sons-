@@ -167,9 +167,10 @@ Each chunk ≈ one short session. Do them in order; each ends with: commit on
       (website-side, tracked in both docs): the public `/privacy` URL.
 
 **🎉 All eleven chunks complete.** The app is feature-complete,
-fold-ready, and submission-ready end to end. What's left is on the
-human side: enroll, TestFlight on real hardware, ship the website's
-`/privacy` page, replace the placeholder icon art if desired, submit.
+fold-ready, and submission-ready end to end. The `/privacy` page
+shipped (website PR #248 — live at lusikandsons.com/privacy), so
+what's left is purely on the human side: enroll, TestFlight on real
+hardware, replace the placeholder icon art if desired, submit.
 
 ## Standing decisions (so future sessions don't re-litigate)
 
