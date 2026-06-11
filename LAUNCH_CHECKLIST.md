@@ -4,7 +4,8 @@ A living inventory of what's still between the site and a fully-finished public
 launch. Most items are addressed to **Lusik** (photos, pricing, copy
 confirmation); a couple need a dev pass. Refresh this file by hand (or ask
 Claude to re-audit) whenever the catalog or content changes — last refreshed
-**2026-06-09**.
+**2026-06-11** (this pass also verified the live Netlify env vars directly,
+not just the code).
 
 Status legend: ✅ done · 🟡 needs Lusik · 🔧 needs a dev pass.
 
@@ -27,9 +28,9 @@ Bib prices were dropped to these everyday levels in June 2026 (a deliberate
 price-test — lower than the old founding-promo prices, so the promo was
 retired rather than extended).
 
-**Four products remain coming-soon placeholders**, now CMS-managed — Lusik can
-edit them herself in the Content Studio at `/studio` (they live in
-`content/products/*.json`):
+**Four products remain coming-soon placeholders.** All eleven products (live
+ones included) are CMS-managed now — Lusik can edit them herself in the Content
+Studio at `/studio` (they live in `content/products/*.json`):
 
 | Product | Blocker |
 | --- | --- |
@@ -56,14 +57,15 @@ price (the server-side price contract) — otherwise checkout rejects it.
 
 In rough priority order:
 
-- 🟡 **Replace the placeholder testimonials.** The quotes in
-  `src/components/TestimonialsSection.jsx` (rendered on the home page) use
-  invented names and were written as seed content. Swap in real quotes from
-  customers who said yes to being quoted — or hide the section until then.
-- 🟡 **Verify the Calendly link.** `CONFIG.TEXT_US.calendly_url` is a guessed
-  placeholder URL. If the account/event doesn't exist, the "Book a video call"
-  circle on the mobile Shop page dead-ends. Create the event (free tier is
-  fine) and paste the real link.
+- 🟡 **Replace the placeholder testimonials.** The home-page quotes use
+  invented names and were written as seed content. They're now CMS-managed
+  (`content/pages/testimonials.json`), so Lusik can swap in real quotes — from
+  customers who said yes to being quoted — herself in the Studio, or empty the
+  list to hide the section until then.
+- ✅ **Calendly link is real (2026-06-11).** `CONFIG.TEXT_US.calendly_url` now
+  points at the owner-confirmed 30-minute event,
+  `https://calendly.com/lusikandsons/30min`. If the event is ever renamed or
+  deleted in Calendly, update the config in the same breath.
 - 🟡 Confirm the Alphabet Blanket size (`src/data/catalog.js` — "Approx.
   30 × 36 in" is marked unconfirmed) and the blanket variants flagged in
   `src/data/product.js`.
@@ -87,15 +89,41 @@ In rough priority order:
 
 ## Payments / go-live (owner-only — can't be automated)
 
+The 2026-06-11 audit checked the **live Netlify environment** directly. Set and
+confirmed: `STRIPE_SECRET_KEY` (live key), `STRIPE_WEBHOOK_SECRET`,
+`NETLIFY_DATABASE_URL`, `RESEND_API_KEY`, `ADMIN_NOTIFICATION_EMAIL`,
+`ADMIN_EMAILS`, `REMINDER_SECRET`. What remains:
+
+- 🟡 **Brand the Resend sender.** `RESEND_FROM_EMAIL` is verified to still be
+  `onboarding@resend.dev` — order confirmations risk the spam folder. Verify
+  `lusikandsons.com` in Resend → Domains, add the SPF/DKIM/DMARC records at
+  Cloudflare, then set `RESEND_FROM_EMAIL=Lusik & Sons <orders@lusikandsons.com>`.
+  Highest-value 15 minutes on this list.
+- 🟡 **Set `NEXT_PUBLIC_SENTRY_DSN`** — verified NOT set, so Sentry is wired but
+  dormant: nobody finds out when something breaks for a real customer.
+- 🟡 **Rotate the dev-context Stripe secrets.** The Netlify env vars
+  `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` carry **unmasked plaintext
+  copies in the "dev" context** (the other contexts are secret-masked) —
+  anything with Netlify API read access can see the live key. Delete the
+  dev-context values (local dev should use a Stripe *test* key via `.env`) and
+  roll the live secret key in Stripe afterward.
+- 🟡 Confirm the Stripe webhook is subscribed to all three events
+  (`checkout.session.completed`, `charge.refunded`, `checkout.session.expired`)
+  — not checkable via the API access available to the audit.
 - 🟡 The end-to-end **Stripe live-card test**: place one small real-card order,
   confirm the webhook fires and the order lands in the DB, then refund.
-- 🟡 Confirm the Stripe webhook is subscribed to all three events
-  (`checkout.session.completed`, `charge.refunded`, `checkout.session.expired`).
-- 🟡 Confirm `NEXT_PUBLIC_SENTRY_DSN` is set in Netlify if error monitoring
-  should be on (Sentry is wired but dormant without it).
+- 🟡 `SCHEDULED_FN_SECRET` is not set (optional — only needed to manually
+  trigger `cleanup-blobs` / `gift-reminder` with curl; Netlify's scheduler
+  works without it).
 
 ## Engineering hygiene (in progress, low priority)
 
 - ✅ Unknown `/shop/...` and `/journal/...` URLs now return a real 404 (the
   dynamic routes call `notFound()`), instead of a soft-404 with HTTP 200.
+- ✅ First-load JS budget (210 KB gzip per route) enforced as a postbuild on
+  every build — locally, CI, and Netlify (`scripts/check-bundle-budget.mjs`).
+- ✅ All products + categories + five page surfaces are CMS-managed with a
+  build-time trusted-products reconciliation gate (a Studio edit can't invent
+  a buyable product or drift a price).
+- ✅ The privacy policy lives at a real URL (`/privacy`) for external listings.
 - 🔧 Gradual `.js → .ts` migration is ongoing (one module at a time, each a PR).

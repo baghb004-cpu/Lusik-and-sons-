@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Status banner — last updated 2026-06-09.** Four big things to know, all now
+> **Status banner — last updated 2026-06-11.** Five big things to know, all now
 > reflected below:
 > 1. **The Next.js (App Router) migration is COMPLETE and flipped to production.**
 >    The site was a Vite-built React SPA; it is now a **Next.js App Router** app.
@@ -12,26 +12,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 >    `NEXTJS_MIGRATION_PLAN.md` for the phase-by-phase history.)
 > 2. **The UI went through an Apple-Store-style redesign** (mobile bottom-nav +
 >    "Liquid Glass" aesthetic, home "Explore" cards, a real `/shop/<category>/<product>`
->    route hierarchy, and a narrative copy rewrite). The e2e smoke suite was updated
->    to match in PR #147.
-> 3. **Launch-readiness polish landed** after the flip: a PNG icon set + favicon +
->    maskable icon, Organization JSON-LD, branded `404`/error pages, Sentry wired
->    into the Next provider shell (DSN-gated), and a dependency-review CI gate.
-> 4. **Ads are live and consent-gated (June 2026).** A Meta Pixel + Google Ads
->    tag load from `app/providers.tsx`, behind the CPRA do-not-share opt-out in
->    `src/lib/adConsent.ts` (footer "Your privacy choices" link + a live switch
->    inside the Privacy Policy; GPC browser signals honored). The Privacy Policy
->    was rewritten to disclose them — keep it in sync with the tags. The cart now
->    also persists (localStorage for everyone + debounced `saved-cart` PUT for
->    signed-in users, cleared on the `?order=success` return), and the Full
->    Alphabet Crib Blanket is **live**, no longer the priced-placeholder example.
+>    route hierarchy, and a narrative copy rewrite; e2e suite updated in PR #147),
+>    and a **June wave on top of it**: photo-led products get an immersive
+>    **pill-sheet mobile PDP** (Find My-style detents, photo lightbox, "breathe"
+>    teaching hint — `CONFIG.SHEET`), plus pure-CSS scroll-driven "theater"
+>    effects, a 15-bucket responsive pass, and bag rows that tap back to their
+>    product page.
+> 3. **Content is CMS-managed now (June 2026).** All eleven products (live ones
+>    included), the four categories, and five page surfaces (announcement bar,
+>    FAQ, home featured pick, Story, testimonials) live in `content/**/*.json`,
+>    edited in the Studio (`/studio`, with editorial workflow + deploy previews)
+>    and compiled into `src/data/*.generated.js` by `npm run gen:data` (a `pre*`
+>    hook on dev/build/typecheck/test). A build-time gate reconciles live
+>    products against `_lib/trusted-products.mjs`, so a Studio edit can never
+>    invent a buyable product or drift a displayed price.
+> 4. **Commerce got a pricing wave (June 2026).** Bib prices dropped to everyday
+>    levels (founding promo retired); shipping is zone-priced by ZIP with a
+>    free-shipping threshold; a storewide bundle discount ($1 off each extra
+>    piece) applies as a real Stripe coupon. All server-trusted, computed in
+>    `_lib/pricing.mjs` + friends, kept in lockstep with `CONFIG` by drift tests.
+>    Checkout also confirms ZIP → city/state via the first-party `zip-lookup`
+>    Function. Ads remain live + consent-gated; the cart persists.
+> 5. **Privacy/security hardening landed.** The Privacy Policy text moved to
+>    `src/data/policies.js` and now renders at a real **`/privacy`** URL (App
+>    Store requirement) as well as in the modal; Identity JWTs are **verified
+>    against the issuer** (an unsafe decode-and-trust fallback was removed);
+>    security headers were hardened; account **export + deletion** Functions
+>    cover CCPA/GDPR rights; and every build enforces a **210 KB gzip
+>    first-load JS budget** per route (`scripts/check-bundle-budget.mjs`).
 
 ## What this is
 
-A marketing + e-commerce site for **Lusik & Sons**, a Cypress, CA maker of hand
-cross-stitched Armenian alphabet baby blankets and related goods. The frontend is
+A marketing + e-commerce site for **Lusik & Sons**, a Buena Park, CA maker of hand
+cross-stitched Armenian alphabet baby blankets and related goods (site copy says
+"Lusik's workshop in Buena Park, CA" — a June 2026 privacy truth-up; don't
+reintroduce the older Cypress wording). The frontend is
 a **Next.js (App Router) app** (routes under `app/`, components/data/libs under
-`src/`); the backend is a small `netlify/` directory holding the database schema
+`src/`); editable content lives as JSON under `content/` (compiled at build time);
+the backend is a small `netlify/` directory holding the database schema
 and the serverless functions every backend interaction goes through.
 
 ## Architecture — the one thing to know
@@ -91,7 +109,9 @@ drift as the tree grows; use `rg`/`grep` to locate a component. High-level shape
 | `app/not-found.tsx`, `app/error.tsx` | Branded 404 + error boundary pages |
 | `src/routes/*.jsx` | Client route components: `HomeRoute`, `ShopIndexRoute`, `CategoryRoute`, `ProductRoute`, `JournalRoute`, `CartRoute`, `CheckoutRoute`, `AccountRoute`, `AdminRoute`, `GalleryRoute` |
 | `src/state/` | `SiteProvider.jsx` (cart + nav + auth state, the old `App.jsx` core) + `useSiteNav.js` (`next/navigation` wrapper) |
-| `src/data/*.{js,ts}` | Pure data: `product.js` (live Armenian Alphabet Blanket), `customProducts.js` (bib), `catalog.js` (multi-category catalog incl. priced + unpriced placeholders), `config.js` (the dial board), `socialPlatforms.js`, `shippingCarriers.ts`, `journalPosts.js` |
+| `content/` | **CMS-managed JSON** (edited in the Studio at `/studio`): `products/*.json` (all 11), `categories/*.json` (4), `pages/*.json` (announcement bar, faq, home featured pick, story, testimonials) — see "Content layer" below |
+| `scripts/gen-*.mjs` | Build-time generators (`npm run gen:data`) that compile `content/` + `journalPosts.js` into `src/data/*.generated.js` / `journalPostsData.js`; `check-bundle-budget.mjs` is the postbuild JS-budget gate |
+| `src/data/*.{js,ts}` | Pure data: `product.js` (live Armenian Alphabet Blanket), `customProducts.js` (bib), `catalog.js` (catalog assembly over the generated CMS data), `config.js` (the dial board), `socialPlatforms.js`, `shippingCarriers.ts`, `shippingZones.js`, `policies.js` (privacy/terms text, single source for modal + `/privacy`), `journalPosts.js` |
 | `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `errorReporting` (Sentry), `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl`, `seo` (`organizationJsonLd()` etc.) |
 | `src/i18n/` | `LangContext.jsx` (+ `LanguageProvider`, `useT()`), `translations.js` (en / hy / hyw) |
 | `src/images/photos.js` | `PHOTO_*` / `IMG_*` constants → `/img/*.jpg` paths |
@@ -106,7 +126,7 @@ Notable components: `HomeView` (the brand-story home + the "Explore" cards),
 `OrderCard`, `JournalView`, `WaitlistModal`, `PolicyModal`, `AuthDrawer`,
 `ChatAssistant`, `BackToTopButton`, `TextUsWidget`.
 
-## The May 2026 redesign (what the UI looks like now)
+## The May 2026 redesign + June additions (what the UI looks like now)
 
 The site was reworked into an Apple-Store-style experience. The pieces that most
 often trip up code/tests written against the old UI:
@@ -122,7 +142,7 @@ often trip up code/tests written against the old UI:
   card is a `<button aria-label="{title} — {blurb}">` that routes to a real page.
   Both the mobile carousel and desktop grid render the same cards; the off-viewport
   copy is `display:none`, so `getByRole` resolves to the single visible card. The
-  cards (e.g. `"Shop — Blankets, bibs & towels"`, `"Our Story — Armenia → Cypress"`)
+  cards (e.g. `"Shop — Blankets, bibs & towels"`, `"Our Story — Armenia → California"`)
   are how you reach `/shop` and the promoted section pages from home.
 - **Real `/shop` hierarchy.** `/shop` → `ShopIndexView` (4 category cards,
   `aria-label="Browse {Category}"`) → `/shop/<category>` → `CategoryView`
@@ -147,6 +167,49 @@ often trip up code/tests written against the old UI:
   - **Unpriced** placeholder (`priceFrom: null`) → a **waitlist path**: a disabled
     "Currently unavailable" bar + a "Write me when it's ready" **button**, with
     "Price coming soon."
+- **Immersive pill-sheet mobile PDP (June 2026).** Photo-led products render a
+  Find My-style draggable sheet over a full-bleed photo on phones: three detents
+  (`expanded`/`medium`/`collapsed`), flick gestures, a per-product remembered
+  detent, tap-the-photo to collapse (or, when collapsed, open a pinch-zoomable
+  lightbox), and a one-time "breathe" rise-and-settle hint until the guest moves
+  the sheet themselves. All dials live in `CONFIG.SHEET`;
+  `CONFIG.SHEET.EXCLUDE_KEYS` keeps the **configurator-led** products (alphabet
+  blanket, custom bib) on the classic page, where the live design preview matters
+  more than the photo. New catalog products with `images` get the sheet
+  automatically. The June **responsive pass** (svh/dvh caps, safe areas, a 700px
+  "book" Tailwind tier, container-query bag rows) and the pure-CSS scroll-driven
+  "theater" effects (card rise-ins, journal progress bar, alphabet marquee —
+  double-gated behind `@supports` + `prefers-reduced-motion`) sit on top.
+- **Bag rows link back.** A bag item's photo + title tap back to its product
+  page, on both the cart page and the desktop drawer.
+
+## Content layer — CMS-managed JSON (`content/`)
+
+Since June 2026 the catalog and several page surfaces are **data, not code**,
+editable by Lusik in the Content Studio (`/studio`, Decap CMS with editorial
+workflow: drafts → review → publish, with Netlify deploy previews):
+
+- `content/products/*.json` — **all eleven products, live ones included.** The
+  migration was deep-diff-verified against the old in-code catalog.
+- `content/categories/*.json` — the four shop categories (cards, ordering, copy).
+- `content/pages/*.json` — `announcement.json` (site-wide bar, off by default —
+  renders nothing while disabled), `home.json` (incl. the build-validated
+  featured pick), `story.json`, `faq.json`, `testimonials.json` (reorderable).
+
+`npm run gen:data` compiles it all (`scripts/gen-products.mjs` →
+`src/data/cmsProductsData.generated.js`, `gen-categories.mjs` →
+`cmsCategoriesData.generated.js`, `gen-pages.mjs` → `pagesData.generated.js`,
+plus the journal generator). It runs automatically as a `pre*` hook on
+`next:dev`, `next:build`, `typecheck`, and `test:unit` — the `.generated.js`
+files are build artifacts, never hand-edited.
+
+**The trusted-products gate is the load-bearing piece**: a product JSON with
+`status: "live"` must carry a `trustedKey` that exists in
+`netlify/functions/_lib/trusted-products.mjs` **and** a displayed price equal to
+that row's `priceCents` to the cent, or the generator fails the build. A Studio
+edit can therefore never invent a buyable product or show a price that drifts
+from what Stripe charges. Money-adjacent data (the server price map) and
+bilingual i18n strings deliberately stay in code.
 
 ## Backend — what's in this repo, and what's not
 
@@ -164,23 +227,44 @@ netlify/
     ├── package.json                 # function-only deps; Netlify CI runs `npm install`
     ├── _lib/
     │   ├── db.mjs                   # @netlify/neon sql tagged-template export
-    │   ├── auth.mjs                 # requireUser + requireAdmin (Identity role check)
+    │   ├── auth.mjs                 # requireUser + requireAdmin — verifies Identity JWTs against the issuer (GoTrue); no decode-and-trust path
     │   ├── json.mjs                 # JSON response helper
-    │   ├── email.mjs                # Resend wrapper + admin-order email composer
-    │   └── trusted-products.mjs     # server-side product price map (Stripe handoff)
+    │   ├── email.mjs                # Resend wrapper + all transactional email composers
+    │   ├── contact.mjs              # server-side contact info (phone/email) for emails
+    │   ├── trusted-products.mjs     # server-side product price map (Stripe handoff)
+    │   ├── pricing.mjs              # server-trusted totals: free-shipping threshold, shipping, discounts
+    │   ├── shipping-zones.mjs       # zone-priced shipping by ZIP prefix
+    │   ├── bundle-discount.mjs      # storewide $1-per-extra-piece discount (Stripe coupon)
+    │   ├── launch-promo.mjs         # promo price map (currently disabled/empty)
+    │   ├── rate-limit.mjs           # IP-keyed rate limiting helper
+    │   ├── scheduled.mjs            # scheduled-function auth (Netlify scheduler / SCHEDULED_FN_SECRET)
+    │   ├── origin.mjs               # request-origin checks
+    │   ├── image-sniff.mjs          # magic-byte sniffing for uploaded images
+    │   └── inventory.mjs            # shared inventory/cap logic
     ├── profile.mjs                  # GET/PUT /profile
     ├── addresses.mjs                # GET/POST/DEL /addresses
     ├── saved-cart.mjs               # GET/PUT /saved-cart
     ├── saved-designs.mjs            # GET/POST/DEL /saved-designs
     ├── orders.mjs                   # GET /orders
-    ├── link-guest-order.mjs         # POST /link-guest-order
+    ├── link-guest-order.mjs         # POST /link-guest-order (requires verified email)
+    ├── account-export.mjs           # GET — data-portability JSON download (CCPA/GDPR)
+    ├── account-delete.mjs           # POST — right-to-deletion teardown (type "DELETE" to confirm)
     ├── avatar.mjs                   # POST /avatar (write to Netlify Blobs)
     ├── avatar-get.mjs               # GET /avatar-get?key=... (public read)
     ├── admin-orders.mjs             # GET/PUT /admin-orders (admin role required)
     ├── admin-order-photo.mjs        # POST /admin-order-photo (finished-piece upload, admin)
     ├── order-photo-get.mjs          # GET /order-photo-get?key=... (signed-in customer or admin)
+    ├── waitlist.mjs                 # POST — public waitlist signup (rate-limited)
+    ├── admin-waitlist.mjs           # GET — per-product waitlist counts (admin)
+    ├── admin-waitlist-notify.mjs    # POST — "it's available" emails (admin, capped)
+    ├── inventory.mjs                # GET — public availability snapshot per product group
+    ├── zip-lookup.mjs               # GET ?zip= → { city, state } (first-party, for checkout confirmation)
+    ├── chat.mjs                     # POST — Anthropic API proxy for ChatAssistant (key server-side, usage-capped)
+    ├── gift-reminder.mjs            # scheduled daily — one-year gift reminder emails
+    ├── unsubscribe-gift-reminder.mjs# GET — HMAC-signed unsubscribe, no sign-in
+    ├── cleanup-blobs.mjs            # scheduled daily — prunes stale blob-store entries
     ├── create-checkout-session.mjs  # POST /create-checkout-session (Stripe)
-    └── stripe-webhook.mjs           # POST /api/stripe-webhook (Stripe → DB, fires admin email)
+    └── stripe-webhook.mjs           # POST /api/stripe-webhook (Stripe → DB, fires emails; event-dedupe via blobs)
 ```
 
 ### Database — Netlify Database (Neon-backed Postgres)
@@ -231,11 +315,21 @@ A mini-blog (`/journal` list, `/journal/<slug>` posts) with starter posts about 
 Two distinct layers, both fed by the `track()` wrapper in `src/lib/analytics.js`:
 
 1. **Umami (privacy-first, opt-in, default OFF).** Set `CONFIG.ANALYTICS.UMAMI_WEBSITE_ID` (in `src/data/config.js`) to enable; when off, Umami calls are no-ops. Tracks pageviews (incl. SPA navigation) and custom events: `add-to-cart`, `checkout-start`, `order-complete`, `save-design`, `share-design`, `waitlist-signup`, `newsletter-signup`.
-2. **Ad pixels (LIVE since June 2026): Meta Pixel + Google Ads gtag.** IDs in `CONFIG.ANALYTICS.META_PIXEL_ID` / `GOOGLE_ADS_ID`; tags injected from `app/providers.tsx`; `track()` forwards mapped funnel events (AddToCart / InitiateCheckout / Purchase / Lead) to `fbq`. **Both sit behind the CPRA do-not-share opt-out in `src/lib/adConsent.ts`**: a stored opt-out (`lusik_ads_optout_v1`) or a Global Privacy Control browser signal prevents injection and event forwarding. The opt-out UI is the switch inside the Privacy Policy's "Advertising pixels" section (`PolicyModal.jsx`, `widget: "adsOptOut"`), reachable via the footer's "Your privacy choices" link (`openPolicy("privacyChoices")` deep-links to it). **If you add/remove an ad tag, update the Privacy Policy section in the same change — the policy describing reality is the deal.**
+2. **Ad pixels (LIVE since June 2026): Meta Pixel + Google Ads gtag.** IDs in `CONFIG.ANALYTICS.META_PIXEL_ID` / `GOOGLE_ADS_ID`; tags injected from `app/providers.tsx`; `track()` forwards mapped funnel events (AddToCart / InitiateCheckout / Purchase / Lead) to `fbq`. **Both sit behind the CPRA do-not-share opt-out in `src/lib/adConsent.ts`**: a stored opt-out (`lusik_ads_optout_v1`) or a Global Privacy Control browser signal prevents injection and event forwarding. The opt-out UI is the switch inside the Privacy Policy's "Advertising pixels" section, reachable via the footer's "Your privacy choices" link. **If you add/remove an ad tag, update the Privacy Policy section in the same change — the policy describing reality is the deal.**
+
+### Privacy Policy — one source of truth, two surfaces
+
+The policy text lives in `src/data/policies.js` and renders in **two** places
+that must stay identical: the footer `PolicyModal` and the static **`/privacy`**
+page (`app/privacy/page.tsx`, with canonical metadata — it exists because
+external listings like the iOS App Store require a public privacy-policy URL).
+The CPRA do-not-share switch is a shared component used by both;
+`/privacy?choices=1` and `openPolicy("privacyChoices")` each deep-link to it.
+Edit the policy in `policies.js` only — never in a view.
 
 ### SEO infrastructure
 
-- `sitemap.xml` (served from `/public/`) lists the home page, journal index, and every journal post with `<lastmod>` — update it when adding a post. A `<url>` for each `/shop/...` page exists too.
+- `sitemap.xml` (served from `/public/`) lists the home page, journal index, every journal post with `<lastmod>`, each `/shop/...` page, and `/privacy` — regenerate with `npm run gen:sitemap` when adding a post.
 - `robots.txt` (served from `/public/`) allows everything except `/.netlify/` and points at the sitemap.
 
 ### Two admin surfaces — `/admin` vs `/studio` (don't confuse them)
@@ -243,7 +337,7 @@ Two distinct layers, both fed by the `track()` wrapper in `src/lib/analytics.js`
 There are **two separate private surfaces**, on **distinct paths** so they don't collide:
 
 - **`/admin` = the order dashboard.** A Next.js route (`app/admin/page.tsx` → `AdminRoute` → `AdminView`). Where Lusik manages orders/fulfillment. Client-gated by `isAdmin`; its data comes from `admin-*` Functions that enforce `requireAdmin`.
-- **`/studio` = the Content Studio (Decap CMS).** A static SPA in `public/studio/` (`index.html` + `config.yml`), Git-Gateway backed, for editing content (journal today; products later). It gets a **looser, scoped CSP** in `netlify.toml` (`for = "/studio/*"`) because Decap loads from unpkg + commits via GitHub.
+- **`/studio` = the Content Studio (Decap CMS).** A static SPA in `public/studio/` (`index.html` + `config.yml`), Git-Gateway backed, for editing content: the journal, **all eleven products, the categories, the announcement bar, the home featured pick, Story, and testimonials** (see "Content layer" above), with editorial workflow (drafts/review/publish + deploy previews). It gets a **looser, scoped CSP** in `netlify.toml` (`for = "/studio/*"`) because Decap loads from unpkg (pinned with SRI) + commits via GitHub.
 
 > History: the Decap CMS used to live at `public/admin/`, which **collided** with the Next `/admin` route (the route shadowed the static CMS). PR #1 of the CMS handoff moved it to `/studio/`. **Keep them separate.**
 
@@ -273,6 +367,21 @@ Stripe ─webhook──▶ /api/stripe-webhook ─┬─▶ verifies signature
 
 Cart-ID shape is load-bearing: `mapLegacyId()` (in `src/lib/cartId.ts`, used by `CheckoutView`) translates browser cart IDs into `productKey` strings, and the same keys are the lookup into `_lib/trusted-products.mjs`. Change the cart-ID shape on the browser side and you must update both. The e2e test `Pay with Stripe POSTs to create-checkout-session` is the safety net — it asserts every cart item's `productKey` matches the shape `TRUSTED_PRODUCTS` recognizes.
 
+**Server-trusted pricing (June 2026).** Item prices come from
+`_lib/trusted-products.mjs`; everything else the customer pays is computed
+server-side too: `_lib/pricing.mjs` applies the free-shipping threshold
+(`FREE_SHIPPING_THRESHOLD_CENTS`) and zone-priced shipping by ZIP
+(`_lib/shipping-zones.mjs`; the browser mirror for the estimator is
+`src/data/shippingZones.js`), and `_lib/bundle-discount.mjs` attaches the
+storewide bundle discount as a real Stripe coupon ($1 off every piece after the
+first, capped — the browser copy in `CONFIG.BUNDLE_DISCOUNT` only drives the
+savings row in the bag). **Each browser/server pair is kept in lockstep by a
+drift unit test** (`bundle-discount-drift.test.mjs`,
+`launch-promo-drift.test.mjs`) — change `CONFIG` and the matching `_lib` file
+together or CI fails. Checkout also confirms the shipping ZIP resolves to a real
+city/state via the first-party `zip-lookup` Function (place data generated by
+`scripts/gen-zip-places.mjs`).
+
 ## Conventions
 
 - **`CONFIG` is the dial board.** Tunable numbers, feature flags, the text-us phone, upload caps — change them in `src/data/config.js`, not inline at call sites. Don't split `CONFIG`.
@@ -281,7 +390,9 @@ Cart-ID shape is load-bearing: `mapLegacyId()` (in `src/lib/cartId.ts`, used by 
 - **Server-side trusted prices.** `_lib/trusted-products.mjs` is the only place pricing is trusted for checkout. The browser may send anything; Stripe gets what this file says.
 - **i18n via `t("key.path")`.** Strings live in `TRANSLATIONS.en|hy|hyw` (`src/i18n/translations.js`). Missing keys fall back to English. `hy` is the only non-English language surfaced; `hyw` is staged for review.
 - **TODO markers are intentional and addressed to Lusik, not Claude.** `⚠️ TODO_LUSIK` (needs photos/pricing/product confirmation) and `⚠️ TODO_LUSIK_REVIEW` (auto-translated strings awaiting a native speaker). Do not silently "fix" these.
-- **Placeholder products are real.** Anything in `CATALOG` with `status: "placeholder"` renders a coming-soon card (commission path if priced, waitlist if unpriced). Don't promote one to `"live"` without the photos, price, copy, **and** the matching `_lib/trusted-products.mjs` row.
+- **Placeholder products are real.** Any `content/products/*.json` entry with `status: "placeholder"` renders a coming-soon card (commission path if priced, waitlist if unpriced). Don't promote one to `"live"` without the photos, price, copy, **and** the matching `_lib/trusted-products.mjs` row — the generator's reconciliation gate fails the build otherwise (by design).
+- **`src/data/*.generated.js` files are build artifacts.** They come from `content/` via `npm run gen:data` — edit the JSON (or the Studio), never the generated file.
+- **Browser/server pricing pairs have drift tests.** `CONFIG.BUNDLE_DISCOUNT` ↔ `_lib/bundle-discount.mjs`, `CONFIG.LAUNCH_PROMO` ↔ `_lib/launch-promo.mjs`, the free-shipping threshold ↔ `_lib/pricing.mjs`. Change both halves in the same commit.
 - **`CONFIG.ROTATED_GALLERY_INDEXES`** is a CSS-rotation band-aid for sideways source images; remove an index once its image is re-uploaded correctly.
 - **Reduced-motion is honored.** Decorative animations (heart-burst, cart pulse) check `prefers-reduced-motion`. Match this for any new animation.
 - **Cart IDs encode the variant.** A blanket cart row's `id` looks like `blanket-{alphabet}-{layout}-{blockDMC}-{letterDMC}[-multi-{dmcs}]`. Two orders with different colors stay separate line items, not qty=2. The trusted-products map keys off the layout suffix.
@@ -289,13 +400,14 @@ Cart-ID shape is load-bearing: `mapLegacyId()` (in `src/lib/cartId.ts`, used by 
 ## Local development
 
 - `npm ci` once. Then `npm run next:dev` (Next dev server) for fast iteration, or `netlify dev` to run the built site + Functions + Identity together (proxies `/.netlify/functions/*`).
-- `npm run next:build` produces `.next/`. `npm run next:start` serves that production build — this is what the e2e tests run against. (`next:build`/`next:dev`/`typecheck` all run a `pre*` hook that regenerates the journal data first.)
+- `npm run next:build` produces `.next/`. `npm run next:start` serves that production build — this is what the e2e tests run against. (`next:build`/`next:dev`/`typecheck`/`test:unit` all run a `pre*` hook — `npm run gen:data` — that regenerates the CMS-derived data first: journal, categories, products, pages.)
+- **Bundle budget:** every build ends with `scripts/check-bundle-budget.mjs` (a `postnext:build` hook, so it runs locally, in CI, and on Netlify) and fails loudly if any route's first-load JS exceeds **210 KB gzip**. `npm run analyze` opens the bundle analyzer for diagnosis; if an increase is intentional, raise `PER_ROUTE_BUDGET_KB` in the same PR.
 
 ### Test suite
 
 Two layers, both run by `npm test`, and CI runs both on every push and PR (`.github/workflows/test.yml`, the **Tests** workflow):
 
-1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`) — Node's built-in test runner, no extra install. Covers the security-critical helpers: `requireUser`/`requireAdmin` + `ADMIN_EMAILS` fallback, the HMAC token roundtrip, the `TRUSTED_PRODUCTS` price-map shape. `npm run test:unit`.
+1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`, ~135 tests) — Node's built-in test runner, no extra install. Covers the security-critical helpers (`requireUser`/`requireAdmin` + `ADMIN_EMAILS` fallback, HMAC token roundtrip, origin allowlist, image sniffing, header safety, the `TRUSTED_PRODUCTS` price-map shape, webhook logic) **and the browser↔server drift tests** (`pricing-drift`, `bundle-discount-drift`, `launch-promo-drift`, `shipping-zones-drift`). `npm run test:unit` (its `pre` hook runs `gen:data` first; the function deps need `npm install` inside `netlify/functions/` when running outside CI).
 
 2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a production Next build of the site, configured in `playwright.config.mjs` with **two projects**: `desktop-chromium` and `mobile-chromium` (Pixel 5, so `isMobile` is true). The `webServer` block runs `npm run next:build && npx next start --port 4173`. Backend calls are stubbed via `page.route()`. `npm run test:e2e` (first time: `npm run test:install`).
 
@@ -335,6 +447,10 @@ A condensed list of things wired up that aren't obvious from the architecture ov
 - **Cart persistence (June 2026).** The cart mirrors to localStorage (`lusik_cart_v1`, 30-day TTL, shape-validated on read) for everyone, and signed-in users get a debounced PUT to the `saved-cart` Function (which previously existed but was never called). The `/?order=success` return from Stripe explicitly clears both copies — before persistence, the full-page redirect resetting React state was the only thing "emptying" the bag post-purchase. All of it lives in `src/state/SiteProvider.jsx`.
 
 ### Security additions
+- **JWT verification against the issuer (June 2026).** `requireUser`/`requireAdmin` trust `context.clientContext.user` (edge-verified) or verify a raw bearer token against GoTrue — the old decode-without-verifying fallback was an auth bypass and was removed. Don't reintroduce any decode-and-trust path.
+- **Hardened security headers** in `netlify.toml` (with the looser scoped CSP only on `/studio/*`).
+- `stripe-webhook.mjs` dedupes event re-fires via the `stripe-events-seen` blob store.
+- `account-export.mjs` / `account-delete.mjs` implement data portability + right-to-deletion.
 - `link-guest-order.mjs` requires `email_verified === true` before claiming guest orders by email.
 - `create-checkout-session.mjs` derives `userId`/`customerEmail` from the JWT (never the body) and validates `gift` + `social_consent` shapes.
 - `avatar.mjs` keys blobs with a `<user_id>/avatar-<ts>-<nonce>.<ext>` (8-byte hex nonce).
