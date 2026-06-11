@@ -84,9 +84,9 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
         {loc(category, "description", lang)}
       </p>
 
-      {/* md (the iPhone Fold's open 4:3 canvas / tablets) gets the full
-          3-up grid a row early — 2-up at 768–1023px stretches the cards. */}
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5 lg:gap-6">
+      {/* The book tier (≥700px: iPhone Fold inner canvas, iPad mini
+          portrait) gets the full 3-up grid early — 2-up stretches there. */}
+      <div className="grid sm:grid-cols-2 book:grid-cols-3 gap-5 lg:gap-6">
         {category.products.map((p, i) => {
           const isLive = p.status === "live";
           const soldOut = isLive && isSoldOut(inventoryKeyForCatalog(p.key));
