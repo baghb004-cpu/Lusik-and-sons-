@@ -1,0 +1,130 @@
+{
+  "category": "bibs",
+  "displayOrder": 50,
+  "trustedKey": "bib-bari-akhorzhak-set",
+  "key": "bib-bari-akhorzhak-set",
+  "slug": "bari-akhorzhak-bib-burp-cloth-set",
+  "name": "The Bari Akhorzhak Bib & Burp Cloth Set",
+  "name_hy": "«Բարի ախորժակ» թքակալի և ուսի սրբիչի հավաքածու",
+  "status": "live",
+  "priceFrom": 40,
+  "tagline": "Two Armenian meal blessings, one matched set — said before the baby eats, and after.",
+  "tagline_hy": "Երկու հայկական սեղանի օրհնություն, մեկ համընկնող հավաքածու՝ ասված մանկան ուտելուց առաջ և հետո։",
+  "description": "A matched bib and burp cloth, each carrying one half of an Armenian grandmother's table blessing. Before the baby eats, the bib reads Բարի ախորժակ — Bari akhorzhak, bon appétit. After, when the food has worked out, the burp cloth answers Անույշ ըլլայ — Anush ella, may it be sweet. Lusik has been stitching this blessing for years — in cream with botanical green, in pale pink with magenta, in periwinkle with gold, in bubblegum pink with navy. Pick the mood you want — quiet harmony, gentle complement, or bold contrast — and Lusik picks the exact combination that fits. The bib carries a soft white inset panel that gives the cross-stitch a clean page to live on; the burp cloth is single-color terry, the everyday companion to the bib's ceremony. Each piece has a primary motif tucked between the words — a cross-stitched bottle, strawberry, grape, or carrot; an appliquéd butterfly, bunny, or daisies on the pink — and the burp cloth carries Lusik's quiet signature in the corner: a tiny car, a chick, a butterfly, varies by piece. Add the matching cap and your baby's name or initial is cross-stitched in the same thread, turning a set of two into a set of three voices: name on the cap, blessing before on the bib, blessing after on the burp cloth. The bib closes with a fabric tie at the back of the neck — the heritage closure Lusik's grandmother used. Hand cross-stitched by Lusik herself from her home in Southern California. Made to order, made to last.",
+  "coverImage": "/img/bari-akhorzhak-set/cover.jpg",
+  "images": [
+    "/img/bari-akhorzhak-set/01.jpg",
+    "/img/bari-akhorzhak-set/02.jpg",
+    "/img/bari-akhorzhak-set/03.jpg",
+    "/img/bari-akhorzhak-set/04.jpg",
+    "/img/bari-akhorzhak-set/05.jpg",
+    "/img/bari-akhorzhak-set/06.jpg",
+    "/img/bari-akhorzhak-set/07.jpg",
+    "/img/bari-akhorzhak-set/08.jpg",
+    "/img/bari-akhorzhak-set/09.jpg",
+    "/img/bari-akhorzhak-set/10.jpg",
+    "/img/bari-akhorzhak-set/11.jpg",
+    "/img/bari-akhorzhak-set/12.jpg",
+    "/img/bari-akhorzhak-set/13.jpg",
+    "/img/bari-akhorzhak-set/14.jpg",
+    "/img/bari-akhorzhak-set/15.jpg",
+    "/img/bari-akhorzhak-set/16.jpg",
+    "/img/bari-akhorzhak-set/17.jpg",
+    "/img/bari-akhorzhak-set/18.jpg",
+    "/img/bari-akhorzhak-set/19.jpg",
+    "/img/bari-akhorzhak-set/20.jpg",
+    "/img/bari-akhorzhak-set/21.jpg",
+    "/img/bari-akhorzhak-set/22.jpg",
+    "/img/bari-akhorzhak-set/23.jpg",
+    "/img/bari-akhorzhak-set/24.jpg",
+    "/img/bari-akhorzhak-set/25.jpg",
+    "/img/bari-akhorzhak-set/26.jpg"
+  ],
+  "colorways": [
+    {
+      "label": "Quiet harmony",
+      "indices": [
+        0,
+        1,
+        4,
+        6,
+        7,
+        10,
+        11,
+        12,
+        14,
+        19,
+        20,
+        23
+      ],
+      "swatch": {
+        "dual": [
+          "#EFE7D6",
+          "#5B6F47"
+        ]
+      }
+    },
+    {
+      "label": "Gentle complement",
+      "indices": [
+        5,
+        8,
+        15,
+        16,
+        17,
+        18
+      ],
+      "swatch": {
+        "dual": [
+          "#FFFFFF",
+          "#93B7D5"
+        ]
+      }
+    },
+    {
+      "label": "Bold contrast",
+      "indices": [
+        9,
+        13,
+        21,
+        22
+      ],
+      "swatch": {
+        "dual": [
+          "#E8579A",
+          "#1A2C5A"
+        ]
+      }
+    }
+  ],
+  "details": [
+    {
+      "label": "Set",
+      "value": "Two pieces — one bib + one matching burp cloth. Add the matching cap and your baby's name or initial is cross-stitched in the same thread color (choose on this page)."
+    },
+    {
+      "label": "Reads",
+      "value": "Bib: Բարի ախորժակ (\"Bari akhorzhak,\" bon appétit) — said before the baby eats. Burp cloth: Անույշ ըլլայ (\"Anush ella,\" may it be sweet) — said after. Each piece has a primary motif tucked between the words — a cross-stitched bottle, strawberry, grape, or carrot; an appliquéd butterfly, bunny, or daisies on the pink — and the burp cloth carries Lusik's quiet signature in the corner: a tiny car, a chick, a butterfly, varies by piece."
+    },
+    {
+      "label": "Closure",
+      "value": "Bib closes with a fabric tie at the back of the neck — the heritage closure Lusik's grandmother used. Slower than a snap, the way these were always made."
+    },
+    {
+      "label": "Materials",
+      "value": "Soft terry bib body with a soft white inset panel for the lettering, terry burp cloth, both finished with picot edging. Hand cross-stitched or appliquéd embellishments throughout."
+    },
+    {
+      "label": "Sizing",
+      "value": "Bib: one size, fits most babies 0–24 months. Burp cloth: standard burp-cloth size (approx. 10 × 17 in)."
+    },
+    {
+      "label": "Care",
+      "value": "We recommend professional dry cleaning to preserve the stitching for years. That said, these are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the embroidery. We can't guarantee against wear from washing-machine cycles."
+    },
+    {
+      "label": "Made",
+      "value": "By Lusik herself, in Southern California. Made to order — about 1–2 weeks."
+    }
+  ]
+}

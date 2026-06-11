@@ -1,0 +1,224 @@
+{
+  "category": "blankets",
+  "displayOrder": 20,
+  "trustedKey": "blanket-full-alphabet",
+  "key": "blanket-full-alphabet",
+  "slug": "full-alphabet-crib-blanket",
+  "name": "The Full Alphabet Crib Blanket",
+  "name_hy": "Ամբողջ այբուբենով օրորոցի ծածկոց",
+  "status": "live",
+  "priceFrom": 245,
+  "tagline": "Every letter of the Armenian alphabet — all thirty-six, hand-knit by Lusik.",
+  "tagline_hy": "Հայկական այբուբենի ամեն տառ՝ բոլոր երեսունվեցը, ձեռքով հյուսված Լուսիկի կողմից։",
+  "description": "The full Armenian alphabet — every letter from Ա to Ք, every one set into the blanket by Lusik's own hand. The heritage crib blanket for the christening, the baby shower, the photograph at the front door coming home from the hospital — and then folded into a chest for the next baby in the family, and the one after that. Hand-knit in soft yarn so the blanket breathes through a California summer, finished with a crochet edge and a satin backing matched to the body color so it lays right in the crib. From Lusik's home in Southern California. Made to order, made to last.",
+  "coverImage": "/img/full-alphabet/cover.jpg",
+  "images": [
+    "/img/full-alphabet/01.jpg",
+    "/img/full-alphabet/02.jpg",
+    "/img/full-alphabet/03.jpg",
+    "/img/full-alphabet/04.jpg",
+    "/img/full-alphabet/05.jpg",
+    "/img/full-alphabet/06.jpg",
+    "/img/full-alphabet/07.jpg",
+    "/img/full-alphabet/08.jpg",
+    "/img/full-alphabet/09.jpg",
+    "/img/full-alphabet/10.jpg",
+    "/img/full-alphabet/11.jpg",
+    "/img/full-alphabet/12.jpg",
+    "/img/full-alphabet/13.jpg",
+    "/img/full-alphabet/14.jpg",
+    "/img/full-alphabet/15.jpg",
+    "/img/full-alphabet/16.jpg",
+    "/img/full-alphabet/17.jpg",
+    "/img/full-alphabet/18.jpg",
+    "/img/full-alphabet/19.jpg",
+    "/img/full-alphabet/20.jpg",
+    "/img/full-alphabet/21.jpg",
+    "/img/full-alphabet/22.jpg",
+    "/img/full-alphabet/23.jpg",
+    "/img/full-alphabet/24.jpg",
+    "/img/full-alphabet/25.jpg",
+    "/img/full-alphabet/26.jpg",
+    "/img/full-alphabet/27.jpg",
+    "/img/full-alphabet/28.jpg",
+    "/img/full-alphabet/29.jpg",
+    "/img/full-alphabet/30.jpg",
+    "/img/full-alphabet/31.jpg",
+    "/img/full-alphabet/32.jpg",
+    "/img/full-alphabet/33.jpg",
+    "/img/full-alphabet/34.jpg",
+    "/img/full-alphabet/35.jpg",
+    "/img/full-alphabet/36.jpg",
+    "/img/full-alphabet/37.jpg",
+    "/img/full-alphabet/38.jpg",
+    "/img/full-alphabet/39.jpg",
+    "/img/full-alphabet/40.jpg",
+    "/img/full-alphabet/41.jpg",
+    "/img/full-alphabet/42.jpg",
+    "/img/full-alphabet/43.jpg",
+    "/img/full-alphabet/44.jpg",
+    "/img/full-alphabet/45.jpg",
+    "/img/full-alphabet/46.jpg",
+    "/img/full-alphabet/47.jpg",
+    "/img/full-alphabet/48.jpg",
+    "/img/full-alphabet/49.jpg",
+    "/img/full-alphabet/50.jpg",
+    "/img/full-alphabet/51.jpg",
+    "/img/full-alphabet/52.jpg",
+    "/img/full-alphabet/53.jpg",
+    "/img/full-alphabet/54.jpg",
+    "/img/full-alphabet/55.jpg",
+    "/img/full-alphabet/56.jpg",
+    "/img/full-alphabet/57.jpg",
+    "/img/full-alphabet/58.jpg",
+    "/img/full-alphabet/59.jpg",
+    "/img/full-alphabet/60.jpg",
+    "/img/full-alphabet/61.jpg"
+  ],
+  "colorways": [
+    {
+      "label": "Blue",
+      "indices": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        56
+      ],
+      "swatch": {
+        "color": "#93B7D5"
+      }
+    },
+    {
+      "label": "Pink",
+      "indices": [
+        11,
+        12,
+        13,
+        14,
+        32,
+        47,
+        48,
+        49
+      ],
+      "swatch": {
+        "color": "#E8B5C7"
+      }
+    },
+    {
+      "label": "Lavender",
+      "indices": [
+        15,
+        16,
+        17,
+        18,
+        30,
+        53,
+        54,
+        55
+      ],
+      "swatch": {
+        "color": "#BBA8D6"
+      }
+    },
+    {
+      "label": "Mint",
+      "indices": [
+        19,
+        20,
+        21,
+        31,
+        45,
+        46
+      ],
+      "swatch": {
+        "color": "#B5D9BC"
+      }
+    },
+    {
+      "label": "Yellow",
+      "indices": [
+        22,
+        44
+      ],
+      "swatch": {
+        "color": "#E8D89B"
+      }
+    },
+    {
+      "label": "Dusty rose",
+      "indices": [
+        23,
+        33,
+        50,
+        51,
+        52
+      ],
+      "swatch": {
+        "color": "#D8AFA3"
+      }
+    },
+    {
+      "label": "Pink + espresso",
+      "indices": [
+        24,
+        25
+      ],
+      "swatch": {
+        "dual": [
+          "#E8B5C7",
+          "#3A2418"
+        ]
+      }
+    },
+    {
+      "label": "Two-color name",
+      "indices": [
+        26,
+        27,
+        28,
+        29
+      ],
+      "swatch": {
+        "dual": [
+          "#BBA8D6",
+          "#E8B5C7"
+        ]
+      }
+    }
+  ],
+  "details": [
+    {
+      "label": "Materials",
+      "value": "Soft yarn body, crochet edging, satin backing."
+    },
+    {
+      "label": "Size",
+      "value": "Approx. 30 × 36 in (76 × 91 cm). ⚠️ TODO_LUSIK: confirm."
+    },
+    {
+      "label": "Backing",
+      "value": "Every blanket is finished with a satin backing, matched to the body color (white, lavender, pink, blue, or mint). Not optional — included on every piece."
+    },
+    {
+      "label": "Care",
+      "value": "Professional dry cleaning recommended to preserve the knit, satin backing, and crochet edge — the dry cleaner gives consistent gentle treatment that a washing machine can't. If you'd rather launder at home, the yarn label reads: machine wash in cool water, do not bleach, do not iron, tumble dry on low / delicate. We can't guarantee against wear from washing-machine cycles."
+    },
+    {
+      "label": "Made",
+      "value": "By Lusik herself, in Southern California. The full Armenian alphabet — all thirty-six letters, plus the satin backing and the crochet edge — is about two solid weeks of hand-knitting for her, working alone. We add a comfortable buffer for life and for the rest of the queue, so please plan on 3–4 weeks from order to ship. If you need it by a specific date — a christening, a baby shower, a flight home — tell us at checkout and we'll write back honestly about whether we can meet it."
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "category": "bibs",
+  "displayOrder": 20,
+  "trustedKey": "bib-days-of-week",
+  "key": "bib-days-of-week",
+  "slug": "days-of-the-week-bib-set",
+  "name": "The Armenian Days-of-the-Week Bib Set",
+  "name_hy": "Շաբաթվա օրերի հայկական թքակալների հավաքածու",
+  "status": "live",
+  "priceFrom": 60,
+  "tagline": "Seven bibs for seven days — Monday through Sunday in Armenian, hand cross-stitched by Lusik.",
+  "tagline_hy": "Յոթ թքակալ յոթ օրվա համար՝ երկուշաբթիից կիրակի հայերեն, ասեղնագործված Լուսիկի կողմից։",
+  "description": "A bib for every day of the week, the way Armenian families have always counted them: Երկուշաբթի, Երեքշաբթի, Չորեքշաբթի, Հինգշաբթի, Ուրբաթ, Շաբաթ, Կիրակի — Monday through Sunday in Armenian, one word per bib. A baby-shower set that opens like a calendar, a christening gift the family will pull out of the drawer for years, a quiet way to teach an American-born child the names of the days the way their great-grandmother said them. Each bib hand cross-stitched by Lusik from her home in Southern California. Made to order, made to last.",
+  "coverImage": "/img/days-bib/cover.jpg",
+  "images": [
+    "/img/days-bib/01.jpg",
+    "/img/days-bib/02.jpg",
+    "/img/days-bib/03.jpg",
+    "/img/days-bib/04.jpg",
+    "/img/days-bib/05.jpg",
+    "/img/days-bib/06.jpg",
+    "/img/days-bib/07.jpg",
+    "/img/days-bib/08.jpg",
+    "/img/days-bib/09.jpg",
+    "/img/days-bib/10.jpg",
+    "/img/days-bib/11.jpg",
+    "/img/days-bib/12.jpg",
+    "/img/days-bib/13.jpg",
+    "/img/days-bib/14.jpg",
+    "/img/days-bib/15.jpg",
+    "/img/days-bib/16.jpg",
+    "/img/days-bib/17.jpg",
+    "/img/days-bib/18.jpg",
+    "/img/days-bib/19.jpg",
+    "/img/days-bib/20.jpg",
+    "/img/days-bib/21.jpg",
+    "/img/days-bib/22.jpg"
+  ],
+  "colorways": [
+    {
+      "label": "Pink",
+      "indices": [
+        5,
+        6,
+        7,
+        9
+      ],
+      "swatch": {
+        "color": "#E8B5C7"
+      }
+    },
+    {
+      "label": "Lavender",
+      "indices": [
+        8
+      ],
+      "swatch": {
+        "color": "#BBA8D6"
+      }
+    },
+    {
+      "label": "Blue",
+      "indices": [
+        10,
+        11
+      ],
+      "swatch": {
+        "color": "#93B7D5"
+      }
+    },
+    {
+      "label": "Gold",
+      "indices": [
+        12
+      ],
+      "swatch": {
+        "color": "#E8D89B"
+      }
+    },
+    {
+      "label": "Boy pastel",
+      "indices": [
+        13,
+        14,
+        15
+      ],
+      "swatch": {
+        "dual": [
+          "#93B7D5",
+          "#E8D89B"
+        ]
+      }
+    },
+    {
+      "label": "Rainbow",
+      "indices": [
+        4,
+        16,
+        17,
+        18,
+        19
+      ],
+      "swatch": {
+        "gradient": [
+          "#E8B5C7",
+          "#BBA8D6",
+          "#93B7D5",
+          "#B5D9BC",
+          "#E8D89B"
+        ]
+      }
+    },
+    {
+      "label": "Green",
+      "indices": [
+        20
+      ],
+      "swatch": {
+        "color": "#B5D9BC"
+      }
+    }
+  ],
+  "details": [
+    {
+      "label": "Set size",
+      "value": "Seven bibs — Monday through Sunday in Armenian (Երկուշաբթի, Երեքշաբթի, Չորեքշաբթի, Հինգշաբթի, Ուրբաթ, Շաբաթ, Կիրակի)."
+    },
+    {
+      "label": "Technique",
+      "value": "Each day name is hand cross-stitched by Lusik in DMC cotton thread — the color you choose on this page, worked across all seven bibs."
+    },
+    {
+      "label": "Materials",
+      "value": "Soft terry bib body with satin trim. Hand cross-stitched lettering."
+    },
+    {
+      "label": "Sizing",
+      "value": "One size, fits most babies."
+    },
+    {
+      "label": "Care",
+      "value": "We recommend professional dry cleaning to preserve the cross-stitch for years. That said, bibs are built to be washed — Lusik uses commercial-grade thread. If you launder at home: machine wash cold on delicate, tumble dry low, no bleach, no iron over the stitching. We can't guarantee against wear from washing-machine cycles."
+    },
+    {
+      "label": "Made",
+      "value": "By Lusik herself, in Southern California. Made to order — a seven-bib hand-stitched set takes about 2–3 weeks."
+    }
+  ]
+}
