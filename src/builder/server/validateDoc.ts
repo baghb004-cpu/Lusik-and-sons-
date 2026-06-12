@@ -27,6 +27,7 @@ import {
   themeSchema,
   migrateDocument,
 } from "../schema/index.ts";
+import { shippingConfigSchema, zipDatasetSchema } from "../data/index.ts";
 // The build-time validators themselves (main() is guarded, so these
 // imports never trigger regeneration). Plain .mjs — typed as any.
 import { validateProduct } from "../../../scripts/gen-products.mjs";
@@ -88,7 +89,11 @@ export async function validateDocument(path: string, content: unknown): Promise<
   if (path.startsWith("builder/templates/")) return zodIssues(templateSchema, content);
   if (path.startsWith("builder/overrides/")) return zodIssues(overrideLayerSchema, content);
   if (path === "builder/theme.json") return zodIssues(themeSchema, content);
-  if (path.startsWith("builder/")) return []; // builder/data/** etc. — structural JSON only for now
+  // Phase 13: shipping config + local datasets (manifest with source +
+  // licenseNotes REQUIRED — un-attributed data can't be saved).
+  if (path === "builder/data/shipping.json") return zodIssues(shippingConfigSchema as ZodLike, content);
+  if (path.startsWith("builder/data/datasets/")) return zodIssues(zipDatasetSchema as ZodLike, content);
+  if (path.startsWith("builder/")) return []; // future builder families: structural JSON only for now
 
   // Lusik content collections — gated by the build's own validators.
   if (path.startsWith("content/products/")) {

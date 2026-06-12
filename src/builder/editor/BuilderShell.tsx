@@ -70,6 +70,8 @@ import { CATALOG } from "../../data/catalog.js";
 import { CMS_PAGES } from "../../data/pagesData.generated.js";
 import { validateCommerceRefs, type CatalogSnapshot } from "../engine/commerce.ts";
 import { INSERTABLE_TYPES, newDefaultBlock, type InsertableType } from "./newBlock.ts";
+import { ShippingPanel } from "./ShippingPanel.tsx";
+import { zipDatasetSchema, SHIPPING_DOC_PATH, type ZipDataset } from "../data/index.ts";
 import { Inspector } from "./Inspector.tsx";
 import { HitboxOverlay, type HitboxReport } from "./HitboxOverlay.tsx";
 import { CanvasToolbar } from "./CanvasToolbar.tsx";
@@ -139,6 +141,16 @@ function groupFiles(files: string[]): SidebarGroup[] {
     if (entries.length > 0) groups.push({ label: c.label, blurb: c.blurb, entries });
   }
 
+  const dataDocs = files.filter((f) => f.startsWith("builder/data/") && !used.has(f));
+  for (const d of dataDocs) used.add(d);
+  if (dataDocs.length > 0) {
+    groups.push({
+      label: "Shipping & data",
+      blurb: "Shipping rules + local ZIP datasets",
+      entries: dataDocs.map((f) => ({ path: f, label: f.replace("builder/data/", "").replace(/\.json$/, "") })),
+    });
+  }
+
   const templates = files.filter((f) => f.startsWith("builder/templates/") && !used.has(f));
   for (const t of templates) used.add(t);
   if (templates.length > 0) {
@@ -197,6 +209,8 @@ export function BuilderShell() {
   // Phase 9 — undo/redo over page content + override layers
   const [history, setHistory] = useState<History<PageSnap> | null>(null);
   const lastPushAt = useRef(0);
+  // Phase 13 — imported ZIP datasets (loaded with the shipping doc)
+  const [datasets, setDatasets] = useState<ZipDataset[]>([]);
 
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
@@ -273,6 +287,11 @@ export function BuilderShell() {
     setJsonText(JSON.stringify(body.content, null, 2));
     setRawMode(false);
 
+    // Shipping doc: load the imported datasets alongside it.
+    if (path === SHIPPING_DOC_PATH) {
+      await loadDatasets();
+    }
+
     // Builder pages: pull their override layers (absent → fresh empty).
     if (path.startsWith("builder/pages/")) {
       const page = body.content as { id?: string; slug?: string };
@@ -299,6 +318,24 @@ export function BuilderShell() {
       setHistory(null);
     }
   };
+
+  const loadDatasets = useCallback(async () => {
+    try {
+      const res = await api("/api/builder/docs?dir=builder/data/datasets");
+      if (!res.ok) return;
+      const { files: datasetFiles } = await res.json();
+      const loaded: ZipDataset[] = [];
+      for (const f of datasetFiles as string[]) {
+        const r = await api(`/api/builder/docs?path=${encodeURIComponent(f)}`);
+        if (!r.ok) continue;
+        const parsed = zipDatasetSchema.safeParse((await r.json()).content);
+        if (parsed.success) loaded.push(parsed.data);
+      }
+      setDatasets(loaded);
+    } catch {
+      setDatasets([]);
+    }
+  }, [api]);
 
   // Central mutation for builder pages: applies the state AND records
   // the undo step (coalescing rapid edits like keystrokes/sliders).
@@ -705,6 +742,7 @@ export function BuilderShell() {
   const formFields = doc ? fieldsForPath(doc.path) : null;
   const collection = doc ? collectionForPath(doc.path) : null;
   const isThemeDoc = doc?.path === THEME_PATH;
+  const isShippingDoc = doc?.path === SHIPPING_DOC_PATH;
   const isBuilderPage = doc?.path.startsWith("builder/pages/") ?? false;
   const isTemplate = doc?.path.startsWith("builder/templates/") ?? false;
   const pageTemplates = useMemo(
@@ -1080,7 +1118,7 @@ export function BuilderShell() {
                   {doc.dirty ? <span className="ml-1 text-accent">•</span> : null}
                 </h2>
                 <div className="flex shrink-0 gap-2">
-                  {formFields || isThemeDoc || isBuilderPage ? (
+                  {formFields || isThemeDoc || isBuilderPage || isShippingDoc ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1156,6 +1194,24 @@ export function BuilderShell() {
                     onBlockVisibility={setBaseVisibility}
                     onBlockProps={setBaseProps}
                     onMove={handleTreeMove}
+                  />
+                </div>
+              ) : isShippingDoc && !rawMode ? (
+                <div className="max-h-[62vh] overflow-y-auto">
+                  <ShippingPanel
+                    value={doc.content}
+                    datasets={datasets}
+                    api={api}
+                    onChange={editContent}
+                    onImportDataset={async (p, c) => {
+                      const ok = await writeDoc(p, c);
+                      if (ok) {
+                        setStatus(`Dataset saved → ${p}`);
+                        await refreshList();
+                        await loadDatasets();
+                      }
+                      return ok;
+                    }}
                   />
                 </div>
               ) : isThemeDoc && !rawMode ? (
