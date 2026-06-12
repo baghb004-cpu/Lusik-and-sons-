@@ -30,7 +30,8 @@ test("tauri.conf.json: valid JSON, splash as frontendDist, CSP locked to self", 
   assert.equal(conf.build.frontendDist, "../splash");
   assert.match(conf.app.security.csp, /default-src 'self'/);
   assert.equal(conf.app.withGlobalTauri, true);
-  assert.equal(conf.identifier, "com.lusikandsons.builder");
+  assert.equal(conf.identifier, "com.baghdo.workshop");
+  assert.equal(conf.productName, "Baghdo's Workshop");
 });
 
 test("splash invariants: offline, fallback-by-construction, reduced-motion, skip, shell hooks", () => {
@@ -46,8 +47,14 @@ test("splash invariants: offline, fallback-by-construction, reduced-motion, skip
   assert.ok(html.includes('id="done"'));
   // click-to-skip
   assert.ok(html.includes('addEventListener("click"'));
-  // the v2 cameo is documented, not forgotten
-  assert.match(html, /Gohar/);
+  // the cast: both characters exist as figures, and the title is the new name
+  assert.ok(html.includes('class="figure baghdo"'));
+  assert.ok(html.includes('class="figure gohar"'));
+  assert.match(html, /Baghdo’s <em>Workshop<\/em>/);
+  // their signatures: the beard, the curls, the coffee
+  for (const part of ["beard", "curls", "cup", "steam", "broom"]) {
+    assert.ok(html.includes(`class="${part}"`) || html.includes(`.${part}`), part);
+  }
 });
 
 test("shell main.rs: splash-first, min duration, token hand-off, teardown", () => {

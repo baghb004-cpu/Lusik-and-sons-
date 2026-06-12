@@ -1,5 +1,5 @@
 // ============================================================
-// Lusik Builder desktop shell (Phase 16, plan §16/§16a)
+// Baghdo's Workshop desktop shell (Phase 16, plan §16/§16a)
 // ============================================================
 // The startup choreography:
 //   1. IMMEDIATELY open the splash window (the §16a mini-story —
@@ -32,11 +32,11 @@ fn session_token() -> String {
     let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
     let p = std::process::id() as u128;
     let a = (&t as *const _ as usize) as u128;
-    format!("lusik-desktop-{:032x}", t ^ (p << 64) ^ a.rotate_left(17))
+    format!("baghdo-desktop-{:032x}", t ^ (p << 64) ^ a.rotate_left(17))
 }
 
 /// USB layout, resolved relative to the exe:
-///   builder.exe            (this shell)
+///   baghdos-workshop.exe   (this shell)
 ///   node/node.exe          (portable Node runtime)
 ///   app/                   (the builder project — package.json etc.)
 fn portable_paths() -> Option<(PathBuf, PathBuf)> {
@@ -98,7 +98,7 @@ fn main() {
         .setup(|app| {
             // 1. Splash first — the earliest visible surface there is.
             let splash = WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash.html".into()))
-                .title("Lusik Builder")
+                .title("Baghdo's Workshop")
                 .inner_size(480.0, 340.0)
                 .decorations(false)
                 .resizable(false)
@@ -139,7 +139,7 @@ fn main() {
 
                 let url = format!("http://127.0.0.1:{PORT}/builder#token={token}");
                 let main = WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(url.parse().unwrap()))
-                    .title("Lusik Builder")
+                    .title("Baghdo's Workshop")
                     .inner_size(1320.0, 860.0)
                     .min_inner_size(900.0, 600.0)
                     .center()
@@ -158,5 +158,5 @@ fn main() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running the Lusik Builder shell");
+        .expect("error while running the Baghdo's Workshop shell");
 }

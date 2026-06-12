@@ -1,4 +1,4 @@
-# Lusik Builder — desktop shell (Phase 16)
+# Baghdo's Workshop — desktop shell (Phase 16)
 
 The double-click Windows app: a ~10 MB Tauri shell that plays the animated
 splash, boots the builder's local server from a portable folder, and opens
@@ -29,23 +29,23 @@ npm run next:build
 # build the shell
 cd desktop
 npm install
-npm run tauri:build        # → src-tauri/target/release/lusik-builder.exe
+npm run tauri:build        # → src-tauri/target/release/baghdos-workshop.exe
 
 # assemble the thumb-drive folder
-node scripts/make-portable.mjs E:\LusikBuilder
+node scripts/make-portable.mjs E:\BaghdosWorkshop
 ```
 
 ## The portable layout
 
 ```
-E:\LusikBuilder\
-├── builder.exe      double-click this
+E:\BaghdosWorkshop\
+├── baghdos-workshop.exe      double-click this
 ├── node\node.exe    portable Node runtime (pinned v22)
 ├── app\             the builder project (production build + data)
 └── README.txt
 ```
 
-`builder.exe` generates a fresh session token, starts `node app … next
+`baghdos-workshop.exe` generates a fresh session token, starts `node app … next
 start` on port 4799 with it, plays the splash until the server answers
 (minimum 3.4 s so the story lands), then opens the editor at
 `/builder#token=…` — the editor reads the hash and logs itself in. Closing

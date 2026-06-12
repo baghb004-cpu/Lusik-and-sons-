@@ -30,6 +30,8 @@ import {
 import { shippingConfigSchema, zipDatasetSchema } from "../data/index.ts";
 import { aiSettingsSchema } from "../ai/models.ts";
 import { appProjectSchema } from "../app/questionnaire.ts";
+import { servicesSelectionSchema } from "../presets/selection.ts";
+import { validateSelection } from "../presets/index.ts";
 // The build-time validators themselves (main() is guarded, so these
 // imports never trigger regeneration). Plain .mjs — typed as any.
 import { validateProduct } from "../../../scripts/gen-products.mjs";
@@ -96,6 +98,15 @@ export async function validateDocument(path: string, content: unknown): Promise<
   if (path === "builder/data/shipping.json") return zodIssues(shippingConfigSchema as ZodLike, content);
   if (path.startsWith("builder/data/datasets/")) return zodIssues(zipDatasetSchema as ZodLike, content);
   if (path === "builder/data/ai.json") return zodIssues(aiSettingsSchema as ZodLike, content);
+  // Phase 17: the services selection — schema + cross-preset rules.
+  if (path === "builder/data/services.json") {
+    const issues = zodIssues(servicesSelectionSchema as ZodLike, content);
+    if (issues.length > 0) return issues;
+    const selection = (content as { selection?: string[] }).selection ?? [];
+    return validateSelection(selection)
+      .filter((i) => i.level === "error")
+      .map((i) => ({ level: "error" as const, code: "preset_selection", message: i.message }));
+  }
   if (path.startsWith("builder/apps/")) return zodIssues(appProjectSchema as ZodLike, content);
   if (path.startsWith("builder/")) return []; // future builder families: structural JSON only for now
 

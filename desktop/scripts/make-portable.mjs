@@ -29,7 +29,7 @@ if (!target) {
 }
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const exe = join(repo, "desktop", "src-tauri", "target", "release", "lusik-builder.exe");
+const exe = join(repo, "desktop", "src-tauri", "target", "release", "baghdos-workshop.exe");
 if (!existsSync(exe)) {
   console.error("Build the shell first: cd desktop && npm run tauri:build (on Windows)");
   process.exit(1);
@@ -43,7 +43,7 @@ const NODE_VERSION = "v22.12.0"; // pin; update deliberately
 const nodeZipUrl = `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-win-x64.zip`;
 
 mkdirSync(target, { recursive: true });
-copyFileSync(exe, join(target, "builder.exe"));
+copyFileSync(exe, join(target, "baghdos-workshop.exe"));
 
 // Portable Node: download once, cache next to the script.
 const nodeCache = join(repo, "desktop", ".node-cache", NODE_VERSION);
@@ -70,9 +70,9 @@ for (const item of [
 
 writeFileSync(
   join(target, "README.txt"),
-  `Lusik Builder — portable
+  `Baghdo's Workshop — portable
 
-Double-click builder.exe. The splash plays while the local server starts,
+Double-click baghdos-workshop.exe. The splash plays while the local server starts,
 then the editor opens. Everything lives in this folder: your pages,
 products, theme and shipping data are plain files under app\\builder and
 app\\content — git-friendly, backup-friendly.

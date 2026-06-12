@@ -1,11 +1,11 @@
-# Lusik Builder desktop shell (Phase 16). MIT-stack throughout:
+# Baghdo's Workshop desktop shell (Phase 16). MIT-stack throughout:
 # Tauri 2 (MIT/Apache-2.0), no other runtime dependencies — the token
 # and port-poll use std only, keeping the shell tiny and auditable.
 
 [package]
-name = "lusik-builder"
+name = "baghdos-workshop"
 version = "0.1.0"
-description = "Lusik Builder — portable desktop shell"
+description = "Baghdo's Workshop — portable desktop shell"
 edition = "2021"
 
 [build-dependencies]

@@ -73,6 +73,8 @@ import { INSERTABLE_TYPES, newDefaultBlock, type InsertableType } from "./newBlo
 import { ShippingPanel } from "./ShippingPanel.tsx";
 import { AiPanel } from "./AiPanel.tsx";
 import { AppPanel } from "./AppPanel.tsx";
+import { PresetsPanel } from "./PresetsPanel.tsx";
+import { SERVICES_PATH } from "../presets/selection.ts";
 import { APP_DIR } from "../app/index.ts";
 import { zipDatasetSchema, SHIPPING_DOC_PATH, type ZipDataset } from "../data/index.ts";
 import { Inspector } from "./Inspector.tsx";
@@ -766,6 +768,7 @@ export function BuilderShell() {
   const isThemeDoc = doc?.path === THEME_PATH;
   const isShippingDoc = doc?.path === SHIPPING_DOC_PATH;
   const isAppDoc = doc?.path.startsWith("builder/apps/") ?? false;
+  const isServicesDoc = doc?.path === SERVICES_PATH;
   const isBuilderPage = doc?.path.startsWith("builder/pages/") ?? false;
   const isTemplate = doc?.path.startsWith("builder/templates/") ?? false;
   const pageTemplates = useMemo(
@@ -868,7 +871,7 @@ export function BuilderShell() {
     <div className="mx-auto max-w-7xl px-4 py-6 font-body text-ink">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl">Builder</h1>
+          <h1 className="font-display text-2xl">Baghdo’s Workshop</h1>
           <p className="text-xs text-muted">storage: {backend || "…"} · saves run the build’s own validators</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1175,7 +1178,7 @@ export function BuilderShell() {
                   {doc.dirty ? <span className="ml-1 text-accent">•</span> : null}
                 </h2>
                 <div className="flex shrink-0 gap-2">
-                  {formFields || isThemeDoc || isBuilderPage || isShippingDoc || isAppDoc ? (
+                  {formFields || isThemeDoc || isBuilderPage || isShippingDoc || isAppDoc || isServicesDoc ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1252,6 +1255,10 @@ export function BuilderShell() {
                     onBlockProps={setBaseProps}
                     onMove={handleTreeMove}
                   />
+                </div>
+              ) : isServicesDoc && !rawMode ? (
+                <div className="max-h-[62vh] overflow-y-auto">
+                  <PresetsPanel value={doc.content} onChange={editContent} />
                 </div>
               ) : isAppDoc && !rawMode ? (
                 <div className="max-h-[62vh] overflow-y-auto">

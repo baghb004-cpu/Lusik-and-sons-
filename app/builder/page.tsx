@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import { BuilderRoute } from "../../src/builder/editor/BuilderRoute.tsx";
 
 export const metadata: Metadata = {
-  title: "Builder — Lusik & Sons",
+  title: "Baghdo’s Workshop",
   robots: { index: false, follow: false },
 };
 

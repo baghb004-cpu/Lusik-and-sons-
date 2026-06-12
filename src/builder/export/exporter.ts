@@ -169,6 +169,19 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     written.push("builder/**", "src/builder/{schema,engine,renderer,theme}/**");
   }
 
+  // Phase 17: the chosen services decorate every export with their
+  // step-by-step setup checklist.
+  try {
+    const servicesRaw = await input.storage.read("builder/data/services.json");
+    if (servicesRaw) {
+      const { servicesSelectionSchema, checklistMarkdown } = await import("../presets/selection.ts");
+      const services = servicesSelectionSchema.safeParse(JSON.parse(servicesRaw));
+      if (services.success && services.data.selection.length > 0) {
+        await write("SETUP-CHECKLIST.md", checklistMarkdown(services.data.selection, services.data.stack));
+      }
+    }
+  } catch { /* no services doc — exports ship without a checklist */ }
+
   const manifest = buildManifest(input.target, pages.map((p) => p.page), fileContents);
   await writeFile(join(input.outDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
   written.push("manifest.json");

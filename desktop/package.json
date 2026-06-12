@@ -1,8 +1,8 @@
 {
-  "name": "lusik-builder-desktop",
+  "name": "baghdos-workshop-desktop",
   "private": true,
   "version": "0.1.0",
-  "description": "Tauri shell for the Lusik Builder (.exe). Build on Windows: npm install, then npm run tauri:build. See README.md.",
+  "description": "Tauri shell for the Baghdo's Workshop (.exe). Build on Windows: npm install, then npm run tauri:build. See README.md.",
   "scripts": {
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
