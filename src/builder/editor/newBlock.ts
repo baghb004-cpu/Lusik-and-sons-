@@ -28,6 +28,7 @@ export const INSERTABLE_TYPES = [
   "video",
   "socialRow",
   "hoursTable",
+  "specTable",
   "mapLink",
   "searchLauncher",
   "sectionJumper",
@@ -103,6 +104,8 @@ export function newDefaultBlock(type: InsertableType, catalog: CatalogSnapshot):
       return { id, type, props: { links: [{ platform: "instagram", href: "https://instagram.com/yourshop" }] } };
     case "hoursTable":
       return { id, type, props: { heading: "Hours", rows: [{ days: "Mon – Fri", hours: "9am – 5pm" }, { days: "Sat – Sun", hours: "By appointment" }] } };
+    case "specTable":
+      return { id, type, props: { heading: "At a glance", rows: [{ label: "Material", value: "100% cotton" }, { label: "Size", value: "90 × 90 cm" }], striped: true } };
     case "mapLink":
       return { id, type, props: { address: "Buena Park, CA", label: "Visit the workshop" } };
     case "searchLauncher":

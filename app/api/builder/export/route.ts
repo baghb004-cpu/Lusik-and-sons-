@@ -24,11 +24,29 @@ export async function POST(req: Request): Promise<Response> {
   const auth = await requireBuilderAdmin(req);
   if (!auth.ok) return auth.response!;
 
-  let body: { target?: string; download?: boolean };
+  let body: { target?: string; download?: boolean; preview?: string };
   try {
     body = await req.json();
   } catch {
     return json(400, { error: "Body must be JSON" });
+  }
+  // "View code": render ONE page to its exact export HTML, in memory.
+  if (typeof body.preview === "string") {
+    const storagePreview = getBuilderStorage();
+    if (storagePreview.backend !== "fs") return json(501, { error: "Code preview runs in local mode" });
+    const { renderSinglePageHtml } = await import("../../../../src/builder/export/exporter.ts");
+    const catalogPreview = Object.fromEntries(
+      Object.entries(CATALOG as Record<string, { products: CatalogSnapshot[string] }>).map(([cat, c]) => [cat, c.products])
+    ) as CatalogSnapshot;
+    const featuredPreview = (CMS_PAGES as { home?: { featured?: { category: string; slug: string } } }).home?.featured;
+    const result = await renderSinglePageHtml(
+      storagePreview,
+      body.preview,
+      catalogPreview,
+      featuredPreview ? { featured: `${featuredPreview.category}/${featuredPreview.slug}` } : undefined,
+      "Lusik & Sons"
+    );
+    return "error" in result ? json(404, result) : json(200, { ok: true, ...result });
   }
   if (!["static", "next", "pwa", "swiftui", "twa"].includes(body.target ?? "")) {
     return json(400, { error: 'Expected { target: "static" | "next" | "pwa" | "swiftui" | "twa", download?: boolean }' });

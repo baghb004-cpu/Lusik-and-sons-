@@ -136,6 +136,35 @@ async function compileCss(htmlDocs: string[], colorOverrides?: Record<string, st
   return result.css;
 }
 
+/** One page → the EXACT static-export HTML, in memory (the editor's
+ *  "View code" panel — INSPIRATION_ROADMAP §1). No files written. */
+export async function renderSinglePageHtml(
+  storage: BuilderStorage,
+  slug: string,
+  catalog: CatalogSnapshot,
+  cms: { featured?: string } | undefined,
+  siteName: string
+): Promise<{ html: string } | { error: string }> {
+  const { pages } = await loadPages(storage, catalog);
+  const entry = pages.find((p) => p.page.slug === slug);
+  if (!entry) return { error: `No publishable page with slug "${slug}" (drafts must pass the gate first)` };
+  const theme = await loadTheme(storage);
+  const chrome = await loadChrome(storage);
+  const mobileLayer = entry.layers.find((l) => l.breakpoint === "mobile");
+  const base = mobileLayer ? materializeMobileOnly(entry.page.sections, mobileLayer) : entry.page.sections;
+  const blocks = [...(chrome?.header ?? []), ...base, ...(chrome?.footer ?? [])];
+  const bodyHtml = await renderPageBody({ blocks, catalog, glass: theme?.tokens.glass ?? [], cms, candle: theme?.appearance?.candlelight });
+  const html = assembleHtmlDocument({
+    page: entry.page,
+    bodyHtml,
+    layers: entry.layers,
+    theme,
+    stylesheetHref: "styles.css",
+    siteName,
+  });
+  return { html };
+}
+
 export async function runExport(input: ExportInput): Promise<ExportResult> {
   const siteName = input.siteName ?? "Site";
   const { pages, skipped } = await loadPages(input.storage, input.catalog);

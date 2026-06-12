@@ -1479,6 +1479,33 @@ export function BuilderShell() {
                       <ActionBtn onClick={() => openDialog("saveTemplate")}>Save as template</ActionBtn>
                     </>
                   ) : null}
+                  {isBuilderPage && parsedPage ? (
+                    <ActionBtn
+                      onClick={async () => {
+                        setStatus("Rendering the export HTML…");
+                        try {
+                          const res = await api("/api/builder/export", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ preview: parsedPage.slug }),
+                          });
+                          const body = await res.json();
+                          if (!res.ok) { setStatus(body.error || "Preview failed"); return; }
+                          await navigator.clipboard?.writeText(body.html).catch(() => {});
+                          const w = window.open("", "_blank");
+                          if (w) {
+                            w.document.write(`<pre style="white-space:pre-wrap;font:12px/1.5 monospace;padding:16px">${body.html.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</pre>`);
+                            w.document.title = `Export HTML — ${parsedPage.slug}`;
+                          }
+                          setStatus(`Export HTML for "${parsedPage.slug}" opened (and copied to the clipboard) — ${Math.round(body.html.length / 1024)} KB, exactly what the static export writes`);
+                        } catch (e) {
+                          setStatus(String((e as Error).message || e));
+                        }
+                      }}
+                    >
+                      {"</> Code"}
+                    </ActionBtn>
+                  ) : null}
                   <ActionBtn onClick={downloadDoc}>Export ↓</ActionBtn>
                   <ActionBtn onClick={() => deleteDoc(doc.path)} danger>Delete</ActionBtn>
                 </div>

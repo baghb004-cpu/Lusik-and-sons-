@@ -69,6 +69,39 @@ Every id must match ^b_[a-z0-9]{12}$ and be unique. Links must be site-relative 
       ),
   },
   {
+    id: "product-description",
+    label: "Write a product description",
+    kind: "text",
+    build: (input, context) =>
+      msg(
+        `${HOUSE_RULES}
+Write a warm, honest product description (60–120 words) for a handmade item. Lead with what makes it special, mention materials and care plainly, no hype words ("stunning", "must-have"), no invented facts. Return only the description.`,
+        `Site context:\n${context}\n\nProduct notes from the maker:\n${input}`
+      ),
+  },
+  {
+    id: "seo-suggest",
+    label: "Suggest SEO title + description",
+    kind: "text",
+    build: (input, context) =>
+      msg(
+        `${HOUSE_RULES}
+Suggest 3 search-result titles (max 60 chars each) and 3 meta descriptions (max 155 chars each) for the given page. Plain language, no clickbait, include what a real searcher would type. Return them as two labeled lists.`,
+        `Site context:\n${context}\n\nPage content/topic:\n${input}`
+      ),
+  },
+  {
+    id: "mobile-review",
+    label: "Review for mobile-friendliness",
+    kind: "text",
+    build: (input, context) =>
+      msg(
+        `${HOUSE_RULES}
+Review the described page for small screens: reading order, tap target spacing, line lengths, image weight, anything that forces horizontal scrolling. Return a short prioritized list of concrete fixes the builder's own tools can make (device overrides, the Screens grader, spacing edits).`,
+        `Site context:\n${context}\n\nPage outline:\n${input}`
+      ),
+  },
+  {
     id: "improve-copy",
     label: "Improve this copy",
     kind: "text",

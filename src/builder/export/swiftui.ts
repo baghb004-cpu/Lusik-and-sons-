@@ -192,6 +192,14 @@ export function blockToSwift(block: Block): string {
       const head = typeof p.heading === "string" && p.heading ? [`Text("${escapeSwift(p.heading)}").font(.headline)`] : [];
       return `VStack(alignment: .leading, spacing: 8) {\n${[...head, ...lines].map((v) => indent(v, 1)).join("\n")}\n}.padding(16).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 16))`;
     }
+    case "specTable": {
+      const rows = (p.rows as Array<{ label: string; value: string }>) ?? [];
+      const lines = rows.map(
+        (r) => `HStack { Text("${escapeSwift(String(r.label))}").fontWeight(.medium); Spacer(); Text("${escapeSwift(String(r.value))}").foregroundColor(Theme.muted) }`
+      );
+      const head = typeof p.heading === "string" && p.heading ? [`Text("${escapeSwift(p.heading)}").font(.headline)`] : [];
+      return `VStack(alignment: .leading, spacing: 8) {\n${[...head, ...lines].map((v) => indent(v, 1)).join("\n")}\n}.padding(16).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 16))`;
+    }
     case "mapLink": {
       const address = escapeSwift(String(p.address ?? ""));
       return `Link(destination: URL(string: "https://maps.apple.com/?q=${escapeSwift(encodeURIComponent(String(p.address ?? "")))}")!) { HStack { Image(systemName: "mappin.and.ellipse"); VStack(alignment: .leading) { Text("${escapeSwift(String(p.label ?? "Find us"))}").fontWeight(.medium); Text("${address}").font(.caption).foregroundColor(Theme.muted) } }.padding(14).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 14)) }.tint(Theme.ink)`;

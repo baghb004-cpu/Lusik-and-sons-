@@ -998,6 +998,27 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
     );
   },
 
+  specTable: (block) => {
+    const p = block.props as { heading?: string; rows: Array<{ label: string; value: string; detail?: string }>; striped?: boolean; note?: string };
+    return (
+      <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/60 shadow-sm">
+        {p.heading ? <h3 className="border-b border-ink/10 px-4 py-3 font-display text-lg">{p.heading}</h3> : null}
+        <table className="w-full text-sm">
+          <tbody>
+            {p.rows.map((r, i) => (
+              <tr key={i} className={p.striped !== false && i % 2 === 1 ? "bg-cream/50" : undefined}>
+                <th scope="row" className="px-4 py-2 text-left font-medium">{r.label}</th>
+                <td className="px-4 py-2 text-right">{r.value}</td>
+                {p.rows.some((x) => x.detail) ? <td className="px-4 py-2 text-right text-xs text-muted">{r.detail ?? ""}</td> : null}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {p.note ? <p className="border-t border-ink/10 px-4 py-2 text-xs text-muted">{p.note}</p> : null}
+      </div>
+    );
+  },
+
   mapLink: (block) => {
     const p = block.props as { address: string; label?: string; image?: string };
     const href = `https://maps.google.com/?q=${encodeURIComponent(p.address)}`;

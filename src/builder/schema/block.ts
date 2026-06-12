@@ -409,6 +409,30 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
 
+  // Spec / price table — the office-suite-inspired "structured rows"
+  // block (plan: INSPIRATION_ROADMAP §1): specs, price lists, menus,
+  // size charts. Label/value pairs, optionally with a third detail
+  // column — deliberately NOT a spreadsheet engine.
+  specTable: z
+    .object({
+      heading: translatableSchema.optional(),
+      rows: z
+        .array(
+          z
+            .object({
+              label: translatableRequired,
+              value: translatableRequired,
+              detail: translatableSchema.optional(),
+            })
+            .strict()
+        )
+        .min(1)
+        .max(20),
+      striped: z.boolean().optional(),
+      note: z.string().max(300).optional(),
+    })
+    .strict(),
+
   // Opening hours.
   hoursTable: z
     .object({
