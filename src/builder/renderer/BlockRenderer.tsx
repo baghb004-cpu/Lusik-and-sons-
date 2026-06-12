@@ -24,6 +24,8 @@ export interface BlockRendererProps {
   catalog?: RenderContext["catalog"];
   /** Per-product availability for inventoryBadge. */
   inventory?: RenderContext["inventory"];
+  /** Offline i18n context for the language switcher / gate. */
+  i18n?: RenderContext["i18n"];
   /** Editor preview mode: show placeholders for unknown types + block ids. */
   editing?: boolean;
   /** Emit data-block-id without editor behavior — the static exporter's
@@ -31,15 +33,16 @@ export interface BlockRendererProps {
   withIds?: boolean;
 }
 
-export function BlockRenderer({ blocks, cms, glass, catalog, inventory, editing = false, withIds = false }: BlockRendererProps) {
+export function BlockRenderer({ blocks, cms, glass, catalog, inventory, i18n, editing = false, withIds = false }: BlockRendererProps) {
   const ctx: RenderContext = {
     cms,
     glass,
     catalog,
     inventory,
+    i18n,
     editing,
     renderChildren: (children) => (
-      <BlockRenderer blocks={children} cms={cms} glass={glass} catalog={catalog} inventory={inventory} editing={editing} withIds={withIds} />
+      <BlockRenderer blocks={children} cms={cms} glass={glass} catalog={catalog} inventory={inventory} i18n={i18n} editing={editing} withIds={withIds} />
     ),
   };
 

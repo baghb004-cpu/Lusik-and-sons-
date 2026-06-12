@@ -15,6 +15,11 @@
 import { z } from "zod";
 import { richTextDoc, imageSrc, safeHref } from "./richtext.ts";
 import { styleProps } from "./style.ts";
+import { translatableSchema, translatableRequired, translatableDoc } from "../i18n/translatable.ts";
+import { LOCALE_CODES } from "../i18n/locales.ts";
+
+// Translatable rich-text doc (a doc, or a per-locale doc map).
+const tDoc = translatableDoc(richTextDoc);
 
 // ── ids ─────────────────────────────────────────────────────
 // Stable ids are load-bearing: mobile overrides, locks, revisions
@@ -56,8 +61,8 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
   // Layout containers
   section: z
     .object({
-      eyebrow: z.string().optional(),
-      heading: z.string().optional(),
+      eyebrow: translatableSchema.optional(),
+      heading: translatableSchema.optional(),
       anchor: z.string().regex(/^[a-z][a-z0-9-]*$/).optional(),
       container: z.boolean().optional(), // constrain to content width
     })
@@ -71,12 +76,12 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
   drawer: z
     .object({
       side: z.enum(["bottom", "left", "right"]),
-      triggerLabel: z.string().min(1),
+      triggerLabel: translatableRequired,
     })
     .strict(),
 
   // Content leaves
-  richText: z.object({ doc: richTextDoc }).strict(),
+  richText: z.object({ doc: tDoc }).strict(),
   image: z
     .object({
       src: imageSrc,
@@ -88,17 +93,17 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     .strict(),
   card: z
     .object({
-      title: z.string().min(1),
-      body: richTextDoc.optional(),
-      image: z.object({ src: imageSrc, alt: z.string() }).strict().optional(),
+      title: translatableRequired,
+      body: tDoc.optional(),
+      image: z.object({ src: imageSrc, alt: translatableSchema }).strict().optional(),
       href: safeHref.optional(),
-      ctaLabel: z.string().optional(),
+      ctaLabel: translatableSchema.optional(),
     })
     .strict(),
   accordion: z
     .object({
       items: z
-        .array(z.object({ id: blockId, title: z.string().min(1), body: richTextDoc }).strict())
+        .array(z.object({ id: blockId, title: translatableRequired, body: tDoc }).strict())
         .min(1),
       allowMultiple: z.boolean().optional(),
     })
@@ -115,7 +120,7 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
   spacer: z.object({ size: z.string().min(1) }).strict(),
   button: z
     .object({
-      label: z.string().min(1),
+      label: translatableRequired,
       href: safeHref,
       variant: z.enum(["primary", "secondary", "ghost"]).optional(),
     })
@@ -123,7 +128,7 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
   breadcrumbs: z
     .object({
       items: z
-        .array(z.object({ label: z.string().min(1), href: safeHref.optional() }).strict())
+        .array(z.object({ label: translatableRequired, href: safeHref.optional() }).strict())
         .min(1), // last item = current page, no href needed
     })
     .strict(),
@@ -133,7 +138,7 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
   tabs: z
     .object({
       items: z
-        .array(z.object({ id: blockId, label: z.string().min(1), body: richTextDoc }).strict())
+        .array(z.object({ id: blockId, label: translatableRequired, body: tDoc }).strict())
         .min(2)
         .max(6),
     })
@@ -153,7 +158,7 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
             .object({
               id: blockId,
               icon: z.enum(PILL_ICONS),
-              label: z.string().min(1).max(14),
+              label: translatableRequired,
               href: safeHref,
             })
             .strict()
@@ -189,7 +194,7 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
       // "cms:featured" follows the home featured pick (build-validated to
       // be live); an explicit ref pins one product.
       binding: z.union([z.literal("cms:featured"), productRef]),
-      headline: z.string().optional(),
+      headline: translatableSchema.optional(),
     })
     .strict(),
   relatedProducts: z
@@ -243,10 +248,35 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
   // drawer/overlay open-modes wire up with the pill-nav phase.
   searchLauncher: z
     .object({
-      label: z.string().min(1),
-      placeholder: z.string().optional(),
+      label: translatableRequired,
+      placeholder: translatableSchema.optional(),
       href: safeHref,
       style: z.enum(["pill", "bar"]).optional(),
+    })
+    .strict(),
+
+  // ── Languages (offline i18n) ──────────────────────────────
+  // A visitor-facing language switcher, placeable anywhere. Lists
+  // the project's enabled locales (or an explicit subset) by their
+  // own names (endonyms). Pure links/buttons — no network.
+  languageSwitcher: z
+    .object({
+      label: translatableSchema.optional(),
+      style: z.enum(["pills", "dropdown", "inline"]).optional(),
+      /** Restrict to these locales; omit = all enabled project locales. */
+      locales: z.array(z.enum(LOCALE_CODES as [string, ...string[]])).optional(),
+      showFlags: z.boolean().optional(),
+    })
+    .strict(),
+  // The pre-entry language prompt (a gate before the site shows).
+  // Honors the project i18n gate settings; this block lets a page
+  // override the copy.
+  languageGate: z
+    .object({
+      heading: translatableSchema.optional(),
+      subtext: translatableSchema.optional(),
+      continueLabel: translatableSchema.optional(),
+      mode: z.enum(["blocking", "dismissible"]).optional(),
     })
     .strict(),
 
@@ -260,7 +290,7 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     .object({
       binding: z.literal("cms:faq").optional(),
       items: z
-        .array(z.object({ id: blockId, q: z.string().min(1), a: richTextDoc }).strict())
+        .array(z.object({ id: blockId, q: translatableRequired, a: tDoc }).strict())
         .optional(),
     })
     .strict(),

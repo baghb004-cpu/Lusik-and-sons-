@@ -76,6 +76,15 @@ import { AppPanel } from "./AppPanel.tsx";
 import { PresetsPanel } from "./PresetsPanel.tsx";
 import { ResponsivePreviewPanel } from "./ResponsivePreviewPanel.tsx";
 import { applyPreset, rectScan, type ViewportPreset, type LayoutIssue, type MeasuredRect } from "../viewport/index.ts";
+import {
+  localizeBlocks,
+  localeByCode,
+  i18nSettingsSchema,
+  DEFAULT_I18N_SETTINGS,
+  I18N_SETTINGS_PATH,
+  type I18nSettings,
+  type LocaleCode,
+} from "../i18n/index.ts";
 import { SERVICES_PATH } from "../presets/selection.ts";
 import { APP_DIR } from "../app/index.ts";
 import { zipDatasetSchema, SHIPPING_DOC_PATH, type ZipDataset } from "../data/index.ts";
@@ -234,6 +243,9 @@ export function BuilderShell() {
   const [screensOpen, setScreensOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<ViewportPreset | null>(null);
   const [liveIssues, setLiveIssues] = useState<LayoutIssue[]>([]);
+  // Offline languages
+  const [i18nSettings, setI18nSettings] = useState<I18nSettings>(DEFAULT_I18N_SETTINGS);
+  const [previewLocale, setPreviewLocale] = useState<LocaleCode>(DEFAULT_I18N_SETTINGS.defaultLocale);
 
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
@@ -300,6 +312,17 @@ export function BuilderShell() {
       // Load the theme once so page previews render with real tokens.
       api(`/api/builder/docs?path=${encodeURIComponent(THEME_PATH)}`)
         .then(async (res) => (res.ok ? setThemeDoc((await res.json()).content as Obj) : null))
+        .catch(() => null);
+      // Load language settings so the preview localizes + offers a toggle.
+      api(`/api/builder/docs?path=${encodeURIComponent(I18N_SETTINGS_PATH)}`)
+        .then(async (res) => {
+          if (!res.ok) return;
+          const parsed = i18nSettingsSchema.safeParse((await res.json()).content);
+          if (parsed.success) {
+            setI18nSettings(parsed.data);
+            setPreviewLocale(parsed.data.defaultLocale);
+          }
+        })
         .catch(() => null);
     }
   }, [authStatus, refreshList, api]);
@@ -423,6 +446,13 @@ export function BuilderShell() {
     setDoc({ ...doc, content: next, dirty: true });
     setJsonText(JSON.stringify(next, null, 2));
     if (doc.path === THEME_PATH) setThemeDoc(next); // page preview re-tokens live
+    if (doc.path === I18N_SETTINGS_PATH) {
+      const parsed = i18nSettingsSchema.safeParse(next);
+      if (parsed.success) {
+        setI18nSettings(parsed.data);
+        if (!parsed.data.locales.includes(previewLocale)) setPreviewLocale(parsed.data.defaultLocale);
+      }
+    }
   };
 
   const applyRawJson = (): Obj | null => {
@@ -627,7 +657,20 @@ export function BuilderShell() {
     if (!parsedPage) return null;
     return resolveBlocks(parsedPage.sections, [layers.tablet, layers.mobile], device);
   }, [parsedPage, layers, device]);
-  const previewBlocks = resolved?.blocks ?? null;
+  // Localize the preview to the chosen language so i18n maps render as text
+  // (not "[object Object]") and the switcher/gate have a current locale.
+  const previewBlocks = useMemo(() => {
+    if (!resolved) return null;
+    return localizeBlocks(resolved.blocks, previewLocale, i18nSettings.defaultLocale);
+  }, [resolved, previewLocale, i18nSettings.defaultLocale]);
+  const i18nRenderCtx = useMemo(
+    () => ({
+      locales: i18nSettings.locales.map((c) => ({ code: c, endonym: localeByCode(c)?.endonym ?? c })),
+      current: previewLocale,
+      hrefForLocale: (c: string) => `#lang-${c}`, // preview-only; export rewrites to real per-locale URLs
+    }),
+    [i18nSettings.locales, previewLocale]
+  );
 
   const staleOverrides = useMemo(() => {
     if (!parsedPage) return [];
@@ -1162,14 +1205,31 @@ export function BuilderShell() {
 
         {/* preview (builder pages) */}
         <main className="min-h-[60vh] overflow-auto rounded-xl border border-ink/10 bg-white/40 p-4">
+          {isBuilderPage && i18nSettings.locales.length > 1 ? (
+            <div className="mb-2 flex flex-wrap items-center gap-1 text-xs">
+              <span className="text-muted">Preview language:</span>
+              {i18nSettings.locales.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setPreviewLocale(c)}
+                  className={c === previewLocale ? "rounded-full bg-ink px-2.5 py-1 text-cream" : "rounded-full border border-ink/20 px-2.5 py-1 hover:bg-cream"}
+                >
+                  {localeByCode(c)?.endonym ?? c}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {previewBlocks ? (
             <div
               ref={setPreviewEl}
+              dir={localeByCode(previewLocale)?.dir ?? "ltr"}
+              data-locale={previewLocale}
               className="bt-theme-scope relative mx-auto min-h-full border border-dashed border-ink/10 bg-cream/40 transition-[max-width]"
               style={
                 activePreset
-                  ? { width: activePreset.width, maxWidth: "none", minHeight: activePreset.height }
-                  : { maxWidth: DEVICE_WIDTH[device] }
+                  ? { width: activePreset.width, maxWidth: "none", minHeight: activePreset.height, fontFamily: localeByCode(previewLocale)?.fontStack }
+                  : { maxWidth: DEVICE_WIDTH[device], fontFamily: localeByCode(previewLocale)?.fontStack }
               }
               onClick={(e) => {
                 const hit = (e.target as HTMLElement).closest("[data-block-id]");
@@ -1208,7 +1268,7 @@ export function BuilderShell() {
                   </div>
                 </>
               ) : null}
-              <BlockRenderer blocks={previewBlocks} glass={glassPresets} catalog={catalogSnapshot} cms={cmsContext} editing />
+              <BlockRenderer blocks={previewBlocks} glass={glassPresets} catalog={catalogSnapshot} cms={cmsContext} i18n={i18nRenderCtx} editing />
               {device === "mobile" && safeAreaOn ? (
                 <div className="pointer-events-none sticky bottom-0 z-10 h-7 bg-ink/15 text-center text-[10px] leading-7 text-ink/60" aria-hidden="true">
                   home indicator — env(safe-area-inset-bottom)

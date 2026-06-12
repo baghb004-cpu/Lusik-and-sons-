@@ -36,6 +36,15 @@ export interface RenderContext {
   catalog?: CatalogSnapshot;
   /** Per-product availability for inventoryBadge ({ soldOut, remaining? }). */
   inventory?: Record<string, { soldOut: boolean; remaining?: number }>;
+  /** Offline i18n context for the switcher/gate (Phase: languages).
+   *  localePrefix is "" for the default locale, "/<code>" otherwise, so the
+   *  switcher links to the same page under each locale's URL prefix. */
+  i18n?: {
+    locales: Array<{ code: string; endonym: string }>;
+    current: string;
+    /** Builds the href for switching to a locale on the current page. */
+    hrefForLocale: (code: string) => string;
+  };
   /** Theme glass presets (Phase 5) for glass-styled blocks like pillNav. */
   glass?: GlassPreset[];
   /** True inside the editor preview — fixed-position blocks render sticky
@@ -572,6 +581,78 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
           ))}
         </div>
       </nav>
+    );
+  },
+
+  // ── Languages (offline) ───────────────────────────────────
+  languageSwitcher: (block, ctx) => {
+    const p = block.props as { label?: string; style?: string; locales?: string[]; showFlags?: boolean };
+    const all = ctx.i18n?.locales ?? [];
+    const list = p.locales && p.locales.length ? all.filter((l) => p.locales!.includes(l.code)) : all;
+    if (list.length <= 1) return null; // nothing to switch between
+    const current = ctx.i18n?.current;
+    if (p.style === "dropdown") {
+      // zero-JS native dropdown: links inside a <details>.
+      return (
+        <details className="relative inline-block text-sm">
+          <summary className="cursor-pointer list-none rounded-full border border-ink/20 px-3 py-1.5 [&::-webkit-details-marker]:hidden">
+            {list.find((l) => l.code === current)?.endonym ?? p.label ?? "Language"} ▾
+          </summary>
+          <ul className="absolute z-30 mt-1 min-w-32 rounded-xl border border-ink/15 bg-white p-1 shadow-card">
+            {list.map((l) => (
+              <li key={l.code}>
+                <a href={ctx.i18n!.hrefForLocale(l.code)} hrefLang={l.code} className={cx("block rounded px-3 py-1.5", l.code === current ? "bg-cream font-medium" : "hover:bg-cream")}>
+                  {l.endonym}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      );
+    }
+    // pills / inline: a row of links
+    return (
+      <nav aria-label="Language" className={cx("flex flex-wrap items-center gap-1.5 text-sm", p.style === "inline" && "gap-3")}>
+        {p.label ? <span className="text-muted">{p.label}:</span> : null}
+        {list.map((l) => (
+          <a
+            key={l.code}
+            href={ctx.i18n!.hrefForLocale(l.code)}
+            hrefLang={l.code}
+            aria-current={l.code === current ? "true" : undefined}
+            className={
+              p.style === "inline"
+                ? cx("underline-offset-2 hover:underline", l.code === current && "font-semibold text-accent")
+                : cx("rounded-full border px-3 py-1", l.code === current ? "border-ink bg-ink text-cream" : "border-ink/20 hover:bg-cream")
+            }
+          >
+            {l.endonym}
+          </a>
+        ))}
+      </nav>
+    );
+  },
+
+  languageGate: (block, ctx) => {
+    const p = block.props as { heading?: string; subtext?: string; continueLabel?: string; mode?: string };
+    const list = ctx.i18n?.locales ?? [];
+    if (list.length <= 1) return null;
+    // A full-bleed pre-entry prompt: pick a language → enter that locale's
+    // site. Zero-JS — each choice is a link to the locale's home.
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/80 p-6 text-center backdrop-blur" role="dialog" aria-modal="true">
+        <div className="w-full max-w-sm rounded-2xl bg-cream p-6 shadow-float">
+          <h2 className="font-display text-2xl">{p.heading ?? "Choose your language"}</h2>
+          {p.subtext ? <p className="mt-1 text-sm text-muted">{p.subtext}</p> : null}
+          <div className="mt-4 grid gap-2">
+            {list.map((l) => (
+              <a key={l.code} href={ctx.i18n!.hrefForLocale(l.code)} hrefLang={l.code} className="rounded-full bg-ink px-5 py-2.5 text-cream">
+                {l.endonym}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
     );
   },
 

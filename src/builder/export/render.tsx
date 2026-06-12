@@ -7,12 +7,14 @@
 import { BlockRenderer } from "../renderer/index.ts";
 import type { Block, GlassPreset } from "../schema/index.ts";
 import type { CatalogSnapshot } from "../engine/commerce.ts";
+import type { RenderContext } from "../renderer/blocks.tsx";
 
 export interface RenderBodyInput {
   blocks: Block[];
   catalog?: CatalogSnapshot;
   glass?: GlassPreset[];
   cms?: { featured?: string };
+  i18n?: RenderContext["i18n"];
 }
 
 export async function renderPageBody(input: RenderBodyInput): Promise<string> {
@@ -26,6 +28,7 @@ export async function renderPageBody(input: RenderBodyInput): Promise<string> {
       catalog={input.catalog}
       glass={input.glass}
       cms={input.cms}
+      i18n={input.i18n}
       withIds
     />
   );

@@ -90,6 +90,14 @@ async function loadTheme(storage: BuilderStorage): Promise<Theme | null> {
   return parsed.success ? parsed.data : null;
 }
 
+async function loadI18n(storage: BuilderStorage) {
+  const { i18nSettingsSchema, DEFAULT_I18N_SETTINGS } = await import("../i18n/index.ts");
+  const raw = await storage.read("builder/i18n.json").catch(() => null);
+  if (!raw) return DEFAULT_I18N_SETTINGS;
+  const parsed = i18nSettingsSchema.safeParse(JSON.parse(raw));
+  return parsed.success ? parsed.data : DEFAULT_I18N_SETTINGS;
+}
+
 /** Compile the utility-CSS subset the emitted HTML actually uses. */
 async function compileCss(htmlDocs: string[]): Promise<string> {
   const [{ default: postcss }, { default: tailwindcss }] = await Promise.all([
@@ -125,18 +133,49 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
 
   if (input.target === "static" || input.target === "pwa") {
     const pwa = input.target === "pwa";
-    // Render every page body first (Tailwind compiles against the union).
-    const rendered = [];
-    for (const { page, layers } of pages) {
-      const mobileLayer = layers.find((l) => l.breakpoint === "mobile");
-      const sections = mobileLayer ? materializeMobileOnly(page.sections, mobileLayer) : page.sections;
-      const bodyHtml = await renderPageBody({ blocks: sections, catalog: input.catalog, glass, cms: input.cms });
-      rendered.push({ page, layers, bodyHtml });
+    // Offline languages: render every page once PER ENABLED LOCALE into a
+    // locale-prefixed path (default at root, others under /<code>/). The
+    // switcher/gate link between them — zero-JS, real per-language URLs,
+    // fully offline.
+    const { localizeBlocks, localeByCode, buildI18nCss, isRtl } = await import("../i18n/index.ts");
+    const i18n = await loadI18n(input.storage);
+    const localeList = i18n.locales.map((code) => ({ code, endonym: localeByCode(code)?.endonym ?? code }));
+
+    // hrefForLocale maps a page across locale prefixes (root-absolute).
+    const pagePathFor = (locale: string, slug: string) => {
+      const prefix = locale === i18n.defaultLocale ? "" : `/${locale}`;
+      return slug === "index" ? `${prefix}/` : `${prefix}/${slug}/`;
+    };
+    const outFileFor = (locale: string, slug: string) => {
+      const prefix = locale === i18n.defaultLocale ? "" : `${locale}/`;
+      return slug === "index" ? `${prefix}index.html` : `${prefix}${slug}/index.html`;
+    };
+
+    const rendered: Array<{ slug: string; outFile: string; locale: string; layers: OverrideLayer[]; page: Page; bodyHtml: string }> = [];
+    for (const locale of i18n.locales) {
+      for (const { page, layers } of pages) {
+        const mobileLayer = layers.find((l) => l.breakpoint === "mobile");
+        const base = mobileLayer ? materializeMobileOnly(page.sections, mobileLayer) : page.sections;
+        const sections = localizeBlocks(base, locale, i18n.defaultLocale);
+        const bodyHtml = await renderPageBody({
+          blocks: sections,
+          catalog: input.catalog,
+          glass,
+          cms: input.cms,
+          i18n: { locales: localeList, current: locale, hrefForLocale: (c) => pagePathFor(c, page.slug) },
+        });
+        rendered.push({ slug: page.slug, outFile: outFileFor(locale, page.slug), locale, layers, page, bodyHtml });
+      }
     }
     const css = await compileCss(rendered.map((r) => r.bodyHtml));
     await write("styles.css", css);
+    if (i18n.locales.length > 1 || i18n.locales[0] !== "en") {
+      await write("i18n.css", buildI18nCss(i18n.locales));
+    }
+    const i18nActive = i18n.locales.length > 1 || i18n.locales[0] !== "en";
     for (const r of rendered) {
-      const depth = r.page.slug === "index" ? 0 : 1;
+      const depth = r.outFile.split("/").length - 1; // dir nesting → "../" count
+      const loc = localeByCode(r.locale);
       const html = assembleHtmlDocument({
         page: r.page,
         bodyHtml: r.bodyHtml,
@@ -145,8 +184,11 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
         stylesheetHref: `${"../".repeat(depth)}styles.css`,
         siteName,
         pwa,
+        lang: r.locale,
+        dir: loc?.dir ?? (isRtl(r.locale) ? "rtl" : "ltr"),
+        i18nHref: i18nActive ? `${"../".repeat(depth)}i18n.css` : undefined,
       });
-      await write(pageFileName(r.page), html);
+      await write(r.outFile, html);
     }
     if (pwa) {
       const { buildWebManifest, buildServiceWorker, buildPwaReadme } = await import("../app/pwa.ts");
@@ -159,9 +201,13 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     }
   } else if (input.target === "swiftui") {
     // Native iOS scaffold — pure codegen here; compiles on a Mac (Xcode).
+    // Localize to the default language (v1 native export is single-locale).
     const { buildSwiftUIProject } = await import("./swiftui.ts");
+    const { localizeBlocks } = await import("../i18n/index.ts");
+    const i18n = await loadI18n(input.storage);
+    const localizedPages = pages.map((p) => ({ ...p.page, sections: localizeBlocks(p.page.sections, i18n.defaultLocale, i18n.defaultLocale) }));
     const project = buildSwiftUIProject(
-      pages.map((p) => p.page),
+      localizedPages,
       theme,
       siteName,
       input.webBaseURL ?? "https://example.com"

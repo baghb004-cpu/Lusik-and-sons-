@@ -29,10 +29,14 @@ export interface StaticPageInput {
   /** PWA export: manifest link + theme-color + the 1-line SW registration
    *  (the ONLY script — the plain static target stays zero-JS). */
   pwa?: boolean;
+  /** Offline-languages: <html lang/dir> + the bundled i18n.css (fonts + dir). */
+  lang?: string;
+  dir?: "ltr" | "rtl";
+  i18nHref?: string;
 }
 
 export function assembleHtmlDocument(input: StaticPageInput): string {
-  const { page, bodyHtml, layers, theme, stylesheetHref, siteName, pwa } = input;
+  const { page, bodyHtml, layers, theme, stylesheetHref, siteName, pwa, lang, dir, i18nHref } = input;
   const title = escapeHtml(page.seo.title ?? `${page.title} — ${siteName}`);
   const description = page.seo.description ? `\n    <meta name="description" content="${escapeHtml(page.seo.description)}" />` : "";
   const og = page.seo.ogImage ? `\n    <meta property="og:image" content="${escapeHtml(page.seo.ogImage)}" />` : "";
@@ -41,15 +45,16 @@ export function assembleHtmlDocument(input: StaticPageInput): string {
   const pwaHead = pwa
     ? `\n    <link rel="manifest" href="/manifest.webmanifest" />\n    <meta name="theme-color" content="${escapeHtml(theme?.tokens.colors.ink ?? "#1A1612")}" />`
     : "";
+  const i18nLink = i18nHref ? `\n    <link rel="stylesheet" href="${i18nHref}" />` : "";
   const pwaScript = pwa ? `\n    ${SW_REGISTER_SNIPPET}` : "";
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${lang ?? "en"}" dir="${dir ?? "ltr"}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>${title}</title>${description}${og}${pwaHead}
-    <link rel="stylesheet" href="${stylesheetHref}" />
+    <link rel="stylesheet" href="${stylesheetHref}" />${i18nLink}
     <style>
 ${themeCss}
 ${mediaCss}

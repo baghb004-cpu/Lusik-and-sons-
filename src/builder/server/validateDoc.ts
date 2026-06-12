@@ -29,6 +29,7 @@ import {
 } from "../schema/index.ts";
 import { shippingConfigSchema, zipDatasetSchema } from "../data/index.ts";
 import { aiSettingsSchema } from "../ai/models.ts";
+import { i18nSettingsSchema } from "../i18n/settings.ts";
 import { appProjectSchema } from "../app/questionnaire.ts";
 import { servicesSelectionSchema } from "../presets/selection.ts";
 import { validateSelection } from "../presets/index.ts";
@@ -98,6 +99,7 @@ export async function validateDocument(path: string, content: unknown): Promise<
   if (path === "builder/data/shipping.json") return zodIssues(shippingConfigSchema as ZodLike, content);
   if (path.startsWith("builder/data/datasets/")) return zodIssues(zipDatasetSchema as ZodLike, content);
   if (path === "builder/data/ai.json") return zodIssues(aiSettingsSchema as ZodLike, content);
+  if (path === "builder/i18n.json") return zodIssues(i18nSettingsSchema as ZodLike, content);
   // Phase 17: the services selection — schema + cross-preset rules.
   if (path === "builder/data/services.json") {
     const issues = zodIssues(servicesSelectionSchema as ZodLike, content);
