@@ -36,11 +36,15 @@ import { buildManifest } from "./manifest.ts";
 
 export interface ExportInput {
   storage: BuilderStorage;
-  target: "static" | "next" | "pwa"; // pwa = static + manifest/sw/icons (plan §15)
+  // pwa = static + manifest/sw/icons; swiftui = native iOS scaffold (App
+  // Developer Mode's native path — compiles on a Mac).
+  target: "static" | "next" | "pwa" | "swiftui";
   outDir: string; // absolute
   catalog: CatalogSnapshot;
   cms?: { featured?: string };
   siteName?: string;
+  /** SwiftUI commerce links point back here (the live web shop). */
+  webBaseURL?: string;
 }
 
 export interface ExportResult {
@@ -153,6 +157,16 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     } else {
       await write("README-DEPLOY.md", staticReadme(siteName, pages.length));
     }
+  } else if (input.target === "swiftui") {
+    // Native iOS scaffold — pure codegen here; compiles on a Mac (Xcode).
+    const { buildSwiftUIProject } = await import("./swiftui.ts");
+    const project = buildSwiftUIProject(
+      pages.map((p) => p.page),
+      theme,
+      siteName,
+      input.webBaseURL ?? "https://example.com"
+    );
+    for (const [rel, content] of Object.entries(project)) await write(rel, content);
   } else {
     // next: scaffold + renderer packages + documents + catalog snapshot.
     for (const [rel, content] of Object.entries(nextScaffold(siteName))) {

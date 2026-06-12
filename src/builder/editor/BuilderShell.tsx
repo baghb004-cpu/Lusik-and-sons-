@@ -1285,6 +1285,20 @@ export function BuilderShell() {
                         setStatus(String((e as Error).message || e));
                       }
                     }}
+                    onExportSwiftUI={async () => {
+                      setStatus("Generating SwiftUI project…");
+                      try {
+                        const res = await api("/api/builder/export", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ target: "swiftui" }),
+                        });
+                        const body = await res.json();
+                        setStatus(res.ok ? `SwiftUI project generated → ${body.outDir} (open on a Mac in Xcode)` : body.error || "Export failed");
+                      } catch (e) {
+                        setStatus(String((e as Error).message || e));
+                      }
+                    }}
                   />
                 </div>
               ) : isShippingDoc && !rawMode ? (

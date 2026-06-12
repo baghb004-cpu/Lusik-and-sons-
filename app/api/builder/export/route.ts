@@ -30,8 +30,8 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return json(400, { error: "Body must be JSON" });
   }
-  if (body.target !== "static" && body.target !== "next" && body.target !== "pwa") {
-    return json(400, { error: 'Expected { target: "static" | "next" | "pwa", download?: boolean }' });
+  if (!["static", "next", "pwa", "swiftui"].includes(body.target ?? "")) {
+    return json(400, { error: 'Expected { target: "static" | "next" | "pwa" | "swiftui", download?: boolean }' });
   }
 
   const storage = getBuilderStorage();
@@ -50,11 +50,12 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const result = await runExport({
       storage,
-      target: body.target,
+      target: body.target as "static" | "next" | "pwa" | "swiftui",
       outDir,
       catalog,
       cms: { featured: featured ? `${featured.category}/${featured.slug}` : undefined },
       siteName: "Lusik & Sons",
+      webBaseURL: process.env.URL || "https://lusikandsons.com",
     });
     // ZIP download (static/pwa — their file lists are fully materialized).
     if (body.download && body.target !== "next") {

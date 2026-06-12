@@ -1,0 +1,342 @@
+// ============================================================
+// Export — SwiftUI code generator (App Developer Mode, native)
+// ============================================================
+// Translates builder block documents into a real, Xcode-openable
+// SwiftUI project. This is the native counterpart to the static/
+// Next adapters — but SwiftUI is a different paradigm (declarative
+// Swift Views, no shared React renderer), so this is a faithful
+// TRANSLATION and starting scaffold, not a pixel clone of the web.
+//
+// Honest boundaries:
+//   - Pure string generation: runs anywhere (Windows/Linux). The
+//     emitted project COMPILES ON A MAC with Xcode — verified
+//     there, not here.
+//   - Protected zones hold: NO payment/checkout/IAP code is ever
+//     generated. A buyBox becomes a labeled link to the web
+//     product page, never an in-app purchase flow.
+//   - Blocks with no native mapping render a visible, labeled
+//     placeholder View — never silently dropped, never raw data.
+//
+// Theme tokens → a Swift `Theme` enum; rich text → Text/stacks.
+// ============================================================
+
+import type { Block, Page, RichTextDoc, RichTextNode, Theme } from "../schema/index.ts";
+
+/** Swift string literal escaping (\ and " and newlines). */
+export function escapeSwift(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t");
+}
+
+/** "gift-guide" / "index" → a valid PascalCase Swift type name. */
+export function swiftTypeName(slug: string, suffix = "View"): string {
+  const pascal = slug
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((p) => p[0].toUpperCase() + p.slice(1))
+    .join("");
+  const safe = /^[A-Za-z]/.test(pascal) ? pascal : `Page${pascal}`;
+  return `${safe || "Home"}${suffix}`;
+}
+
+function indent(code: string, level: number): string {
+  const pad = "    ".repeat(level);
+  return code
+    .split("\n")
+    .map((l) => (l ? pad + l : l))
+    .join("\n");
+}
+
+// ── rich text → SwiftUI ─────────────────────────────────────
+// Concatenate inline runs into a single Text with modifiers; block
+// nodes become stacked Views.
+function inlineText(node: RichTextNode): string | null {
+  if (node.type !== "text") return null;
+  let expr = `Text("${escapeSwift(node.text ?? "")}")`;
+  for (const mark of node.marks ?? []) {
+    if (mark.type === "bold") expr += ".bold()";
+    else if (mark.type === "italic") expr += ".italic()";
+    else if (mark.type === "underline") expr += ".underline()";
+    // links inside paragraphs: keep the text, drop the nav (honest — a
+    // tappable inline link needs AttributedString; v1 shows the words).
+  }
+  return expr;
+}
+
+function richNodeToSwift(node: RichTextNode): string[] {
+  switch (node.type) {
+    case "heading": {
+      const level = Number(node.attrs?.level ?? 2);
+      const font = level <= 1 ? ".largeTitle" : level === 2 ? ".title" : level === 3 ? ".title2" : ".title3";
+      const text = (node.content ?? []).map(inlineText).filter(Boolean).join(" + ");
+      return [`(${text || 'Text("")'}).font(${font}).fontWeight(.semibold)`];
+    }
+    case "paragraph": {
+      const runs = (node.content ?? []).map(inlineText).filter(Boolean);
+      return runs.length ? [`(${runs.join(" + ")}).font(.body)`] : [];
+    }
+    case "bulletList":
+    case "orderedList":
+      return (node.content ?? []).flatMap((li, i) =>
+        (li.content ?? []).flatMap(inlineText).filter(Boolean).map((t) => `HStack(alignment: .top) { Text("${node.type === "orderedList" ? `${i + 1}.` : "•"}"); ${t} }`)
+      );
+    case "blockquote":
+      return (node.content ?? [])
+        .flatMap(richNodeToSwift)
+        .map((v) => `${v}.italic().padding(.leading, 12).overlay(Rectangle().frame(width: 2).foregroundColor(Theme.accent), alignment: .leading)`);
+    case "image":
+      return [`RemoteImage(url: "${escapeSwift(String(node.attrs?.src ?? ""))}")`];
+    default:
+      return [];
+  }
+}
+
+function richTextToSwift(doc: RichTextDoc): string {
+  const views = doc.content.flatMap(richNodeToSwift);
+  if (views.length === 0) return 'EmptyView()';
+  return `VStack(alignment: .leading, spacing: 10) {\n${views.map((v) => indent(v, 1)).join("\n")}\n}`;
+}
+
+// ── blocks → SwiftUI ────────────────────────────────────────
+function placeholder(type: string): string {
+  return `BuilderPlaceholder(label: "${escapeSwift(type)} — not yet available natively")`;
+}
+
+export function blockToSwift(block: Block): string {
+  const p = block.props as Record<string, unknown>;
+  switch (block.type) {
+    case "section": {
+      const kids = (block.children ?? []).map(blockToSwift);
+      const head: string[] = [];
+      if (typeof p.eyebrow === "string") head.push(`Text("${escapeSwift(p.eyebrow)}").font(.caption).foregroundColor(Theme.accent).textCase(.uppercase)`);
+      if (typeof p.heading === "string") head.push(`Text("${escapeSwift(p.heading)}").font(.title).fontWeight(.semibold)`);
+      const all = [...head, ...kids];
+      return `VStack(alignment: .leading, spacing: 16) {\n${all.map((v) => indent(v, 1)).join("\n")}\n}.padding(.vertical, 8)`;
+    }
+    case "columns": {
+      const kids = (block.children ?? []).map(blockToSwift);
+      // Native phones are narrow → stack vertically (the web's stackOnMobile default).
+      return `VStack(alignment: .leading, spacing: 16) {\n${kids.map((v) => indent(v, 1)).join("\n")}\n}`;
+    }
+    case "richText":
+      return richTextToSwift(p.doc as RichTextDoc);
+    case "image":
+      return `RemoteImage(url: "${escapeSwift(String(p.src ?? ""))}")${p.caption ? `.overlay(Text("${escapeSwift(String(p.caption))}").font(.caption).foregroundColor(Theme.muted), alignment: .bottom)` : ""}`;
+    case "button": {
+      const href = String(p.href ?? "/");
+      const label = escapeSwift(String(p.label ?? "Button"));
+      return href.startsWith("http")
+        ? `Link("${label}", destination: URL(string: "${escapeSwift(href)}")!).buttonStyle(.borderedProminent).tint(Theme.ink)`
+        : `Text("${label}").fontWeight(.medium).padding(.horizontal, 20).padding(.vertical, 10).background(Theme.ink).foregroundColor(Theme.cream).clipShape(Capsule())`;
+    }
+    case "spacer":
+      return `Spacer().frame(height: 24)`;
+    case "card": {
+      const title = escapeSwift(String(p.title ?? ""));
+      const body = p.body ? richTextToSwift(p.body as RichTextDoc) : 'EmptyView()';
+      const cta = p.ctaLabel ? `\n${indent(`Text("${escapeSwift(String(p.ctaLabel))} →").font(.subheadline).foregroundColor(Theme.accent)`, 1)}` : "";
+      return `VStack(alignment: .leading, spacing: 8) {\n${indent(`Text("${title}").font(.headline)`, 1)}\n${indent(body, 1)}${cta}\n}.padding(16).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 16)).shadow(radius: 2)`;
+    }
+    case "accordion": {
+      const items = (p.items as Array<{ id: string; title: string; body: RichTextDoc }>) ?? [];
+      const groups = items.map(
+        (it) => `DisclosureGroup("${escapeSwift(it.title)}") {\n${indent(richTextToSwift(it.body), 1)}\n}`
+      );
+      return `VStack(spacing: 8) {\n${groups.map((g) => indent(g, 1)).join("\n")}\n}`;
+    }
+    case "tabs": {
+      const items = (p.items as Array<{ id: string; label: string; body: RichTextDoc }>) ?? [];
+      const tabs = items.map(
+        (it, i) => `${richTextToSwift(it.body)}.tabItem { Text("${escapeSwift(it.label)}") }.tag(${i})`
+      );
+      return `TabView {\n${tabs.map((t) => indent(t, 1)).join("\n")}\n}.frame(minHeight: 200)`;
+    }
+    case "breadcrumbs": {
+      const items = (p.items as Array<{ label: string }>) ?? [];
+      const labels = items.map((it) => `Text("${escapeSwift(it.label)}")`).join(` + Text(" › ").foregroundColor(Theme.muted) + `);
+      return `(${labels || 'Text("")'}).font(.caption).foregroundColor(Theme.muted)`;
+    }
+    // Commerce: present the product, link to the web page for purchase.
+    // Checkout/IAP is a protected zone — never generated here.
+    case "productCard":
+    case "buyBox":
+    case "featuredProduct":
+      return `ProductLink(ref: "${escapeSwift(String(p.product ?? p.binding ?? ""))}")`;
+    default:
+      return placeholder(block.type);
+  }
+}
+
+export function pageToSwiftView(page: Page): string {
+  const typeName = swiftTypeName(page.slug);
+  const body = page.sections.map(blockToSwift);
+  const inner = body.length
+    ? body.map((v) => indent(v, 4)).join("\n")
+    : indent('Text("This page is empty.")', 4);
+  return `struct ${typeName}: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+${inner}
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+        }
+        .navigationTitle("${escapeSwift(page.title)}")
+        .background(Theme.cream.ignoresSafeArea())
+    }
+}`;
+}
+
+// ── the project ─────────────────────────────────────────────
+function hexToSwiftColor(hex: string): string {
+  const h = hex.replace(/^#/, "");
+  const full = h.length === 3 ? [...h].map((c) => c + c).join("") : h.slice(0, 6);
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  return `Color(red: ${r.toFixed(3)}, green: ${g.toFixed(3)}, blue: ${b.toFixed(3)})`;
+}
+
+function themeSwift(theme: Theme | null): string {
+  const c = theme?.tokens.colors ?? {};
+  const color = (name: string, fallback: string) => hexToSwiftColor(c[name] ?? fallback);
+  return `import SwiftUI
+
+// Generated from your builder theme tokens. Edit here to restyle the app.
+enum Theme {
+    static let ink = ${color("ink", "#1A1612")}
+    static let cream = ${color("cream", "#F5EFE3")}
+    static let accent = ${color("accent", "#B08842")}
+    static let muted = ${color("muted", "#6B655D")}
+    static let paper = ${color("paper", "#FFFFFF")}
+}
+`;
+}
+
+const SUPPORT_VIEWS = `import SwiftUI
+
+// Async image loader with a calm placeholder.
+struct RemoteImage: View {
+    let url: String
+    var body: some View {
+        AsyncImage(url: URL(string: url)) { phase in
+            switch phase {
+            case .success(let image): image.resizable().scaledToFit()
+            case .failure: Color.gray.opacity(0.15).frame(height: 160)
+            default: Color.gray.opacity(0.08).frame(height: 160)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// A block type with no native mapping yet — visible, never silent.
+struct BuilderPlaceholder: View {
+    let label: String
+    var body: some View {
+        Text(label)
+            .font(.footnote)
+            .foregroundColor(Theme.muted)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.accent.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// Commerce is view-only in the app: link out to the web product page.
+// Checkout / in-app purchase is intentionally NOT generated.
+struct ProductLink: View {
+    let ref: String
+    var body: some View {
+        Link(destination: URL(string: "\\(AppConfig.webBaseURL)/shop/\\(ref)")!) {
+            HStack {
+                Text("View product").fontWeight(.medium)
+                Spacer()
+                Image(systemName: "arrow.up.right")
+            }
+            .padding(16)
+            .background(Theme.paper)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .tint(Theme.ink)
+    }
+}
+`;
+
+/** Returns relative-path → file-content for a complete SwiftUI project. */
+export function buildSwiftUIProject(
+  pages: Page[],
+  theme: Theme | null,
+  siteName: string,
+  webBaseURL = "https://example.com"
+): Record<string, string> {
+  // Module/base name (no suffix); the @main struct appends "App" → e.g.
+  // "LusikSons" → struct LusikSonsApp. Avoids a doubled "AppApp".
+  const appName = swiftTypeName(siteName, "");
+  const homeSlug = pages.find((p) => p.slug === "index")?.slug ?? pages[0]?.slug ?? "home";
+  const home = swiftTypeName(homeSlug);
+  const files: Record<string, string> = {};
+
+  files["Package.swift"] = `// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "${appName}",
+    platforms: [.iOS(.v16)],
+    targets: [.executableTarget(name: "${appName}", path: "Sources/${appName}")]
+)
+`;
+
+  files[`Sources/${appName}/AppConfig.swift`] = `import Foundation\n\nenum AppConfig {\n    static let webBaseURL = "${escapeSwift(webBaseURL)}"\n}\n`;
+  files[`Sources/${appName}/Theme.swift`] = themeSwift(theme);
+  files[`Sources/${appName}/SupportViews.swift`] = SUPPORT_VIEWS;
+
+  files[`Sources/${appName}/${appName}App.swift`] = `import SwiftUI
+
+@main
+struct ${appName}App: App {
+    var body: some Scene {
+        WindowGroup {
+            NavigationStack { ${home}() }
+        }
+    }
+}
+`;
+
+  for (const page of pages) {
+    files[`Sources/${appName}/Views/${swiftTypeName(page.slug)}.swift`] = `import SwiftUI\n\n${pageToSwiftView(page)}\n`;
+  }
+
+  files["README.md"] = `# ${siteName} — SwiftUI app (generated)
+
+A native iOS app scaffold generated from your builder pages. **This is a
+starting point, not a finished App Store build** — open it on a Mac and
+expect to iterate.
+
+## Run it
+1. Get this folder onto a **Mac** (your own, or a cloud Mac: MacinCloud,
+   MacStadium, AWS EC2 Mac, Scaleway).
+2. Open the folder in **Xcode** (it reads Package.swift), or drag the
+   Sources into a new iOS App project.
+3. Build & run in the **iOS Simulator** — free, no account needed.
+
+## Onto a real iPhone / TestFlight
+- Needs an **Apple Developer account** ($99/yr) and code signing
+  (Xcode → Signing & Capabilities → enable automatic signing).
+- Archive → upload to App Store Connect → TestFlight.
+- The App Developer Mode checklist in the builder covers every step.
+
+## Honest notes
+- Pages render as SwiftUI Views translated from your blocks — faithful,
+  not pixel-identical to the website.
+- **Commerce is view-only:** products link out to your website for
+  purchase. No in-app purchase / checkout code is generated (Apple's
+  rules + your safety gates both apply).
+- Blocks with no native mapping show a labeled placeholder — search the
+  project for "not yet available natively" to find them.
+- Theme colors live in Theme.swift; edit there to restyle everything.
+`;
+
+  return files;
+}

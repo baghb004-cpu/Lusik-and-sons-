@@ -32,10 +32,12 @@ export function AppPanel({
   value,
   onChange,
   onExportPwa,
+  onExportSwiftUI,
 }: {
   value: Obj;
   onChange: (next: Obj) => void;
   onExportPwa: () => void;
+  onExportSwiftUI: () => void;
 }) {
   const parsed = useMemo(() => appProjectSchema.safeParse(value), [value]);
   if (!parsed.success) {
@@ -123,6 +125,12 @@ export function AppPanel({
       <details className="rounded-xl border border-ink/10 p-3">
         <summary className="cursor-pointer font-medium">The hard path (native apps — eyes open)</summary>
         <ul className="mt-1 list-disc space-y-1 pl-4">{HARD_PATH.map((s, i) => <li key={i}>{s}</li>)}</ul>
+        <button type="button" onClick={onExportSwiftUI} className="mt-2 rounded-full border border-ink/25 px-4 py-1.5">
+          Export SwiftUI (iOS) project ↓
+        </button>
+        <p className="mt-1 text-[11px] text-muted">
+          Generates an Xcode project from your pages. Build it on a Mac (or a rented cloud Mac) → run in the iOS Simulator → TestFlight needs a paid Apple Developer account. Commerce links out to the web; no in-app purchase code is generated.
+        </p>
       </details>
 
       {/* store checklists */}

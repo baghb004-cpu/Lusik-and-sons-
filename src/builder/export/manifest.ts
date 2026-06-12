@@ -9,7 +9,7 @@ export interface ExportManifest {
   format: "lusik-builder-export";
   formatVersion: 1;
   schemaVersion: number;
-  target: "static" | "next" | "pwa";
+  target: "static" | "next" | "pwa" | "swiftui";
   createdAt: string;
   pages: number;
   blockTypesUsed: string[];
