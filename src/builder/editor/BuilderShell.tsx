@@ -71,6 +71,7 @@ import { CMS_PAGES } from "../../data/pagesData.generated.js";
 import { validateCommerceRefs, type CatalogSnapshot } from "../engine/commerce.ts";
 import { INSERTABLE_TYPES, newDefaultBlock, type InsertableType } from "./newBlock.ts";
 import { ShippingPanel } from "./ShippingPanel.tsx";
+import { AiPanel } from "./AiPanel.tsx";
 import { zipDatasetSchema, SHIPPING_DOC_PATH, type ZipDataset } from "../data/index.ts";
 import { Inspector } from "./Inspector.tsx";
 import { HitboxOverlay, type HitboxReport } from "./HitboxOverlay.tsx";
@@ -211,6 +212,8 @@ export function BuilderShell() {
   const lastPushAt = useRef(0);
   // Phase 13 — imported ZIP datasets (loaded with the shipping doc)
   const [datasets, setDatasets] = useState<ZipDataset[]>([]);
+  // Phase 14 — local AI panel toggle
+  const [aiOpen, setAiOpen] = useState(false);
 
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
@@ -849,6 +852,14 @@ export function BuilderShell() {
           <p className="text-xs text-muted">storage: {backend || "…"} · saves run the build’s own validators</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAiOpen(!aiOpen)}
+            className={aiOpen ? "rounded-full bg-accent px-3 py-1 text-sm text-cream" : "rounded-full border border-ink/20 px-3 py-1 text-sm"}
+            title="Local AI assistant (runs on your machine, offline)"
+          >
+            ✨ AI
+          </button>
           {(["desktop", "tablet", "mobile"] as Device[]).map((d) => (
             <button
               key={d}
@@ -1110,6 +1121,14 @@ export function BuilderShell() {
 
         {/* edit panel */}
         <aside className="space-y-3">
+          {aiOpen ? (
+            <AiPanel
+              api={api}
+              canInsertBlocks={isBuilderPage && !!parsedPage}
+              onInsertBlocks={(blocks) => withSections((s) => [...s, ...blocks])}
+              setStatus={setStatus}
+            />
+          ) : null}
           {doc ? (
             <>
               <div className="flex items-center justify-between gap-2">
