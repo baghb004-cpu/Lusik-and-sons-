@@ -14,7 +14,11 @@
 
 import type { Block, Breakpoint, GlassPreset, OverrideLayer, StyleProps } from "../schema/index.ts";
 import { newId } from "../schema/index.ts";
+import type { CatalogSnapshot } from "../engine/commerce.ts";
+import type { LocaleCode } from "../i18n/locales.ts";
 import { PillNavEditor, type PillNavProps } from "./PillNavEditor.tsx";
+import { BlockPropsForm } from "./BlockPropsForm.tsx";
+import { hasGeneratedForm } from "./introspect.ts";
 import {
   setOverridePatch,
   clearOverridePatch,
@@ -33,6 +37,10 @@ export interface InspectorProps {
   device: Device;
   selectedId: string | null;
   glass: GlassPreset[];
+  /** Catalog + locales feed the generated per-block form (plan §21). */
+  catalog: CatalogSnapshot;
+  locales: LocaleCode[];
+  defaultLocale: LocaleCode;
   onSelect: (id: string | null) => void;
   onLayerChange: (bp: Breakpoint, next: OverrideLayer) => void;
   /** Base-document edits (desktop visibility). */
@@ -59,6 +67,9 @@ export function Inspector({
   device,
   selectedId,
   glass,
+  catalog,
+  locales,
+  defaultLocale,
   onSelect,
   onLayerChange,
   onBlockVisibility,
@@ -76,7 +87,24 @@ export function Inspector({
           onChange={(next) => onBlockProps(selected.id, next as unknown as Record<string, unknown>)}
         />
       ) : selectedId ? (
-        <BlockControls
+        <>
+          {selected && device === "desktop" && hasGeneratedForm(selected) ? (
+            selected.locks?.edit ? (
+              <p className="rounded-xl border border-ink/10 bg-cream/60 p-3 text-xs text-muted">
+                🔒 {selected.locks.reason || "This block's content is locked."}
+              </p>
+            ) : (
+              <BlockPropsForm
+                key={selected.id}
+                block={selected}
+                catalog={catalog}
+                locales={locales}
+                defaultLocale={defaultLocale}
+                onChange={(props) => onBlockProps(selected.id, props)}
+              />
+            )
+          ) : null}
+          <BlockControls
           blocks={blocks}
           layers={layers}
           device={device}
@@ -84,6 +112,7 @@ export function Inspector({
           onLayerChange={onLayerChange}
           onBlockVisibility={onBlockVisibility}
         />
+        </>
       ) : (
         <p className="text-xs text-muted">Select a block to edit its visibility and spacing per device.</p>
       )}

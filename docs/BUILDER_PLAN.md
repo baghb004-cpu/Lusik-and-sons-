@@ -988,6 +988,49 @@ typed file paths and become a real library.
 
 ---
 
+## 21. Generated inspector forms — the registry cashes its promise (shipped)
+
+Roadmap item #2. block.ts always said "one registry drives schema
+validation, the editor's inspector forms, and the renderer's prop
+contracts" — the middle claim is now literally true. JSON editing is no
+longer required for any block.
+
+- **`editor/introspect.ts`** walks each block type's zod schema (v4
+  `.def` tree) and compiles a `FieldSpec` list: translatable strings
+  (string|`{_i18n}` unions), rich docs, enums/literal unions → selects,
+  bounded numbers, hex → color pickers, safe hrefs, image paths,
+  `productRef` → a catalog dropdown, arrays of objects → repeatable rows
+  (managed `id`s hidden; breadcrumbs' id-less rows respected), optional
+  nested objects → add/remove groups, literals → shown constants.
+  **The lockstep law**: a unit test asserts every registered type
+  compiles with ZERO json-fallback fields, so a zod upgrade or an
+  unintrospectable new prop fails CI instead of silently degrading the
+  inspector. Unknown shapes degrade honestly (per-prop JSON textarea;
+  non-object schemas → whole-props JSON), never crash.
+- **`editor/BlockPropsForm.tsx`** renders the specs in the Inspector
+  (desktop/base document; pillNav keeps its dedicated editor; locked
+  blocks show the lock reason). Edits flow through the normal
+  commit/undo path and the canvas updates live.
+- **Invalid edits never touch the document.** Each change is parsed
+  against the block schema first; a failing value (blanked required
+  title, half-typed hex) is held in a local draft with the first issue
+  explained inline next to the form — the page stays valid, the canvas
+  keeps the last good state, and the form stays mounted. (Found by the
+  browser verification: committing the invalid value used to null the
+  parsed page and unmount the whole inspector.)
+- **Per-locale copy editing**: when the project has several languages,
+  an "editing language" selector switches every translatable field to
+  that locale (writes via `setLocaleValue`, placeholders show the
+  default-locale text, RTL `dir` applied for Arabic).
+- Verified in the real editor with Playwright: form renders for the
+  card block, edits drive the canvas, invalid-draft behavior, variant
+  select, accordion "+ Add item", locale switch to Armenian.
+- Simple rich docs (paragraphs of plain text) edit as a textarea
+  (blank line = new paragraph); marked-up or per-locale docs defer to
+  the canvas/JSON honestly.
+
+---
+
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
 preview/build, and all data (documents, templates, themes, datasets, and

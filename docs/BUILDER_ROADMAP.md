@@ -77,12 +77,11 @@ day one. The engine supports all of them; what's missing is UI.
    cap, generated names), thumbnail grid, insert-as-block / use-for-
    selected / copy-path / delete, fs + GitHub backends, uploads travel
    with every export.
-2. **Visual forms for every block's props.** Only pillNav has a dedicated
-   editor; everything else is edited as JSON. The schema registry already
-   knows every field and type — generate the inspector form from it
-   (string → text input, enum → select, boolean → toggle, translatable →
-   per-language tabs). One generic component kills the JSON editing for
-   ~25 block types at once.
+2. ~~**Visual forms for every block's props.**~~ ✅ **Shipped** (plan §21):
+   the inspector form is generated from each block's zod schema — text/
+   select/color/number/product-picker/repeatable-rows widgets, per-locale
+   copy editing, live inline validation (invalid edits never touch the
+   document), locked by a zero-json-fallback CI test.
 3. **Click-to-edit text on the canvas.** Tap a heading in the preview,
    type, done — instead of finding the block in the tree. Even a simple
    "double-click opens the right inspector field" version is a huge step.

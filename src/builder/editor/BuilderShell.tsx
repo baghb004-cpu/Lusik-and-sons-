@@ -1443,6 +1443,9 @@ export function BuilderShell() {
                     device={device}
                     selectedId={selectedBlockId}
                     glass={glassPresets}
+                    catalog={catalogSnapshot}
+                    locales={i18nSettings.locales}
+                    defaultLocale={i18nSettings.defaultLocale}
                     onSelect={setSelectedBlockId}
                     onLayerChange={setLayer}
                     onBlockVisibility={setBaseVisibility}
