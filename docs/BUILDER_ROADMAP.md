@@ -72,11 +72,11 @@ the rough edges are.
 These are the things a GoDaddy/Wordpress/Squarespace user would expect on
 day one. The engine supports all of them; what's missing is UI.
 
-1. **A media library + image upload.** Right now an image block takes a
-   typed path (`/img/...`). Real users need: drag a photo in → it lands in
-   the project's `public/img/`, gets a sane filename, maybe auto-resizes,
-   and appears in a picker. *This is the single highest-impact missing
-   piece.* (fs-mode: copy file + thumbnail; GitHub-mode: commit the blob.)
+1. ~~**A media library + image upload.**~~ ✅ **Shipped** (plan §20): the
+   🖼 Media panel — drag photos in (sniffed by bytes, SVG rejected, 8 MB
+   cap, generated names), thumbnail grid, insert-as-block / use-for-
+   selected / copy-path / delete, fs + GitHub backends, uploads travel
+   with every export.
 2. **Visual forms for every block's props.** Only pillNav has a dedicated
    editor; everything else is edited as JSON. The schema registry already
    knows every field and type — generate the inspector form from it

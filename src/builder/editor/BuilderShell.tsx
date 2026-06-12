@@ -74,6 +74,7 @@ import { ShippingPanel } from "./ShippingPanel.tsx";
 import { AiPanel } from "./AiPanel.tsx";
 import { AppPanel } from "./AppPanel.tsx";
 import { PresetsPanel } from "./PresetsPanel.tsx";
+import { MediaPanel } from "./MediaPanel.tsx";
 import { ResponsivePreviewPanel } from "./ResponsivePreviewPanel.tsx";
 import { applyPreset, rectScan, type ViewportPreset, type LayoutIssue, type MeasuredRect } from "../viewport/index.ts";
 import {
@@ -239,6 +240,8 @@ export function BuilderShell() {
   const [datasets, setDatasets] = useState<ZipDataset[]>([]);
   // Phase 14 — local AI panel toggle
   const [aiOpen, setAiOpen] = useState(false);
+  // Media library panel (plan §20)
+  const [mediaOpen, setMediaOpen] = useState(false);
   // Adaptive-layout (Screens) panel
   const [screensOpen, setScreensOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<ViewportPreset | null>(null);
@@ -992,6 +995,14 @@ export function BuilderShell() {
           </button>
           <button
             type="button"
+            onClick={() => setMediaOpen(!mediaOpen)}
+            className={mediaOpen ? "rounded-full bg-accent px-3 py-1 text-sm text-cream" : "rounded-full border border-ink/20 px-3 py-1 text-sm"}
+            title="Media library — drag photos in, use them anywhere"
+          >
+            🖼 Media
+          </button>
+          <button
+            type="button"
             onClick={() => { setScreensOpen(!screensOpen); if (screensOpen) setActivePreset(null); }}
             className={screensOpen ? "rounded-full bg-accent px-3 py-1 text-sm text-cream" : "rounded-full border border-ink/20 px-3 py-1 text-sm"}
             title="Screen ratios & adaptive layout"
@@ -1327,6 +1338,22 @@ export function BuilderShell() {
               }}
               onApplyPreset={applyLayoutPreset}
               onGenerateFixes={applyLayoutPreset}
+            />
+          ) : null}
+          {mediaOpen ? (
+            <MediaPanel
+              api={api}
+              canInsert={isBuilderPage && !!parsedPage}
+              onInsertBlock={(block) => withSections((s) => [...s, block])}
+              onUseForSelected={
+                selectedBaseBlock?.type === "image" && selectedBlockId
+                  ? (path) =>
+                      withSections((s) =>
+                        updateBlock(s, selectedBlockId, (b) => ({ ...b, props: { ...b.props, src: path } }))
+                      )
+                  : null
+              }
+              setStatus={setStatus}
             />
           ) : null}
           {aiOpen ? (

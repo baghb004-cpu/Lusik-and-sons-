@@ -33,6 +33,7 @@ import type { BuilderStorage } from "../storage/index.ts";
 import { renderPageBody } from "./render.tsx";
 import { assembleHtmlDocument, pageFileName } from "./static.ts";
 import { buildManifest } from "./manifest.ts";
+import { MEDIA_DIR } from "../media/paths.ts";
 
 export interface ExportInput {
   storage: BuilderStorage;
@@ -217,6 +218,14 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
       });
       await write(r.outFile, html);
     }
+    // Media-library uploads travel with the site (plan §20) — pages
+    // reference /img/uploads/<file>, so the files must ship beside them.
+    try {
+      await cp(join(process.cwd(), MEDIA_DIR), join(input.outDir, "img", "uploads"), { recursive: true });
+      written.push("img/uploads/**");
+    } catch {
+      /* no uploads yet — nothing to copy */
+    }
     if (pwa) {
       const { buildWebManifest, buildServiceWorker, buildPwaReadme } = await import("../app/pwa.ts");
       await write("manifest.webmanifest", buildWebManifest({ name: siteName, theme }));
@@ -250,6 +259,12 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     // Copy documents + the renderer-side builder packages verbatim.
     const root = process.cwd();
     await cp(join(root, "builder"), join(input.outDir, "builder"), { recursive: true });
+    try {
+      await cp(join(root, MEDIA_DIR), join(input.outDir, MEDIA_DIR), { recursive: true });
+      written.push(`${MEDIA_DIR}/**`);
+    } catch {
+      /* no uploads yet */
+    }
     for (const pkg of ["schema", "engine", "renderer", "theme"]) {
       await cp(join(root, "src", "builder", pkg), join(input.outDir, "src", "builder", pkg), { recursive: true });
     }

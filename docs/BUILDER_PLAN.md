@@ -953,6 +953,41 @@ candlelight. Three layers, each honest about what it needs:
 
 ---
 
+## 20. Media library — drag a photo in, use it anywhere (shipped)
+
+Roadmap item #1 (the single highest-impact UX gap): images stop being
+typed file paths and become a real library.
+
+- **Storage** (`src/builder/media/`): the binary cousin of document
+  storage, same walls. One flat directory — `public/img/uploads/` — so
+  Next serves uploads immediately in fs mode, a github-mode upload is a
+  commit that serves after the gated deploy, and exports copy the folder
+  wholesale. `assertMediaFileName` is the single gate (one segment,
+  generated shape, image extensions only); the fs adapter re-checks
+  resolved-path containment, writes atomically (tmp + rename), and
+  best-effort git-commits so History covers media too.
+- **The upload gate is bytes, not names** (`/api/builder/media`,
+  admin-gated like every builder route): a file is accepted only if its
+  magic bytes sniff as JPEG/PNG/GIF/WebP — **SVG is deliberately
+  rejected** (script container). Stored names are generated server-side:
+  sanitized human base + timestamp/nonce, **extension from the sniff**
+  (a `.png` that's really a JPEG is stored as `.jpg`). 8 MB cap, checked
+  before and after base64 decode.
+- **Editor** (`MediaPanel.tsx`, the 🖼 Media toolbar toggle): dropzone +
+  file picker, thumbnail grid, and per-photo actions — **+ Insert** (new
+  image block at the end of the page, with a humane default alt),
+  **Use for selected** (appears when an image block is selected; swaps
+  its `src`), Copy path, Delete (with a broken-reference warning).
+  Hosted mode shows the "serves after next deploy" note honestly.
+- **Exports**: static/PWA copy `img/uploads/**` beside the pages; the
+  Next target copies `public/img/uploads/**`. A page can't reference an
+  upload its export doesn't carry.
+- Verified over live HTTP end-to-end: 401 without auth, sniff-wins
+  naming, the file serving back as `image/png`, SVG/junk/oversize
+  refused, traversal refused, delete + git history working.
+
+---
+
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
 preview/build, and all data (documents, templates, themes, datasets, and
