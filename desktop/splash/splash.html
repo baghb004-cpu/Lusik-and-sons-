@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lusik Builder</title>
+<!-- ============================================================
+  The splash mini-story (plan §16a) — original character, no
+  copyrighted styles. Entirely inline: zero network, zero files
+  beyond this one. The FALLBACK IS THE BASE LAYER: scene 5's
+  final pose renders even with every animation off (old webview,
+  prefers-reduced-motion, CSS failure) — a static splash by
+  construction.
+
+  Timeline (~4.6s, then idle loop):
+    scene 1  0.0–1.3s  our hero gams happily, TV glow flickering
+    scene 2  1.3–2.1s  !!! the app is launching — startled jump,
+                       controller goes flying
+    scene 3  2.1–3.3s  the badminton whiff (a swing of pure
+                       confidence, zero contact)
+    scene 4  (v2)      Gohar's cameo — walk-by + wave. Deferred to
+                       keep v1 simple; add a second .gohar figure
+                       and a 3.0–3.6s walk keyframe when ready.
+    scene 5  3.3–4.6s  turns to camera, goofy thumbs-up, the app
+                       name appears → idle bob until the shell
+                       fades us out.
+
+  Replacing the art: this file IS the art. Swap the CSS shapes
+  (or drop sprite PNGs into .stage and animate background-
+  position) — the shell only needs #done to exist and the
+  "app-ready" fade hook at the bottom to keep working.
+============================================================ -->
+<style>
+  :root {
+    --ink: #1A1612; --cream: #F5EFE3; --gold: #B08842; --muted: #6B655D; --paper: #FFFFFF;
+    --t1: 0s; --t2: 1.3s; --t3: 2.1s; --t5: 3.3s; /* scene starts */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--cream);
+    font-family: Georgia, "Times New Roman", serif;
+    display: grid; place-items: center;
+    border-radius: 14px; /* the window is undecorated */
+    outline: 1px solid #1A161222; outline-offset: -1px;
+    transition: opacity .5s ease;
+    user-select: none; -webkit-user-select: none; cursor: default;
+  }
+  body.fade-out { opacity: 0; }
+  .stage { position: relative; width: 420px; height: 280px; }
+
+  /* ── the hero (original mascot: round fellow, gold cap) ── */
+  .hero { position: absolute; left: 150px; bottom: 56px; width: 110px; height: 130px;
+          animation: hero-pose 4.6s steps(1, end) forwards; }
+  .head { position: absolute; left: 25px; top: 0; width: 60px; height: 56px;
+          background: var(--ink); border-radius: 50% 50% 46% 46%;
+          animation: head-bob 4.6s ease forwards; }
+  .cap  { position: absolute; left: -3px; top: -10px; width: 66px; height: 30px;
+          background: var(--gold); border-radius: 50% 50% 12% 12%; }
+  .cap::after { content: ""; position: absolute; left: 18px; top: -7px; width: 14px; height: 14px;
+          background: var(--gold); border-radius: 50%; }
+  .eye  { position: absolute; top: 26px; width: 9px; height: 10px; background: var(--cream);
+          border-radius: 50%; animation: blink 4.6s steps(1,end) forwards, idle-blink 3.2s 5.2s steps(1,end) infinite; }
+  .eye.l { left: 14px; } .eye.r { left: 36px; }
+  .smile { position: absolute; left: 21px; top: 40px; width: 18px; height: 8px;
+          border: 3px solid var(--cream); border-top: none; border-left: none; border-right: none;
+          border-radius: 0 0 12px 12px; }
+  .body { position: absolute; left: 20px; top: 50px; width: 70px; height: 60px;
+          background: var(--ink); border-radius: 42% 42% 48% 48%; }
+  .body::after { /* gold stitch — a tiny cross, the family trade */
+          content: "✕"; position: absolute; left: 28px; top: 18px; color: var(--gold);
+          font-size: 14px; font-weight: bold; }
+  .arm  { position: absolute; top: 58px; width: 14px; height: 42px; background: var(--ink);
+          border-radius: 8px; transform-origin: top center; }
+  .arm.l { left: 10px; animation: arm-l 4.6s ease forwards; }
+  .arm.r { left: 86px; animation: arm-r 4.6s ease forwards, idle-wave 1.6s 5.2s ease-in-out infinite; }
+  .thumb { position: absolute; left: -2px; top: 34px; width: 18px; height: 18px; background: var(--ink);
+          border-radius: 50% 50% 50% 12%; opacity: 0; animation: thumb-pop 4.6s steps(1,end) forwards; }
+  .leg  { position: absolute; top: 104px; width: 16px; height: 26px; background: var(--ink);
+          border-radius: 0 0 8px 8px; }
+  .leg.l { left: 28px; } .leg.r { left: 64px; }
+
+  /* ── props ── */
+  .tv { position: absolute; left: 36px; bottom: 64px; width: 78px; height: 58px;
+        background: var(--ink); border-radius: 8px;
+        animation: tv-off 4.6s steps(1,end) forwards; }
+  .tv::before { content: ""; position: absolute; inset: 6px; background: var(--gold);
+        border-radius: 4px; opacity: .85; animation: tv-glow .35s ease-in-out infinite alternate; }
+  .tv::after { content: ""; position: absolute; left: 30px; bottom: -10px; width: 16px; height: 12px;
+        background: var(--ink); }
+  .controller { position: absolute; left: 128px; bottom: 96px; width: 34px; height: 18px;
+        background: var(--muted); border-radius: 10px;
+        animation: controller-fly 4.6s ease forwards; }
+  .controller::before, .controller::after { content: ""; position: absolute; top: -5px; width: 10px;
+        height: 10px; background: var(--muted); border-radius: 50%; }
+  .controller::before { left: 2px; } .controller::after { right: 2px; }
+  .bang { position: absolute; left: 246px; bottom: 196px; font: bold 40px Georgia, serif; color: var(--gold);
+        opacity: 0; transform: scale(.3) rotate(12deg);
+        animation: bang-pop 4.6s ease forwards; }
+  .racket { position: absolute; left: 252px; bottom: 96px; width: 12px; height: 56px;
+        background: var(--gold); border-radius: 6px; transform-origin: bottom center; opacity: 0;
+        animation: racket-swing 4.6s ease forwards; }
+  .racket::before { content: ""; position: absolute; left: -12px; top: -34px; width: 36px; height: 44px;
+        border: 5px solid var(--gold); border-radius: 50%; background:
+        repeating-linear-gradient(0deg, transparent 0 5px, #B0884255 5px 7px); }
+  .birdie { position: absolute; left: 300px; bottom: 150px; width: 14px; height: 16px; opacity: 0;
+        background: var(--paper); clip-path: polygon(50% 100%, 0 0, 100% 0);
+        animation: birdie-sails 4.6s ease forwards; }
+  .floor { position: absolute; left: 0; right: 0; bottom: 48px; height: 3px;
+        background: #1A161226; border-radius: 2px; }
+
+  /* ── title card (scene 5 / final state — the BASE LAYER) ── */
+  #done { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; }
+  #done .name { font-size: 24px; color: var(--ink); letter-spacing: .02em; }
+  #done .name em { color: var(--gold); font-style: italic; }
+  #done .sub { font-size: 11px; color: var(--muted); margin-top: 3px; letter-spacing: .14em;
+        text-transform: uppercase; }
+  .reveal { opacity: 0; animation: title-in 4.6s ease forwards; }
+
+  /* ── the timeline ── */
+  @keyframes tv-glow { from { opacity: .55; } to { opacity: .95; } }
+  @keyframes tv-off { 0%, 27% { opacity: 1; } 34%, 100% { opacity: .18; } }
+  @keyframes head-bob {
+    0%, 26%  { transform: translateY(2px) rotate(-6deg); }   /* gaming lean */
+    28%, 43% { transform: translateY(-7px) rotate(8deg); }   /* startled */
+    46%, 68% { transform: translateY(-2px) rotate(-10deg); } /* mid-swing focus */
+    72%, 100%{ transform: translateY(0) rotate(0); }         /* to camera */
+  }
+  @keyframes blink {
+    0%, 26% { height: 10px; } 27%, 30% { height: 2px; } 31%, 100% { height: 10px; }
+  }
+  @keyframes idle-blink { 0%, 92% { height: 10px; } 93%, 97% { height: 2px; } 98%, 100% { height: 10px; } }
+  @keyframes hero-pose {
+    0%, 27%  { transform: translateY(10px); }   /* sitting */
+    28%, 45% { transform: translateY(-16px); }  /* the jump */
+    46%, 100%{ transform: translateY(0); }
+  }
+  @keyframes arm-l {
+    0%, 26%  { transform: rotate(58deg); }      /* both hands on controller */
+    28%, 43% { transform: rotate(150deg); }     /* flailing */
+    46%, 100%{ transform: rotate(12deg); }
+  }
+  @keyframes arm-r {
+    0%, 26%  { transform: rotate(-58deg); }
+    28%, 43% { transform: rotate(-160deg); }    /* flail */
+    46%, 64% { transform: rotate(-140deg); }    /* racket back… */
+    66%, 70% { transform: rotate(40deg); }      /* THE WHIFF */
+    74%, 100%{ transform: rotate(-200deg); }    /* thumbs-up hold */
+  }
+  @keyframes idle-wave { 0%, 100% { transform: rotate(-200deg); } 50% { transform: rotate(-192deg); } }
+  @keyframes thumb-pop { 0%, 73% { opacity: 0; } 76%, 100% { opacity: 1; } }
+  @keyframes controller-fly {
+    0%, 27% { transform: translate(0, 0) rotate(0); opacity: 1; }
+    45%     { transform: translate(-66px, -90px) rotate(-200deg); opacity: 1; }
+    60%, 100% { transform: translate(-80px, 10px) rotate(-340deg); opacity: 1; }
+  }
+  @keyframes bang-pop {
+    0%, 28% { opacity: 0; transform: scale(.3) rotate(12deg); }
+    32%     { opacity: 1; transform: scale(1.25) rotate(-6deg); }
+    40%     { opacity: 1; transform: scale(1) rotate(0); }
+    48%, 100% { opacity: 0; transform: scale(.8); }
+  }
+  @keyframes racket-swing {
+    0%, 44% { opacity: 0; transform: rotate(50deg); }
+    48%     { opacity: 1; transform: rotate(50deg); }
+    64%     { opacity: 1; transform: rotate(46deg); }
+    68%     { opacity: 1; transform: rotate(-118deg); } /* mighty swing */
+    72%     { opacity: 1; transform: rotate(-96deg); }  /* wobble */
+    78%, 100% { opacity: 0; }
+  }
+  @keyframes birdie-sails {
+    0%, 47% { opacity: 0; transform: translate(60px, -40px) rotate(20deg); }
+    50%     { opacity: 1; }
+    70%     { opacity: 1; transform: translate(-150px, 60px) rotate(160deg); } /* sails past, untouched */
+    72%, 100% { opacity: 0; }
+  }
+  @keyframes title-in { 0%, 74% { opacity: 0; transform: translateY(6px); } 86%, 100% { opacity: 1; transform: translateY(0); } }
+
+  /* Reduced motion / no-animation fallback: land on the final pose. */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+    .hero { transform: translateY(0); }
+    .arm.l { transform: rotate(12deg); } .arm.r { transform: rotate(-200deg); }
+    .thumb, #done .reveal { opacity: 1; }
+    .tv::before { animation: none; opacity: .3; }
+    .controller, .racket, .birdie, .bang { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage" aria-label="Lusik Builder is starting">
+    <div class="tv"></div>
+    <div class="controller"></div>
+    <div class="bang">!</div>
+    <div class="racket"></div>
+    <div class="birdie"></div>
+    <div class="hero">
+      <div class="arm l"></div>
+      <div class="arm r"><div class="thumb"></div></div>
+      <div class="head">
+        <div class="cap"></div>
+        <div class="eye l"></div><div class="eye r"></div>
+        <div class="smile"></div>
+      </div>
+      <div class="body"></div>
+      <div class="leg l"></div><div class="leg r"></div>
+    </div>
+    <div class="floor"></div>
+    <div id="done">
+      <div class="name reveal">Lusik <em>Builder</em></div>
+      <div class="sub reveal">warming up the workshop…</div>
+    </div>
+  </div>
+  <script>
+    // Skip: a click jumps straight to the final pose.
+    addEventListener("click", () => {
+      document.querySelectorAll("*").forEach((el) => {
+        el.getAnimations?.().forEach((a) => { try { a.finish(); } catch {} });
+      });
+    });
+    // The shell emits "app-ready" when the server is up → fade out.
+    // "app-error" → show the message instead of hanging forever.
+    // Works without Tauri too (plain preview): nothing listens, we idle.
+    if (window.__TAURI__?.event) {
+      window.__TAURI__.event.listen("app-ready", () => {
+        document.body.classList.add("fade-out");
+      });
+      window.__TAURI__.event.listen("app-error", (e) => {
+        const sub = document.querySelector("#done .sub");
+        if (sub) {
+          sub.textContent = String(e.payload || "Something went wrong starting the builder.");
+          sub.style.cssText = "color:#9b2c2c;text-transform:none;letter-spacing:0;font-size:12px;opacity:1";
+        }
+        document.querySelector("#done .name")?.classList.remove("reveal");
+      });
+    }
+  </script>
+</body>
+</html>

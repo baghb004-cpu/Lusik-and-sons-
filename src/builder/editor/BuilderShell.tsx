@@ -230,6 +230,13 @@ export function BuilderShell() {
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+    // Desktop shell hand-off: the .exe opens /builder#token=… with the
+    // session token it generated for the local server. Store + strip.
+    const hashToken = /^#token=(.+)$/.exec(window.location.hash)?.[1];
+    if (hashToken && hashToken.length >= 16) {
+      sessionStorage.setItem(LOCAL_TOKEN_KEY, hashToken);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
     const resolveToken = async () => {
       const saved = sessionStorage.getItem(LOCAL_TOKEN_KEY);
       if (saved) {
