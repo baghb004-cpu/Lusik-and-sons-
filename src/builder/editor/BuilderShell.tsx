@@ -74,6 +74,8 @@ import { ShippingPanel } from "./ShippingPanel.tsx";
 import { AiPanel } from "./AiPanel.tsx";
 import { AppPanel } from "./AppPanel.tsx";
 import { PresetsPanel } from "./PresetsPanel.tsx";
+import { ResponsivePreviewPanel } from "./ResponsivePreviewPanel.tsx";
+import { applyPreset, rectScan, type ViewportPreset, type LayoutIssue, type MeasuredRect } from "../viewport/index.ts";
 import { SERVICES_PATH } from "../presets/selection.ts";
 import { APP_DIR } from "../app/index.ts";
 import { zipDatasetSchema, SHIPPING_DOC_PATH, type ZipDataset } from "../data/index.ts";
@@ -228,6 +230,10 @@ export function BuilderShell() {
   const [datasets, setDatasets] = useState<ZipDataset[]>([]);
   // Phase 14 — local AI panel toggle
   const [aiOpen, setAiOpen] = useState(false);
+  // Adaptive-layout (Screens) panel
+  const [screensOpen, setScreensOpen] = useState(false);
+  const [activePreset, setActivePreset] = useState<ViewportPreset | null>(null);
+  const [liveIssues, setLiveIssues] = useState<LayoutIssue[]>([]);
 
   // ── auth bootstrapping ────────────────────────────────────
   useEffect(() => {
@@ -661,6 +667,58 @@ export function BuilderShell() {
     });
   };
 
+  // ── adaptive layout: apply a viewport preset's rules ───────
+  const applyLayoutPreset = (preset: ViewportPreset) => {
+    if (!parsedPage || !doc) return;
+    try {
+      const result = applyPreset(parsedPage, layers, preset);
+      if (result.sections) {
+        // desktop preset → base edit
+        commitPage({ ...doc.content, sections: result.sections }, layers);
+      } else if (result.layer) {
+        commitPage(doc.content, { ...layers, [result.breakpoint as "tablet" | "mobile"]: result.layer });
+        setDevice(result.breakpoint as Device);
+      }
+      setStatus(`Applied ${preset.label} layout (${result.breakpoint}): ${result.changes.join(", ")}`);
+    } catch (err) {
+      setStatus(err instanceof EngineError ? err.message : String(err));
+    }
+  };
+
+  // Live rect scan: measure the real preview render at the active preset and
+  // surface off-screen / overflow / overlap / safe-area issues the static
+  // scan can't see. Guarded so a measurement hiccup never throws.
+  useEffect(() => {
+    if (!screensOpen || !activePreset || !previewEl) {
+      setLiveIssues([]);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      try {
+        const frame = previewEl.getBoundingClientRect();
+        const rects: MeasuredRect[] = [];
+        previewEl.querySelectorAll<HTMLElement>("[data-block-id], a, button, summary").forEach((el, i) => {
+          const b = el.getBoundingClientRect();
+          if (b.width === 0 && b.height === 0) return;
+          const cs = getComputedStyle(el);
+          rects.push({
+            id: el.getAttribute("data-block-id") ?? `el${i}`,
+            label: el.getAttribute("aria-label") || el.textContent?.trim().slice(0, 24) || el.tagName.toLowerCase(),
+            x: b.left - frame.left,
+            y: b.top - frame.top,
+            width: b.width,
+            height: b.height,
+            fixed: cs.position === "fixed" || cs.position === "sticky",
+          });
+        });
+        setLiveIssues(rectScan(rects, { width: activePreset.width, height: activePreset.height, safeArea: activePreset.safeArea }));
+      } catch {
+        setLiveIssues([]);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [screensOpen, activePreset, previewEl, jsonText, device]);
+
   // ── Phase 9: canvas actions on the selected block ──────────
   const withSections = (fn: (sections: Block[]) => Block[]) => {
     if (!doc || !parsedPage) return;
@@ -889,6 +947,14 @@ export function BuilderShell() {
           >
             ✨ AI
           </button>
+          <button
+            type="button"
+            onClick={() => { setScreensOpen(!screensOpen); if (screensOpen) setActivePreset(null); }}
+            className={screensOpen ? "rounded-full bg-accent px-3 py-1 text-sm text-cream" : "rounded-full border border-ink/20 px-3 py-1 text-sm"}
+            title="Screen ratios & adaptive layout"
+          >
+            ▢ Screens
+          </button>
           {(["desktop", "tablet", "mobile"] as Device[]).map((d) => (
             <button
               key={d}
@@ -1100,7 +1166,11 @@ export function BuilderShell() {
             <div
               ref={setPreviewEl}
               className="bt-theme-scope relative mx-auto min-h-full border border-dashed border-ink/10 bg-cream/40 transition-[max-width]"
-              style={{ maxWidth: DEVICE_WIDTH[device] }}
+              style={
+                activePreset
+                  ? { width: activePreset.width, maxWidth: "none", minHeight: activePreset.height }
+                  : { maxWidth: DEVICE_WIDTH[device] }
+              }
               onClick={(e) => {
                 const hit = (e.target as HTMLElement).closest("[data-block-id]");
                 if (hit) {
@@ -1112,6 +1182,24 @@ export function BuilderShell() {
               {themeCss ? <style>{themeCss}</style> : null}
               {selectedBlockId ? (
                 <style>{`[data-block-id="${selectedBlockId}"]{outline:2px solid #B08842;outline-offset:2px;border-radius:4px}`}</style>
+              ) : null}
+              {/* preset safe-area + hinge overlays (Screens mode) */}
+              {activePreset?.safeArea ? (
+                <>
+                  <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-ink/15" style={{ height: activePreset.safeArea.top }} aria-hidden="true" />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-ink/15" style={{ height: activePreset.safeArea.bottom }} aria-hidden="true" />
+                </>
+              ) : null}
+              {activePreset?.hinge ? (
+                <div
+                  className="pointer-events-none absolute z-20 bg-accent/25"
+                  style={
+                    activePreset.hinge.axis === "vertical"
+                      ? { top: 0, bottom: 0, left: `calc(${activePreset.hinge.position * 100}% - ${activePreset.hinge.widthPx / 2}px)`, width: activePreset.hinge.widthPx }
+                      : { left: 0, right: 0, top: `calc(${activePreset.hinge.position * 100}% - ${activePreset.hinge.widthPx / 2}px)`, height: activePreset.hinge.widthPx }
+                  }
+                  aria-hidden="true"
+                />
               ) : null}
               {device === "mobile" && safeAreaOn ? (
                 <>
@@ -1168,6 +1256,19 @@ export function BuilderShell() {
 
         {/* edit panel */}
         <aside className="space-y-3">
+          {screensOpen && isBuilderPage ? (
+            <ResponsivePreviewPanel
+              page={parsedPage}
+              activePresetId={activePreset?.id ?? null}
+              liveIssues={liveIssues}
+              onSelectPreset={(preset) => {
+                setActivePreset(preset);
+                setStatus(`Previewing ${preset.label} — ${preset.width}×${preset.height}`);
+              }}
+              onApplyPreset={applyLayoutPreset}
+              onGenerateFixes={applyLayoutPreset}
+            />
+          ) : null}
           {aiOpen ? (
             <AiPanel
               api={api}
