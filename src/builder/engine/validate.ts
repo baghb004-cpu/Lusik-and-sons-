@@ -64,6 +64,7 @@ export function validatePage(raw: unknown): ValidatePageResult {
   checkImageAlt(page.sections, issues);
   checkHiddenEverywhere(page.sections, issues);
   checkPillNav(page.sections, issues);
+  checkSectionJumper(page.sections, issues);
   if (page.sections.length === 0) {
     issues.push({ level: "warning", code: "empty_page", message: "Page has no sections" });
   }
@@ -159,6 +160,50 @@ function checkPillNav(blocks: Block[], issues: ValidationIssue[]): void {
         blockId: b.id,
       });
     }
+  }
+}
+
+// Section-jumper publish rules (plan §18): like the pill menu it's a
+// fixed-position singleton — two sets of floating arrows would overlap,
+// and inside a container its fixed positioning escapes the layout. It
+// also needs sections to hop between, so a one-section page gets a
+// warning (the buttons would only bounce between top and bottom).
+function checkSectionJumper(blocks: Block[], issues: ValidationIssue[]): void {
+  const all: Block[] = [];
+  walk(blocks, (b) => {
+    if (b.type === "sectionJumper") all.push(b);
+  });
+  if (all.length === 0) return;
+
+  if (all.length > 1) {
+    for (const b of all.slice(1)) {
+      issues.push({
+        level: "error",
+        code: "jumper_multiple",
+        message: "Only one section jumper per page — two sets of floating arrows would stack on the same edge",
+        blockId: b.id,
+      });
+    }
+  }
+  const topLevelIds = new Set(blocks.map((b) => b.id));
+  const sectionCount = blocks.filter((b) => b.type === "section").length;
+  for (const b of all) {
+    if (!topLevelIds.has(b.id)) {
+      issues.push({
+        level: "error",
+        code: "jumper_nested",
+        message: "The section jumper must be a top-level block — inside a container its fixed positioning escapes the layout",
+        blockId: b.id,
+      });
+    }
+  }
+  if (sectionCount < 2) {
+    issues.push({
+      level: "warning",
+      code: "jumper_few_sections",
+      message: "The section jumper hops between sections — this page has fewer than two, so the arrows have nowhere to go",
+      blockId: all[0].id,
+    });
   }
 }
 

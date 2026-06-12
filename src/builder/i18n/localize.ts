@@ -43,6 +43,7 @@ export const TRANSLATABLE_FIELDS: Record<string, FieldSpec> = {
   productCard: {}, // catalog-driven; product copy localizes via the catalog later
   languageSwitcher: { strings: ["label"] },
   languageGate: { strings: ["heading", "subtext", "continueLabel"] },
+  sectionJumper: { strings: ["upLabel", "downLabel"] },
 };
 
 function localizeProps(

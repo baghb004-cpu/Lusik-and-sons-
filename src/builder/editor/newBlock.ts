@@ -25,6 +25,7 @@ export const INSERTABLE_TYPES = [
   "drawer",
   "gallery",
   "searchLauncher",
+  "sectionJumper",
   "languageSwitcher",
   "languageGate",
   "productCard",
@@ -90,6 +91,8 @@ export function newDefaultBlock(type: InsertableType, catalog: CatalogSnapshot):
       return { id, type, props: { product: ref, layout: "grid", columns: 3 } };
     case "searchLauncher":
       return { id, type, props: { label: "Search", href: "/shop", style: "pill" } };
+    case "sectionJumper":
+      return { id, type, props: { edge: "right", align: "center", size: "md", stops: "sections" } };
     case "languageSwitcher":
       return { id, type, props: { style: "pills" } };
     case "languageGate":

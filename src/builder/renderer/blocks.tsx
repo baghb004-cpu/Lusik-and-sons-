@@ -22,6 +22,7 @@ import { cx } from "./style.ts";
 import { tokenToCss } from "./style.ts";
 import { glassPresetToCss } from "../theme/css.ts";
 import { resolveProductRef, type CatalogProductSnapshot, type CatalogSnapshot } from "../engine/commerce.ts";
+import { JUMPER_STOP_SELECTORS, jumperDomId, sectionJumperScript, sectionJumperCss } from "./jumperScript.ts";
 
 export interface RenderContext {
   /** CMS surfaces for bound blocks, injected by the caller (Phase 4). */
@@ -581,6 +582,74 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
           ))}
         </div>
       </nav>
+    );
+  },
+
+  // Floating ▲/▼ section navigator (plan §18). The ONE block that
+  // inlines JavaScript: "scroll to the next section from here" has
+  // no CSS expression. The script ships inside the block's markup —
+  // parser-inserted, so it runs on the SSR'd live site and in every
+  // export with zero extra files — and the nav renders `hidden`
+  // until the script un-hides it, so no-JS visitors never meet dead
+  // buttons. In the editor preview (client render: innerHTML scripts
+  // don't execute) it renders as a sticky visual mock instead.
+  sectionJumper: (block, ctx) => {
+    const p = block.props as {
+      edge?: "right" | "left";
+      align?: "center" | "lower";
+      size?: "sm" | "md" | "lg";
+      stops?: string;
+      preset?: string;
+      accent?: string;
+      upLabel?: string;
+      downLabel?: string;
+    };
+    const preset = ctx.glass?.find((g) => g.name === p.preset) ?? ctx.glass?.[0];
+    const glass: CSSProperties = preset ? (glassPresetToCss(preset) as CSSProperties) : FALLBACK_GLASS;
+    const px = { sm: 44, md: 52, lg: 60 }[p.size ?? "md"]; // 44px tap floor
+    const domId = jumperDomId(block.id);
+
+    // Static class literals (Tailwind scanner): edge × align × mode.
+    const positionClass = ctx.editing
+      ? "sticky bottom-20 z-30 ml-auto mr-3 w-fit"
+      : cx(
+          "fixed z-40",
+          p.edge === "left"
+            ? "left-[max(0.75rem,env(safe-area-inset-left))]"
+            : "right-[max(0.75rem,env(safe-area-inset-right))]",
+          p.align === "lower" ? "bottom-[max(6rem,env(safe-area-inset-bottom))]" : "top-1/2 -translate-y-1/2"
+        );
+
+    const btn = (dir: "prev" | "next", label: string) => (
+      <button
+        type="button"
+        data-jump={dir}
+        aria-label={label}
+        className="flex items-center justify-center rounded-full border border-ink/15 text-ink shadow-md"
+        style={{ ...glass, width: px, height: px }}
+      >
+        <svg viewBox="0 0 16 16" className="h-5 w-5" aria-hidden="true">
+          <path d={dir === "prev" ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4"} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    );
+
+    return (
+      <>
+        <nav
+          id={domId}
+          aria-label="Jump between sections"
+          hidden={!ctx.editing}
+          data-stops={JUMPER_STOP_SELECTORS[p.stops ?? "sections"] ?? JUMPER_STOP_SELECTORS.sections}
+          data-pos="top"
+          className={cx(positionClass, "flex flex-col gap-2")}
+        >
+          {btn("prev", p.upLabel ?? "Previous section")}
+          {btn("next", p.downLabel ?? "Next section")}
+        </nav>
+        <style dangerouslySetInnerHTML={{ __html: sectionJumperCss(block.id, p.accent) }} />
+        {ctx.editing ? null : <script dangerouslySetInnerHTML={{ __html: sectionJumperScript(block.id) }} />}
+      </>
     );
   },
 

@@ -868,6 +868,46 @@ Phase 11 export format exists for them to decorate.
 
 ---
 
+## 18. Section jumper — floating ▲/▼ scroll navigation (shipped)
+
+Modeled on the events-site recording Baghdo shared: two circular buttons
+pinned to a screen edge that hop the visitor **section-by-section** with a
+smooth scroll — ▼ to the next section (or page end), ▲ back up (or page
+top) — with the useful direction filled in the accent color and the dead
+direction dimmed at the edges.
+
+- **One new block type, `sectionJumper`** (`schema/block.ts`), placeable
+  from "+ Add block" in both the website builder and the app builder.
+  Options: edge (right/left), vertical anchor (center/lower), button size
+  (44/52/60 px — the 44 px tap floor holds), what to hop between
+  (sections or headings), glass preset for the idle button, accent hex,
+  and translatable ▲/▼ accessibility labels (full offline-i18n support).
+- **The one block that inlines JavaScript** — "scroll to the next section
+  from here" has no CSS expression. `renderer/jumperScript.ts` builds the
+  ~30-line vanilla script + scoped CSS as pure strings (unit-testable);
+  the renderer inlines them with the block's markup so every target
+  (static export, PWA, SSR'd live site) carries it with zero extra files.
+  It is a **progressive enhancement**: the nav renders `hidden` and the
+  script's first act is to un-hide it, so no-JS visitors never see dead
+  buttons (a scoped `[hidden]{display:none !important}` guard makes that
+  hold against the nav's own display classes). `prefers-reduced-motion`
+  swaps the smooth scroll for an instant jump. Nothing user-typed reaches
+  the script: the block id is regex-gated, stop selectors come from a
+  fixed two-entry map, the accent is a schema-gated hex.
+- **Publish rules** (`engine/validate.ts`): one jumper per page (error),
+  top-level only (error), and a warning when the page has fewer than two
+  sections to hop between.
+- **Native (SwiftUI) translation**: a real mapping, not a placeholder —
+  the page wraps in `ScrollViewReader`, sections get `.id()` tags, and a
+  generated `SectionJumperControl` overlays the chosen edge and hops them
+  with `withAnimation`. Compiles on a Mac like the rest of the SwiftUI
+  export.
+- **Editor preview** renders a sticky visual mock (client-rendered inline
+  scripts don't execute); the live behavior is verified by a Playwright
+  smoke against the real generated script.
+
+---
+
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
 preview/build, and all data (documents, templates, themes, datasets, and

@@ -243,6 +243,27 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
 
+  // Floating section-by-section scroll navigator (the ▲/▼ "jump
+  // buttons" pattern, plan §18). Two circular buttons pinned to a
+  // screen edge hop the visitor between top-level sections with a
+  // smooth scroll; the useful direction gets the accent highlight.
+  // Ships as a progressive enhancement: the renderer inlines ~30
+  // lines of vanilla JS with the block, and the buttons stay hidden
+  // for no-JS visitors (the page just scrolls normally). Honors
+  // prefers-reduced-motion. Sizes respect the 44px tap floor.
+  sectionJumper: z
+    .object({
+      edge: z.enum(["right", "left"]).optional(), // default right (thumb side)
+      align: z.enum(["center", "lower"]).optional(), // vertical anchor; default center
+      size: z.enum(["sm", "md", "lg"]).optional(), // 44 / 52 / 60 px buttons
+      stops: z.enum(["sections", "headings"]).optional(), // what ▼/▲ hop between
+      preset: z.string().min(1).optional(), // theme glass preset for the idle button
+      accent: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(), // highlight; default theme accent
+      upLabel: translatableSchema.optional(), // a11y label, default "Previous section"
+      downLabel: translatableSchema.optional(), // a11y label, default "Next section"
+    })
+    .strict(),
+
   // Mobile search entry point (plan §6 item 5). Progressive v1: an
   // anchor styled as a search pill/bar pointing at a search page; the
   // drawer/overlay open-modes wire up with the pill-nav phase.

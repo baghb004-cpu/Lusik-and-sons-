@@ -6,7 +6,10 @@
 // honest HTML document: real <title>/<meta> from the page's SEO
 // fields (structure renderer-owned, per plan §5), the compiled
 // theme variables, the compiled utility CSS, and the override
-// layers as @media rules. Zero JavaScript emitted.
+// layers as @media rules. The ASSEMBLER emits zero JavaScript;
+// the only script a page can carry is one a block inlines in its
+// own markup (today: sectionJumper's ~30-line progressive
+// enhancement, which the page works fine without).
 // ============================================================
 
 import type { OverrideLayer, Page, Theme } from "../schema/index.ts";

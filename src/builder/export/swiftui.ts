@@ -161,6 +161,12 @@ export function blockToSwift(block: Block): string {
     case "buyBox":
     case "featuredProduct":
       return `ProductLink(ref: "${escapeSwift(String(p.product ?? p.binding ?? ""))}")`;
+    // The floating ▲/▼ navigator is wired at the PAGE level (it needs the
+    // ScrollViewReader proxy) — pageToSwiftView lifts it out. A nested one
+    // is a validation error on the web side; render nothing rather than a
+    // confusing placeholder.
+    case "sectionJumper":
+      return `EmptyView()`;
     default:
       return placeholder(block.type);
   }
@@ -168,7 +174,41 @@ export function blockToSwift(block: Block): string {
 
 export function pageToSwiftView(page: Page): string {
   const typeName = swiftTypeName(page.slug);
-  const body = page.sections.map(blockToSwift);
+  // A top-level sectionJumper becomes the native pattern: ScrollViewReader
+  // + a floating SectionJumperControl overlay that hops `.id()`-tagged
+  // sections. Pages without one keep the original (simpler) shape.
+  const jumper = page.sections.find((b) => b.type === "sectionJumper");
+  const content = jumper ? page.sections.filter((b) => b.type !== "sectionJumper") : page.sections;
+  const body = content.map(blockToSwift);
+
+  if (jumper) {
+    const jp = jumper.props as { edge?: string };
+    const edge = jp.edge === "left" ? ".leading" : ".trailing";
+    const padEdge = jp.edge === "left" ? ".leading" : ".trailing";
+    const inner = body.length
+      ? body.map((v, i) => indent(`${v}.id(${i})`, 5)).join("\n")
+      : indent('Text("This page is empty.").id(0)', 5);
+    return `struct ${typeName}: View {
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+${inner}
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+            }
+            .overlay(alignment: ${edge}) {
+                SectionJumperControl(proxy: proxy, count: ${Math.max(body.length, 1)})
+                    .padding(${padEdge}, 12)
+            }
+        }
+        .navigationTitle("${escapeSwift(page.title)}")
+        .background(Theme.cream.ignoresSafeArea())
+    }
+}`;
+  }
+
   const inner = body.length
     ? body.map((v) => indent(v, 4)).join("\n")
     : indent('Text("This page is empty.")', 4);
@@ -241,6 +281,38 @@ struct BuilderPlaceholder: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.accent.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// Floating ▲/▼ section navigator — the native counterpart of the web
+// sectionJumper block. Hops the ScrollView between .id()-tagged
+// sections; the useful direction gets the accent fill, dead ends dim.
+struct SectionJumperControl: View {
+    let proxy: ScrollViewProxy
+    let count: Int
+    @State private var current = 0
+    var body: some View {
+        VStack(spacing: 10) {
+            jumpButton(up: true, enabled: current > 0)
+            jumpButton(up: false, enabled: current < count - 1)
+        }
+    }
+    private func step(_ delta: Int) {
+        current = min(max(current + delta, 0), max(count - 1, 0))
+        withAnimation(.easeInOut) { proxy.scrollTo(current, anchor: .top) }
+    }
+    private func jumpButton(up: Bool, enabled: Bool) -> some View {
+        Button { step(up ? -1 : 1) } label: {
+            Image(systemName: up ? "chevron.up" : "chevron.down")
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: 48, height: 48)
+                .background(enabled ? Theme.accent : Theme.paper.opacity(0.85))
+                .foregroundColor(enabled ? Theme.cream : Theme.muted)
+                .clipShape(Circle())
+                .shadow(radius: 3)
+        }
+        .disabled(!enabled)
+        .accessibilityLabel(up ? "Previous section" : "Next section")
     }
 }
 
