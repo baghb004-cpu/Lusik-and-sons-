@@ -58,14 +58,37 @@ mkdirSync(join(target, "node"), { recursive: true });
 copyFileSync(join(nodeCache, "node.exe"), join(target, "node", "node.exe"));
 
 // The app folder: production build + everything the server needs.
-console.log("Copying the app (this is the big one — node_modules ride along)…");
+console.log("Copying the app…");
 const appDir = join(target, "app");
 for (const item of [
   ".next", "node_modules", "builder", "content", "public", "scripts", "src", "app",
-  "netlify", "package.json", "next.config.mjs", "tailwind.config.mjs", "postcss.config.mjs", "tsconfig.json",
+  "netlify", "package.json", "package-lock.json", "next.config.mjs", "tailwind.config.mjs", "postcss.config.mjs", "tsconfig.json",
 ]) {
   const src = join(repo, item);
   if (existsSync(src)) cpSync(src, join(appDir, item), { recursive: true });
+}
+
+// Prune dev dependencies (Playwright, Lighthouse CI, type packages, the
+// bundle analyzer…): `next start` needs only production deps, and the
+// copied node_modules is ~800 MB otherwise. Offline-safe — prune just
+// deletes from the tree, no network.
+console.log("Pruning dev dependencies (smaller drive footprint)…");
+try {
+  execSync("npm prune --omit=dev", { cwd: appDir, stdio: "inherit" });
+} catch {
+  console.warn("  prune skipped (npm not on PATH) — the drive will be larger but still works.");
+}
+
+// Give the app folder its own git repo so the History panel works on the
+// drive: fs-mode saves auto-commit (see src/builder/storage/fs.ts), and
+// this is the repo they commit into. Best-effort.
+console.log("Initializing version history…");
+try {
+  execSync("git init -q", { cwd: appDir, stdio: "inherit" });
+  execSync('git -c user.email=workshop@local -c user.name=Workshop add builder content', { cwd: appDir, stdio: "ignore" });
+  execSync('git -c user.email=workshop@local -c user.name=Workshop -c commit.gpgsign=false commit -q -m "Initial workshop state"', { cwd: appDir, stdio: "ignore" });
+} catch {
+  console.warn("  git not found on this machine — History will be empty on the drive (Backup/Restore still works).");
 }
 
 writeFileSync(

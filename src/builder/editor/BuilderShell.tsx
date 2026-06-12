@@ -733,35 +733,41 @@ export function BuilderShell() {
   };
 
   // Keyboard: undo/redo + block actions (ignored while typing).
+  // Stable listener, always-fresh logic: bind keydown ONCE, route through a
+  // ref that every render refreshes. Avoids re-adding the window listener on
+  // every render (the churn the review flagged) without dep-array ordering
+  // games. The ref is assigned on each render just below.
+  const keyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
   useEffect(() => {
-    if (!isBuilderPage) return;
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement;
-      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable) return;
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "z") {
-        e.preventDefault();
-        if (e.shiftKey) redoAction();
-        else undoAction();
-      } else if (mod && e.key.toLowerCase() === "y") {
-        e.preventDefault();
-        redoAction();
-      } else if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId) {
-        e.preventDefault();
-        handleDelete();
-      } else if (e.altKey && e.key === "ArrowUp" && selectedBlockId) {
-        e.preventDefault();
-        handleMoveBy(-1);
-      } else if (e.altKey && e.key === "ArrowDown" && selectedBlockId) {
-        e.preventDefault();
-        handleMoveBy(1);
-      } else if (e.key === "Escape") {
-        setSelectedBlockId(null);
-      }
-    };
+    const onKey = (e: KeyboardEvent) => keyHandlerRef.current(e);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  });
+  }, []);
+  keyHandlerRef.current = (e: KeyboardEvent) => {
+    if (!isBuilderPage) return;
+    const t = e.target as HTMLElement;
+    if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable) return;
+    const mod = e.metaKey || e.ctrlKey;
+    if (mod && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      if (e.shiftKey) redoAction();
+      else undoAction();
+    } else if (mod && e.key.toLowerCase() === "y") {
+      e.preventDefault();
+      redoAction();
+    } else if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId) {
+      e.preventDefault();
+      handleDelete();
+    } else if (e.altKey && e.key === "ArrowUp" && selectedBlockId) {
+      e.preventDefault();
+      handleMoveBy(-1);
+    } else if (e.altKey && e.key === "ArrowDown" && selectedBlockId) {
+      e.preventDefault();
+      handleMoveBy(1);
+    } else if (e.key === "Escape") {
+      setSelectedBlockId(null);
+    }
+  };
 
   const formFields = doc ? fieldsForPath(doc.path) : null;
   const collection = doc ? collectionForPath(doc.path) : null;

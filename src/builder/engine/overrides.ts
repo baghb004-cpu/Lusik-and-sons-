@@ -40,9 +40,14 @@ function layersFor(device: Device, layers: OverrideLayer[]): OverrideLayer[] {
 }
 
 function applyPatch(block: Block, patch: BlockPatch, device: Device): Block {
-  const next: Block = { ...block };
-  if (patch.props) next.props = { ...block.props, ...patch.props };
-  if (patch.style) next.style = { ...block.style, ...patch.style };
+  // A patched block becomes a FRESH object graph — it shares no nested
+  // reference with the base tree, even for keys the patch didn't touch.
+  // So a later mutation of a resolved block can never alias back into the
+  // desktop document. (Desktop never reads overrides, so this is
+  // belt-and-suspenders, but it makes resolved trees safe to hand anywhere.)
+  const next: Block = { ...block, props: structuredClone(block.props) };
+  if (patch.props) next.props = structuredClone({ ...block.props, ...patch.props });
+  if (patch.style) next.style = structuredClone({ ...block.style, ...patch.style });
   if (patch.visibility !== undefined) {
     next.visibility = { ...block.visibility, [device]: patch.visibility };
   }

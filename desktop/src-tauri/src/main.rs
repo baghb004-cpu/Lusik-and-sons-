@@ -19,7 +19,7 @@
 use std::net::TcpStream;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
@@ -28,11 +28,14 @@ const MIN_SPLASH_MS: u64 = 3400; // let the story reach the thumbs-up
 const SERVER_TIMEOUT_S: u64 = 120;
 
 fn session_token() -> String {
-    // Random enough for a loopback session token: time + pid + ASLR noise.
-    let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-    let p = std::process::id() as u128;
-    let a = (&t as *const _ as usize) as u128;
-    format!("baghdo-desktop-{:032x}", t ^ (p << 64) ^ a.rotate_left(17))
+    // Cryptographically random — this token is the ONLY gate on a local
+    // server that reads/writes files on disk, so it must not be guessable
+    // (a local process or a DNS-rebinding page could otherwise brute it).
+    // 32 bytes from the OS CSPRNG → 64 hex chars.
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes).expect("OS RNG unavailable");
+    let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+    format!("baghdo-desktop-{hex}")
 }
 
 /// USB layout, resolved relative to the exe:

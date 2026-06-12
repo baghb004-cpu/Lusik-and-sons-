@@ -134,12 +134,25 @@ export function recommendTier(ramGB: number): TierAdvice {
   };
 }
 
+// The AI runner URL is fetched SERVER-SIDE, so it must be loopback only —
+// otherwise an admin-authed request could point the server at an internal
+// host or a cloud metadata endpoint (SSRF). The runner always runs on the
+// operator's own machine, so loopback is also correct, not just safe.
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+export function isLoopbackUrl(url: string): boolean {
+  try {
+    return LOOPBACK_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 // ── persisted settings (builder/data/ai.json) ───────────────
 export const aiSettingsSchema = z
   .object({
     schemaVersion: z.number().int().min(1).default(1),
     runner: z.enum(["ollama", "llamacpp"]).default("ollama"),
-    baseUrl: z.string().url().optional(),
+    baseUrl: z.string().url().refine(isLoopbackUrl, "AI runner URL must be loopback (127.0.0.1 / localhost / ::1)").optional(),
     model: z.string().min(1).default("qwen3:4b"),
     temperature: z.number().min(0).max(2).default(0.4),
     maxTokens: z.number().int().min(64).max(8192).default(1024),

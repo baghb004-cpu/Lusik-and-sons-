@@ -75,9 +75,13 @@ export async function requireBuilderAdmin(
   if (!m) return deny(401, "Sign in required");
   const token = m[1].trim();
 
-  // Path 1: local access token (thumb-drive / home-server mode).
+  // Path 1: local access token (thumb-drive / home-server mode). Refused
+  // when a GitHub backend is configured — a hosted deployment must NOT honor
+  // a local token even if one is mistakenly present in the environment;
+  // hosted auth goes through Identity only.
+  const hostedBackend = !!(env.BUILDER_GITHUB_REPO && env.BUILDER_GITHUB_TOKEN) || env.BUILDER_BACKEND === "github";
   const localToken = env.BUILDER_LOCAL_TOKEN;
-  if (localToken && localToken.length >= 16 && constantTimeMatch(token, localToken)) {
+  if (!hostedBackend && localToken && localToken.length >= 16 && constantTimeMatch(token, localToken)) {
     return { ok: true, who: "local-operator" };
   }
 

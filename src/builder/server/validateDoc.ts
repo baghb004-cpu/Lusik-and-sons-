@@ -108,7 +108,9 @@ export async function validateDocument(path: string, content: unknown): Promise<
       .map((i) => ({ level: "error" as const, code: "preset_selection", message: i.message }));
   }
   if (path.startsWith("builder/apps/")) return zodIssues(appProjectSchema as ZodLike, content);
-  if (path.startsWith("builder/")) return []; // future builder families: structural JSON only for now
+  // FAIL-CLOSED: any other builder/** path matched no known family. Reject
+  // it rather than writing unvalidated JSON (a near-miss like
+  // builder/data/datasetsX.json or builder/x.json must NOT slip through).
 
   // Lusik content collections — gated by the build's own validators.
   if (path.startsWith("content/products/")) {
