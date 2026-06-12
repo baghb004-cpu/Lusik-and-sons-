@@ -28,6 +28,10 @@ export interface HealthFacts {
   godotExportPresent: boolean;
   launcherExePresent: boolean | null; // null = not determinable (dev mode)
   vmImages: string[];
+  /** portable/THIRD_PARTY_NOTICES.md exists (the installer writes it). */
+  noticesPresent: boolean;
+  /** 86Box machine ROMs present (user-fetched from the official set). */
+  romsPresent86box: boolean;
 }
 
 export type HealthStatus = "ready" | "missing" | "optional" | "info";
@@ -88,9 +92,30 @@ export function healthReport(facts: HealthFacts): HealthItem[] {
       detail: found
         ? `Detected in portable/retro/emulators/. ${emu.bestFor}`
         : `${emu.bestFor} ${emu.bundling}`,
-      guidance: found ? undefined : { label: `Official ${emu.label} downloads (or run: node scripts/fetch-emulators.mjs)`, url: emu.officialUrl },
+      guidance: found ? undefined : { label: `One command stages it verified: node scripts/install-retro-tools.mjs (source: ${emu.officialUrl})`, url: emu.officialUrl },
     });
   }
+
+  // 86Box without its ROM set = installed but not configured
+  if (backends.includes("86box")) {
+    items.push(
+      facts.romsPresent86box
+        ? { id: "86box-roms", label: "86Box machine ROMs", status: "ready", detail: "ROM set present — machines can be configured in 86Box's own UI." }
+        : {
+            id: "86box-roms",
+            label: "86Box machine ROMs",
+            status: "missing",
+            detail: "86Box is installed but not configured: it needs its machine ROM set, which only the official 86Box project distributes — place it in portable/retro/emulators/86box/roms/.",
+            guidance: { label: "Official 86Box ROM set", url: "https://github.com/86Box/roms" },
+          }
+    );
+  }
+
+  items.push(
+    facts.noticesPresent
+      ? { id: "licenses", label: "Licenses & notices", status: "ready", detail: "portable/THIRD_PARTY_NOTICES.md + portable/licenses/ document everything staged (open them any time)." }
+      : { id: "licenses", label: "Licenses & notices", status: "optional", detail: "Written automatically by node scripts/install-retro-tools.mjs — provenance, licenses, and what stays user-supplied." }
+  );
 
   const profileIds = new Set(facts.emulatorProfiles.map((p) => p.id));
   const templatesReady = GAME_TEMPLATES.every((t) => profileIds.has(`${t.era}-${t.recommendedBackend}`));

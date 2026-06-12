@@ -50,7 +50,7 @@ Reader Rabbit, Math Rabbit, and friends) through open-source emulation.
    every row is Ready / Missing / Optional with a real **Fix This**
    button where the engine can act (enable the room, create folders,
    seed the Win95/98/XP era profiles + a starter controller mapping).
-2. `node scripts/fetch-emulators.mjs` — downloads the official
+2. `node scripts/install-retro-tools.mjs` — downloads the official
    open-source backends with the GPL-2.0 obligations handled
    automatically (license note + source list written beside the
    binaries). **The honest bundling answer: GPL-2.0 allows

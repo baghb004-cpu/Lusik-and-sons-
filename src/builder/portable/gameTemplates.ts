@@ -122,6 +122,8 @@ export interface GameTemplate {
   saveNotes: string;
   compatNotes: string;
   ramMB: number;
+  screenshotNotes: string;
+  backupNotes: string;
 }
 
 export const GAME_TEMPLATES: GameTemplate[] = [
@@ -138,6 +140,9 @@ export const GAME_TEMPLATES: GameTemplate[] = [
     saveNotes: "Saves live inside the VM's Windows — snapshot the VM (qcow2) for real save points.",
     compatNotes: "Wants real Windows 95/98 — a guest VM with your own install media. Runs nicely at period settings.",
     ramMB: 64,
+
+    screenshotNotes: "Screenshots land in portable/retro/screenshots/ (DOSBox-X: Ctrl+F5; QEMU: the monitor's screendump command).",
+    backupNotes: "Covered by the room's backup zip (library/profiles/saves metadata); the VM disk is big - copy portable/retro/vm-images/ by hand for a full image backup.",
   },
   {
     id: "lego-island-2",
@@ -152,6 +157,9 @@ export const GAME_TEMPLATES: GameTemplate[] = [
     saveNotes: "In-game save slots inside the VM + qcow2 snapshots on top.",
     compatNotes: "Happier on a Windows 98SE or XP guest than 95.",
     ramMB: 256,
+
+    screenshotNotes: "Screenshots land in portable/retro/screenshots/ (DOSBox-X: Ctrl+F5; QEMU: the monitor's screendump command).",
+    backupNotes: "Covered by the room's backup zip (library/profiles/saves metadata); the VM disk is big - copy portable/retro/vm-images/ by hand for a full image backup.",
   },
   {
     id: "legoland",
@@ -166,6 +174,9 @@ export const GAME_TEMPLATES: GameTemplate[] = [
     saveNotes: "Park saves inside the VM; snapshot before big park changes.",
     compatNotes: "Low requirements; one of the easiest of the set.",
     ramMB: 128,
+
+    screenshotNotes: "Screenshots land in portable/retro/screenshots/ (DOSBox-X: Ctrl+F5; QEMU: the monitor's screendump command).",
+    backupNotes: "Covered by the room's backup zip (library/profiles/saves metadata); the VM disk is big - copy portable/retro/vm-images/ by hand for a full image backup.",
   },
   {
     id: "lego-racers",
@@ -180,6 +191,9 @@ export const GAME_TEMPLATES: GameTemplate[] = [
     saveNotes: "Profile + unlocks saved in-game inside the VM; snapshots recommended before circuit finals 🏁.",
     compatNotes: "A controller maps well: D-pad → arrows, A → accelerate key. Pair it with a controller profile.",
     ramMB: 128,
+
+    screenshotNotes: "Screenshots land in portable/retro/screenshots/ (DOSBox-X: Ctrl+F5; QEMU: the monitor's screendump command).",
+    backupNotes: "Covered by the room's backup zip (library/profiles/saves metadata); the VM disk is big - copy portable/retro/vm-images/ by hand for a full image backup.",
   },
   {
     id: "lego-racers-2",
@@ -194,6 +208,9 @@ export const GAME_TEMPLATES: GameTemplate[] = [
     saveNotes: "In-game saves + qcow2 snapshots.",
     compatNotes: "Wants the XP-era profile; analog stick maps to the driving keys nicely.",
     ramMB: 256,
+
+    screenshotNotes: "Screenshots land in portable/retro/screenshots/ (DOSBox-X: Ctrl+F5; QEMU: the monitor's screendump command).",
+    backupNotes: "Covered by the room's backup zip (library/profiles/saves metadata); the VM disk is big - copy portable/retro/vm-images/ by hand for a full image backup.",
   },
   {
     id: "lego-rock-raiders",
@@ -208,6 +225,9 @@ export const GAME_TEMPLATES: GameTemplate[] = [
     saveNotes: "Mission progress saves in-game; snapshot between missions.",
     compatNotes: "The fussiest of the set; if QEMU misbehaves, this is the one that justifies an 86Box machine.",
     ramMB: 128,
+
+    screenshotNotes: "Screenshots land in portable/retro/screenshots/ (DOSBox-X: Ctrl+F5; QEMU: the monitor's screendump command).",
+    backupNotes: "Covered by the room's backup zip (library/profiles/saves metadata); the VM disk is big - copy portable/retro/vm-images/ by hand for a full image backup.",
   },
 ];
 

@@ -26,7 +26,12 @@ const list = (p) => {
 };
 const has = (p) => existsSync(join(root, p));
 
-const emus = list(join(root, "portable", "retro", "emulators"));
+// emulators may sit flat or in per-tool sidecar folders
+const emuRoot = join(root, "portable", "retro", "emulators");
+const emus = list(emuRoot).flatMap((e) => {
+  const sub = list(join(emuRoot, e));
+  return sub.length > 0 ? sub : [e];
+});
 const games = list(join(root, "portable", "retro", "library")).filter((f) => f.endsWith(".json"));
 const vms = list(join(root, "portable", "retro", "vm-images")).filter((f) => !f.startsWith("."));
 const godot = list(join(root, "game-mode", "godot-export")).some((f) => f.endsWith(".exe") || f.endsWith(".x86_64"));
@@ -35,15 +40,35 @@ const rows = [
   ["Launcher .exe", inPortableLayout ? (has("baghdos-workshop.exe") ? "✅ built and detected" : "❌ missing — desktop/scripts/build-windows.ps1 on a Windows PC") : "ℹ dev checkout (run make-portable for the USB layout)"],
   ["Builder app + runtime", inPortableLayout ? "✅ app/ + node/ in place" : existsSync(join(appDir, "package.json")) ? "✅ repo checkout" : "❌ app folder missing"],
   ["Godot Game Mode", godot ? "✅ exported and detected" : "○ optional — export desktop/game-mode/godot-project once in Godot 4.3+"],
-  ["DOSBox-X", emus.some((f) => /^dosbox-x/i.test(f)) ? "✅ detected" : "○ run: node scripts/fetch-emulators.mjs"],
-  ["QEMU (Win-era)", emus.some((f) => /^qemu-system/i.test(f)) ? "✅ detected" : "○ one download — see scripts/fetch-emulators.mjs output"],
-  ["86Box (accuracy option)", emus.some((f) => /^86box/i.test(f)) ? "✅ detected" : "○ optional — fetch-emulators.mjs --with-86box (+ official ROM set, user-supplied)"],
+  ["DOSBox-X", emus.some((f) => /^dosbox-x/i.test(f)) ? "✅ detected" : "○ run: node scripts/install-retro-tools.mjs"],
+  ["QEMU (Win-era)", emus.some((f) => /^qemu-system/i.test(f)) ? "✅ detected" : "○ one download — staged by: node scripts/install-retro-tools.mjs"],
+  ["86Box (accuracy option)", emus.some((f) => /^86box/i.test(f)) ? "✅ detected" : "○ optional — install-retro-tools.mjs stages it (official ROM set stays user-supplied)"],
   ["Game media", games.length > 0 ? `✅ ${games.length} game(s) on the shelf` : "○ user-provided — adopt a LEGO template with your own ISO/disc"],
   ["Windows 95/98 guest", vms.length > 0 ? `✅ ${vms.length} virtual disk(s)` : "○ user-provided only — your own install media into a .qcow2 (profile notes show the command)"],
   ["Saves & backups", has("portable/retro/save-data") ? "✅ portable folders ready" : "○ created on first run (or the Setup wizard's Fix button)"],
   ["Offline fonts", existsSync(join(appDir, "public", "fonts", "armenian.woff2")) ? "✅ bundled" : "○ node scripts/fetch-fonts.mjs (one-time)"],
-  ["Privacy mode", "✅ offline/local-only by default — no telemetry, no accounts, no cloud"],
+  ["Licenses & notices", has("portable/THIRD_PARTY_NOTICES.md") && has("portable/licenses") ? "✅ THIRD_PARTY_NOTICES.md + licenses/ present" : "○ written by: node scripts/install-retro-tools.mjs"],
+  ["Components manifest", has("portable/retro/COMPONENTS_MANIFEST.json") ? "✅ provenance recorded (name/version/source/license/sha256)" : "○ written by the installer"],
+  ["Privacy mode", "✅ offline/local-only by default — no telemetry, no accounts, no cloud; internet only for explicit install/update commands"],
 ];
+
+// Forbidden-file scan: bundled locations must never contain media that
+// only the user may supply. (portable/retro/user-media is THEIRS — allowed.)
+const forbidden = [];
+const scanDirs = ["portable/retro/emulators", "game-mode"];
+const walk = (dir, depth = 0) => {
+  if (depth > 3) return;
+  for (const f of list(join(root, dir))) {
+    const rel = `${dir}/${f}`;
+    if (/\.(iso|img|wim|vhd)$/i.test(f) || /^win(dows)?.*\.(zip|exe)$/i.test(f) && /9[58]|xp|2000/i.test(f)) forbidden.push(rel);
+    walk(rel, depth + 1);
+  }
+};
+for (const d of scanDirs) walk(d);
+rows.push([
+  "No copyrighted media bundled",
+  forbidden.length === 0 ? "✅ clean — bundled folders contain tools only" : `❌ found in bundled locations: ${forbidden.slice(0, 3).join(", ")} — user media belongs in portable/retro/user-media/`,
+]);
 
 const width = Math.max(...rows.map(([a]) => a.length));
 console.log("\nFlash-drive build preflight — " + root + "\n");

@@ -113,8 +113,13 @@ async function gatherFacts(store: NonNullable<Awaited<ReturnType<typeof guard>>[
   const godotExportPresent = safelyHasExecutable(godotDir);
   const exeCandidate = join(portableRoot, "baghdos-workshop.exe");
   const launcherExePresent = existsSync(join(portableRoot, "node")) ? existsSync(exeCandidate) : null;
+  // emulator binaries may sit flat or in per-tool sidecar folders
+  const emulatorFiles = safeList("retro/emulators").flatMap((entry) => {
+    const sub = safeList(`retro/emulators/${entry}`);
+    return sub.length > 0 ? sub : [entry];
+  });
   return {
-    emulatorFiles: safeList("retro/emulators"),
+    emulatorFiles,
     games,
     emulatorProfiles: all.emulators.map((e) => ({ id: e.id, backend: e.backend, machinePath: e.machinePath })),
     controllerProfiles: all.controllers.length,
@@ -123,6 +128,8 @@ async function gatherFacts(store: NonNullable<Awaited<ReturnType<typeof guard>>[
     godotExportPresent,
     launcherExePresent,
     vmImages: safeList("retro/vm-images"),
+    noticesPresent: existsSync(join(store.root, "THIRD_PARTY_NOTICES.md")),
+    romsPresent86box: safeList("retro/emulators/86box/roms").length > 0,
   };
 }
 
@@ -336,13 +343,21 @@ export async function POST(req: Request): Promise<Response> {
       }
 
       const plan = composeLaunch(game, emu, controller);
-      const binAbs = isAbsolute(plan.bin)
-        ? plan.bin
-        : join(store.root, "retro", "emulators", process.platform === "win32" ? `${plan.bin}.exe` : plan.bin);
+      // sidecar layout first (emulators/<tool>/<bin>), then legacy flat
+      const binName = process.platform === "win32" ? `${plan.bin}.exe` : plan.bin;
+      const toolDir = { "dosbox-x": "dosbox-x", "86box": "86box", qemu: "qemu" }[emu.backend];
+      const candidates = isAbsolute(plan.bin)
+        ? [plan.bin]
+        : [
+            join(store.root, "retro", "emulators", toolDir, binName),
+            join(store.root, "retro", "emulators", toolDir, plan.bin === "86Box" ? "86Box.exe" : binName),
+            join(store.root, "retro", "emulators", binName),
+          ];
+      const binAbs = candidates.find((c) => existsSync(c)) ?? candidates[0];
       if (!existsSync(binAbs)) {
         return json(409, {
           error: `The ${emu.backend} backend isn't installed`,
-          hint: `Download the open-source ${emu.backend} yourself and place it at portable/retro/emulators/`,
+          hint: `One command stages it (verified): node scripts/install-retro-tools.mjs — or place it at portable/retro/emulators/${toolDir}/`,
         });
       }
 

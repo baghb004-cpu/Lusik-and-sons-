@@ -28,6 +28,8 @@ const BASE_FACTS: HealthFacts = {
   godotExportPresent: false,
   launcherExePresent: null,
   vmImages: [],
+  noticesPresent: false,
+  romsPresent86box: false,
 };
 
 test("six LEGO templates: era profiles validate; adoption with user media yields a valid entry", () => {
@@ -106,6 +108,8 @@ test("health report: configured environment reads ready; moved media calls out L
     games: [{ id: "lego-racers", title: "LEGO Racers", missing: [{ field: "isoPath", path: "E:/old/racers.iso" }] }],
     godotExportPresent: true,
     launcherExePresent: true,
+    noticesPresent: true,
+    romsPresent86box: false,
   };
   const items = healthReport(facts);
   const byId = Object.fromEntries(items.map((i) => [i.id, i]));
@@ -116,6 +120,11 @@ test("health report: configured environment reads ready; moved media calls out L
   assert.match(byId.media.detail, /Locate File Again/);
   assert.equal(byId.godot.status, "ready");
   assert.equal(byId.launcher.status, "ready");
+  assert.equal(byId.licenses.status, "ready");
+  // 86Box present without its ROM set = installed but not configured
+  assert.equal(byId["86box-roms"].status, "missing");
+  assert.match(byId["86box-roms"].detail, /installed but not configured/);
+  assert.ok(byId["86box-roms"].guidance?.url?.includes("86Box/roms"));
 });
 
 test("portable-path advice flags drive letters and absolute paths", () => {
