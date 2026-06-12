@@ -1031,6 +1031,36 @@ longer required for any block.
 
 ---
 
+## 22. The finishing wave (roadmap #3–#17, shipped)
+
+One sweep closed the rest of the roadmap; details per item live in
+`BUILDER_ROADMAP.md` (all ticked). The load-bearing additions:
+
+- **Five small-business blocks** — contactForm (provider presets:
+  Netlify/Formspree/Web3Forms/mailto, https-gated endpoints, honeypot),
+  video (native local files; YouTube/Vimeo privacy facade — zero
+  third-party requests until the visitor clicks), socialRow, hoursTable,
+  mapLink. All translatable, all introspectable (the §21 lockstep law
+  covers them automatically), all with native SwiftUI mappings.
+- **Six starter page templates** (`builder/templates/starter-*.json`),
+  publishable as-is and guarded by a permanent gate test.
+- **Site chrome** — `builder/chrome.json` header/footer blocks render
+  around every page in exports and the editor preview.
+- **Export SEO** — sitemap.xml with per-locale hreflang alternates,
+  robots.txt, a branded 404 rendered through the real renderer; the
+  bundled Noto fonts (now fetched, all four) ship beside i18n.css.
+- **Android target `twa`** — the PWA export plus a Bubblewrap (Trusted
+  Web Activity) scaffold; builds on any OS, Play-Store ready, updates
+  ship by deploying the site.
+- **Editor UX** — Audit panel (all guardrails, one button), Help modal
+  (guide + shortcuts, ? key), five-step first-run tour, unsaved/saved-at
+  indicator + beforeunload guard, double-click-to-edit into the
+  generated form, SEO panel with live search preview.
+- **Builder e2e spec** (`tests/e2e/builder.spec.mjs`) riding the same
+  Playwright suite CI already runs.
+
+---
+
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
 preview/build, and all data (documents, templates, themes, datasets, and

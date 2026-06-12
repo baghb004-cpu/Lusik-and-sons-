@@ -218,6 +218,17 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     await write("styles.css", css);
     if (i18n.locales.length > 1 || i18n.locales[0] !== "en") {
       await write("i18n.css", buildI18nCss(i18n.locales));
+      // Ship the bundled woff2 files the CSS references (when present —
+      // without them the OS-font fallbacks still render every script).
+      const { fontManifest } = await import("../i18n/index.ts");
+      for (const f of fontManifest(i18n.locales)) {
+        try {
+          await cp(join(process.cwd(), "public", "fonts", f.file), join(input.outDir, "fonts", f.file));
+          written.push(`fonts/${f.file}`);
+        } catch {
+          /* font not fetched yet — fallbacks cover it */
+        }
+      }
     }
     const i18nActive = i18n.locales.length > 1 || i18n.locales[0] !== "en";
     for (const r of rendered) {
