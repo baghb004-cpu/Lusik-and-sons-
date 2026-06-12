@@ -30,8 +30,8 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return json(400, { error: "Body must be JSON" });
   }
-  if (body.target !== "static" && body.target !== "next") {
-    return json(400, { error: 'Expected { target: "static" | "next", download?: boolean }' });
+  if (body.target !== "static" && body.target !== "next" && body.target !== "pwa") {
+    return json(400, { error: 'Expected { target: "static" | "next" | "pwa", download?: boolean }' });
   }
 
   const storage = getBuilderStorage();
@@ -56,8 +56,8 @@ export async function POST(req: Request): Promise<Response> {
       cms: { featured: featured ? `${featured.category}/${featured.slug}` : undefined },
       siteName: "Lusik & Sons",
     });
-    // ZIP download (static only — its file list is fully materialized).
-    if (body.download && body.target === "static") {
+    // ZIP download (static/pwa — their file lists are fully materialized).
+    if (body.download && body.target !== "next") {
       const { readFile } = await import("node:fs/promises");
       const { zipFiles } = await import("../../../../src/builder/server/zip.ts");
       const entries = [];

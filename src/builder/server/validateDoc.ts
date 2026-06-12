@@ -29,6 +29,7 @@ import {
 } from "../schema/index.ts";
 import { shippingConfigSchema, zipDatasetSchema } from "../data/index.ts";
 import { aiSettingsSchema } from "../ai/models.ts";
+import { appProjectSchema } from "../app/questionnaire.ts";
 // The build-time validators themselves (main() is guarded, so these
 // imports never trigger regeneration). Plain .mjs — typed as any.
 import { validateProduct } from "../../../scripts/gen-products.mjs";
@@ -95,6 +96,7 @@ export async function validateDocument(path: string, content: unknown): Promise<
   if (path === "builder/data/shipping.json") return zodIssues(shippingConfigSchema as ZodLike, content);
   if (path.startsWith("builder/data/datasets/")) return zodIssues(zipDatasetSchema as ZodLike, content);
   if (path === "builder/data/ai.json") return zodIssues(aiSettingsSchema as ZodLike, content);
+  if (path.startsWith("builder/apps/")) return zodIssues(appProjectSchema as ZodLike, content);
   if (path.startsWith("builder/")) return []; // future builder families: structural JSON only for now
 
   // Lusik content collections — gated by the build's own validators.

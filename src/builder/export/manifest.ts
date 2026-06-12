@@ -9,7 +9,7 @@ export interface ExportManifest {
   format: "lusik-builder-export";
   formatVersion: 1;
   schemaVersion: number;
-  target: "static" | "next";
+  target: "static" | "next" | "pwa";
   createdAt: string;
   pages: number;
   blockTypesUsed: string[];

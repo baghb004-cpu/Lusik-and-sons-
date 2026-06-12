@@ -72,6 +72,8 @@ import { validateCommerceRefs, type CatalogSnapshot } from "../engine/commerce.t
 import { INSERTABLE_TYPES, newDefaultBlock, type InsertableType } from "./newBlock.ts";
 import { ShippingPanel } from "./ShippingPanel.tsx";
 import { AiPanel } from "./AiPanel.tsx";
+import { AppPanel } from "./AppPanel.tsx";
+import { APP_DIR } from "../app/index.ts";
 import { zipDatasetSchema, SHIPPING_DOC_PATH, type ZipDataset } from "../data/index.ts";
 import { Inspector } from "./Inspector.tsx";
 import { HitboxOverlay, type HitboxReport } from "./HitboxOverlay.tsx";
@@ -140,6 +142,16 @@ function groupFiles(files: string[]): SidebarGroup[] {
       }
     }
     if (entries.length > 0) groups.push({ label: c.label, blurb: c.blurb, entries });
+  }
+
+  const appDocs = files.filter((f) => f.startsWith("builder/apps/") && !used.has(f));
+  for (const a of appDocs) used.add(a);
+  if (appDocs.length > 0) {
+    groups.push({
+      label: "App projects",
+      blurb: "Guided app planning, compliance + PWA export",
+      entries: appDocs.map((f) => ({ path: f, label: f.replace("builder/apps/", "").replace(/\.json$/, "") })),
+    });
   }
 
   const dataDocs = files.filter((f) => f.startsWith("builder/data/") && !used.has(f));
@@ -746,6 +758,7 @@ export function BuilderShell() {
   const collection = doc ? collectionForPath(doc.path) : null;
   const isThemeDoc = doc?.path === THEME_PATH;
   const isShippingDoc = doc?.path === SHIPPING_DOC_PATH;
+  const isAppDoc = doc?.path.startsWith("builder/apps/") ?? false;
   const isBuilderPage = doc?.path.startsWith("builder/pages/") ?? false;
   const isTemplate = doc?.path.startsWith("builder/templates/") ?? false;
   const pageTemplates = useMemo(
@@ -933,6 +946,24 @@ export function BuilderShell() {
           <div className="flex flex-wrap gap-1.5">
             <button type="button" onClick={() => openDialog("newPage")} className="rounded-full bg-ink px-3 py-1 text-xs text-cream">
               + New page
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const name = window.prompt("App project name?");
+                if (!name?.trim()) return;
+                const slug = suggestSlug(name);
+                const path = `${APP_DIR}/${slug}.json`;
+                if (files.includes(path)) { setStatus(`An app project "${slug}" already exists`); return; }
+                const project = { schemaVersion: 1, id: newBlockId("app"), name: name.trim(), slug, answers: {}, checkedItems: [], notes: "" };
+                if (await writeDoc(path, project)) {
+                  await refreshList();
+                  await openDoc(path);
+                }
+              }}
+              className="rounded-full border border-ink/20 px-3 py-1 text-xs hover:bg-cream"
+            >
+              + New app
             </button>
             <button
               type="button"
@@ -1137,7 +1168,7 @@ export function BuilderShell() {
                   {doc.dirty ? <span className="ml-1 text-accent">•</span> : null}
                 </h2>
                 <div className="flex shrink-0 gap-2">
-                  {formFields || isThemeDoc || isBuilderPage || isShippingDoc ? (
+                  {formFields || isThemeDoc || isBuilderPage || isShippingDoc || isAppDoc ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1213,6 +1244,27 @@ export function BuilderShell() {
                     onBlockVisibility={setBaseVisibility}
                     onBlockProps={setBaseProps}
                     onMove={handleTreeMove}
+                  />
+                </div>
+              ) : isAppDoc && !rawMode ? (
+                <div className="max-h-[62vh] overflow-y-auto">
+                  <AppPanel
+                    value={doc.content}
+                    onChange={editContent}
+                    onExportPwa={async () => {
+                      setStatus("Exporting PWA…");
+                      try {
+                        const res = await api("/api/builder/export", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ target: "pwa" }),
+                        });
+                        const body = await res.json();
+                        setStatus(res.ok ? `PWA exported: ${body.pages} page(s) → ${body.outDir}` : body.error || "Export failed");
+                      } catch (e) {
+                        setStatus(String((e as Error).message || e));
+                      }
+                    }}
                   />
                 </div>
               ) : isShippingDoc && !rawMode ? (

@@ -36,7 +36,7 @@ import { buildManifest } from "./manifest.ts";
 
 export interface ExportInput {
   storage: BuilderStorage;
-  target: "static" | "next";
+  target: "static" | "next" | "pwa"; // pwa = static + manifest/sw/icons (plan §15)
   outDir: string; // absolute
   catalog: CatalogSnapshot;
   cms?: { featured?: string };
@@ -119,7 +119,8 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     fileContents.push({ path: rel, content });
   };
 
-  if (input.target === "static") {
+  if (input.target === "static" || input.target === "pwa") {
+    const pwa = input.target === "pwa";
     // Render every page body first (Tailwind compiles against the union).
     const rendered = [];
     for (const { page, layers } of pages) {
@@ -139,10 +140,19 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
         theme,
         stylesheetHref: `${"../".repeat(depth)}styles.css`,
         siteName,
+        pwa,
       });
       await write(pageFileName(r.page), html);
     }
-    await write("README-DEPLOY.md", staticReadme(siteName, pages.length));
+    if (pwa) {
+      const { buildWebManifest, buildServiceWorker, buildPwaReadme } = await import("../app/pwa.ts");
+      await write("manifest.webmanifest", buildWebManifest({ name: siteName, theme }));
+      await write("sw.js", buildServiceWorker(new Date().toISOString().slice(0, 10)));
+      await write("README-PWA.md", buildPwaReadme(siteName));
+      await write("icons/README.txt", "Replace icon-192.png, icon-512.png and icon-maskable-512.png with real PNG artwork (same filenames).\n");
+    } else {
+      await write("README-DEPLOY.md", staticReadme(siteName, pages.length));
+    }
   } else {
     // next: scaffold + renderer packages + documents + catalog snapshot.
     for (const [rel, content] of Object.entries(nextScaffold(siteName))) {
