@@ -1025,7 +1025,10 @@ export function BuilderShell() {
       {tourOpen ? <OnboardingTour onDone={() => setTourOpen(false)} /> : null}
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl">Baghdo’s Workshop</h1>
+          {/* The Workshop name belongs to the thumb-drive build (Baghdo's
+              call). The hosted deployment presents as the site's own
+              content workshop instead. */}
+          <h1 className="font-display text-2xl">{backend === "github" ? "Lusik & Sons — Content Workshop" : "Baghdo’s Workshop"}</h1>
           <p className="text-xs text-muted">storage: {backend || "…"} · saves run the build’s own validators</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
