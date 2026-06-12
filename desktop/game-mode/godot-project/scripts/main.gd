@@ -50,6 +50,12 @@ func _ready() -> void:
 	_station(row, "📦  Export Portal", _on_export)
 	_station(row, "🕹  Retro Game Room", _on_room)
 
+	var pads := Input.get_connected_joypads()
+	var pad_status := Label.new()
+	pad_status.text = "🎮 %s" % ("Generic Controller #%d connected" % pads[0] if pads.size() > 0 else "No controller — keyboard & mouse work everywhere")
+	pad_status.add_theme_color_override("font_color", INK)
+	root.add_child(pad_status)
+
 	var controller_btn := Button.new()
 	controller_btn.text = "🎮  Controller setup & test"
 	controller_btn.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/ControllerTest.tscn"))
@@ -63,6 +69,11 @@ func _ready() -> void:
 
 	quests_box = VBoxContainer.new()
 	root.add_child(quests_box)
+
+	var return_note := Label.new()
+	return_note.text = "↩  The Normal Builder stays open in its own window — close this one any time; nothing here can break it."
+	return_note.add_theme_color_override("font_color", ACCENT)
+	root.add_child(return_note)
 
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

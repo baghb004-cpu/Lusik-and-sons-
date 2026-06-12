@@ -53,17 +53,37 @@ func _ready() -> void:
 	status.add_theme_color_override("font_color", INK)
 	root.add_child(status)
 
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 10)
+	root.add_child(actions)
+
 	var back := Button.new()
 	back.text = "← Exit room"
 	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/Main.tscn"))
-	root.add_child(back)
+	actions.add_child(back)
+
+	var wizard := Button.new()
+	wizard.text = "🛠 Setup wizard"
+	wizard.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/SetupWizard.tscn"))
+	actions.add_child(wizard)
+
+	var backup := Button.new()
+	backup.text = "💾 Back up saves & library"
+	backup.pressed.connect(func() -> void:
+		Bridge.call_api(self, "/api/builder/portable", HTTPClient.METHOD_POST, {"kind": "backup"}, func(code: int, body: Dictionary) -> void:
+			status.text = str(body.get("note", body.get("error", ""))) if code == 200 else str(body.get("error", "backup failed"))
+			if code == 200:
+				status.text = "💾 Backed up to portable/%s — %s" % [body.get("file", "?"), body.get("note", "")]
+		)
+	)
+	actions.add_child(backup)
 
 	_load_library()
 
 func _load_library() -> void:
 	Bridge.call_api(self, "/api/builder/retro", HTTPClient.METHOD_GET, {}, func(code: int, body: Dictionary) -> void:
 		if code == 403:
-			status.text = str(body.get("error", "The room is switched off."))
+			status.text = str(body.get("error", "The room is switched off.")) + "  The Setup wizard above can turn it on."
 			return
 		if code != 200:
 			status.text = str(body.get("error", "Could not open the room."))
@@ -82,7 +102,8 @@ func _shelf_row(g: Dictionary) -> void:
 	var label := Label.new()
 	var missing: Array = g.get("missing", [])
 	var tier := str(g.get("saveTier", "?"))
-	label.text = "📀 %s  [%s · saves: %s]" % [g.get("title", "?"), g.get("category", "?"), tier]
+	var badge := "🟢 Ready" if missing.is_empty() else ("🔴 Missing disc/ISO" if str(missing[0].get("field", "")) == "isoPath" else "🟡 Needs setup")
+	label.text = "📀 %s  [%s · saves: %s]  %s" % [g.get("title", "?"), g.get("category", "?"), tier, badge]
 	label.add_theme_color_override("font_color", INK)
 	row.add_child(label)
 	if missing.size() > 0:

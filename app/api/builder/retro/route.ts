@@ -15,7 +15,7 @@
 // ============================================================
 
 import { join, isAbsolute } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { copyFile, stat } from "node:fs/promises";
 
 import { requireBuilderAdmin } from "../../../../src/builder/server/auth.ts";
@@ -29,9 +29,17 @@ import {
   composeLaunch,
   pathsToVerify,
   PortablePathError,
+  GAME_TEMPLATES,
+  ERA_CHECKLISTS,
+  EMULATOR_CATALOG,
+  emulatorProfileForTemplate,
+  healthReport,
+  healthSummary,
+  isPortablePathAdvice,
   type GameEntry,
   type EmulatorProfile,
   type ControllerProfile,
+  type HealthFacts,
 } from "../../../../src/builder/portable/index.ts";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +51,7 @@ function json(status: number, body: unknown): Response {
   });
 }
 
-async function guard(req: Request) {
+async function guard(req: Request, allowDisabled = false) {
   const auth = await requireBuilderAdmin(req);
   if (!auth.ok) return { denied: auth.response! };
   if (getBuilderStorage().backend !== "fs") {
@@ -53,14 +61,14 @@ async function guard(req: Request) {
   await store.init();
   const settingsRaw = await store.read("settings.json");
   const settings = portableSettingsSchema.parse(settingsRaw ? JSON.parse(settingsRaw) : {});
-  if (!settings.gameRoom.enabled) {
+  if (!settings.gameRoom.enabled && !allowDisabled) {
     return {
       denied: json(403, {
-        error: "The Retro Game Room is switched off. The owner can enable it locally: portable/settings.json → gameRoom.enabled = true.",
+        error: "The Retro Game Room is switched off. The owner can enable it locally: portable/settings.json → gameRoom.enabled = true — or open the Setup wizard, which has the button.",
       }),
     };
   }
-  return { store };
+  return { store, settings };
 }
 
 type Families = { games: GameEntry[]; emulators: EmulatorProfile[]; controllers: ControllerProfile[] };
@@ -85,9 +93,63 @@ async function loadAll(store: NonNullable<Awaited<ReturnType<typeof guard>>["sto
 
 const resolveUserPath = (root: string, p: string) => (isAbsolute(p) ? p : join(root, p));
 
+async function gatherFacts(store: NonNullable<Awaited<ReturnType<typeof guard>>["store"]>, enabled: boolean): Promise<HealthFacts> {
+  const all = await loadAll(store);
+  const safeList = (dir: string): string[] => {
+    try {
+      return readdirSync(join(store.root, dir));
+    } catch {
+      return [];
+    }
+  };
+  const games = all.games.map((game) => {
+    const emu = all.emulators.find((e) => e.id === game.emulatorProfileId);
+    const missing = emu ? pathsToVerify(game, emu).filter((p) => !existsSync(resolveUserPath(store.root, p.path))) : [];
+    return { id: game.id, title: game.title, missing };
+  });
+  // launcher/godot detection: portable layout puts them beside the app dir
+  const portableRoot = join(store.root, "..");
+  const godotDir = join(portableRoot, "game-mode", "godot-export");
+  const godotExportPresent = safelyHasExecutable(godotDir);
+  const exeCandidate = join(portableRoot, "baghdos-workshop.exe");
+  const launcherExePresent = existsSync(join(portableRoot, "node")) ? existsSync(exeCandidate) : null;
+  return {
+    emulatorFiles: safeList("retro/emulators"),
+    games,
+    emulatorProfiles: all.emulators.map((e) => ({ id: e.id, backend: e.backend, machinePath: e.machinePath })),
+    controllerProfiles: all.controllers.length,
+    gameRoomEnabled: enabled,
+    dirsPresent: safeList("retro").length > 0 ? ["retro"] : [],
+    godotExportPresent,
+    launcherExePresent,
+    vmImages: safeList("retro/vm-images"),
+  };
+}
+
+function safelyHasExecutable(dir: string): boolean {
+  try {
+    return readdirSync(dir).some((f) => f.endsWith(".exe") || f.endsWith(".x86_64"));
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(req: Request): Promise<Response> {
-  const g = await guard(req);
+  const wantsWizard = new URL(req.url).searchParams.get("wizard") === "1";
+  const g = await guard(req, wantsWizard); // the wizard works while the room is off
   if (g.denied) return g.denied;
+  if (wantsWizard) {
+    const facts = await gatherFacts(g.store, g.settings!.gameRoom.enabled);
+    const items = healthReport(facts);
+    return json(200, {
+      ok: true,
+      health: items,
+      summary: healthSummary(items),
+      templates: GAME_TEMPLATES,
+      checklists: ERA_CHECKLISTS,
+      catalog: EMULATOR_CATALOG.map(({ binaries: _b, ...rest }) => rest),
+    });
+  }
   const all = await loadAll(g.store);
   // verification status rides along so shelves can show "Locate File Again"
   const verified = all.games.map((game) => {
@@ -101,10 +163,18 @@ export async function GET(req: Request): Promise<Response> {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const g = await guard(req);
+  let peek: { action?: string } = {};
+  let rawBody = "";
+  try {
+    rawBody = await req.text();
+    peek = JSON.parse(rawBody);
+  } catch {
+    return json(400, { error: "Body must be JSON" });
+  }
+  const g = await guard(req, peek.action === "fix"); // Fix buttons work while the room is off
   if (g.denied) return g.denied;
   const store = g.store;
-  let body: {
+  const body: {
     action?: string;
     game?: unknown;
     emulator?: unknown;
@@ -113,14 +183,88 @@ export async function POST(req: Request): Promise<Response> {
     newPath?: string;
     field?: string;
     confirm?: boolean;
-  };
-  try {
-    body = await req.json();
-  } catch {
-    return json(400, { error: "Body must be JSON" });
-  }
+    fix?: string;
+    templateId?: string;
+    isoPath?: string;
+    useDiscDrive?: string;
+  } = peek;
 
   try {
+    // ── the wizard's Fix-This buttons (plan §23b) ───────────
+    if (body.action === "fix") {
+      if (body.fix === "enable-room") {
+        const next = { ...g.settings!, gameRoom: { enabled: true } };
+        await store.write("settings.json", JSON.stringify(next, null, 2) + "\n");
+        return json(200, { ok: true, fixed: "enable-room" });
+      }
+      if (body.fix === "create-dirs") {
+        await store.init(); // idempotent skeleton
+        return json(200, { ok: true, fixed: "create-dirs" });
+      }
+      if (body.fix === "seed-profiles") {
+        let created = 0;
+        for (const t of GAME_TEMPLATES) {
+          const profile = emulatorProfileForTemplate(t);
+          const rel = `retro/emulator-profiles/${profile.id}.json`;
+          if (!(await store.read(rel))) {
+            const parsed = emulatorProfileSchema.parse(profile);
+            await store.write(rel, JSON.stringify(parsed, null, 2) + "\n");
+            created++;
+          }
+        }
+        return json(200, { ok: true, fixed: "seed-profiles", created });
+      }
+      if (body.fix === "seed-controller") {
+        const starter = controllerProfileSchema.parse({
+          id: "starter-pad",
+          label: "Generic Modern Controller",
+          preset: "Generic Modern Controller",
+          bindings: [
+            { input: "dpad-up", target: { kind: "key", value: "up" } },
+            { input: "dpad-down", target: { kind: "key", value: "down" } },
+            { input: "dpad-left", target: { kind: "key", value: "left" } },
+            { input: "dpad-right", target: { kind: "key", value: "right" } },
+            { input: "a-button", target: { kind: "key", value: "enter" } },
+            { input: "b-button", target: { kind: "key", value: "escape" } },
+            { input: "x-button", target: { kind: "mouse-button", value: "left" } },
+            { input: "right-stick", target: { kind: "mouse-move", value: "xy" } },
+          ],
+        });
+        await store.write(`retro/controller-profiles/${starter.id}.json`, JSON.stringify(starter, null, 2) + "\n");
+        return json(200, { ok: true, fixed: "seed-controller" });
+      }
+      return json(400, { error: "Unknown fix" });
+    }
+
+    // ── adopt a LEGO template: settings + YOUR media = a shelf entry ─
+    if (body.action === "adopt-template") {
+      const t = GAME_TEMPLATES.find((x) => x.id === body.templateId);
+      if (!t) return json(404, { error: "Template not found" });
+      if (!body.isoPath && !body.useDiscDrive) {
+        return json(400, { error: `Bring your own media: pass { isoPath } (your ISO of "${t.title}") or { useDiscDrive: "D:" }` });
+      }
+      const profile = emulatorProfileForTemplate(t);
+      const profileRel = `retro/emulator-profiles/${profile.id}.json`;
+      if (!(await store.read(profileRel))) {
+        await store.write(profileRel, JSON.stringify(emulatorProfileSchema.parse(profile), null, 2) + "\n");
+      }
+      const entry = gameEntrySchema.safeParse({
+        id: t.id,
+        title: t.title,
+        category: t.category,
+        year: t.year,
+        emulatorProfileId: profile.id,
+        isoPath: body.isoPath,
+        useDiscDrive: body.useDiscDrive,
+        notes: `${t.compatNotes} Graphics: ${t.graphicsNotes} Audio: ${t.audioNotes} Saves: ${t.saveNotes}`,
+        addedAt: Date.now(),
+      });
+      if (!entry.success) return json(422, { error: entry.error.issues[0]?.message });
+      await store.write(`retro/library/${t.id}.json`, JSON.stringify(entry.data, null, 2) + "\n");
+      const advice = body.isoPath ? isPortablePathAdvice(body.isoPath) : null;
+      return json(200, { ok: true, id: t.id, ...(advice ? { advice } : {}) });
+    }
+
     if (body.action === "upsert-game" || body.action === "upsert-emulator" || body.action === "upsert-controller") {
       const [schema, dir, value] =
         body.action === "upsert-game"

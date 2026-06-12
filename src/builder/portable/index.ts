@@ -23,3 +23,14 @@ export {
 export { createPortableStore, PortablePathError, PORTABLE_DIR, PORTABLE_SKELETON, type PortableStore } from "./store.ts";
 export { composeLaunch, pathsToVerify, dosboxMapperLines, type LaunchPlan } from "./retro.ts";
 export { QUESTS, LEVELS, levelFor, awardQuest, type Quest } from "./quests.ts";
+
+export {
+  EMULATOR_CATALOG,
+  ERA_CHECKLISTS,
+  GAME_TEMPLATES,
+  emulatorProfileForTemplate,
+  type EmulatorInfo,
+  type GameTemplate,
+  type ChecklistItem,
+} from "./gameTemplates.ts";
+export { healthReport, healthSummary, detectedBackends, isPortablePathAdvice, type HealthFacts, type HealthItem } from "./health.ts";
