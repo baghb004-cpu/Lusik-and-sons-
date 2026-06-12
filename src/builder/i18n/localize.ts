@@ -44,6 +44,7 @@ export const TRANSLATABLE_FIELDS: Record<string, FieldSpec> = {
   languageSwitcher: { strings: ["label"] },
   languageGate: { strings: ["heading", "subtext", "continueLabel"] },
   sectionJumper: { strings: ["upLabel", "downLabel"] },
+  appearanceSwitcher: { strings: ["lightLabel", "darkLabel", "autoLabel", "candleLabel"] },
 };
 
 function localizeProps(

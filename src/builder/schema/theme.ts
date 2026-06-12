@@ -46,9 +46,46 @@ export const glassPreset = z
 
 export type GlassPreset = z.infer<typeof glassPreset>;
 
+// ── Appearance: Day / Night / Candlelight (plan §19) ────────
+// Inspired by iOS Night Shift, with the workshop twist: besides a
+// real dark palette ("Night"), the site can light a CANDLE — a warm
+// amber wash with its own Less↔More Warm dial, an after-dark
+// schedule, and a visitor tap that lasts "until morning". Dark mode
+// is honest CSS: explicit choice via [data-bt-mode], OS preference
+// via prefers-color-scheme (works with zero JS). Visitor state is
+// per-device (localStorage); THIS schema holds only the design.
+const timeHHMM = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+
+export const candlelightSchema = z
+  .object({
+    /** The Night-Shift slider: 0 = off-white wash, 100 = deep amber. */
+    warmth: z.number().min(0).max(100).default(45),
+    /** Gentle brightness drop (%) layered under the warmth. */
+    dim: z.number().min(0).max(40).default(8),
+    /** Light the candle automatically after dark. */
+    scheduled: z.boolean().default(false),
+    start: timeHHMM.default("21:00"),
+    end: timeHHMM.default("07:00"),
+  })
+  .strict();
+
+export const appearanceSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    /** Dark-palette overrides per color token; missing keys auto-derive
+     *  (lightness-flipped) so one click yields a complete Night look. */
+    darkColors: z.record(z.string(), hexColor).default({}),
+    candlelight: candlelightSchema.default({ warmth: 45, dim: 8, scheduled: false, start: "21:00", end: "07:00" }),
+  })
+  .strict();
+
+export type Candlelight = z.infer<typeof candlelightSchema>;
+export type Appearance = z.infer<typeof appearanceSchema>;
+
 export const themeSchema = z
   .object({
     schemaVersion: z.number().int().min(1).default(CURRENT_SCHEMA_VERSION),
+    appearance: appearanceSchema.optional(),
     tokens: z
       .object({
         colors: z.record(z.string(), hexColor),

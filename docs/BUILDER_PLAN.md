@@ -908,6 +908,51 @@ direction dimmed at the edges.
 
 ---
 
+## 19. Appearance — Day / Night / Candlelight (shipped)
+
+Inspired by iOS Night Shift (the scheduled toggle, the "manually enable
+until tomorrow" switch, the Less↔More Warm slider) with the workshop
+twist: besides a real dark palette ("Night"), a site can light a
+**candle** — a warm amber wash over either mode, like stitching by
+candlelight. Three layers, each honest about what it needs:
+
+- **Night (dark mode), CSS-first.** `theme.appearance` (optional, schema
+  in `schema/theme.ts`) carries per-token `darkColors`;
+  `theme/appearance.ts` derives the rest automatically
+  (lightness-flipped, hue kept — `deriveDarkColors`) so enabling dark
+  mode is one click, and compiles: explicit-choice overrides under
+  `[data-bt-mode="dark"]`, plus a `prefers-color-scheme` rule so **auto
+  dark mode works with zero JavaScript**. Explicit Day always beats OS
+  dark.
+- **Utilities re-skin.** Appearance-enabled exports compile their
+  Tailwind palette to `rgb(var(--bt-rgb-*) / <alpha-value>)` channels, so
+  the variable flip restyles every utility — `bg-cream`, `text-ink`,
+  `bg-white/60`, alpha variants included — with no markup changes.
+- **Candlelight.** A fixed, pointer-events-none multiply-blended amber
+  wash (`::after`) plus a gentle dim (`::before`), strength on one CSS
+  variable. Theme dials: warmth (the Less↔More Warm slider), dim, and an
+  after-dark schedule. Visitor taps are Night-Shift-symmetric: candle ON
+  lasts **until morning**, OFF snoozes until morning, then the schedule
+  resumes.
+- **`appearanceSwitcher` block**: Day/Night/Auto pills + the candle
+  button + the warmth slider, glass-styled, labels translatable. Same
+  progressive pattern as sectionJumper: hidden until its inline script
+  runs (with the `[hidden] !important` guard), pressed state accent-
+  filled, reduced-motion honored. An anti-flash bootstrap goes in the
+  `<head>` of every exported page (applies the saved mode before first
+  paint); visitor state lives in `localStorage` (`bt_appearance_v1`) —
+  per-device, never sent anywhere.
+- **Editor**: a ThemeEditor "Appearance" section — enable toggle, the
+  Night palette with per-color overrides + "back to auto", warmth/dim
+  sliders, schedule times, and a live Day/Night/Candle preview strip.
+- **Native (SwiftUI)**: appearance on → `Theme.swift` ships dynamic
+  colors (`UIColor` trait provider) following the iPhone's light/dark
+  setting with the same Night palette; the switcher block renders
+  nothing natively (iOS Settings is the switcher) and Candlelight stays
+  web-only — stated in the generated README.
+
+---
+
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
 preview/build, and all data (documents, templates, themes, datasets, and

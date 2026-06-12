@@ -46,6 +46,6 @@ export {
   type Revision,
 } from "./documents.ts";
 
-export { themeSchema, glassPreset, type Theme, type GlassPreset } from "./theme.ts";
+export { themeSchema, glassPreset, appearanceSchema, candlelightSchema, type Theme, type GlassPreset, type Appearance, type Candlelight } from "./theme.ts";
 
 export { CURRENT_SCHEMA_VERSION, migrateDocument, SchemaVersionError } from "./migrate.ts";

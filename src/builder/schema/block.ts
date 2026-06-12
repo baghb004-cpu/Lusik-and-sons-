@@ -264,6 +264,26 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
 
+  // Day / Night / Candlelight switcher (plan §19). Visitor-facing
+  // appearance control: Day/Night/Auto pills plus the candle — a warm
+  // Night-Shift-style wash with a Less↔More Warm slider. Dark "auto"
+  // works with zero JS (prefers-color-scheme); the explicit buttons,
+  // persistence and the candle ship as the same inline progressive
+  // enhancement pattern as sectionJumper (hidden until JS runs).
+  appearanceSwitcher: z
+    .object({
+      style: z.enum(["pills", "icons"]).optional(), // icons = compact, label-less
+      showAuto: z.boolean().optional(), // default true
+      showCandle: z.boolean().optional(), // default true
+      showWarmth: z.boolean().optional(), // the warmth slider; default true
+      preset: z.string().min(1).optional(), // theme glass preset for the pill container
+      lightLabel: translatableSchema.optional(), // default "Day"
+      darkLabel: translatableSchema.optional(), // default "Night"
+      autoLabel: translatableSchema.optional(), // default "Auto"
+      candleLabel: translatableSchema.optional(), // default "Candlelight"
+    })
+    .strict(),
+
   // Mobile search entry point (plan §6 item 5). Progressive v1: an
   // anchor styled as a search pill/bar pointing at a search page; the
   // drawer/overlay open-modes wire up with the pill-nav phase.

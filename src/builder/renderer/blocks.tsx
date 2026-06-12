@@ -23,6 +23,8 @@ import { tokenToCss } from "./style.ts";
 import { glassPresetToCss } from "../theme/css.ts";
 import { resolveProductRef, type CatalogProductSnapshot, type CatalogSnapshot } from "../engine/commerce.ts";
 import { JUMPER_STOP_SELECTORS, jumperDomId, sectionJumperScript, sectionJumperCss } from "./jumperScript.ts";
+import { appearanceDomId, appearanceSwitcherScript, appearanceSwitcherCss, CANDLE_DEFAULTS } from "./appearanceScript.ts";
+import type { Candlelight } from "../schema/index.ts";
 
 export interface RenderContext {
   /** CMS surfaces for bound blocks, injected by the caller (Phase 4). */
@@ -48,6 +50,9 @@ export interface RenderContext {
   };
   /** Theme glass presets (Phase 5) for glass-styled blocks like pillNav. */
   glass?: GlassPreset[];
+  /** Candlelight config (theme.appearance.candlelight) — the appearance
+   *  switcher's script needs the schedule + default warmth. */
+  candle?: Candlelight;
   /** True inside the editor preview — fixed-position blocks render sticky
    *  so they stay inside the preview frame instead of escaping to the
    *  editor's own viewport. */
@@ -649,6 +654,96 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
         </nav>
         <style dangerouslySetInnerHTML={{ __html: sectionJumperCss(block.id, p.accent) }} />
         {ctx.editing ? null : <script dangerouslySetInnerHTML={{ __html: sectionJumperScript(block.id) }} />}
+      </>
+    );
+  },
+
+  // Day / Night / Candlelight switcher (plan §19). Same progressive
+  // pattern as sectionJumper: hidden until its inline script runs
+  // (mode toggling and the candle are inherently JS), while the AUTO
+  // dark path needs no JS at all — prefers-color-scheme CSS from the
+  // appearance compiler handles visitors who never touch this.
+  appearanceSwitcher: (block, ctx) => {
+    const p = block.props as {
+      style?: "pills" | "icons";
+      showAuto?: boolean;
+      showCandle?: boolean;
+      showWarmth?: boolean;
+      preset?: string;
+      lightLabel?: string;
+      darkLabel?: string;
+      autoLabel?: string;
+      candleLabel?: string;
+    };
+    const preset = ctx.glass?.find((g) => g.name === p.preset) ?? ctx.glass?.[0];
+    const glass: CSSProperties = preset ? (glassPresetToCss(preset) as CSSProperties) : FALLBACK_GLASS;
+    const domId = appearanceDomId(block.id);
+    const iconsOnly = p.style === "icons";
+
+    const icon = (name: "sun" | "moon" | "auto" | "candle") => (
+      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden="true">
+        {name === "sun" ? (
+          <>
+            <circle cx="12" cy="12" r="4" {...stroke} />
+            <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" {...stroke} />
+          </>
+        ) : name === "moon" ? (
+          <path d="M20 13.5A8 8 0 1110.5 4 6.5 6.5 0 0020 13.5z" {...stroke} />
+        ) : name === "auto" ? (
+          <>
+            <circle cx="12" cy="12" r="8" {...stroke} />
+            <path d="M12 4a8 8 0 010 16z" fill="currentColor" opacity="0.55" />
+          </>
+        ) : (
+          // the candle: flame over a wick
+          <path d="M12 3s3.5 3.4 3.5 6.2A3.5 3.5 0 0112 12.7a3.5 3.5 0 01-3.5-3.5C8.5 6.4 12 3 12 3zM9 15h6v6H9z" {...stroke} />
+        )}
+      </svg>
+    );
+
+    const modeBtn = (mode: "light" | "dark" | "auto", label: string, ic: "sun" | "moon" | "auto", pressed: boolean) => (
+      <button
+        type="button"
+        data-ap-mode={mode}
+        aria-pressed={pressed}
+        aria-label={label}
+        className="flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-transparent px-3 text-sm text-ink"
+      >
+        {icon(ic)}
+        {iconsOnly ? null : <span className="font-medium">{label}</span>}
+      </button>
+    );
+
+    return (
+      <>
+        <div id={domId} hidden={!ctx.editing} className="inline-flex flex-col gap-2">
+          <div role="group" aria-label="Appearance" className="flex w-fit items-center gap-1 rounded-full p-1" style={glass}>
+            {modeBtn("light", p.lightLabel ?? "Day", "sun", true)}
+            {modeBtn("dark", p.darkLabel ?? "Night", "moon", false)}
+            {p.showAuto !== false ? modeBtn("auto", p.autoLabel ?? "Auto", "auto", false) : null}
+            {p.showCandle !== false ? (
+              <button
+                type="button"
+                data-ap-candle
+                aria-pressed={false}
+                aria-label={p.candleLabel ?? "Candlelight"}
+                className="flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-transparent px-3 text-sm text-ink"
+              >
+                {icon("candle")}
+                {iconsOnly ? null : <span className="font-medium">{p.candleLabel ?? "Candlelight"}</span>}
+              </button>
+            ) : null}
+          </div>
+          {p.showCandle !== false && p.showWarmth !== false ? (
+            <label data-ap-warmthrow hidden={!ctx.editing} className="flex items-center gap-2 text-xs text-muted">
+              <span>Less warm</span>
+              <input type="range" min={0} max={100} step={1} defaultValue={(ctx.candle ?? CANDLE_DEFAULTS).warmth} data-ap-warmth aria-label="Candlelight warmth" className="w-36 accent-ink" />
+              <span>More warm</span>
+            </label>
+          ) : null}
+        </div>
+        <style dangerouslySetInnerHTML={{ __html: appearanceSwitcherCss(block.id) }} />
+        {ctx.editing ? null : <script dangerouslySetInnerHTML={{ __html: appearanceSwitcherScript(block.id, ctx.candle ?? CANDLE_DEFAULTS) }} />}
       </>
     );
   },

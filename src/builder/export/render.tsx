@@ -15,6 +15,7 @@ export interface RenderBodyInput {
   glass?: GlassPreset[];
   cms?: { featured?: string };
   i18n?: RenderContext["i18n"];
+  candle?: RenderContext["candle"];
 }
 
 export async function renderPageBody(input: RenderBodyInput): Promise<string> {
@@ -29,6 +30,7 @@ export async function renderPageBody(input: RenderBodyInput): Promise<string> {
       glass={input.glass}
       cms={input.cms}
       i18n={input.i18n}
+      candle={input.candle}
       withIds
     />
   );

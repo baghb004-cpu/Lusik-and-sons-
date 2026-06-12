@@ -98,17 +98,26 @@ async function loadI18n(storage: BuilderStorage) {
   return parsed.success ? parsed.data : DEFAULT_I18N_SETTINGS;
 }
 
-/** Compile the utility-CSS subset the emitted HTML actually uses. */
-async function compileCss(htmlDocs: string[]): Promise<string> {
+/** Compile the utility-CSS subset the emitted HTML actually uses.
+ *  `colorOverrides` (appearance-enabled exports) swaps the brand palette
+ *  to rgb(var(--bt-rgb-*)) channels so dark mode's variable flip re-skins
+ *  every utility — bg-cream, text-ink, bg-white/60, alpha variants, all
+ *  of it — with zero extra classes in the markup. */
+async function compileCss(htmlDocs: string[], colorOverrides?: Record<string, string>): Promise<string> {
   const [{ default: postcss }, { default: tailwindcss }] = await Promise.all([
     import("postcss"),
     import("tailwindcss"),
   ]);
-  const site = (await import("../../../tailwind.config.mjs")).default as { theme: unknown };
+  const site = (await import("../../../tailwind.config.mjs")).default as {
+    theme: { extend?: { colors?: Record<string, string> } } & Record<string, unknown>;
+  };
+  const theme = colorOverrides
+    ? { ...site.theme, extend: { ...site.theme.extend, colors: { ...site.theme.extend?.colors, ...colorOverrides } } }
+    : site.theme;
   const result = await postcss([
     tailwindcss({
       content: htmlDocs.map((raw) => ({ raw, extension: "html" })),
-      theme: site.theme,
+      theme,
       corePlugins: { preflight: true },
     } as never),
   ]).process("@tailwind base;\n@tailwind components;\n@tailwind utilities;", { from: undefined });
@@ -151,6 +160,19 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
       return slug === "index" ? `${prefix}index.html` : `${prefix}${slug}/index.html`;
     };
 
+    // Day/Night/Candlelight (plan §19): when the theme enables appearance,
+    // compile its CSS once, build the anti-flash bootstrap, and swap the
+    // Tailwind palette to variable channels.
+    const appearanceOn = !!theme?.appearance?.enabled;
+    const candle = theme?.appearance?.candlelight;
+    const appearanceForPage = appearanceOn && theme
+      ? await (async () => {
+          const { appearanceCss } = await import("../theme/appearance.ts");
+          const { appearanceBootstrap } = await import("../renderer/appearanceScript.ts");
+          return { css: appearanceCss(theme), bootstrap: appearanceBootstrap(candle) };
+        })()
+      : undefined;
+
     const rendered: Array<{ slug: string; outFile: string; locale: string; layers: OverrideLayer[]; page: Page; bodyHtml: string }> = [];
     for (const locale of i18n.locales) {
       for (const { page, layers } of pages) {
@@ -162,12 +184,16 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
           catalog: input.catalog,
           glass,
           cms: input.cms,
+          candle,
           i18n: { locales: localeList, current: locale, hrefForLocale: (c) => pagePathFor(c, page.slug) },
         });
         rendered.push({ slug: page.slug, outFile: outFileFor(locale, page.slug), locale, layers, page, bodyHtml });
       }
     }
-    const css = await compileCss(rendered.map((r) => r.bodyHtml));
+    const colorOverrides = appearanceOn && theme
+      ? (await import("../theme/appearance.ts")).appearanceTailwindColors(theme)
+      : undefined;
+    const css = await compileCss(rendered.map((r) => r.bodyHtml), colorOverrides);
     await write("styles.css", css);
     if (i18n.locales.length > 1 || i18n.locales[0] !== "en") {
       await write("i18n.css", buildI18nCss(i18n.locales));
@@ -187,6 +213,7 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
         lang: r.locale,
         dir: loc?.dir ?? (isRtl(r.locale) ? "rtl" : "ltr"),
         i18nHref: i18nActive ? `${"../".repeat(depth)}i18n.css` : undefined,
+        appearance: appearanceForPage,
       });
       await write(r.outFile, html);
     }

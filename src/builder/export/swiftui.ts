@@ -21,6 +21,7 @@
 // ============================================================
 
 import type { Block, Page, RichTextDoc, RichTextNode, Theme } from "../schema/index.ts";
+import { nightPalette } from "../theme/appearance.ts";
 
 /** Swift string literal escaping (\ and " and newlines). */
 export function escapeSwift(s: string): string {
@@ -167,6 +168,11 @@ export function blockToSwift(block: Block): string {
     // confusing placeholder.
     case "sectionJumper":
       return `EmptyView()`;
+    // iOS owns appearance: the app's Theme colors are dynamic (see
+    // Theme.swift when dark mode is enabled), so the system Settings
+    // toggle IS the switcher. An in-app override control would fight it.
+    case "appearanceSwitcher":
+      return `EmptyView()`;
     default:
       return placeholder(block.type);
   }
@@ -237,8 +243,37 @@ function hexToSwiftColor(hex: string): string {
   return `Color(red: ${r.toFixed(3)}, green: ${g.toFixed(3)}, blue: ${b.toFixed(3)})`;
 }
 
-function themeSwift(theme: Theme | null): string {
+export function themeSwift(theme: Theme | null): string {
   const c = theme?.tokens.colors ?? {};
+  // Appearance enabled → native dark mode: every Theme color becomes a
+  // dynamic UIColor that follows the system light/dark setting, using the
+  // same Night palette (explicit darkColors over the derived flip) as the
+  // web export. Candlelight stays a web feature (noted in the README).
+  if (theme?.appearance?.enabled) {
+    const dark = nightPalette(theme);
+    const adaptive = (name: string, fallback: string, darkFallback: string) =>
+      `adaptive(${hexToSwiftColor(c[name] ?? fallback)}, ${hexToSwiftColor(dark[name] ?? darkFallback)})`;
+    return `import SwiftUI
+import UIKit
+
+// Generated from your builder theme tokens — WITH dark mode. Each color
+// is dynamic: it follows the device's light/dark appearance using the
+// same Night palette as your website export.
+enum Theme {
+    static let ink = ${adaptive("ink", "#1A1612", "#F0E9DC")}
+    static let cream = ${adaptive("cream", "#F5EFE3", "#171310")}
+    static let accent = ${adaptive("accent", "#B08842", "#C49A52")}
+    static let muted = ${adaptive("muted", "#6B655D", "#A39C92")}
+    static let paper = ${adaptive("paper", "#FFFFFF", "#262119")}
+
+    private static func adaptive(_ light: Color, _ dark: Color) -> Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light)
+        })
+    }
+}
+`;
+  }
   const color = (name: string, fallback: string) => hexToSwiftColor(c[name] ?? fallback);
   return `import SwiftUI
 
@@ -408,6 +443,11 @@ expect to iterate.
 - Blocks with no native mapping show a labeled placeholder — search the
   project for "not yet available natively" to find them.
 - Theme colors live in Theme.swift; edit there to restyle everything.
+- **Dark mode:** if your builder theme has appearance enabled, Theme.swift
+  ships dynamic colors that follow the iPhone's light/dark setting — same
+  Night palette as the website. The web appearanceSwitcher block renders
+  nothing natively (iOS Settings is the switcher), and Candlelight is a
+  web-only effect.
 `;
 
   return files;

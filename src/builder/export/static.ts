@@ -36,10 +36,14 @@ export interface StaticPageInput {
   lang?: string;
   dir?: "ltr" | "rtl";
   i18nHref?: string;
+  /** Day/Night/Candlelight (plan §19): the compiled appearance CSS and the
+   *  anti-flash <head> bootstrap that applies the visitor's saved mode
+   *  before first paint. Both optional — omitted = today's zero-JS pages. */
+  appearance?: { css: string; bootstrap: string };
 }
 
 export function assembleHtmlDocument(input: StaticPageInput): string {
-  const { page, bodyHtml, layers, theme, stylesheetHref, siteName, pwa, lang, dir, i18nHref } = input;
+  const { page, bodyHtml, layers, theme, stylesheetHref, siteName, pwa, lang, dir, i18nHref, appearance } = input;
   const title = escapeHtml(page.seo.title ?? `${page.title} — ${siteName}`);
   const description = page.seo.description ? `\n    <meta name="description" content="${escapeHtml(page.seo.description)}" />` : "";
   const og = page.seo.ogImage ? `\n    <meta property="og:image" content="${escapeHtml(page.seo.ogImage)}" />` : "";
@@ -50,6 +54,9 @@ export function assembleHtmlDocument(input: StaticPageInput): string {
     : "";
   const i18nLink = i18nHref ? `\n    <link rel="stylesheet" href="${i18nHref}" />` : "";
   const pwaScript = pwa ? `\n    ${SW_REGISTER_SNIPPET}` : "";
+  const appearanceCssBlock = appearance ? `\n${appearance.css}` : "";
+  // The bootstrap runs in <head>, before first paint — no wrong-mode flash.
+  const appearanceScript = appearance ? `\n    <script>${appearance.bootstrap}</script>` : "";
 
   return `<!doctype html>
 <html lang="${lang ?? "en"}" dir="${dir ?? "ltr"}">
@@ -59,9 +66,9 @@ export function assembleHtmlDocument(input: StaticPageInput): string {
     <title>${title}</title>${description}${og}${pwaHead}
     <link rel="stylesheet" href="${stylesheetHref}" />${i18nLink}
     <style>
-${themeCss}
+${themeCss}${appearanceCssBlock}
 ${mediaCss}
-    </style>${pwaScript}
+    </style>${appearanceScript}${pwaScript}
   </head>
   <body class="bg-cream font-body text-ink">
     <main>

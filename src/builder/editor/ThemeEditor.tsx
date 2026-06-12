@@ -13,9 +13,10 @@
 // ============================================================
 
 import { useMemo } from "react";
-import { themeSchema, type GlassPreset, type Theme } from "../schema/index.ts";
+import { themeSchema, type Appearance, type GlassPreset, type Theme } from "../schema/index.ts";
 import { checkContrast } from "../engine/index.ts";
 import { glassPresetToCss } from "../theme/css.ts";
+import { nightPalette } from "../theme/appearance.ts";
 
 type Obj = Record<string, unknown>;
 
@@ -99,7 +100,141 @@ export function ThemeEditor({ value, onChange }: { value: Obj; onChange: (next: 
           ))}
         </div>
       </Section>
+
+      <AppearanceSection theme={theme} value={value} onChange={onChange} />
     </div>
+  );
+}
+
+// ── Day / Night / Candlelight (plan §19) ────────────────────
+const DEFAULT_APPEARANCE: Appearance = {
+  enabled: false,
+  darkColors: {},
+  candlelight: { warmth: 45, dim: 8, scheduled: false, start: "21:00", end: "07:00" },
+};
+
+function AppearanceSection({ theme, value, onChange }: { theme: Theme; value: Obj; onChange: (next: Obj) => void }) {
+  const a = theme.appearance ?? DEFAULT_APPEARANCE;
+  const setA = (mutate: (draft: Appearance) => void) => {
+    const next = structuredClone(value) as Obj;
+    const draft = (next.appearance ?? structuredClone(DEFAULT_APPEARANCE)) as Appearance;
+    mutate(draft);
+    next.appearance = draft as unknown as Obj[keyof Obj];
+    onChange(next);
+  };
+  const night = nightPalette(theme);
+  const candleAlpha = (a.candlelight.warmth / 100) * 0.45;
+
+  return (
+    <Section title="Appearance — Day / Night / Candlelight" open>
+      <label className="mb-2 flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={a.enabled} onChange={(e) => setA((d) => void (d.enabled = e.target.checked))} className="h-4 w-4 accent-ink" />
+        Give visitors Day / Night modes (+ the candle)
+      </label>
+      <p className="mb-3 text-xs text-muted">
+        Night follows the visitor’s device automatically — no JavaScript needed — and a page can add an
+        “appearanceSwitcher” block for explicit Day/Night/Candle buttons. Candlelight is the warm after-dark
+        wash: it lays soft amber over either mode, like stitching by candlelight.
+      </p>
+
+      {/* live three-mode preview */}
+      <div className="mb-3 grid grid-cols-3 gap-2" aria-hidden="true">
+        {([
+          ["Day", theme.tokens.colors, false],
+          ["Night", night, false],
+          ["Candle", theme.tokens.colors, true],
+        ] as Array<[string, Record<string, string>, boolean]>).map(([label, colors, candle]) => (
+          <div key={label} className="relative overflow-hidden rounded-lg border border-ink/10 p-2" style={{ background: colors.cream ?? "#F5EFE3" }}>
+            <p className="text-[11px] font-medium" style={{ color: colors.ink ?? "#1A1612" }}>{label}</p>
+            <p className="text-[10px]" style={{ color: colors.muted ?? "#6B655D" }}>Hand-stitched</p>
+            <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[9px] text-white" style={{ background: colors.accent ?? "#B08842" }}>Shop</span>
+            {candle ? <div className="pointer-events-none absolute inset-0" style={{ background: `rgb(255 147 41 / ${candleAlpha.toFixed(3)})`, mixBlendMode: "multiply" }} /> : null}
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-3">
+        <div className="mb-1 flex items-center justify-between">
+          <h4 className="text-xs uppercase tracking-wide text-muted">Night palette</h4>
+          <button
+            type="button"
+            onClick={() => setA((d) => void (d.darkColors = {}))}
+            className="rounded-full border border-ink/20 px-2.5 py-0.5 text-[11px] hover:bg-cream"
+            title="Clear overrides — every color derives from its Day value again"
+          >
+            ↺ Back to auto palette
+          </button>
+        </div>
+        <div className="space-y-1.5">
+          {Object.keys(theme.tokens.colors).map((name) => (
+            <div key={name} className="flex items-center gap-2">
+              <input
+                type="color"
+                value={(night[name] ?? "#000000").slice(0, 7)}
+                onChange={(e) => setA((d) => void (d.darkColors = { ...d.darkColors, [name]: e.target.value }))}
+                className="h-7 w-9 cursor-pointer rounded border border-ink/15"
+                aria-label={`${name} night color`}
+              />
+              <span className="w-20 text-xs font-medium">{name}</span>
+              <span className="font-mono text-[11px] text-muted">{night[name]}</span>
+              {!a.darkColors[name] ? <span className="text-[10px] text-muted">(auto)</span> : null}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <h4 className="mb-1 text-xs uppercase tracking-wide text-muted">Candlelight</h4>
+      <label className="block text-xs">
+        <span className="flex justify-between">
+          <span>Less warm</span>
+          <span>More warm</span>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={a.candlelight.warmth}
+          onChange={(e) => setA((d) => void (d.candlelight.warmth = Number(e.target.value)))}
+          className="w-full accent-ink"
+          aria-label="Candlelight warmth"
+        />
+      </label>
+      <label className="mt-1 block text-xs">
+        <span className="flex justify-between">
+          <span>Dim</span>
+          <span className="font-mono text-muted">{a.candlelight.dim}%</span>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={40}
+          step={1}
+          value={a.candlelight.dim}
+          onChange={(e) => setA((d) => void (d.candlelight.dim = Number(e.target.value)))}
+          className="w-full accent-ink"
+          aria-label="Candlelight dim"
+        />
+      </label>
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={a.candlelight.scheduled} onChange={(e) => setA((d) => void (d.candlelight.scheduled = e.target.checked))} className="h-3.5 w-3.5 accent-ink" />
+          Light it after dark
+        </label>
+        <label className="flex items-center gap-1">
+          from
+          <input type="time" value={a.candlelight.start} onChange={(e) => setA((d) => void (d.candlelight.start = e.target.value))} className="rounded border border-ink/15 px-1 py-0.5" aria-label="Candlelight start time" />
+        </label>
+        <label className="flex items-center gap-1">
+          until
+          <input type="time" value={a.candlelight.end} onChange={(e) => setA((d) => void (d.candlelight.end = e.target.value))} className="rounded border border-ink/15 px-1 py-0.5" aria-label="Candlelight end time" />
+        </label>
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        Visitors can always tap the candle themselves — on lasts until morning, off snoozes it until morning. Their
+        choice (and warmth) is remembered on their device.
+      </p>
+    </Section>
   );
 }
 

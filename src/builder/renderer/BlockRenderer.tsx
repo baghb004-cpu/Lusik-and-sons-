@@ -26,6 +26,8 @@ export interface BlockRendererProps {
   inventory?: RenderContext["inventory"];
   /** Offline i18n context for the language switcher / gate. */
   i18n?: RenderContext["i18n"];
+  /** Candlelight config (theme.appearance) for the appearance switcher. */
+  candle?: RenderContext["candle"];
   /** Editor preview mode: show placeholders for unknown types + block ids. */
   editing?: boolean;
   /** Emit data-block-id without editor behavior — the static exporter's
@@ -33,16 +35,17 @@ export interface BlockRendererProps {
   withIds?: boolean;
 }
 
-export function BlockRenderer({ blocks, cms, glass, catalog, inventory, i18n, editing = false, withIds = false }: BlockRendererProps) {
+export function BlockRenderer({ blocks, cms, glass, catalog, inventory, i18n, candle, editing = false, withIds = false }: BlockRendererProps) {
   const ctx: RenderContext = {
     cms,
     glass,
     catalog,
     inventory,
     i18n,
+    candle,
     editing,
     renderChildren: (children) => (
-      <BlockRenderer blocks={children} cms={cms} glass={glass} catalog={catalog} inventory={inventory} i18n={i18n} editing={editing} withIds={withIds} />
+      <BlockRenderer blocks={children} cms={cms} glass={glass} catalog={catalog} inventory={inventory} i18n={i18n} candle={candle} editing={editing} withIds={withIds} />
     ),
   };
 
