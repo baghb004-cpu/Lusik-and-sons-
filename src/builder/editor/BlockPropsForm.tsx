@@ -78,7 +78,7 @@ export function BlockPropsForm({ block, catalog, locales, defaultLocale, onChang
   };
 
   return (
-    <div className="space-y-2 rounded-xl border border-ink/10 p-3">
+    <div data-bpf className="space-y-2 rounded-xl border border-ink/10 p-3">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-medium uppercase tracking-wide text-muted">{block.type}</h4>
         {locales.length > 1 ? (

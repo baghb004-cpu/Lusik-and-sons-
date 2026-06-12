@@ -76,6 +76,9 @@ import { AppPanel } from "./AppPanel.tsx";
 import { PresetsPanel } from "./PresetsPanel.tsx";
 import { MediaPanel } from "./MediaPanel.tsx";
 import { SeoPanel } from "./SeoPanel.tsx";
+import { AuditPanel } from "./AuditPanel.tsx";
+import { HelpPanel } from "./HelpPanel.tsx";
+import { OnboardingTour, TOUR_DONE_KEY } from "./OnboardingTour.tsx";
 import { ResponsivePreviewPanel } from "./ResponsivePreviewPanel.tsx";
 import { applyPreset, rectScan, type ViewportPreset, type LayoutIssue, type MeasuredRect } from "../viewport/index.ts";
 import {
@@ -247,6 +250,10 @@ export function BuilderShell() {
   const [screensOpen, setScreensOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<ViewportPreset | null>(null);
   const [liveIssues, setLiveIssues] = useState<LayoutIssue[]>([]);
+  // Help modal + first-run tour + save freshness (roadmap #4/#12/#14)
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   // Shared site chrome (header/footer blocks) for page previews
   const [chromeDoc, setChromeDoc] = useState<{ header: Block[]; footer: Block[] } | null>(null);
   // Offline languages
@@ -299,6 +306,17 @@ export function BuilderShell() {
     [token]
   );
 
+  // Unsaved work warns before the tab closes (roadmap #12).
+  const dirtyRef = useRef(false);
+  dirtyRef.current = !!doc?.dirty;
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (dirtyRef.current) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
+
   // ── document list (both roots) ────────────────────────────
   const refreshList = useCallback(async () => {
     const [b, c] = await Promise.all([
@@ -319,6 +337,10 @@ export function BuilderShell() {
       api(`/api/builder/docs?path=${encodeURIComponent(THEME_PATH)}`)
         .then(async (res) => (res.ok ? setThemeDoc((await res.json()).content as Obj) : null))
         .catch(() => null);
+      // First visit → the five-step tour (skippable, shows once).
+      try {
+        if (!localStorage.getItem(TOUR_DONE_KEY)) setTourOpen(true);
+      } catch { /* private mode */ }
       // Load the shared chrome so page previews show the real header/footer.
       api("/api/builder/docs?path=builder%2Fchrome.json")
         .then(async (res) => {
@@ -524,6 +546,7 @@ export function BuilderShell() {
     setJsonText(JSON.stringify(content, null, 2));
     setIssues([]);
     setStatus(`Saved ✓ (${body.backend})`);
+    setSavedAt(Date.now());
   };
 
   // ── page & template operations (Phase 6) ──────────────────
@@ -883,6 +906,8 @@ export function BuilderShell() {
     } else if (e.altKey && e.key === "ArrowDown" && selectedBlockId) {
       e.preventDefault();
       handleMoveBy(1);
+    } else if (e.key === "?" && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+      setHelpOpen(true);
     } else if (e.key === "Escape") {
       setSelectedBlockId(null);
     }
@@ -994,6 +1019,8 @@ export function BuilderShell() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 font-body text-ink">
+      {helpOpen ? <HelpPanel onClose={() => setHelpOpen(false)} /> : null}
+      {tourOpen ? <OnboardingTour onDone={() => setTourOpen(false)} /> : null}
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl">Baghdo’s Workshop</h1>
@@ -1023,6 +1050,15 @@ export function BuilderShell() {
             title="Screen ratios & adaptive layout"
           >
             ▢ Screens
+          </button>
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            className="rounded-full border border-ink/20 px-3 py-1 text-sm"
+            title="Help & keyboard shortcuts"
+            aria-label="Help"
+          >
+            ?
           </button>
           {(["desktop", "tablet", "mobile"] as Device[]).map((d) => (
             <button
@@ -1264,6 +1300,16 @@ export function BuilderShell() {
                   setSelectedBlockId(hit.getAttribute("data-block-id"));
                 }
               }}
+              onDoubleClick={(e) => {
+                const hit = (e.target as HTMLElement).closest("[data-block-id]");
+                if (!hit) return;
+                setSelectedBlockId(hit.getAttribute("data-block-id"));
+                // jump into the generated form (roadmap #3)
+                setTimeout(() => {
+                  const field = document.querySelector<HTMLElement>("[data-bpf] input, [data-bpf] textarea, [data-bpf] select");
+                  field?.focus();
+                }, 50);
+              }}
             >
               {themeCss ? <style>{themeCss}</style> : null}
               {selectedBlockId ? (
@@ -1394,7 +1440,11 @@ export function BuilderShell() {
               <div className="flex items-center justify-between gap-2">
                 <h2 className="truncate text-sm font-medium" title={doc.path}>
                   {doc.path}
-                  {doc.dirty ? <span className="ml-1 text-accent">•</span> : null}
+                  {doc.dirty ? (
+                    <span className="ml-1 text-accent" title="Unsaved changes — ⌘S saves">• unsaved</span>
+                  ) : savedAt ? (
+                    <span className="ml-1 text-[10px] font-normal text-muted">saved {new Date(savedAt).toLocaleTimeString()}</span>
+                  ) : null}
                 </h2>
                 <div className="flex shrink-0 gap-2">
                   {formFields || isThemeDoc || isBuilderPage || isShippingDoc || isAppDoc || isServicesDoc ? (
@@ -1467,6 +1517,12 @@ export function BuilderShell() {
                     siteName="Lusik & Sons"
                     onChange={(seo) => commitPage({ ...(doc!.content as object), seo } as never, layers)}
                   />
+                  <AuditPanel
+                    page={parsedPage}
+                    theme={themeDoc ? (themeSchema.safeParse(themeDoc).data ?? null) : null}
+                    locales={i18nSettings.locales}
+                    defaultLocale={i18nSettings.defaultLocale}
+                  />
                   <Inspector
                     blocks={previewBlocks ?? parsedPage.sections}
                     layers={layers}
@@ -1516,6 +1572,20 @@ export function BuilderShell() {
                         });
                         const body = await res.json();
                         setStatus(res.ok ? `SwiftUI project generated → ${body.outDir} (open on a Mac in Xcode)` : body.error || "Export failed");
+                      } catch (e) {
+                        setStatus(String((e as Error).message || e));
+                      }
+                    }}
+                    onExportAndroid={async () => {
+                      setStatus("Exporting PWA + Android (TWA) scaffold…");
+                      try {
+                        const res = await api("/api/builder/export", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ target: "twa" }),
+                        });
+                        const body = await res.json();
+                        setStatus(res.ok ? `Android scaffold ready → ${body.outDir}/android (see README-ANDROID.md)` : body.error || "Export failed");
                       } catch (e) {
                         setStatus(String((e as Error).message || e));
                       }

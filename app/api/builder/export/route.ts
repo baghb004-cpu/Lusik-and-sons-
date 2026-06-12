@@ -30,8 +30,8 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return json(400, { error: "Body must be JSON" });
   }
-  if (!["static", "next", "pwa", "swiftui"].includes(body.target ?? "")) {
-    return json(400, { error: 'Expected { target: "static" | "next" | "pwa" | "swiftui", download?: boolean }' });
+  if (!["static", "next", "pwa", "swiftui", "twa"].includes(body.target ?? "")) {
+    return json(400, { error: 'Expected { target: "static" | "next" | "pwa" | "swiftui" | "twa", download?: boolean }' });
   }
 
   const storage = getBuilderStorage();

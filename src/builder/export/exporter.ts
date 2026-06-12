@@ -42,7 +42,7 @@ export interface ExportInput {
   storage: BuilderStorage;
   // pwa = static + manifest/sw/icons; swiftui = native iOS scaffold (App
   // Developer Mode's native path — compiles on a Mac).
-  target: "static" | "next" | "pwa" | "swiftui";
+  target: "static" | "next" | "pwa" | "swiftui" | "twa";
   outDir: string; // absolute
   catalog: CatalogSnapshot;
   cms?: { featured?: string };
@@ -152,8 +152,9 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     fileContents.push({ path: rel, content });
   };
 
-  if (input.target === "static" || input.target === "pwa") {
-    const pwa = input.target === "pwa";
+  if (input.target === "static" || input.target === "pwa" || input.target === "twa") {
+    // twa = the pwa export + an Android (Bubblewrap) scaffold on top.
+    const pwa = input.target === "pwa" || input.target === "twa";
     // Offline languages: render every page once PER ENABLED LOCALE into a
     // locale-prefixed path (default at root, others under /<code>/). The
     // switcher/gate link between them — zero-JS, real per-language URLs,
@@ -290,6 +291,11 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
       await write("sw.js", buildServiceWorker(new Date().toISOString().slice(0, 10)));
       await write("README-PWA.md", buildPwaReadme(siteName));
       await write("icons/README.txt", "Replace icon-192.png, icon-512.png and icon-maskable-512.png with real PNG artwork (same filenames).\n");
+      if (input.target === "twa") {
+        const { buildTwaManifest, buildAndroidReadme } = await import("./twa.ts");
+        await write("android/twa-manifest.json", buildTwaManifest({ siteName, webBaseURL: baseUrl, theme }));
+        await write("android/README-ANDROID.md", buildAndroidReadme(siteName, baseUrl));
+      }
     } else {
       await write("README-DEPLOY.md", staticReadme(siteName, pages.length));
     }

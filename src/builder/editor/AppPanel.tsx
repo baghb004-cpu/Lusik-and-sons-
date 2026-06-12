@@ -33,11 +33,13 @@ export function AppPanel({
   onChange,
   onExportPwa,
   onExportSwiftUI,
+  onExportAndroid,
 }: {
   value: Obj;
   onChange: (next: Obj) => void;
   onExportPwa: () => void;
   onExportSwiftUI: () => void;
+  onExportAndroid: () => void;
 }) {
   const parsed = useMemo(() => appProjectSchema.safeParse(value), [value]);
   if (!parsed.success) {
@@ -128,8 +130,11 @@ export function AppPanel({
         <button type="button" onClick={onExportSwiftUI} className="mt-2 rounded-full border border-ink/25 px-4 py-1.5">
           Export SwiftUI (iOS) project ↓
         </button>
+        <button type="button" onClick={onExportAndroid} className="ml-2 mt-2 rounded-full border border-ink/25 px-4 py-1.5">
+          Export Android (TWA) project ↓
+        </button>
         <p className="mt-1 text-[11px] text-muted">
-          Generates an Xcode project from your pages. Build it on a Mac (or a rented cloud Mac) → run in the iOS Simulator → TestFlight needs a paid Apple Developer account. Commerce links out to the web; no in-app purchase code is generated.
+          iOS: generates an Xcode project from your pages — build on a Mac (or a rented cloud Mac); TestFlight needs a paid Apple Developer account. Android: the PWA export plus a Bubblewrap (Trusted Web Activity) scaffold — builds on ANY computer, Play Store needs a one-time $25 account. Commerce links out to the web; no in-app purchase code is generated.
         </p>
       </details>
 
