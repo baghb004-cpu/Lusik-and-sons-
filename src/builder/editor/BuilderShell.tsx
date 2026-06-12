@@ -63,6 +63,13 @@ import {
   type OverrideLayer,
 } from "../schema/index.ts";
 import { BlockRenderer } from "../renderer/index.ts";
+// The real catalog (generated, gate-checked) — editor chunk only, for
+// commerce-block preview + live binding validation. The featured pick
+// rides the same generated pages data.
+import { CATALOG } from "../../data/catalog.js";
+import { CMS_PAGES } from "../../data/pagesData.generated.js";
+import { validateCommerceRefs, type CatalogSnapshot } from "../engine/commerce.ts";
+import { INSERTABLE_TYPES, newDefaultBlock, type InsertableType } from "./newBlock.ts";
 import { Inspector } from "./Inspector.tsx";
 import { HitboxOverlay, type HitboxReport } from "./HitboxOverlay.tsx";
 import { CanvasToolbar } from "./CanvasToolbar.tsx";
@@ -527,12 +534,27 @@ export function BuilderShell() {
   };
 
   // ── live validation + preview (builder pages only) ────────
+  // Catalog snapshot + featured pick for commerce blocks (editor copy of
+  // what published pages get injected at build).
+  const catalogSnapshot = useMemo<CatalogSnapshot>(
+    () =>
+      Object.fromEntries(
+        Object.entries(CATALOG as Record<string, { products: CatalogSnapshot[string] }>).map(([cat, c]) => [cat, c.products])
+      ),
+    []
+  );
+  const cmsContext = useMemo(() => {
+    const f = (CMS_PAGES as { home?: { featured?: { category: string; slug: string } } }).home?.featured;
+    return { featured: f ? `${f.category}/${f.slug}` : undefined };
+  }, []);
+
   const parsedPage = useMemo(() => {
     if (!doc || !doc.path.startsWith("builder/pages/")) return null;
     const result = validatePage(doc.content);
-    setIssues(result.issues);
+    const commerce = result.page ? validateCommerceRefs(result.page.sections, catalogSnapshot) : [];
+    setIssues([...result.issues, ...commerce]);
     return result.page;
-  }, [doc]);
+  }, [doc, catalogSnapshot]);
 
   const resolved = useMemo(() => {
     if (!parsedPage) return null;
@@ -929,7 +951,7 @@ export function BuilderShell() {
                   </div>
                 </>
               ) : null}
-              <BlockRenderer blocks={previewBlocks} glass={glassPresets} editing />
+              <BlockRenderer blocks={previewBlocks} glass={glassPresets} catalog={catalogSnapshot} cms={cmsContext} editing />
               {device === "mobile" && safeAreaOn ? (
                 <div className="pointer-events-none sticky bottom-0 z-10 h-7 bg-ink/15 text-center text-[10px] leading-7 text-ink/60" aria-hidden="true">
                   home indicator — env(safe-area-inset-bottom)
@@ -1024,6 +1046,13 @@ export function BuilderShell() {
 
               {isBuilderPage && !rawMode && parsedPage ? (
                 <div className="max-h-[62vh] overflow-y-auto">
+                  <AddBlockMenu
+                    onAdd={(type) => {
+                      const block = newDefaultBlock(type, catalogSnapshot);
+                      withSections((s) => [...s, block]);
+                      setSelectedBlockId(block.id);
+                    }}
+                  />
                   {!parsedPage.sections.some((b) => b.type === "pillNav") ? (
                     <button
                       type="button"
@@ -1124,6 +1153,36 @@ export function BuilderShell() {
           onSubmit={submitDialog}
         />
       ) : null}
+    </div>
+  );
+}
+
+function AddBlockMenu({ onAdd }: { onAdd: (type: InsertableType) => void }) {
+  const [value, setValue] = useState<"" | InsertableType>("");
+  return (
+    <div className="mb-2 flex gap-1.5">
+      <select
+        value={value}
+        onChange={(e) => setValue(e.target.value as InsertableType)}
+        className="min-w-0 flex-1 rounded-lg border border-ink/15 bg-white/80 px-2 py-1.5 text-xs"
+        aria-label="Block type to add"
+      >
+        <option value="" disabled>+ Add block…</option>
+        {INSERTABLE_TYPES.map((t) => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
+      <button
+        type="button"
+        disabled={!value}
+        onClick={() => {
+          if (value) onAdd(value);
+          setValue("");
+        }}
+        className="rounded-full bg-ink px-3 py-1 text-xs text-cream disabled:opacity-40"
+      >
+        Add
+      </button>
     </div>
   );
 }

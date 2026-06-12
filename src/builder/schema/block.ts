@@ -29,6 +29,13 @@ export function newId(prefix = "b"): string {
 // ── shared fragments ────────────────────────────────────────
 const galleryImage = z.object({ src: imageSrc, alt: z.string() }).strict();
 
+// Catalog reference: "category/slug" into the generated, gate-checked
+// catalog. Commerce blocks carry NO price/name fields at all — display
+// data always resolves from the catalog at render, so a builder page
+// physically cannot show a price Stripe won't charge (plan §7).
+export const PRODUCT_REF_RE = /^[a-z0-9-]+\/[a-z0-9-]+$/;
+export const productRef = z.string().regex(PRODUCT_REF_RE);
+
 // Icon names the renderer ships SVGs for (renderer/blocks.tsx PILL_ICON_SVGS
 // must cover every name here — locked together by a unit test).
 export const PILL_ICONS = [
@@ -98,11 +105,13 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     .strict(),
   gallery: z
     .object({
-      images: z.array(galleryImage).min(1),
+      images: z.array(galleryImage).min(1).optional(),
+      product: productRef.optional(), // bind to a product's photo set instead
       layout: z.enum(["grid", "carousel"]),
       columns: z.number().int().min(1).max(4).optional(),
     })
-    .strict(),
+    .strict()
+    .refine((g) => g.images || g.product, { message: "gallery needs images or a product binding" }),
   spacer: z.object({ size: z.string().min(1) }).strict(),
   button: z
     .object({
@@ -156,6 +165,76 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
       showLabels: z.boolean().optional(),
       heightPx: z.number().int().min(48).max(80).optional(),
       radiusPx: z.number().int().min(8).max(40).optional(),
+    })
+    .strict(),
+
+  // ── Commerce blocks (plan §7): bind, never own ────────────
+  productCard: z
+    .object({
+      product: productRef,
+      showPrice: z.boolean().optional(),
+      showTagline: z.boolean().optional(),
+    })
+    .strict(),
+  productGrid: z
+    .object({
+      category: z.string().regex(/^[a-z0-9-]+$/),
+      columns: z.number().int().min(1).max(4).optional(),
+      limit: z.number().int().min(1).max(24).optional(),
+      includeComingSoon: z.boolean().optional(),
+    })
+    .strict(),
+  featuredProduct: z
+    .object({
+      // "cms:featured" follows the home featured pick (build-validated to
+      // be live); an explicit ref pins one product.
+      binding: z.union([z.literal("cms:featured"), productRef]),
+      headline: z.string().optional(),
+    })
+    .strict(),
+  relatedProducts: z
+    .object({
+      product: productRef, // shows OTHER products from the same category
+      limit: z.number().int().min(1).max(8).optional(),
+    })
+    .strict(),
+  // The color swatch builder (§17 req. 14). Standalone swatches, or bind
+  // a product to render its colorways.
+  swatchRow: z
+    .object({
+      product: productRef.optional(),
+      swatches: z
+        .array(
+          z
+            .object({
+              id: blockId,
+              color: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/),
+              name: z.string().min(1).max(30),
+              description: z.string().max(120).optional(),
+            })
+            .strict()
+        )
+        .max(12)
+        .optional(),
+      layout: z.enum(["horizontal", "vertical"]),
+      size: z.enum(["sm", "md", "lg"]).optional(),
+      showNames: z.boolean().optional(),
+    })
+    .strict()
+    .refine((s) => s.product || (s.swatches && s.swatches.length > 0), {
+      message: "swatchRow needs swatches or a product binding",
+    }),
+  inventoryBadge: z
+    .object({ product: productRef })
+    .strict(),
+  // OPAQUE buy box: name/price from the catalog + a CTA to the product's
+  // real page, where the battle-tested cart/checkout code lives. The
+  // visual editor can place the door to checkout — never redecorate
+  // what's behind it (plan §5 tier 3).
+  buyBox: z
+    .object({
+      product: productRef,
+      ctaLabel: z.string().min(1).max(30).optional(),
     })
     .strict(),
 

@@ -23,6 +23,8 @@ export {
   CONTAINER_TYPES,
   BLOCK_ID_RE,
   PILL_ICONS,
+  productRef,
+  PRODUCT_REF_RE,
   type Block,
 } from "./block.ts";
 

@@ -21,13 +21,21 @@ import { RichText } from "./RichText.tsx";
 import { cx } from "./style.ts";
 import { tokenToCss } from "./style.ts";
 import { glassPresetToCss } from "../theme/css.ts";
+import { resolveProductRef, type CatalogProductSnapshot, type CatalogSnapshot } from "../engine/commerce.ts";
 
 export interface RenderContext {
   /** CMS surfaces for bound blocks, injected by the caller (Phase 4). */
   cms?: {
     announcement?: { enabled: boolean; message: string; link?: string; linkLabel?: string };
     faq?: Array<{ q: string; a: RichTextDoc }>;
+    /** The home featured pick (category/slug), for featuredProduct's cms:featured binding. */
+    featured?: string;
   };
+  /** Catalog snapshot for commerce blocks (Phase 10) — prices/names/photos
+   *  resolve from here at render, NEVER from block props. */
+  catalog?: CatalogSnapshot;
+  /** Per-product availability for inventoryBadge ({ soldOut, remaining? }). */
+  inventory?: Record<string, { soldOut: boolean; remaining?: number }>;
   /** Theme glass presets (Phase 5) for glass-styled blocks like pillNav. */
   glass?: GlassPreset[];
   /** True inside the editor preview — fixed-position blocks render sticky
@@ -96,6 +104,50 @@ const FALLBACK_GLASS: CSSProperties = {
   border: "1px solid #FFFFFF8C",
   boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
 };
+
+// ── commerce helpers (Phase 10) ─────────────────────────────
+function productFrom(ctx: RenderContext, ref: string): CatalogProductSnapshot | null {
+  if (!ctx.catalog) return null;
+  return resolveProductRef(ctx.catalog, ref);
+}
+
+function productHref(ref: string): string {
+  return `/shop/${ref}`; // the canonical PDP route — where real cart/checkout lives
+}
+
+function price(p: CatalogProductSnapshot): string {
+  return p.priceFrom === null ? "Price coming soon" : `$${p.priceFrom}`;
+}
+
+function MissingProduct({ refStr, editing }: { refStr: string; editing?: boolean }) {
+  if (!editing) return null; // published pages never leak broken bindings
+  return (
+    <div className="rounded-lg border border-dashed border-red-400 bg-red-50 p-3 text-xs text-red-700">
+      Product “{refStr}” not found in the catalog
+    </div>
+  );
+}
+
+function ProductCardInner({ p, refStr, showPrice = true, showTagline = false }: { p: CatalogProductSnapshot; refStr: string; showPrice?: boolean; showTagline?: boolean }) {
+  return (
+    <a href={productHref(refStr)} className="block rounded-2xl border border-ink/10 bg-white/60 p-4 shadow-sm transition hover:shadow-md">
+      {p.coverImage ? <img src={p.coverImage} alt={p.name} loading="lazy" className="mb-3 aspect-square w-full rounded-xl object-cover" /> : null}
+      <h3 className="font-display text-base leading-snug">{p.name}</h3>
+      {showTagline && p.tagline ? <p className="mt-1 line-clamp-2 text-xs text-muted">{p.tagline}</p> : null}
+      <p className="mt-1 text-sm">
+        {p.status === "live" ? price(p) : <span className="text-muted">Coming soon</span>}
+      </p>
+    </a>
+  );
+}
+
+const GRID_COLS: Record<number, string> = {
+  1: "grid grid-cols-1 gap-4",
+  2: "grid grid-cols-2 gap-4",
+  3: "grid grid-cols-2 gap-4 md:grid-cols-3",
+  4: "grid grid-cols-2 gap-4 md:grid-cols-4",
+};
+const SWATCH_SIZE: Record<string, string> = { sm: "h-5 w-5", md: "h-7 w-7", lg: "h-10 w-10" };
 
 const SearchIcon = () => (
   <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" aria-hidden="true">
@@ -212,8 +264,16 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
     );
   },
 
-  gallery: (block) => {
-    const p = block.props as { images: Array<{ src: string; alt: string }>; layout: string; columns?: number };
+  gallery: (block, ctx) => {
+    const raw = block.props as { images?: Array<{ src: string; alt: string }>; product?: string; layout: string; columns?: number };
+    const bound = raw.product ? productFrom(ctx, raw.product) : null;
+    const p = {
+      ...raw,
+      images:
+        raw.images ??
+        (bound?.images ?? []).map((src) => ({ src, alt: bound?.name ?? "" })),
+    };
+    if (p.images.length === 0) return ctx.editing ? <MissingProduct refStr={raw.product ?? "gallery"} editing /> : null;
     if (p.layout === "carousel") {
       return (
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
@@ -333,6 +393,133 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
             <RichText doc={item.body} />
           </div>
         ))}
+      </div>
+    );
+  },
+
+  // ── Commerce blocks (Phase 10): bind, never own ───────────
+  productCard: (block, ctx) => {
+    const p = block.props as { product: string; showPrice?: boolean; showTagline?: boolean };
+    const product = productFrom(ctx, p.product);
+    if (!product) return <MissingProduct refStr={p.product} editing={ctx.editing} />;
+    return <ProductCardInner p={product} refStr={p.product} showPrice={p.showPrice} showTagline={p.showTagline} />;
+  },
+
+  productGrid: (block, ctx) => {
+    const p = block.props as { category: string; columns?: number; limit?: number; includeComingSoon?: boolean };
+    const products = ctx.catalog?.[p.category] ?? [];
+    const visible = products
+      .filter((x) => p.includeComingSoon !== false || x.status === "live")
+      .slice(0, p.limit ?? 24);
+    if (visible.length === 0) return ctx.editing ? <MissingProduct refStr={`${p.category}/*`} editing /> : null;
+    return (
+      <div className={GRID_COLS[p.columns ?? 3] ?? GRID_COLS[3]}>
+        {visible.map((x) => (
+          <ProductCardInner key={x.slug} p={x} refStr={`${p.category}/${x.slug}`} showTagline={false} />
+        ))}
+      </div>
+    );
+  },
+
+  featuredProduct: (block, ctx) => {
+    const p = block.props as { binding: string; headline?: string };
+    const ref = p.binding === "cms:featured" ? ctx.cms?.featured : p.binding;
+    const product = ref ? productFrom(ctx, ref) : null;
+    if (!product || !ref) return <MissingProduct refStr={p.binding} editing={ctx.editing} />;
+    return (
+      <a href={productHref(ref)} className="grid items-center gap-5 rounded-2xl border border-ink/10 bg-white/60 p-5 shadow-sm transition hover:shadow-md md:grid-cols-2">
+        {product.coverImage ? <img src={product.coverImage} alt={product.name} loading="lazy" className="aspect-square w-full rounded-xl object-cover" /> : null}
+        <div>
+          <p className="mb-1 text-xs uppercase tracking-[0.2em] text-accent">{p.headline ?? "We think you’ll love"}</p>
+          <h3 className="font-display text-xl md:text-2xl">{product.name}</h3>
+          {product.tagline ? <p className="mt-2 text-sm text-muted">{product.tagline}</p> : null}
+          <p className="mt-3 font-medium">{price(product)}</p>
+        </div>
+      </a>
+    );
+  },
+
+  relatedProducts: (block, ctx) => {
+    const p = block.props as { product: string; limit?: number };
+    const [category, slug] = p.product.split("/");
+    const siblings = (ctx.catalog?.[category] ?? []).filter((x) => x.slug !== slug).slice(0, p.limit ?? 3);
+    if (siblings.length === 0) return ctx.editing ? <MissingProduct refStr={p.product} editing /> : null;
+    return (
+      <div className={GRID_COLS[3]}>
+        {siblings.map((x) => (
+          <ProductCardInner key={x.slug} p={x} refStr={`${category}/${x.slug}`} />
+        ))}
+      </div>
+    );
+  },
+
+  swatchRow: (block, ctx) => {
+    const p = block.props as {
+      product?: string;
+      swatches?: Array<{ id: string; color: string; name: string; description?: string }>;
+      layout: "horizontal" | "vertical";
+      size?: string;
+      showNames?: boolean;
+    };
+    // Product binding: render its colorways' swatch colors; else inline swatches.
+    const items = p.product
+      ? (productFrom(ctx, p.product)?.colorways ?? []).map((cw, i) => ({
+          id: `cw-${i}`,
+          color: String((cw.swatch as { color?: string; gradient?: string[] } | undefined)?.color ?? (cw.swatch as { gradient?: string[] } | undefined)?.gradient?.[0] ?? "#CCCCCC"),
+          name: cw.label,
+          description: undefined as string | undefined,
+        }))
+      : (p.swatches ?? []);
+    if (items.length === 0) return ctx.editing ? <MissingProduct refStr={p.product ?? "swatches"} editing /> : null;
+    const dot = SWATCH_SIZE[p.size ?? "md"] ?? SWATCH_SIZE.md;
+    return (
+      <ul className={p.layout === "vertical" ? "space-y-2" : "flex flex-wrap items-start gap-3"}>
+        {items.map((s) => (
+          <li key={s.id} className={p.layout === "vertical" ? "flex items-center gap-2" : "flex max-w-24 flex-col items-center gap-1 text-center"}>
+            <span className={cx(dot, "shrink-0 rounded-full border border-ink/15 shadow-sm")} style={{ background: s.color }} title={s.name} />
+            {p.showNames !== false ? (
+              <span className="text-xs leading-tight">
+                {s.name}
+                {s.description ? <span className="block text-[10px] text-muted">{s.description}</span> : null}
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    );
+  },
+
+  inventoryBadge: (block, ctx) => {
+    const p = block.props as { product: string };
+    const product = productFrom(ctx, p.product);
+    if (!product) return <MissingProduct refStr={p.product} editing={ctx.editing} />;
+    const inv = ctx.inventory?.[p.product];
+    if (product.status !== "live") {
+      return <span className="inline-block rounded-full bg-ink/10 px-3 py-1 text-xs font-medium text-muted">Coming soon</span>;
+    }
+    if (inv?.soldOut) {
+      return <span className="inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">Sold out</span>;
+    }
+    if (inv?.remaining !== undefined && inv.remaining <= 3) {
+      return <span className="inline-block rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-ink">Only {inv.remaining} left</span>;
+    }
+    return <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-900">Made to order</span>;
+  },
+
+  buyBox: (block, ctx) => {
+    const p = block.props as { product: string; ctaLabel?: string };
+    const product = productFrom(ctx, p.product);
+    if (!product) return <MissingProduct refStr={p.product} editing={ctx.editing} />;
+    if (product.status !== "live") return <MissingProduct refStr={`${p.product} (not live)`} editing={ctx.editing} />;
+    return (
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-ink/10 bg-white/70 p-4 shadow-sm">
+        <div className="min-w-0">
+          <h3 className="truncate font-display text-base">{product.name}</h3>
+          <p className="text-sm font-medium">{price(product)}</p>
+        </div>
+        <a href={productHref(p.product)} className="shrink-0 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-cream transition hover:opacity-90">
+          {p.ctaLabel ?? "View & buy"}
+        </a>
       </div>
     );
   },

@@ -20,7 +20,7 @@
 // Returns issues; empty array = safe to write.
 // ============================================================
 
-import { validatePage } from "../engine/index.ts";
+import { validatePage, validateCommerceRefs } from "../engine/index.ts";
 import {
   templateSchema,
   overrideLayerSchema,
@@ -73,7 +73,17 @@ export async function validateDocument(path: string, content: unknown): Promise<
   // Builder documents
   if (path.startsWith("builder/pages/")) {
     const result = validatePage(content);
-    return result.publishable ? [] : result.issues.filter((i) => i.level === "error");
+    if (!result.publishable || !result.page) {
+      return result.issues.filter((i) => i.level === "error");
+    }
+    // Commerce bindings resolve against the REAL generated catalog —
+    // a page can't be saved pointing at a product that doesn't exist,
+    // and a buyBox can't point at anything that isn't live.
+    const { CATALOG } = await import("../../data/catalog.js");
+    const snapshot = Object.fromEntries(
+      Object.entries(CATALOG as Record<string, { products: unknown[] }>).map(([cat, c]) => [cat, c.products])
+    ) as Parameters<typeof validateCommerceRefs>[1];
+    return validateCommerceRefs(result.page.sections, snapshot).filter((i) => i.level === "error");
   }
   if (path.startsWith("builder/templates/")) return zodIssues(templateSchema, content);
   if (path.startsWith("builder/overrides/")) return zodIssues(overrideLayerSchema, content);

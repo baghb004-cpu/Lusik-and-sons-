@@ -20,16 +20,24 @@ export interface BlockRendererProps {
   cms?: RenderContext["cms"];
   /** Theme glass presets for glass-styled blocks (pillNav). */
   glass?: GlassPreset[];
+  /** Catalog snapshot for commerce blocks (prices resolve here, never from props). */
+  catalog?: RenderContext["catalog"];
+  /** Per-product availability for inventoryBadge. */
+  inventory?: RenderContext["inventory"];
   /** Editor preview mode: show placeholders for unknown types + block ids. */
   editing?: boolean;
 }
 
-export function BlockRenderer({ blocks, cms, glass, editing = false }: BlockRendererProps) {
+export function BlockRenderer({ blocks, cms, glass, catalog, inventory, editing = false }: BlockRendererProps) {
   const ctx: RenderContext = {
     cms,
     glass,
+    catalog,
+    inventory,
     editing,
-    renderChildren: (children) => <BlockRenderer blocks={children} cms={cms} glass={glass} editing={editing} />,
+    renderChildren: (children) => (
+      <BlockRenderer blocks={children} cms={cms} glass={glass} catalog={catalog} inventory={inventory} editing={editing} />
+    ),
   };
 
   return <>{blocks.map((block) => renderOne(block, ctx, editing))}</>;

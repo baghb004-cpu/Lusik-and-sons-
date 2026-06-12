@@ -55,6 +55,13 @@ export {
 export { validatePage, type ValidationIssue, type ValidatePageResult } from "./validate.ts";
 
 export {
+  validateCommerceRefs,
+  resolveProductRef,
+  type CatalogSnapshot,
+  type CatalogProductSnapshot,
+} from "./commerce.ts";
+
+export {
   suggestSlug,
   pagePath,
   templatePath,
