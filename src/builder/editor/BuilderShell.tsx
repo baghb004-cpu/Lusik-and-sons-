@@ -908,6 +908,56 @@ export function BuilderShell() {
             >
               Export site ↓
             </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setStatus("Building backup…");
+                try {
+                  const res = await api("/api/builder/backup");
+                  if (!res.ok) { setStatus("Backup failed"); return; }
+                  const blob = await res.blob();
+                  const a = document.createElement("a");
+                  a.href = URL.createObjectURL(blob);
+                  a.download = `builder-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                  setStatus("Backup downloaded ✓ — keep a copy on the thumb drive");
+                } catch (e) {
+                  setStatus(String((e as Error).message || e));
+                }
+              }}
+              className="rounded-full border border-ink/20 px-3 py-1 text-xs hover:bg-cream"
+            >
+              Backup ↓
+            </button>
+            <label className="cursor-pointer rounded-full border border-ink/20 px-3 py-1 text-xs hover:bg-cream">
+              Restore ↑
+              <input
+                type="file"
+                accept=".zip,application/zip"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  if (!window.confirm(`Restore "${f.name}"? Valid documents replace the current ones (all-or-nothing; git history keeps the previous state).`)) return;
+                  setStatus("Validating backup…");
+                  try {
+                    const res = await api("/api/builder/backup", { method: "POST", body: f });
+                    const body = await res.json();
+                    if (!res.ok) {
+                      setStatus(`Restore refused: ${body.problems?.[0]?.path ?? ""} — ${body.problems?.[0]?.issues?.[0]?.message ?? body.error}`);
+                      return;
+                    }
+                    setStatus(`Restored ${body.written.length} document(s) ✓`);
+                    setDoc(null);
+                    await refreshList();
+                  } catch (err) {
+                    setStatus(String((err as Error).message || err));
+                  }
+                }}
+              />
+            </label>
             <label className="cursor-pointer rounded-full border border-ink/20 px-3 py-1 text-xs hover:bg-cream">
               Import template
               <input
@@ -1067,6 +1117,16 @@ export function BuilderShell() {
                 </div>
               ) : null}
 
+              <HistoryPanel
+                key={doc.path}
+                path={doc.path}
+                api={api}
+                onLoadRevision={(content) => {
+                  editContent(content as Obj);
+                  setStatus("Old version loaded as a draft — review it, then Save to restore (runs the normal gates)");
+                }}
+              />
+
               {isBuilderPage && !rawMode && parsedPage ? (
                 <div className="max-h-[62vh] overflow-y-auto">
                   <AddBlockMenu
@@ -1175,6 +1235,74 @@ export function BuilderShell() {
           onCancel={() => setDialog(null)}
           onSubmit={submitDialog}
         />
+      ) : null}
+    </div>
+  );
+}
+
+interface RevisionRow {
+  sha: string;
+  date: string;
+  author: string;
+  message: string;
+}
+
+function HistoryPanel({
+  path,
+  api,
+  onLoadRevision,
+}: {
+  path: string;
+  api: (input: string, init?: RequestInit) => Promise<Response>;
+  onLoadRevision: (content: unknown) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [revisions, setRevisions] = useState<RevisionRow[] | null>(null);
+
+  const load = async () => {
+    setOpen(!open);
+    if (revisions || open) return;
+    try {
+      const res = await api(`/api/builder/revisions?path=${encodeURIComponent(path)}`);
+      setRevisions(res.ok ? (await res.json()).revisions : []);
+    } catch {
+      setRevisions([]);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-ink/10">
+      <button type="button" onClick={load} className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium">
+        History (git)
+        <span className="text-muted">{open ? "▾" : "▸"}</span>
+      </button>
+      {open ? (
+        <ul className="max-h-44 space-y-1 overflow-y-auto px-3 pb-2 text-xs">
+          {revisions === null ? (
+            <li className="text-muted">Loading…</li>
+          ) : revisions.length === 0 ? (
+            <li className="text-muted">No history yet — every Save becomes a revision.</li>
+          ) : (
+            revisions.map((r) => (
+              <li key={r.sha} className="flex items-center justify-between gap-2">
+                <span className="min-w-0">
+                  <span className="block truncate" title={r.message}>{r.message}</span>
+                  <span className="text-[10px] text-muted">{r.date.slice(0, 10)} · {r.author} · {r.sha.slice(0, 7)}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await api(`/api/builder/revisions?path=${encodeURIComponent(path)}&sha=${r.sha}`);
+                    if (res.ok) onLoadRevision((await res.json()).content);
+                  }}
+                  className="shrink-0 rounded-full border border-ink/20 px-2 py-0.5 text-[11px] hover:bg-cream"
+                >
+                  Load
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
       ) : null}
     </div>
   );

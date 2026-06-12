@@ -30,11 +30,36 @@
                 {
                   "type": "paragraph",
                   "content": [
-                    { "type": "text", "text": "This page lives at " },
-                    { "type": "text", "text": "builder/pages/welcome.json", "marks": [{ "type": "italic" }] },
-                    { "type": "text", "text": " — edit the JSON on the right and the preview updates. Saving runs the schema gate: try a " },
-                    { "type": "text", "text": "javascript:", "marks": [{ "type": "bold" }] },
-                    { "type": "text", "text": " link and watch it refuse." }
+                    {
+                      "type": "text",
+                      "text": "This page lives at "
+                    },
+                    {
+                      "type": "text",
+                      "text": "builder/pages/welcome.json",
+                      "marks": [
+                        {
+                          "type": "italic"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "text": " — edit the JSON on the right and the preview updates. Saving runs the schema gate: try a "
+                    },
+                    {
+                      "type": "text",
+                      "text": "javascript:",
+                      "marks": [
+                        {
+                          "type": "bold"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "text": " link and watch it refuse."
+                    }
                   ]
                 }
               ]
@@ -44,7 +69,9 @@
         {
           "id": "b_democolumns1",
           "type": "columns",
-          "props": { "count": 2 },
+          "props": {
+            "count": 2
+          },
           "children": [
             {
               "id": "b_democard0001",
@@ -58,7 +85,12 @@
                   "content": [
                     {
                       "type": "paragraph",
-                      "content": [{ "type": "text", "text": "Links are validated, styles come from theme tokens." }]
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Links are validated, styles come from theme tokens."
+                        }
+                      ]
                     }
                   ]
                 }
@@ -74,12 +106,19 @@
                   "content": [
                     {
                       "type": "paragraph",
-                      "content": [{ "type": "text", "text": "Switch the device preview to mobile and it disappears — per-device visibility, no JavaScript." }]
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Switch the device preview to mobile and it disappears — per-device visibility, no JavaScript."
+                        }
+                      ]
                     }
                   ]
                 }
               },
-              "visibility": { "mobile": false }
+              "visibility": {
+                "mobile": false
+              }
             }
           ]
         },
@@ -96,7 +135,12 @@
                   "content": [
                     {
                       "type": "paragraph",
-                      "content": [{ "type": "text", "text": "It renders as a plain <details> element — CSS-only, server-rendered, static-export friendly." }]
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "It renders as a plain <details> element — CSS-only, server-rendered, static-export friendly."
+                        }
+                      ]
                     }
                   ]
                 }
@@ -107,7 +151,11 @@
         {
           "id": "b_demobtn00001",
           "type": "button",
-          "props": { "label": "See what Lusik makes", "href": "/shop", "variant": "primary" }
+          "props": {
+            "label": "See what Lusik makes",
+            "href": "/shop",
+            "variant": "primary"
+          }
         },
         {
           "id": "b_demotabs0001",
@@ -119,7 +167,17 @@
                 "label": "Tabs are blocks too",
                 "body": {
                   "type": "doc",
-                  "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "These tabs are pure CSS — radio inputs and peer selectors, no JavaScript, so they survive a static export." }] }]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "These tabs are pure CSS — radio inputs and peer selectors, no JavaScript, so they survive a static export."
+                        }
+                      ]
+                    }
+                  ]
                 }
               },
               {
@@ -127,7 +185,17 @@
                 "label": "And keyboard-friendly",
                 "body": {
                   "type": "doc",
-                  "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Tab to a label, press space, the panel switches — accessible by construction." }] }]
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Tab to a label, press space, the panel switches — accessible by construction."
+                        }
+                      ]
+                    }
+                  ]
                 }
               }
             ]

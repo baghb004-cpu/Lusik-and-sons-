@@ -8,10 +8,30 @@
     "type": "pillNav",
     "props": {
       "items": [
-        { "id": "b_pillforyou01", "icon": "home", "label": "For You", "href": "/" },
-        { "id": "b_pillshop0001", "icon": "shop", "label": "Shop", "href": "/shop" },
-        { "id": "b_pilljournal1", "icon": "journal", "label": "Journal", "href": "/journal" },
-        { "id": "b_pillbag00001", "icon": "bag", "label": "Bag", "href": "/cart" }
+        {
+          "id": "b_pillforyou01",
+          "icon": "home",
+          "label": "For You",
+          "href": "/"
+        },
+        {
+          "id": "b_pillshop0001",
+          "icon": "shop",
+          "label": "Shop",
+          "href": "/shop"
+        },
+        {
+          "id": "b_pilljournal1",
+          "icon": "journal",
+          "label": "Journal",
+          "href": "/journal"
+        },
+        {
+          "id": "b_pillbag00001",
+          "icon": "bag",
+          "label": "Bag",
+          "href": "/cart"
+        }
       ],
       "position": "bottom",
       "preset": "Liquid Glass",
@@ -19,6 +39,9 @@
       "heightPx": 56,
       "radiusPx": 28
     },
-    "visibility": { "desktop": false, "tablet": false }
+    "visibility": {
+      "desktop": false,
+      "tablet": false
+    }
   }
 }

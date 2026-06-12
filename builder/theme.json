@@ -9,9 +9,21 @@
       "paper": "#FFFFFF"
     },
     "fonts": {
-      "display": { "family": "Fraunces", "fallback": "Georgia, serif", "source": "google" },
-      "body": { "family": "DM Sans", "fallback": "system-ui, -apple-system, sans-serif", "source": "google" },
-      "accent": { "family": "Allura", "fallback": "cursive", "source": "google" }
+      "display": {
+        "family": "Fraunces",
+        "fallback": "Georgia, serif",
+        "source": "google"
+      },
+      "body": {
+        "family": "DM Sans",
+        "fallback": "system-ui, -apple-system, sans-serif",
+        "source": "google"
+      },
+      "accent": {
+        "family": "Allura",
+        "fallback": "cursive",
+        "source": "google"
+      }
     },
     "typeScale": {
       "sm": "0.875rem",

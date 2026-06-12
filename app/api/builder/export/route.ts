@@ -24,14 +24,14 @@ export async function POST(req: Request): Promise<Response> {
   const auth = await requireBuilderAdmin(req);
   if (!auth.ok) return auth.response!;
 
-  let body: { target?: string };
+  let body: { target?: string; download?: boolean };
   try {
     body = await req.json();
   } catch {
     return json(400, { error: "Body must be JSON" });
   }
   if (body.target !== "static" && body.target !== "next") {
-    return json(400, { error: 'Expected { target: "static" | "next" }' });
+    return json(400, { error: 'Expected { target: "static" | "next", download?: boolean }' });
   }
 
   const storage = getBuilderStorage();
@@ -56,6 +56,24 @@ export async function POST(req: Request): Promise<Response> {
       cms: { featured: featured ? `${featured.category}/${featured.slug}` : undefined },
       siteName: "Lusik & Sons",
     });
+    // ZIP download (static only — its file list is fully materialized).
+    if (body.download && body.target === "static") {
+      const { readFile } = await import("node:fs/promises");
+      const { zipFiles } = await import("../../../../src/builder/server/zip.ts");
+      const entries = [];
+      for (const rel of [...result.files, "manifest.json"]) {
+        if (rel.includes("**")) continue;
+        entries.push({ path: rel, content: await readFile(join(outDir, rel), "utf8") });
+      }
+      const zip = await zipFiles([...new Map(entries.map((e) => [e.path, e])).values()]);
+      return new Response(new Uint8Array(zip), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": `attachment; filename="site-export-${stamp}.zip"`,
+        },
+      });
+    }
     return json(200, result);
   } catch (err) {
     console.error("[builder/export]", err);
