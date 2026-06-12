@@ -508,7 +508,8 @@ budget green at every merge. **L** = Lusik-usable value ships.
 | **13. Offline ZIP / address / shipping data module** | Dataset manager (licensing-safe), ZIP→city/state lookup, local-delivery + blocked lists, shipping rule editor, zone tables, trimmed per-site export (§14) | Generalizes what Lusik already ships |
 | **14. Local AI engine** | llama.cpp/Ollama adapter, model manager + Local AI settings panel, assistant tasks behind the deterministic gates (§15) | Local-first; no weights bundled by default |
 | **15. App Developer Mode** | Guided questionnaire → project plan, app screen templates, PWA/manifest export, App Store / Play Store checklist generators (§15) | PWA first; native export later if practical |
-| **16. Portable desktop app (.exe)** | Package the builder as a double-click Windows app (§16): Tauri shell (MIT, ~10 MB) wrapping the local Next server + fs storage, portable USB layout, optional llama.cpp sidecar + offline model folder | The thumb-drive end-state |
+| **16. Portable desktop app (.exe)** | Package the builder as a double-click Windows app (§16): Tauri shell (MIT, ~10 MB) wrapping the local Next server + fs storage, portable USB layout, optional llama.cpp sidecar + offline model folder, **animated splash screen** (§16a) | The thumb-drive end-state |
+| **17. Service preset system** | Modular hosting/database/commerce/email/security/CMS presets (§17): registry + UI cards + project generation; beginner/advanced modes, honest informational recommendations, recommended stacks | Data model + registry land early (Phase 9.5); cards + generation ride the export system |
 
 **Recommended first build step (next session): Phase 2** — schemas + engine
 with tests. It's the foundation everything else type-checks against, it
@@ -750,7 +751,125 @@ the editor window, and needs nothing installed on the host machine.
   someone; doing it sooner is possible if the owner wants the portable
   shell before the visual editor lands.
 
+### §16a. Animated splash screen (part of Phase 16)
+
+**Current-structure analysis (the honest answer):** there is no desktop app
+yet — Phase 16 hasn't been built — so the splash is *designed* here and
+*implemented together with the Tauri shell*, which is the safest possible
+path: in Tauri, the earliest displayable surface is a *second, tiny window*
+the Rust shell opens immediately at launch (a built-in pattern), showing the
+splash while the main window boots the builder UI. Nothing is retrofitted;
+the splash is the shell's first act.
+
+- **Format decision:** CSS/sprite-sheet animation in a static local HTML
+  file — no video decoder, no Lottie runtime, ~no memory, instant start,
+  scales responsively. Scene art = layered PNG/SVG sprite sheets. A single
+  static PNG renders first as the base layer, so if animation ever fails
+  the fallback is already on screen (requirement 8 by construction). All
+  assets bundled into the EXE; zero network.
+- **The mini-story (3–5 s, original art, no copyrighted styles):**
+  1. A stylized original mascot of the owner sits gaming, glow on his face.
+  2. He notices the app launching — startled jump, controller flies.
+  3. One-beat montage gag (badminton swing, total whiff).
+  4. *(v2, documented for later)* Gohar cameo: a simple background
+     walk-by + wave — deferred from v1 to keep the first cut simple.
+  5. He turns to camera, goofy thumbs-up, app name appears → fade.
+- **Timing behavior:** app ready early → skip gracefully to scene 5's
+  ending; app slow → loop a small idle (thumbs-up bob) from the final
+  scene, never replay the story; splash never blocks the server boot
+  (separate window, separate process concern). Fade-out handoff when the
+  main window signals ready.
+- **Replaceable art:** assets live in one folder
+  (`desktop/splash/assets/`), scene timings in one CSS/JSON file —
+  swapping artwork later means replacing files, not code. Documented in
+  the Phase 16 README.
+
+---
+
+## 17. Service preset system (Phase 17; data model lands early)
+
+Make hosting/database/checkout/email/DNS/CMS choices easy for a
+non-technical user — **without lock-in, affiliate-style steering, or
+pretending to do things the builder can't do.**
+
+### Honesty rules (these are product law, not copy)
+- Recommendations are **informational only**, clearly labeled, one tap to
+  ignore ("Use another provider" is always present).
+- **"One click" = one-click project PREPARATION**: generate files and
+  `.env.example`, add npm packages, prepare schema files, emit a setup
+  checklist and copy/paste instructions. The builder **never claims** to
+  create external accounts or manage API keys — unless a real OAuth/API
+  connection exists someday, in which case it's explicit and opt-in.
+- DNS/security cards are **informational presets**: Cloudflare/Turnstile/
+  CDN-WAF explainers that never imply Cloudflare is required and never
+  touch DNS automatically.
+- Paid tiers, vendor lock-in risk, and secret-key handling get visible
+  warnings on the card, not fine print.
+
+### Architecture
+```
+src/builder/presets/
+├── types.ts        # the zod'd Preset + Stack data model (below)
+├── hosting.ts      # netlify, vercel, cloudflare-pages, render, railway,
+│                   #   do-app-platform, fly-io (advanced)
+├── database.ts     # none-static, supabase, neon, firebase, turso,
+│                   #   cloudflare-d1, render-pg, railway-pg, do-managed
+├── commerce.ts     # stripe-checkout, stripe-products, stripe-webhooks
+├── email.ts        # resend, smtp (advanced/later), + the two capability
+│                   #   presets: admin-notifications, customer-receipts
+├── security.ts     # cloudflare-info, turnstile-info, cdn-waf-explainer
+│                   #   (informational: true — render-only, generate nothing)
+├── cms.ts          # builtin-git-cms (this builder), external headless (later)
+├── stacks.ts       # the recommended default stacks (below)
+└── index.ts        # registry: byId/byCategory, beginner filter, stack
+                    #   resolution, cross-preset conflict checks
+```
+Each preset: `id, label, category, difficulty (easy|standard|advanced),
+blurb, bestFor, notBestFor, requiredEnvVars, optionalEnvVars, npmPackages,
+filesToGenerate, setupSteps, validationChecks, warnings, docsLinks,
+canAutoConfigure, requiresUserAccount, requiresSecretKey, recommendedFor,
+informational?, freeTier?, requiresPresets?` — adding a provider = adding
+one object, never rewriting the builder.
+
+### UI (Phase 17 proper)
+Beginner mode shows the 2–3 `difficulty:"easy"` choices per category;
+Advanced shows all. Every recommended card carries a "Why this
+recommendation?" expander (plain-language reasoning from `recommendedFor`)
+and the escape hatch. Selecting a stack produces the **final pre-deploy
+checklist**: env vars to set (from the presets' lists), accounts needed,
+secrets warnings, generated files review, and the provider's own setup
+steps in order.
+
+### Generation (rides the Phase 11 export system)
+A chosen preset set decorates the export: provider config files
+(`netlify.toml`/`vercel.json`/wrangler config…), `.env.example`, schema
+SQL for the chosen database, README setup section, checklists. The
+**Lusik production stack (Netlify + Neon + Stripe + Resend) is the first
+validated preset combination** — the generators dogfood against a real,
+working site.
+
+### Recommended default stacks (`stacks.ts`)
+1. **Simple business site** — Netlify *or* Vercel · no database · optional
+   Resend · Cloudflare informational card only.
+2. **Small business shop** — Netlify/Vercel · Supabase *or* Neon · Stripe
+   checkout (+webhooks) · Resend · Cloudflare informational only.
+3. **CMS site** — Netlify · the builder's git-based CMS first · optional
+   Supabase · optional Resend.
+4. **App builder mode** — Vercel/Netlify/Cloudflare Pages · Supabase/
+   Firebase/Neon/Turso by need · Supabase/Firebase auth option · storage:
+   Supabase/Firebase/R2 or a provider-neutral placeholder.
+
+### Sequencing
+The **data model + registry** are pure data and land now (with tests:
+schema validity, unique ids, stacks reference real presets, informational
+presets generate nothing, no preset claims `canAutoConfigure` for account
+creation). **UI cards + generation logic** are Phase 17 proper, after the
+Phase 11 export format exists for them to decorate.
+
+---
+
 *Standing constraint across every phase: the builder itself must run from a
 thumb drive — fs storage adapter, no cloud dependency in the editor, local
 preview/build, and all data (documents, templates, themes, datasets, and
 downloaded models) as plain files inside the project.*
+
