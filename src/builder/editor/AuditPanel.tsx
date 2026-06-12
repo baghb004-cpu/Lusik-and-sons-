@@ -11,7 +11,8 @@
 // before I publish" view.
 // ============================================================
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { pageWeight, PAGE_WEIGHT_BUDGET_BYTES, type MediaFileInfo } from "./pageWeight.ts";
 import type { Page, Theme } from "../schema/index.ts";
 import { validatePage, checkContrast } from "../engine/index.ts";
 import { staticScan } from "../viewport/layoutIssueScanner.ts";
@@ -33,17 +34,26 @@ const CONTRAST_PAIRS: Array<[string, string, string]> = [
 ];
 
 export function AuditPanel({
+  api,
   page,
   theme,
   locales,
   defaultLocale,
 }: {
+  api?: (input: string, init?: RequestInit) => Promise<Response>;
   page: Page;
   theme: Theme | null;
   locales: LocaleCode[];
   defaultLocale: LocaleCode;
 }) {
   const [ranAt, setRanAt] = useState<number | null>(null);
+  const [media, setMedia] = useState<MediaFileInfo[] | null>(null);
+  useEffect(() => {
+    if (!ranAt || !api || media) return;
+    api("/api/builder/media")
+      .then(async (res) => (res.ok ? setMedia(((await res.json()) as { files: MediaFileInfo[] }).files) : setMedia([])))
+      .catch(() => setMedia([]));
+  }, [ranAt, api, media]);
 
   const findings = useMemo<Finding[]>(() => {
     if (!ranAt) return [];
@@ -94,8 +104,20 @@ export function AuditPanel({
       }
     }
 
+    // 5. page weight (uploaded media this page references)
+    if (media && media.length > 0) {
+      const w = pageWeight(page, media);
+      if (w.refs.length > 0) {
+        out.push({
+          level: w.over ? "warning" : "info",
+          area: "Performance",
+          message: `${w.refs.length} uploaded photo(s) ≈ ${(w.bytes / 1024 / 1024).toFixed(1)} MB${w.over ? ` — over the ${(PAGE_WEIGHT_BUDGET_BYTES / 1024 / 1024).toFixed(1)} MB budget; resize the biggest before publishing` : " — within budget"}`,
+        });
+      }
+    }
+
     return out.sort((a, b) => ["error", "warning", "info"].indexOf(a.level) - ["error", "warning", "info"].indexOf(b.level));
-  }, [ranAt, page, theme, locales, defaultLocale]);
+  }, [ranAt, page, theme, locales, defaultLocale, media]);
 
   const counts = {
     error: findings.filter((f) => f.level === "error").length,

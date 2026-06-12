@@ -49,6 +49,7 @@ export const TRANSLATABLE_FIELDS: Record<string, FieldSpec> = {
   video: { strings: ["caption"] },
   socialRow: { strings: ["label"] },
   hoursTable: { strings: ["heading", "note"], arrays: [{ prop: "rows", strings: ["days", "hours"] }] },
+  csvTable: { strings: ["caption"] },
   specTable: { strings: ["heading"], arrays: [{ prop: "rows", strings: ["label", "value", "detail"] }] },
   mapLink: { strings: ["label"] },
 };

@@ -27,6 +27,8 @@ import {
   themeSchema,
   migrateDocument,
   chromeSchema,
+  brandSchema,
+  reviewsSchema,
 } from "../schema/index.ts";
 import { shippingConfigSchema, zipDatasetSchema } from "../data/index.ts";
 import { aiSettingsSchema } from "../ai/models.ts";
@@ -96,6 +98,8 @@ export async function validateDocument(path: string, content: unknown): Promise<
   if (path.startsWith("builder/overrides/")) return zodIssues(overrideLayerSchema, content);
   if (path === "builder/theme.json") return zodIssues(themeSchema, content);
   if (path === "builder/chrome.json") return zodIssues(chromeSchema, content);
+  if (path === "builder/brand.json") return zodIssues(brandSchema, content);
+  if (path.startsWith("builder/reviews/")) return zodIssues(reviewsSchema, content);
   // Phase 13: shipping config + local datasets (manifest with source +
   // licenseNotes REQUIRED — un-attributed data can't be saved).
   if (path === "builder/data/shipping.json") return zodIssues(shippingConfigSchema as ZodLike, content);

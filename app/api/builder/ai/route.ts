@@ -37,6 +37,19 @@ const snapshot = (): CatalogSnapshot =>
     Object.entries(CATALOG as Record<string, { products: CatalogSnapshot[string] }>).map(([cat, c]) => [cat, c.products])
   ) as CatalogSnapshot;
 
+/** Brand voice (INSPIRATION_ROADMAP P2): the AI writes like the business talks. */
+async function brandContextSuffix(): Promise<string> {
+  try {
+    const raw = await getBuilderStorage().read("builder/brand.json");
+    if (!raw) return "";
+    const b = JSON.parse(raw) as { tagline?: string; voice?: string };
+    const lines = [b.tagline ? `Tagline: ${b.tagline}` : "", b.voice ? `Voice & tone: ${b.voice}` : ""].filter(Boolean);
+    return lines.length ? `\n${lines.join("\n")}` : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(req: Request): Promise<Response> {
   const auth = await requireBuilderAdmin(req);
   if (!auth.ok) return auth.response!;
@@ -73,7 +86,7 @@ export async function POST(req: Request): Promise<Response> {
 
     const adapter = adapterFor(settings.runner, settings.baseUrl);
     const catalog = snapshot();
-    const messages = task.build(input, buildSiteContext(catalog));
+    const messages = task.build(input, buildSiteContext(catalog) + (await brandContextSuffix()));
     const result = await adapter.chat(settings.model, {
       messages,
       schema: task.schema,

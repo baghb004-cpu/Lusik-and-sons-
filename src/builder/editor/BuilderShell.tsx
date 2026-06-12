@@ -76,6 +76,8 @@ import { AppPanel } from "./AppPanel.tsx";
 import { PresetsPanel } from "./PresetsPanel.tsx";
 import { MediaPanel } from "./MediaPanel.tsx";
 import { SeoPanel } from "./SeoPanel.tsx";
+import { BrandPanel } from "./BrandPanel.tsx";
+import { NotesPanel } from "./NotesPanel.tsx";
 import { AuditPanel } from "./AuditPanel.tsx";
 import { HelpPanel } from "./HelpPanel.tsx";
 import { OnboardingTour, TOUR_DONE_KEY } from "./OnboardingTour.tsx";
@@ -1544,7 +1546,9 @@ export function BuilderShell() {
                     siteName="Lusik & Sons"
                     onChange={(seo) => commitPage({ ...(doc!.content as object), seo } as never, layers)}
                   />
+                  <NotesPanel api={api} slug={parsedPage.slug} selectedBlockId={selectedBlockId} setStatus={setStatus} />
                   <AuditPanel
+                    api={api}
                     page={parsedPage}
                     theme={themeDoc ? (themeSchema.safeParse(themeDoc).data ?? null) : null}
                     locales={i18nSettings.locales}
@@ -1566,6 +1570,8 @@ export function BuilderShell() {
                     onMove={handleTreeMove}
                   />
                 </div>
+              ) : doc?.path === "builder/brand.json" && !rawMode ? (
+                <BrandPanel value={doc.content} onChange={editContent} />
               ) : isServicesDoc && !rawMode ? (
                 <div className="max-h-[62vh] overflow-y-auto">
                   <PresetsPanel value={doc.content} onChange={editContent} />

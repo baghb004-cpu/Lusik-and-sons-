@@ -22,6 +22,7 @@ import { cx } from "./style.ts";
 import { tokenToCss } from "./style.ts";
 import { glassPresetToCss } from "../theme/css.ts";
 import { resolveProductRef, type CatalogProductSnapshot, type CatalogSnapshot } from "../engine/commerce.ts";
+import { parseCsv } from "../engine/csv.ts";
 import { JUMPER_STOP_SELECTORS, jumperDomId, sectionJumperScript, sectionJumperCss } from "./jumperScript.ts";
 import { appearanceDomId, appearanceSwitcherScript, appearanceSwitcherCss, CANDLE_DEFAULTS } from "./appearanceScript.ts";
 import { videoDomId, videoFacadeScript, videoWatchUrl } from "./videoScript.ts";
@@ -995,6 +996,36 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
         </dl>
         {p.note ? <p className="mt-3 text-xs text-muted">{p.note}</p> : null}
       </div>
+    );
+  },
+
+  csvTable: (block) => {
+    const p = block.props as { caption?: string; csv: string; headerRow?: boolean };
+    const rows = parseCsv(p.csv);
+    if (rows.length === 0) return null;
+    const hasHeader = p.headerRow !== false;
+    const head = hasHeader ? rows[0] : null;
+    const body = hasHeader ? rows.slice(1) : rows;
+    return (
+      <figure className="overflow-x-auto rounded-2xl border border-ink/10 bg-white/60 shadow-sm">
+        <table className="w-full text-sm">
+          {head ? (
+            <thead>
+              <tr className="border-b border-ink/10 text-left">
+                {head.map((h, i) => <th key={i} scope="col" className="px-4 py-2 font-medium">{h}</th>)}
+              </tr>
+            </thead>
+          ) : null}
+          <tbody>
+            {body.map((r, i) => (
+              <tr key={i} className={i % 2 === 1 ? "bg-cream/50" : undefined}>
+                {r.map((c, j) => <td key={j} className="px-4 py-2">{c}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {p.caption ? <figcaption className="border-t border-ink/10 px-4 py-2 text-xs text-muted">{p.caption}</figcaption> : null}
+      </figure>
     );
   },
 

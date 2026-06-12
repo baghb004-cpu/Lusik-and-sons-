@@ -433,6 +433,17 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
 
+  // CSV table (dataset-inspired): paste rows, get a real table.
+  // First line = headers. Deliberately a static render — sorting/
+  // filtering is a Phase-3 enhancement, not a spreadsheet engine.
+  csvTable: z
+    .object({
+      caption: translatableSchema.optional(),
+      csv: z.string().min(1).max(8000),
+      headerRow: z.boolean().optional(), // default true
+    })
+    .strict(),
+
   // Opening hours.
   hoursTable: z
     .object({

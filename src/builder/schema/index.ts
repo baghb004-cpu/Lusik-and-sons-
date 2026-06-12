@@ -48,6 +48,12 @@ export {
   chromeSchema,
   CHROME_PATH,
   type Chrome,
+  brandSchema,
+  BRAND_PATH,
+  type Brand,
+  reviewsSchema,
+  reviewNoteSchema,
+  type Reviews,
 } from "./documents.ts";
 
 export { themeSchema, glassPreset, appearanceSchema, candlelightSchema, type Theme, type GlassPreset, type Appearance, type Candlelight } from "./theme.ts";

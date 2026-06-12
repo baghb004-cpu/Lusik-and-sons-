@@ -17,6 +17,21 @@ import { themeToCssVars } from "../theme/css.ts";
 import { layersToMediaCss } from "./css.ts";
 import { SW_REGISTER_SNIPPET } from "../app/pwa.ts";
 
+// Printable business documents (INSPIRATION_ROADMAP P2): every exported
+// page is print-ready — fixed UI hidden, tables/sections kept whole,
+// external link URLs shown. "Save as PDF" in any browser = the PDF export.
+export const PRINT_CSS = `@media print {
+  nav, [data-bt-candle], video, iframe, button { display: none !important; }
+  section, table, figure { break-inside: avoid; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #555; }
+  body { background: #fff !important; color: #000 !important; }
+}`;
+
+// Slides-inspired deck (the "deck" export target): every top-level
+// section snaps to a full screen. Pure CSS over the same renderer.
+export const DECK_CSS = `html { scroll-snap-type: y mandatory; }
+main > div > section, main > section { min-height: 100vh; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }`;
+
 export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -40,10 +55,12 @@ export interface StaticPageInput {
    *  anti-flash <head> bootstrap that applies the visitor's saved mode
    *  before first paint. Both optional — omitted = today's zero-JS pages. */
   appearance?: { css: string; bootstrap: string };
+  /** Target-specific stylesheet additions (e.g. the deck's scroll-snap). */
+  extraCss?: string;
 }
 
 export function assembleHtmlDocument(input: StaticPageInput): string {
-  const { page, bodyHtml, layers, theme, stylesheetHref, siteName, pwa, lang, dir, i18nHref, appearance } = input;
+  const { page, bodyHtml, layers, theme, stylesheetHref, siteName, pwa, lang, dir, i18nHref, appearance, extraCss } = input;
   const title = escapeHtml(page.seo.title ?? `${page.title} — ${siteName}`);
   const description = page.seo.description ? `\n    <meta name="description" content="${escapeHtml(page.seo.description)}" />` : "";
   const og = page.seo.ogImage ? `\n    <meta property="og:image" content="${escapeHtml(page.seo.ogImage)}" />` : "";
@@ -68,6 +85,7 @@ export function assembleHtmlDocument(input: StaticPageInput): string {
     <style>
 ${themeCss}${appearanceCssBlock}
 ${mediaCss}
+${PRINT_CSS}${extraCss ? `\n${extraCss}` : ""}
     </style>${appearanceScript}${pwaScript}
   </head>
   <body class="bg-cream font-body text-ink">

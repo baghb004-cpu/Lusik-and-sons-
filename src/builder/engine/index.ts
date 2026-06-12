@@ -78,3 +78,4 @@ export {
   hexToRgb,
   type ContrastCheck,
 } from "./contrast.ts";
+export { parseCsv } from "./csv.ts";

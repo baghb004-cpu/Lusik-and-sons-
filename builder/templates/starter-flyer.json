@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "id": "b_96229458b5c4",
+  "name": "Printable flyer",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_4991a0f470d4",
+    "slug": "flyer",
+    "kind": "standard",
+    "title": "Flyer",
+    "order": 60,
+    "seo": {
+      "title": "Flyer"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_a5ff9bfdf70b",
+        "type": "section",
+        "props": {
+          "heading": "Your headline here",
+          "container": true,
+          "eyebrow": "You're invited"
+        },
+        "children": [
+          {
+            "id": "b_17c02038b5e9",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "One short paragraph that sells the event or offer. This page is print-ready: open it on the exported site and use the browser's Save as PDF — fixed menus hide, tables stay whole, link URLs print."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "b_6f62c13add31",
+            "type": "specTable",
+            "props": {
+              "heading": "The details",
+              "rows": [
+                {
+                  "label": "When",
+                  "value": "Saturday, 2pm"
+                },
+                {
+                  "label": "Where",
+                  "value": "The workshop"
+                },
+                {
+                  "label": "Bring",
+                  "value": "Yourself"
+                }
+              ],
+              "striped": true
+            }
+          },
+          {
+            "id": "b_761dec84685c",
+            "type": "socialRow",
+            "props": {
+              "links": [
+                {
+                  "platform": "instagram",
+                  "href": "https://instagram.com/yourshop"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -29,6 +29,7 @@ export const INSERTABLE_TYPES = [
   "socialRow",
   "hoursTable",
   "specTable",
+  "csvTable",
   "mapLink",
   "searchLauncher",
   "sectionJumper",
@@ -106,6 +107,8 @@ export function newDefaultBlock(type: InsertableType, catalog: CatalogSnapshot):
       return { id, type, props: { heading: "Hours", rows: [{ days: "Mon – Fri", hours: "9am – 5pm" }, { days: "Sat – Sun", hours: "By appointment" }] } };
     case "specTable":
       return { id, type, props: { heading: "At a glance", rows: [{ label: "Material", value: "100% cotton" }, { label: "Size", value: "90 × 90 cm" }], striped: true } };
+    case "csvTable":
+      return { id, type, props: { caption: "Pasted data", csv: "Item,Price\nCrib blanket,$165\nBib,$28" } };
     case "mapLink":
       return { id, type, props: { address: "Buena Park, CA", label: "Visit the workshop" } };
     case "searchLauncher":

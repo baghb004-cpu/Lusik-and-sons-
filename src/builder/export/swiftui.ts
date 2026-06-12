@@ -192,6 +192,8 @@ export function blockToSwift(block: Block): string {
       const head = typeof p.heading === "string" && p.heading ? [`Text("${escapeSwift(p.heading)}").font(.headline)`] : [];
       return `VStack(alignment: .leading, spacing: 8) {\n${[...head, ...lines].map((v) => indent(v, 1)).join("\n")}\n}.padding(16).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 16))`;
     }
+    case "csvTable":
+      return placeholder("csvTable (tabular data — view on the website)");
     case "specTable": {
       const rows = (p.rows as Array<{ label: string; value: string }>) ?? [];
       const lines = rows.map(

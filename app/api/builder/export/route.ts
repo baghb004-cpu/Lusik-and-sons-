@@ -48,8 +48,8 @@ export async function POST(req: Request): Promise<Response> {
     );
     return "error" in result ? json(404, result) : json(200, { ok: true, ...result });
   }
-  if (!["static", "next", "pwa", "swiftui", "twa"].includes(body.target ?? "")) {
-    return json(400, { error: 'Expected { target: "static" | "next" | "pwa" | "swiftui" | "twa", download?: boolean }' });
+  if (!["static", "next", "pwa", "swiftui", "twa", "deck"].includes(body.target ?? "")) {
+    return json(400, { error: 'Expected { target: "static" | "next" | "pwa" | "swiftui" | "twa" | "deck", download?: boolean }' });
   }
 
   const storage = getBuilderStorage();

@@ -31,18 +31,18 @@ import { materializeMobileOnly } from "../engine/overrides.ts";
 import { overridePath } from "../engine/index.ts";
 import type { BuilderStorage } from "../storage/index.ts";
 import { renderPageBody } from "./render.tsx";
-import { assembleHtmlDocument, pageFileName } from "./static.ts";
+import { assembleHtmlDocument, pageFileName, DECK_CSS } from "./static.ts";
 import { buildManifest } from "./manifest.ts";
 import { MEDIA_DIR } from "../media/paths.ts";
 import { sitemapXml, robotsTxt, type SitemapEntry } from "./seoFiles.ts";
-import { chromeSchema, type Chrome } from "../schema/index.ts";
+import { chromeSchema, brandSchema, type Chrome } from "../schema/index.ts";
 import { textDoc } from "../schema/richtext.ts";
 
 export interface ExportInput {
   storage: BuilderStorage;
   // pwa = static + manifest/sw/icons; swiftui = native iOS scaffold (App
   // Developer Mode's native path — compiles on a Mac).
-  target: "static" | "next" | "pwa" | "swiftui" | "twa";
+  target: "static" | "next" | "pwa" | "swiftui" | "twa" | "deck";
   outDir: string; // absolute
   catalog: CatalogSnapshot;
   cms?: { featured?: string };
@@ -166,7 +166,11 @@ export async function renderSinglePageHtml(
 }
 
 export async function runExport(input: ExportInput): Promise<ExportResult> {
-  const siteName = input.siteName ?? "Site";
+  // Brand kit (P2): the business name on every export comes from
+  // builder/brand.json when present; the caller's value is the fallback.
+  const brandRaw = await input.storage.read("builder/brand.json").catch(() => null);
+  const brand = brandRaw ? brandSchema.safeParse(JSON.parse(brandRaw)) : null;
+  const siteName = (brand?.success ? brand.data.name : null) ?? input.siteName ?? "Site";
   const { pages, skipped } = await loadPages(input.storage, input.catalog);
   const theme = await loadTheme(input.storage);
   const glass = theme?.tokens.glass ?? [];
@@ -181,9 +185,13 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
     fileContents.push({ path: rel, content });
   };
 
-  if (input.target === "static" || input.target === "pwa" || input.target === "twa") {
+  if (input.target === "static" || input.target === "pwa" || input.target === "twa" || input.target === "deck") {
     // twa = the pwa export + an Android (Bubblewrap) scaffold on top.
+    // deck = the static export where each top-level section becomes a
+    // full-screen scroll-snap slide (slides-inspired; doubles as app
+    // onboarding) — pure CSS, the same renderer, zero new block types.
     const pwa = input.target === "pwa" || input.target === "twa";
+    const deck = input.target === "deck";
     // Offline languages: render every page once PER ENABLED LOCALE into a
     // locale-prefixed path (default at root, others under /<code>/). The
     // switcher/gate link between them — zero-JS, real per-language URLs,
@@ -275,6 +283,7 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
         dir: loc?.dir ?? (isRtl(r.locale) ? "rtl" : "ltr"),
         i18nHref: i18nActive ? `${"../".repeat(depth)}i18n.css` : undefined,
         appearance: appearanceForPage,
+        extraCss: deck ? DECK_CSS : undefined,
       });
       await write(r.outFile, html);
     }

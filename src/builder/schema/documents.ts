@@ -91,6 +91,49 @@ export type Chrome = z.infer<typeof chromeSchema>;
 
 export const CHROME_PATH = "builder/chrome.json";
 
+// ── Brand Kit (INSPIRATION_ROADMAP P2) ──────────────────────
+// One document that makes everything feel like YOUR business:
+// templates, exports (site name/contact), chrome, and the local
+// AI's context all read from here. A panel edits it; the gate
+// validates it like any document.
+export const brandSchema = z
+  .object({
+    schemaVersion,
+    name: z.string().min(1).max(60),
+    tagline: z.string().max(120).optional(),
+    logoPath: imageSrc.optional(),
+    email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).optional(),
+    phone: z.string().max(30).optional(),
+    address: z.string().max(160).optional(),
+    /** How the business talks — feeds the local AI's house style. */
+    voice: z.string().max(400).optional(),
+  })
+  .strict();
+export type Brand = z.infer<typeof brandSchema>;
+export const BRAND_PATH = "builder/brand.json";
+
+// ── Review notes (collab-inspired, git as the transport) ────
+// Margin notes pinned to block ids: builder/reviews/<slug>.json.
+// Saving rides the normal docs API + gates; history = git.
+export const reviewNoteSchema = z
+  .object({
+    id: blockId,
+    blockId: blockId.optional(), // page-level notes omit it
+    author: z.string().min(1).max(40),
+    text: z.string().min(1).max(500),
+    createdAt: z.number().int(),
+    resolved: z.boolean().optional(),
+  })
+  .strict();
+export const reviewsSchema = z
+  .object({
+    schemaVersion,
+    slug,
+    notes: z.array(reviewNoteSchema).max(200).default([]),
+  })
+  .strict();
+export type Reviews = z.infer<typeof reviewsSchema>;
+
 // ── Mobile/tablet override layer (plan §4/§6) ───────────────
 // Sparse patches keyed by block id. Desktop never reads these,
 // which is the structural guarantee that mobile polish cannot
