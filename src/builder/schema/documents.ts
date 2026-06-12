@@ -74,6 +74,23 @@ export const templateSchema = z
 
 export type Template = z.infer<typeof templateSchema>;
 
+// ── Site chrome (plan §22) — shared header + footer ─────────
+// One document, builder/chrome.json, holds the blocks every page
+// shares: exports and the editor preview render header blocks
+// above the page and footer blocks below it, so a nav or a
+// copyright line is edited ONCE, not per page.
+export const chromeSchema = z
+  .object({
+    schemaVersion,
+    header: z.array(blockSchema).default([]),
+    footer: z.array(blockSchema).default([]),
+  })
+  .strict();
+
+export type Chrome = z.infer<typeof chromeSchema>;
+
+export const CHROME_PATH = "builder/chrome.json";
+
 // ── Mobile/tablet override layer (plan §4/§6) ───────────────
 // Sparse patches keyed by block id. Desktop never reads these,
 // which is the structural guarantee that mobile polish cannot

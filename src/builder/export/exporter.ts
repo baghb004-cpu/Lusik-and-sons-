@@ -34,6 +34,9 @@ import { renderPageBody } from "./render.tsx";
 import { assembleHtmlDocument, pageFileName } from "./static.ts";
 import { buildManifest } from "./manifest.ts";
 import { MEDIA_DIR } from "../media/paths.ts";
+import { sitemapXml, robotsTxt, type SitemapEntry } from "./seoFiles.ts";
+import { chromeSchema, type Chrome } from "../schema/index.ts";
+import { textDoc } from "../schema/richtext.ts";
 
 export interface ExportInput {
   storage: BuilderStorage;
@@ -89,6 +92,14 @@ async function loadTheme(storage: BuilderStorage): Promise<Theme | null> {
   if (!raw) return null;
   const parsed = themeSchema.safeParse(migrateDocument(JSON.parse(raw)));
   return parsed.success ? parsed.data : null;
+}
+
+/** Shared header/footer blocks (builder/chrome.json) — null when absent. */
+async function loadChrome(storage: BuilderStorage): Promise<Chrome | null> {
+  const raw = await storage.read("builder/chrome.json").catch(() => null);
+  if (!raw) return null;
+  const parsed = chromeSchema.safeParse(migrateDocument(JSON.parse(raw)));
+  return parsed.success && (parsed.data.header.length || parsed.data.footer.length) ? parsed.data : null;
 }
 
 async function loadI18n(storage: BuilderStorage) {
@@ -174,20 +185,28 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
         })()
       : undefined;
 
+    // Shared chrome (plan §22): header blocks render above every page,
+    // footer blocks below — localized per locale like the page itself.
+    const chrome = await loadChrome(input.storage);
+
     const rendered: Array<{ slug: string; outFile: string; locale: string; layers: OverrideLayer[]; page: Page; bodyHtml: string }> = [];
     for (const locale of i18n.locales) {
       for (const { page, layers } of pages) {
         const mobileLayer = layers.find((l) => l.breakpoint === "mobile");
         const base = mobileLayer ? materializeMobileOnly(page.sections, mobileLayer) : page.sections;
-        const sections = localizeBlocks(base, locale, i18n.defaultLocale);
-        const bodyHtml = await renderPageBody({
-          blocks: sections,
+        const renderCtx = {
           catalog: input.catalog,
           glass,
           cms: input.cms,
           candle,
-          i18n: { locales: localeList, current: locale, hrefForLocale: (c) => pagePathFor(c, page.slug) },
-        });
+          i18n: { locales: localeList, current: locale, hrefForLocale: (c: string) => pagePathFor(c, page.slug) },
+        };
+        const wrapped = [
+          ...localizeBlocks(chrome?.header ?? [], locale, i18n.defaultLocale),
+          ...localizeBlocks(base, locale, i18n.defaultLocale),
+          ...localizeBlocks(chrome?.footer ?? [], locale, i18n.defaultLocale),
+        ];
+        const bodyHtml = await renderPageBody({ blocks: wrapped, ...renderCtx });
         rendered.push({ slug: page.slug, outFile: outFileFor(locale, page.slug), locale, layers, page, bodyHtml });
       }
     }
@@ -218,6 +237,45 @@ export async function runExport(input: ExportInput): Promise<ExportResult> {
       });
       await write(r.outFile, html);
     }
+    // SEO infrastructure (plan §22): sitemap with hreflang alternates,
+    // robots.txt, and a branded 404 rendered through the real renderer.
+    const baseUrl = input.webBaseURL ?? "https://example.com";
+    const sitemapEntries: SitemapEntry[] = rendered.map((r) => ({
+      path: pagePathFor(r.locale, r.slug),
+      locale: r.locale,
+      slug: r.slug,
+    }));
+    await write("sitemap.xml", sitemapXml(sitemapEntries, baseUrl));
+    await write("robots.txt", robotsTxt(baseUrl));
+    {
+      const nfPage: Page = {
+        schemaVersion: 1,
+        id: "b_notfound0001",
+        slug: "404",
+        kind: "standard",
+        title: "Page not found",
+        order: 999,
+        seo: { title: `Page not found — ${siteName}` },
+        status: "published",
+        sections: [
+          {
+            id: "b_nfsection001",
+            type: "section",
+            props: { heading: "This page wandered off", container: true },
+            children: [
+              { id: "b_nftext000001", type: "richText", props: { doc: textDoc("The link may be old, or the page may have moved. The home page has everything.") } },
+              { id: "b_nfbtn0000001", type: "button", props: { label: "Back to the home page", href: "/", variant: "primary" } },
+            ],
+          },
+        ],
+      };
+      const nfBody = await renderPageBody({ blocks: nfPage.sections, catalog: input.catalog, glass, cms: input.cms, candle });
+      await write(
+        "404.html",
+        assembleHtmlDocument({ page: nfPage, bodyHtml: nfBody, layers: [], theme, stylesheetHref: "styles.css", siteName, pwa, appearance: appearanceForPage })
+      );
+    }
+
     // Media-library uploads travel with the site (plan §20) — pages
     // reference /img/uploads/<file>, so the files must ship beside them.
     try {

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "header": [],
+  "footer": [
+    {
+      "id": "b_chromefoot01",
+      "type": "section",
+      "props": {
+        "container": true
+      },
+      "children": [
+        {
+          "id": "b_chromecopy01",
+          "type": "richText",
+          "props": {
+            "doc": {
+              "type": "doc",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "\u00a9 Lusik & Sons \u2014 hand cross-stitched in Buena Park, CA."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

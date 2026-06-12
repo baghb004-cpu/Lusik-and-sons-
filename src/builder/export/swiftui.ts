@@ -162,6 +162,40 @@ export function blockToSwift(block: Block): string {
     case "buyBox":
     case "featuredProduct":
       return `ProductLink(ref: "${escapeSwift(String(p.product ?? p.binding ?? ""))}")`;
+    // Small-business blocks (plan §22): native-honest translations.
+    case "contactForm": {
+      const endpoint = escapeSwift(String(p.endpoint ?? ""));
+      if (p.provider === "mailto" && endpoint) {
+        return `Link("${escapeSwift(String(p.submitLabel ?? "Email us"))}", destination: URL(string: "mailto:${endpoint}")!).buttonStyle(.borderedProminent).tint(Theme.ink)`;
+      }
+      return placeholder("contactForm (web form — link out or use mailto natively)");
+    }
+    case "video": {
+      const src = String(p.src ?? "");
+      const url =
+        p.kind === "youtube" ? `https://www.youtube.com/watch?v=${src}` : p.kind === "vimeo" ? `https://vimeo.com/${src}` : "";
+      if (!url) return placeholder("video (local file — bundle it in the Xcode project)");
+      return `Link(destination: URL(string: "${escapeSwift(url)}")!) { HStack { Image(systemName: "play.circle.fill"); Text("${escapeSwift(String(p.caption ?? "Watch the video"))}") }.padding(14).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 14)) }.tint(Theme.ink)`;
+    }
+    case "socialRow": {
+      const links = (p.links as Array<{ platform: string; href: string }>) ?? [];
+      const items = links
+        .filter((l) => /^https?:|^mailto:|^tel:/.test(l.href))
+        .map((l) => `Link("${escapeSwift(l.platform)}", destination: URL(string: "${escapeSwift(l.href)}")!)`);
+      return `HStack(spacing: 14) {\n${items.map((v) => indent(v, 1)).join("\n")}\n}.font(.subheadline).tint(Theme.accent)`;
+    }
+    case "hoursTable": {
+      const rows = (p.rows as Array<{ days: string; hours: string }>) ?? [];
+      const lines = rows.map(
+        (r) => `HStack { Text("${escapeSwift(String(r.days))}").fontWeight(.medium); Spacer(); Text("${escapeSwift(String(r.hours))}").foregroundColor(Theme.muted) }`
+      );
+      const head = typeof p.heading === "string" && p.heading ? [`Text("${escapeSwift(p.heading)}").font(.headline)`] : [];
+      return `VStack(alignment: .leading, spacing: 8) {\n${[...head, ...lines].map((v) => indent(v, 1)).join("\n")}\n}.padding(16).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 16))`;
+    }
+    case "mapLink": {
+      const address = escapeSwift(String(p.address ?? ""));
+      return `Link(destination: URL(string: "https://maps.apple.com/?q=${escapeSwift(encodeURIComponent(String(p.address ?? "")))}")!) { HStack { Image(systemName: "mappin.and.ellipse"); VStack(alignment: .leading) { Text("${escapeSwift(String(p.label ?? "Find us"))}").fontWeight(.medium); Text("${address}").font(.caption).foregroundColor(Theme.muted) } }.padding(14).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 14)) }.tint(Theme.ink)`;
+    }
     // The floating ▲/▼ navigator is wired at the PAGE level (it needs the
     // ScrollViewReader proxy) — pageToSwiftView lifts it out. A nested one
     // is a validation error on the web side; render nothing rather than a

@@ -43,6 +43,20 @@ export const productRef = z.string().regex(PRODUCT_REF_RE);
 
 // Icon names the renderer ships SVGs for (renderer/blocks.tsx PILL_ICON_SVGS
 // must cover every name here — locked together by a unit test).
+// Social platforms the socialRow block can link to (renderer ships an
+// SVG per name — locked together by a unit test, like PILL_ICONS).
+export const SOCIAL_PLATFORMS = [
+  "instagram",
+  "facebook",
+  "tiktok",
+  "youtube",
+  "pinterest",
+  "x",
+  "etsy",
+  "email",
+  "phone",
+] as const;
+
 export const PILL_ICONS = [
   "home",
   "shop",
@@ -318,6 +332,103 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
       subtext: translatableSchema.optional(),
       continueLabel: translatableSchema.optional(),
       mode: z.enum(["blocking", "dismissible"]).optional(),
+    })
+    .strict(),
+
+  // ── Small-business blocks (plan §22) ──────────────────────
+  // Contact form. Provider-preset based (no lock-in, same philosophy
+  // as the service presets): Netlify Forms works on Netlify hosting
+  // with zero config; Formspree/Web3Forms work on ANY host with the
+  // user's own endpoint/key; mailto is the no-backend fallback. The
+  // endpoint is https-only — a form action is an injection surface.
+  contactForm: z
+    .object({
+      provider: z.enum(["netlify", "formspree", "web3forms", "mailto"]),
+      /** formspree: the form URL · web3forms: the access key · mailto: the address. */
+      endpoint: z.string().min(1).max(200).optional(),
+      heading: translatableSchema.optional(),
+      nameLabel: translatableSchema.optional(),
+      emailLabel: translatableSchema.optional(),
+      messageLabel: translatableSchema.optional(),
+      submitLabel: translatableSchema.optional(),
+    })
+    .strict()
+    .superRefine((f, ctx) => {
+      if (f.provider === "formspree" && !/^https:\/\/formspree\.io\//.test(f.endpoint ?? "")) {
+        ctx.addIssue({ code: "custom", message: "formspree needs your form URL (https://formspree.io/f/…)", path: ["endpoint"] });
+      }
+      if (f.provider === "web3forms" && !/^[a-zA-Z0-9-]{16,}$/.test(f.endpoint ?? "")) {
+        ctx.addIssue({ code: "custom", message: "web3forms needs your access key", path: ["endpoint"] });
+      }
+      if (f.provider === "mailto" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.endpoint ?? "")) {
+        ctx.addIssue({ code: "custom", message: "mailto needs an email address", path: ["endpoint"] });
+      }
+    }),
+
+  // Video. Local files play natively; YouTube/Vimeo render as a
+  // privacy facade — a plain LINK to the video (works with zero JS,
+  // loads nothing third-party) that a small inline script upgrades to
+  // an inline embed on click (youtube-nocookie / player.vimeo).
+  video: z
+    .object({
+      kind: z.enum(["file", "youtube", "vimeo"]),
+      /** file: a local path (/video/… or /img/uploads/…) · youtube/vimeo: the video id. */
+      src: z.string().min(1).max(200),
+      poster: imageSrc.optional(),
+      caption: translatableSchema.optional(),
+    })
+    .strict()
+    .superRefine((v, ctx) => {
+      if (v.kind === "file" && !/^\/(?!\/)[\w./-]+\.(mp4|webm|mov)$/.test(v.src)) {
+        ctx.addIssue({ code: "custom", message: "local video needs a site-relative .mp4/.webm/.mov path", path: ["src"] });
+      }
+      if (v.kind === "youtube" && !/^[A-Za-z0-9_-]{6,15}$/.test(v.src)) {
+        ctx.addIssue({ code: "custom", message: "youtube needs the video id (the part after v=)", path: ["src"] });
+      }
+      if (v.kind === "vimeo" && !/^\d{6,12}$/.test(v.src)) {
+        ctx.addIssue({ code: "custom", message: "vimeo needs the numeric video id", path: ["src"] });
+      }
+    }),
+
+  // Social links row — icon links to the platforms a shop actually has.
+  socialRow: z
+    .object({
+      label: translatableSchema.optional(),
+      links: z
+        .array(
+          z
+            .object({
+              platform: z.enum(SOCIAL_PLATFORMS),
+              href: safeHref,
+            })
+            .strict()
+        )
+        .min(1)
+        .max(9),
+      size: z.enum(["sm", "md", "lg"]).optional(),
+    })
+    .strict(),
+
+  // Opening hours.
+  hoursTable: z
+    .object({
+      heading: translatableSchema.optional(),
+      rows: z
+        .array(z.object({ days: translatableRequired, hours: translatableRequired }).strict())
+        .min(1)
+        .max(10),
+      note: translatableSchema.optional(),
+    })
+    .strict(),
+
+  // "Find us" — links out to the visitor's own maps app (no embedded
+  // third-party map: offline-friendly, consent-clean), with an optional
+  // storefront photo.
+  mapLink: z
+    .object({
+      address: z.string().min(1).max(200),
+      label: translatableSchema.optional(),
+      image: imageSrc.optional(),
     })
     .strict(),
 

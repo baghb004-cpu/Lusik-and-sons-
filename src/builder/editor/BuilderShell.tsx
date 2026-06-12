@@ -75,6 +75,7 @@ import { AiPanel } from "./AiPanel.tsx";
 import { AppPanel } from "./AppPanel.tsx";
 import { PresetsPanel } from "./PresetsPanel.tsx";
 import { MediaPanel } from "./MediaPanel.tsx";
+import { SeoPanel } from "./SeoPanel.tsx";
 import { ResponsivePreviewPanel } from "./ResponsivePreviewPanel.tsx";
 import { applyPreset, rectScan, type ViewportPreset, type LayoutIssue, type MeasuredRect } from "../viewport/index.ts";
 import {
@@ -246,6 +247,8 @@ export function BuilderShell() {
   const [screensOpen, setScreensOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<ViewportPreset | null>(null);
   const [liveIssues, setLiveIssues] = useState<LayoutIssue[]>([]);
+  // Shared site chrome (header/footer blocks) for page previews
+  const [chromeDoc, setChromeDoc] = useState<{ header: Block[]; footer: Block[] } | null>(null);
   // Offline languages
   const [i18nSettings, setI18nSettings] = useState<I18nSettings>(DEFAULT_I18N_SETTINGS);
   const [previewLocale, setPreviewLocale] = useState<LocaleCode>(DEFAULT_I18N_SETTINGS.defaultLocale);
@@ -316,6 +319,14 @@ export function BuilderShell() {
       api(`/api/builder/docs?path=${encodeURIComponent(THEME_PATH)}`)
         .then(async (res) => (res.ok ? setThemeDoc((await res.json()).content as Obj) : null))
         .catch(() => null);
+      // Load the shared chrome so page previews show the real header/footer.
+      api("/api/builder/docs?path=builder%2Fchrome.json")
+        .then(async (res) => {
+          if (!res.ok) return;
+          const c = (await res.json()).content as { header?: Block[]; footer?: Block[] };
+          if (c && (c.header?.length || c.footer?.length)) setChromeDoc({ header: c.header ?? [], footer: c.footer ?? [] });
+        })
+        .catch(() => {});
       // Load language settings so the preview localizes + offers a toggle.
       api(`/api/builder/docs?path=${encodeURIComponent(I18N_SETTINGS_PATH)}`)
         .then(async (res) => {
@@ -449,6 +460,10 @@ export function BuilderShell() {
     setDoc({ ...doc, content: next, dirty: true });
     setJsonText(JSON.stringify(next, null, 2));
     if (doc.path === THEME_PATH) setThemeDoc(next); // page preview re-tokens live
+    if (doc.path === "builder/chrome.json") {
+      const c = next as { header?: Block[]; footer?: Block[] };
+      setChromeDoc(c.header?.length || c.footer?.length ? { header: c.header ?? [], footer: c.footer ?? [] } : null);
+    }
     if (doc.path === I18N_SETTINGS_PATH) {
       const parsed = i18nSettingsSchema.safeParse(next);
       if (parsed.success) {
@@ -1279,7 +1294,17 @@ export function BuilderShell() {
                   </div>
                 </>
               ) : null}
+              {chromeDoc?.header.length ? (
+                <div className="pointer-events-none border-b border-dashed border-ink/15 opacity-90" title="Shared header — edit builder/chrome.json">
+                  <BlockRenderer blocks={chromeDoc.header} glass={glassPresets} catalog={catalogSnapshot} cms={cmsContext} i18n={i18nRenderCtx} editing />
+                </div>
+              ) : null}
               <BlockRenderer blocks={previewBlocks} glass={glassPresets} catalog={catalogSnapshot} cms={cmsContext} i18n={i18nRenderCtx} editing />
+              {chromeDoc?.footer.length ? (
+                <div className="pointer-events-none border-t border-dashed border-ink/15 opacity-90" title="Shared footer — edit builder/chrome.json">
+                  <BlockRenderer blocks={chromeDoc.footer} glass={glassPresets} catalog={catalogSnapshot} cms={cmsContext} i18n={i18nRenderCtx} editing />
+                </div>
+              ) : null}
               {device === "mobile" && safeAreaOn ? (
                 <div className="pointer-events-none sticky bottom-0 z-10 h-7 bg-ink/15 text-center text-[10px] leading-7 text-ink/60" aria-hidden="true">
                   home indicator — env(safe-area-inset-bottom)
@@ -1437,6 +1462,11 @@ export function BuilderShell() {
                       + Add Liquid Glass pill menu
                     </button>
                   ) : null}
+                  <SeoPanel
+                    page={parsedPage}
+                    siteName="Lusik & Sons"
+                    onChange={(seo) => commitPage({ ...(doc!.content as object), seo } as never, layers)}
+                  />
                   <Inspector
                     blocks={previewBlocks ?? parsedPage.sections}
                     layers={layers}

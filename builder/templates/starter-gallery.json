@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "id": "b_45c572c48527",
+  "name": "Photo gallery",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_325b98e0e1f1",
+    "slug": "gallery",
+    "kind": "standard",
+    "title": "Gallery",
+    "order": 50,
+    "seo": {
+      "title": "Gallery"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_a1d96cb104ed",
+        "type": "section",
+        "props": {
+          "heading": "The work",
+          "container": true,
+          "eyebrow": "Portfolio"
+        },
+        "children": [
+          {
+            "id": "b_0aca0d918e48",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Swap these placeholders for your own photos — upload them in the Media panel and pick them here."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "b_a46fc1aadb78",
+            "type": "gallery",
+            "props": {
+              "layout": "grid",
+              "columns": 3,
+              "images": [
+                {
+                  "src": "/img/armenian-flag.jpg",
+                  "alt": "Replace me — photo one"
+                },
+                {
+                  "src": "/img/armenian-flag.jpg",
+                  "alt": "Replace me — photo two"
+                },
+                {
+                  "src": "/img/armenian-flag.jpg",
+                  "alt": "Replace me — photo three"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -24,6 +24,7 @@ import { glassPresetToCss } from "../theme/css.ts";
 import { resolveProductRef, type CatalogProductSnapshot, type CatalogSnapshot } from "../engine/commerce.ts";
 import { JUMPER_STOP_SELECTORS, jumperDomId, sectionJumperScript, sectionJumperCss } from "./jumperScript.ts";
 import { appearanceDomId, appearanceSwitcherScript, appearanceSwitcherCss, CANDLE_DEFAULTS } from "./appearanceScript.ts";
+import { videoDomId, videoFacadeScript, videoWatchUrl } from "./videoScript.ts";
 import type { Candlelight } from "../schema/index.ts";
 
 export interface RenderContext {
@@ -103,6 +104,20 @@ export const PILL_ICON_SVGS: Record<string, ReactNode> = {
   phone: <path d="M6 3h4l1 5-2.5 1.5a12 12 0 006 6L16 13l5 1v4a2 2 0 01-2 2A16 16 0 014 5a2 2 0 012-2z" {...stroke} />,
   star: <path d="M12 3l2.7 5.7 6.3.8-4.6 4.3 1.2 6.2L12 17l-5.6 3 1.2-6.2L3 9.5l6.3-.8z" {...stroke} />,
   gift: <path d="M4 9h16v3H4zm2 3v8h12v-8M12 9v11M12 9s-4 0-5-2 1-4 3-3 2 5 2 5zm0 0s4 0 5-2-1-4-3-3-2 5-2 5z" {...stroke} />,
+};
+
+// One SVG per SOCIAL_PLATFORMS name (schema/block.ts) — same lockstep
+// contract as PILL_ICON_SVGS. Simple, recognizable glyphs, currentColor.
+export const SOCIAL_ICON_SVGS: Record<string, ReactNode> = {
+  instagram: <><rect x="4" y="4" width="16" height="16" rx="4.5" {...stroke} /><circle cx="12" cy="12" r="3.6" {...stroke} /><circle cx="16.7" cy="7.3" r="1" fill="currentColor" /></>,
+  facebook: <path d="M14.5 8.5H13c-.6 0-1 .4-1 1V11h2.5l-.4 2.5H12V20a8 8 0 10-3 0v-6.5H7V11h2V9.2C9 7 10.3 5.6 12.6 5.6c.8 0 1.6.1 1.9.2z" {...stroke} />,
+  tiktok: <path d="M14 4v9.5a3.5 3.5 0 11-3.5-3.5M14 4c.3 2.4 1.8 4 4.5 4.3" {...stroke} />,
+  youtube: <><rect x="3" y="6.5" width="18" height="11" rx="3" {...stroke} /><path d="M10.5 9.8l4 2.2-4 2.2z" fill="currentColor" /></>,
+  pinterest: <><circle cx="12" cy="12" r="8.5" {...stroke} /><path d="M11 8.5c-1.6.6-2.2 2.6-1.2 3.8M12.8 8.2c1.8.4 2.4 2.6 1.2 4.1-.9 1.1-2.4 1.2-3.2.4L9.5 19" {...stroke} /></>,
+  x: <path d="M5 4l14 16M19 4L5 20" {...stroke} />,
+  etsy: <path d="M7 4h10M8.5 4v16M7 20h10M8.5 11.5H15M16 6.5V4M16.5 20l.5-2.5" {...stroke} />,
+  email: <><rect x="3.5" y="5.5" width="17" height="13" rx="2" {...stroke} /><path d="M4.5 7l7.5 6 7.5-6" {...stroke} /></>,
+  phone: PILL_ICON_SVGS.phone,
 };
 
 const PillIcon = ({ name }: { name: string }) => (
@@ -834,6 +849,171 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
       <a href={p.href} aria-label={p.label} className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-ink/15 bg-white/70 px-4 text-sm hover:border-accent">
         <SearchIcon />
         <span>{p.label}</span>
+      </a>
+    );
+  },
+
+  // ── Small-business blocks (plan §22) ──────────────────────
+  contactForm: (block, ctx) => {
+    const p = block.props as {
+      provider: "netlify" | "formspree" | "web3forms" | "mailto";
+      endpoint?: string;
+      heading?: string;
+      nameLabel?: string;
+      emailLabel?: string;
+      messageLabel?: string;
+      submitLabel?: string;
+    };
+    const formName = `contact-${block.id}`;
+    if (p.provider === "mailto") {
+      return (
+        <div className="rounded-2xl border border-ink/10 bg-white/60 p-5 text-center shadow-sm">
+          {p.heading ? <h3 className="mb-2 font-display text-lg">{p.heading}</h3> : null}
+          <a href={`mailto:${p.endpoint}`} className="inline-block rounded-full bg-ink px-5 py-2 text-sm font-medium text-cream transition hover:opacity-90">
+            {p.submitLabel ?? "Email us"}
+          </a>
+        </div>
+      );
+    }
+    const action =
+      p.provider === "formspree" ? p.endpoint : p.provider === "web3forms" ? "https://api.web3forms.com/submit" : undefined;
+    const inputClass = "w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none";
+    return (
+      <form
+        method="POST"
+        action={action}
+        {...(p.provider === "netlify" ? { "data-netlify": "true", name: formName, "netlify-honeypot": "bot-field" } : {})}
+        className="space-y-3 rounded-2xl border border-ink/10 bg-white/60 p-5 shadow-sm"
+      >
+        {p.heading ? <h3 className="font-display text-lg">{p.heading}</h3> : null}
+        {p.provider === "netlify" ? <input type="hidden" name="form-name" value={formName} /> : null}
+        {p.provider === "web3forms" ? <input type="hidden" name="access_key" value={p.endpoint} /> : null}
+        {/* honeypot — bots fill it, humans never see it */}
+        <p className="hidden" aria-hidden="true">
+          <input type="text" name="bot-field" tabIndex={-1} autoComplete="off" />
+        </p>
+        <label className="block text-sm">
+          {p.nameLabel ?? "Name"}
+          <input type="text" name="name" required className={inputClass} />
+        </label>
+        <label className="block text-sm">
+          {p.emailLabel ?? "Email"}
+          <input type="email" name="email" required className={inputClass} />
+        </label>
+        <label className="block text-sm">
+          {p.messageLabel ?? "Message"}
+          <textarea name="message" rows={4} required className={inputClass} />
+        </label>
+        <button type="submit" className="rounded-full bg-ink px-5 py-2 text-sm font-medium text-cream transition hover:opacity-90">
+          {p.submitLabel ?? "Send"}
+        </button>
+        {ctx.editing && p.provider === "netlify" ? (
+          <p className="rounded bg-accent/10 px-2 py-1 text-xs text-muted">Netlify Forms works when the site is hosted on Netlify (submissions appear in the dashboard). Other hosts: switch to Formspree or Web3Forms.</p>
+        ) : null}
+      </form>
+    );
+  },
+
+  // Local files play natively; YouTube/Vimeo render as a privacy facade:
+  // a plain link (zero third-party requests) the inline script upgrades
+  // to an embed on click. Reduced-data, no-JS and export-safe by default.
+  video: (block, ctx) => {
+    const p = block.props as { kind: "file" | "youtube" | "vimeo"; src: string; poster?: string; caption?: string };
+    let inner: ReactNode;
+    if (p.kind === "file") {
+      inner = <video controls preload="metadata" poster={p.poster} src={p.src} className="w-full rounded-xl" />;
+    } else {
+      const domId = videoDomId(block.id);
+      inner = (
+        <div className="relative aspect-video overflow-hidden rounded-xl bg-ink">
+          <a
+            id={domId}
+            href={videoWatchUrl(p.kind, p.src)}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={p.caption ?? "Play video"}
+            className="absolute inset-0 flex items-center justify-center"
+            style={p.poster ? { background: `center/cover no-repeat url(${JSON.stringify(p.poster)})` } : undefined}
+          >
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cream/90 shadow-md transition hover:scale-105">
+              <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7 text-ink" aria-hidden="true">
+                <path d="M8 5l11 7-11 7z" fill="currentColor" />
+              </svg>
+            </span>
+          </a>
+          {ctx.editing ? null : <script dangerouslySetInnerHTML={{ __html: videoFacadeScript(block.id, p.kind, p.src) }} />}
+        </div>
+      );
+    }
+    return p.caption ? (
+      <figure>
+        {inner}
+        <figcaption className="mt-1 text-sm text-muted">{p.caption}</figcaption>
+      </figure>
+    ) : (
+      inner
+    );
+  },
+
+  socialRow: (block) => {
+    const p = block.props as { label?: string; links: Array<{ platform: string; href: string }>; size?: string };
+    const px = { sm: 36, md: 44, lg: 52 }[p.size ?? "md"];
+    return (
+      <nav aria-label={p.label ?? "Social links"} className="flex flex-wrap items-center gap-2">
+        {p.label ? <span className="mr-1 text-sm text-muted">{p.label}</span> : null}
+        {p.links.map((l, i) => (
+          <a
+            key={i}
+            href={l.href}
+            aria-label={l.platform}
+            target={l.href.startsWith("http") ? "_blank" : undefined}
+            rel={l.href.startsWith("http") ? "noreferrer" : undefined}
+            className="flex items-center justify-center rounded-full border border-ink/15 bg-white/70 text-ink transition hover:border-accent"
+            style={{ width: px, height: px }}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+              {SOCIAL_ICON_SVGS[l.platform] ?? SOCIAL_ICON_SVGS.email}
+            </svg>
+          </a>
+        ))}
+      </nav>
+    );
+  },
+
+  hoursTable: (block) => {
+    const p = block.props as { heading?: string; rows: Array<{ days: string; hours: string }>; note?: string };
+    return (
+      <div className="rounded-2xl border border-ink/10 bg-white/60 p-5 shadow-sm">
+        {p.heading ? <h3 className="mb-3 font-display text-lg">{p.heading}</h3> : null}
+        <dl className="space-y-1.5">
+          {p.rows.map((r, i) => (
+            <div key={i} className="flex items-baseline justify-between gap-4 text-sm">
+              <dt className="font-medium">{r.days}</dt>
+              <dd className="text-muted">{r.hours}</dd>
+            </div>
+          ))}
+        </dl>
+        {p.note ? <p className="mt-3 text-xs text-muted">{p.note}</p> : null}
+      </div>
+    );
+  },
+
+  mapLink: (block) => {
+    const p = block.props as { address: string; label?: string; image?: string };
+    const href = `https://maps.google.com/?q=${encodeURIComponent(p.address)}`;
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl border border-ink/10 bg-white/60 shadow-sm transition hover:shadow-md">
+        {p.image ? <img src={p.image} alt="" loading="lazy" className="h-40 w-full object-cover" /> : null}
+        <span className="flex items-center gap-3 p-4">
+          <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-accent" aria-hidden="true">
+            <path d="M12 21s-7-6.1-7-11a7 7 0 0114 0c0 4.9-7 11-7 11z" {...stroke} />
+            <circle cx="12" cy="10" r="2.5" {...stroke} />
+          </svg>
+          <span>
+            <span className="block text-sm font-medium">{p.label ?? "Find us"}</span>
+            <span className="block text-xs text-muted">{p.address}</span>
+          </span>
+        </span>
       </a>
     );
   },

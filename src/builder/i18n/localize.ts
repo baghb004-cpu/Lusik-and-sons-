@@ -45,6 +45,11 @@ export const TRANSLATABLE_FIELDS: Record<string, FieldSpec> = {
   languageGate: { strings: ["heading", "subtext", "continueLabel"] },
   sectionJumper: { strings: ["upLabel", "downLabel"] },
   appearanceSwitcher: { strings: ["lightLabel", "darkLabel", "autoLabel", "candleLabel"] },
+  contactForm: { strings: ["heading", "nameLabel", "emailLabel", "messageLabel", "submitLabel"] },
+  video: { strings: ["caption"] },
+  socialRow: { strings: ["label"] },
+  hoursTable: { strings: ["heading", "note"], arrays: [{ prop: "rows", strings: ["days", "hours"] }] },
+  mapLink: { strings: ["label"] },
 };
 
 function localizeProps(

@@ -23,6 +23,7 @@ export {
   CONTAINER_TYPES,
   BLOCK_ID_RE,
   PILL_ICONS,
+  SOCIAL_PLATFORMS,
   productRef,
   PRODUCT_REF_RE,
   type Block,
@@ -44,6 +45,9 @@ export {
   type BlockPatch,
   type Breakpoint,
   type Revision,
+  chromeSchema,
+  CHROME_PATH,
+  type Chrome,
 } from "./documents.ts";
 
 export { themeSchema, glassPreset, appearanceSchema, candlelightSchema, type Theme, type GlassPreset, type Appearance, type Candlelight } from "./theme.ts";

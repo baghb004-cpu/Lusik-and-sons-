@@ -24,6 +24,11 @@ export const INSERTABLE_TYPES = [
   "breadcrumbs",
   "drawer",
   "gallery",
+  "contactForm",
+  "video",
+  "socialRow",
+  "hoursTable",
+  "mapLink",
   "searchLauncher",
   "sectionJumper",
   "appearanceSwitcher",
@@ -90,6 +95,16 @@ export function newDefaultBlock(type: InsertableType, catalog: CatalogSnapshot):
       return { id, type, props: { side: "bottom", triggerLabel: "More details" }, children: [] };
     case "gallery":
       return { id, type, props: { product: ref, layout: "grid", columns: 3 } };
+    case "contactForm":
+      return { id, type, props: { provider: "mailto", endpoint: "hello@example.com", heading: "Write to us" } };
+    case "video":
+      return { id, type, props: { kind: "youtube", src: "dQw4w9WgXcQ", caption: "Our story" } };
+    case "socialRow":
+      return { id, type, props: { links: [{ platform: "instagram", href: "https://instagram.com/yourshop" }] } };
+    case "hoursTable":
+      return { id, type, props: { heading: "Hours", rows: [{ days: "Mon – Fri", hours: "9am – 5pm" }, { days: "Sat – Sun", hours: "By appointment" }] } };
+    case "mapLink":
+      return { id, type, props: { address: "Buena Park, CA", label: "Visit the workshop" } };
     case "searchLauncher":
       return { id, type, props: { label: "Search", href: "/shop", style: "pill" } };
     case "sectionJumper":

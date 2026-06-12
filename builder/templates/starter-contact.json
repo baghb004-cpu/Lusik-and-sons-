@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "id": "b_04e07e6be4e8",
+  "name": "Contact page",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_eb4f137b5c3a",
+    "slug": "contact",
+    "kind": "standard",
+    "title": "Contact",
+    "order": 50,
+    "seo": {
+      "title": "Contact"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_35bbafc1799f",
+        "type": "section",
+        "props": {
+          "heading": "Get in touch",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_c31c3a9d3e19",
+            "type": "contactForm",
+            "props": {
+              "provider": "netlify",
+              "heading": "Send us a note"
+            }
+          }
+        ]
+      },
+      {
+        "id": "b_40e378fa815d",
+        "type": "section",
+        "props": {
+          "heading": "Visit or follow",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_2b768d89f559",
+            "type": "hoursTable",
+            "props": {
+              "heading": "Hours",
+              "rows": [
+                {
+                  "days": "Mon – Fri",
+                  "hours": "9am – 5pm"
+                },
+                {
+                  "days": "Sat – Sun",
+                  "hours": "By appointment"
+                }
+              ]
+            }
+          },
+          {
+            "id": "b_65589c5cc960",
+            "type": "mapLink",
+            "props": {
+              "address": "Your street address, City, ST",
+              "label": "Find the workshop"
+            }
+          },
+          {
+            "id": "b_961b2f8406e0",
+            "type": "socialRow",
+            "props": {
+              "links": [
+                {
+                  "platform": "instagram",
+                  "href": "https://instagram.com/yourshop"
+                },
+                {
+                  "platform": "email",
+                  "href": "mailto:hello@example.com"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
