@@ -294,6 +294,25 @@
     // The shell emits "app-ready" when the server is up → fade out.
     // "app-error" → show the message instead of hanging forever.
     if (window.__TAURI__?.event) {
+      // Mode picker (plan §23): a small toggle during boot — if Game Mode
+      // is installed beside the exe, the operator can ask for it and the
+      // shell spawns Godot alongside the builder window when ready.
+      try {
+        window.__TAURI__.core.invoke("game_mode_available").then((available) => {
+          if (!available) return;
+          const btn = document.createElement("button");
+          btn.textContent = "🎮 also open Game Mode";
+          btn.style.cssText = "position:absolute;bottom:10px;right:12px;z-index:9;font:12px system-ui;padding:6px 12px;border-radius:999px;border:1px solid #B0884266;background:#1a161299;color:#F5EFE3;cursor:pointer;";
+          let on = false;
+          btn.addEventListener("click", () => {
+            on = !on;
+            btn.style.background = on ? "#B08842" : "#1a161299";
+            window.__TAURI__.core.invoke("request_game_mode", { enabled: on });
+          });
+          document.body.appendChild(btn);
+        }).catch(() => {});
+      } catch (_) {}
+
       window.__TAURI__.event.listen("app-ready", () => {
         document.body.classList.add("fade-out");
       });

@@ -96,8 +96,64 @@ fn wait_for_port(deadline: Instant) -> bool {
     false
 }
 
+// ── Game Mode (plan §23): the optional Godot companion ──────
+// Lives at game-mode/godot-export/ next to the exe. Missing = the
+// launcher says so kindly and Normal Mode proceeds — Game Mode can
+// never take the builder down (separate process, same API token).
+fn find_game_mode() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    let dir = exe.parent()?.join("game-mode").join("godot-export");
+    let entries = std::fs::read_dir(&dir).ok()?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = path.file_name()?.to_string_lossy().to_lowercase();
+        if cfg!(windows) && name.ends_with(".exe") {
+            return Some(path);
+        }
+        if !cfg!(windows) && (name.ends_with(".x86_64") || name.ends_with(".app")) {
+            return Some(path);
+        }
+    }
+    None
+}
+
+static TOKEN: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+// The splash's "🎮 Game Mode" toggle — checked once the server is ready.
+static WANT_GAME_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn spawn_game_mode() -> Result<(), String> {
+    let bin = find_game_mode().ok_or_else(|| {
+        "Game Mode isn't installed yet: open desktop/game-mode/godot-project in Godot 4.3+, export for Windows, and drop the exe into game-mode/godot-export/.".to_string()
+    })?;
+    let token = TOKEN.get().cloned().unwrap_or_default();
+    Command::new(&bin)
+        .env("WORKSHOP_TOKEN", token)
+        .env("WORKSHOP_PORT", PORT.to_string())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("Game Mode could not start: {e}"))
+}
+
+#[tauri::command]
+fn game_mode_available() -> bool {
+    find_game_mode().is_some()
+}
+
+#[tauri::command]
+fn enter_game_mode() -> Result<(), String> {
+    spawn_game_mode()
+}
+
+#[tauri::command]
+fn request_game_mode(enabled: bool) {
+    WANT_GAME_MODE.store(enabled, std::sync::atomic::Ordering::Relaxed);
+}
+
 fn main() {
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![game_mode_available, enter_game_mode, request_game_mode])
         .setup(|app| {
             // 1. Splash first — the earliest visible surface there is.
             let splash = WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash.html".into()))
@@ -113,6 +169,7 @@ fn main() {
             std::thread::spawn(move || {
                 let started = Instant::now();
                 let token = session_token();
+                let _ = TOKEN.set(token.clone());
                 let mut child = match spawn_server(&token) {
                     Ok(c) => c,
                     Err(msg) => {
@@ -139,6 +196,15 @@ fn main() {
 
                 let _ = splash.emit("app-ready", ());
                 std::thread::sleep(Duration::from_millis(550)); // the fade
+
+                // Opt-in Game Mode at launch: --game-mode flag or env. The
+                // builder window opens either way — the engine is the product.
+                let wants_game = std::env::args().any(|a| a == "--game-mode")
+                    || std::env::var("WORKSHOP_GAME_MODE").as_deref() == Ok("1")
+                    || WANT_GAME_MODE.load(std::sync::atomic::Ordering::Relaxed);
+                if wants_game {
+                    let _ = spawn_game_mode(); // missing → silent here; the splash button explains
+                }
 
                 let url = format!("http://127.0.0.1:{PORT}/builder#token={token}");
                 let main = WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(url.parse().unwrap()))

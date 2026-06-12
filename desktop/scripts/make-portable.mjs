@@ -105,3 +105,45 @@ panel lights up. Nothing else phones home — this folder works offline.
 `
 );
 console.log(`Portable build assembled at ${target}`);
+
+// ── Game Mode + portable environment skeleton (plan §23) ────
+// The fun layer's home + the private data directory, created empty:
+// the Godot PROJECT ships as source; the exported exe and all user
+// data (profiles, saves, the Retro Game Room's media) live here.
+{
+  const dirs = [
+    "game-mode/godot-export",
+    "portable/profiles",
+    "portable/quicksaves",
+    "portable/backups",
+    "portable/retro/library",
+    "portable/retro/emulator-profiles",
+    "portable/retro/controller-profiles",
+    "portable/retro/emulators",
+    "portable/retro/user-media/isos",
+    "portable/retro/user-media/covers",
+    "portable/retro/vm-images",
+    "portable/retro/save-data",
+    "portable/retro/screenshots",
+    "portable/retro/logs",
+  ];
+  for (const d of dirs) mkdirSync(join(target, d), { recursive: true });
+  const gmSrc = join(repo, "desktop", "game-mode");
+  if (existsSync(gmSrc)) {
+    cpSync(join(gmSrc, "godot-project"), join(target, "game-mode", "godot-project"), { recursive: true });
+    cpSync(join(gmSrc, "CREDITS.md"), join(target, "game-mode", "CREDITS.md"));
+  }
+  writeFileSync(
+    join(target, "portable", "settings.json"),
+    JSON.stringify({ schemaVersion: 1, gameRoom: { enabled: false }, gameModeDefault: false }, null, 2) + "\n"
+  );
+  writeFileSync(
+    join(target, "game-mode", "godot-export", "README.txt"),
+    "Open ../godot-project in Godot 4.3+ (free, godotengine.org), Project > Export > Windows Desktop,\nand save the exe here. The launcher's Game Mode toggle finds it automatically.\n"
+  );
+  writeFileSync(
+    join(target, "portable", "retro", "emulators", "README.txt"),
+    "Place the open-source backends you installed yourself here (dosbox-x.exe, 86Box.exe, qemu-system-i386.exe).\nNo OS images, BIOSes, games or keys are ever bundled - the Retro Game Room only launches media YOU own.\n"
+  );
+  console.log("game-mode + portable environment skeleton created");
+}

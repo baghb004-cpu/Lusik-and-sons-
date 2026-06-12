@@ -1,0 +1,25 @@
+; Baghdo's Workshop — Game Mode (the optional fun layer, plan §23)
+; Open this folder in Godot 4.3+ → run, or Export → Windows Desktop and
+; drop the exe into ../godot-export/. The builder engine stays in charge:
+; every station talks to the existing local API over loopback HTTP.
+
+config_version=5
+
+[application]
+
+config/name="Baghdo's Workshop — Game Mode"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.3")
+
+[autoload]
+
+Bridge="*res://scripts/bridge.gd"
+
+[display]
+
+window/size/viewport_width=1100
+window/size/viewport_height=650
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"

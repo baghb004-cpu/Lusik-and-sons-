@@ -53,3 +53,9 @@ playwright-report/
 *.swp
 src/data/cmsCategoriesData.generated.js
 exports/
+
+# Portable environment (private local data — plan §23)
+/portable/
+desktop/game-mode/godot-project/.godot/
+desktop/game-mode/godot-export/*
+!desktop/game-mode/godot-export/.gitkeep
