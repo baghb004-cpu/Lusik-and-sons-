@@ -885,6 +885,29 @@ export function BuilderShell() {
             <button type="button" onClick={() => openDialog("newPage")} className="rounded-full bg-ink px-3 py-1 text-xs text-cream">
               + New page
             </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const target = window.confirm("OK = static HTML export (zero JS, deploy anywhere)\nCancel = Next.js project export") ? "static" : "next";
+                setStatus(`Exporting ${target}…`);
+                try {
+                  const res = await api("/api/builder/export", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ target }),
+                  });
+                  const body = await res.json();
+                  if (!res.ok) { setStatus(body.error || "Export failed"); return; }
+                  const skipped = body.skipped?.length ? ` (${body.skipped.length} page(s) skipped — failed gates)` : "";
+                  setStatus(`Exported ${body.pages} page(s) → ${body.outDir}${skipped}`);
+                } catch (e) {
+                  setStatus(String((e as Error).message || e));
+                }
+              }}
+              className="rounded-full border border-ink/20 px-3 py-1 text-xs hover:bg-cream"
+            >
+              Export site ↓
+            </button>
             <label className="cursor-pointer rounded-full border border-ink/20 px-3 py-1 text-xs hover:bg-cream">
               Import template
               <input

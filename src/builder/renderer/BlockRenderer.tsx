@@ -26,9 +26,12 @@ export interface BlockRendererProps {
   inventory?: RenderContext["inventory"];
   /** Editor preview mode: show placeholders for unknown types + block ids. */
   editing?: boolean;
+  /** Emit data-block-id without editor behavior — the static exporter's
+   *  hook for override @media CSS targets. */
+  withIds?: boolean;
 }
 
-export function BlockRenderer({ blocks, cms, glass, catalog, inventory, editing = false }: BlockRendererProps) {
+export function BlockRenderer({ blocks, cms, glass, catalog, inventory, editing = false, withIds = false }: BlockRendererProps) {
   const ctx: RenderContext = {
     cms,
     glass,
@@ -36,14 +39,14 @@ export function BlockRenderer({ blocks, cms, glass, catalog, inventory, editing 
     inventory,
     editing,
     renderChildren: (children) => (
-      <BlockRenderer blocks={children} cms={cms} glass={glass} catalog={catalog} inventory={inventory} editing={editing} />
+      <BlockRenderer blocks={children} cms={cms} glass={glass} catalog={catalog} inventory={inventory} editing={editing} withIds={withIds} />
     ),
   };
 
-  return <>{blocks.map((block) => renderOne(block, ctx, editing))}</>;
+  return <>{blocks.map((block) => renderOne(block, ctx, editing, withIds))}</>;
 }
 
-function renderOne(block: Block, ctx: RenderContext, editing: boolean): ReactNode {
+function renderOne(block: Block, ctx: RenderContext, editing: boolean, withIds = false): ReactNode {
   const component = BLOCK_COMPONENTS[block.type];
 
   let content: ReactNode;
@@ -62,11 +65,10 @@ function renderOne(block: Block, ctx: RenderContext, editing: boolean): ReactNod
 
   const style = resolveStyle(block.style);
   const visibility = visibilityClasses(block.visibility);
-  const hasWrapper = visibility !== "" || Object.keys(style).length > 0 || editing;
-  if (!hasWrapper) return <div key={block.id}>{content}</div>;
+  const tagId = editing || withIds;
 
   return (
-    <div key={block.id} className={cx(visibility) || undefined} style={style} {...(editing ? { "data-block-id": block.id } : {})}>
+    <div key={block.id} className={cx(visibility) || undefined} style={Object.keys(style).length ? style : undefined} {...(tagId ? { "data-block-id": block.id } : {})}>
       {content}
     </div>
   );

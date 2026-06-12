@@ -57,6 +57,11 @@ const SECURITY_HEADERS = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // The builder's export API compiles utility CSS at request time
+  // (admin-gated, local mode). Tailwind/postcss must load from real
+  // node_modules — bundled into a server chunk, Tailwind's preflight
+  // can't find its own asset files.
+  serverExternalPackages: ["tailwindcss", "postcss"],
   // Serve images in the smallest modern format the browser accepts. AVIF first
   // (typically 20–30% smaller than WebP), WebP fallback, then the original.
   // The Netlify image CDN (@netlify/plugin-nextjs) handles the negotiation.

@@ -221,6 +221,26 @@ export function removeMobileOnlyBlock(layer: OverrideLayer, blockId: string): Ov
   };
 }
 
+/**
+ * Static-export materialization: bake a layer's mobile-only blocks into
+ * the BASE tree as markup hidden on desktop+tablet (the existing
+ * visibility classes do the rest) — semantically identical to runtime
+ * insertion, but achievable in pure HTML/CSS. Style/visibility PATCHES
+ * are handled separately as @media CSS (export/css.ts).
+ */
+export function materializeMobileOnly(base: Block[], layer: OverrideLayer): Block[] {
+  let blocks = base;
+  for (const add of layer.mobileOnlyBlocks) {
+    const forced: Block = {
+      ...add.block,
+      visibility: { ...add.block.visibility, desktop: false, tablet: false },
+    };
+    const inserted = insertAtAnchor(blocks, add.anchorBlockId, add.position, forced);
+    if (inserted) blocks = inserted; // stale anchors simply don't materialize
+  }
+  return blocks;
+}
+
 /** Drop stale patches/additions (run after base edits; keeps layers from rotting). */
 export function pruneStaleOverrides(base: Block[], layer: OverrideLayer): OverrideLayer {
   const stale = listStaleOverrides(base, layer);

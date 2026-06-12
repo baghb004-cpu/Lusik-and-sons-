@@ -52,3 +52,4 @@ playwright-report/
 .idea/
 *.swp
 src/data/cmsCategoriesData.generated.js
+exports/
