@@ -68,17 +68,26 @@ shell. (No Tauri build is needed for the Pi; the script launcher is enough.)
 | `app/` (built site + builder) | shared | shared | `.next` is portable; `node_modules` is per-arch |
 | `portable/` data | shared | shared | Profiles, saves, settings, retro library — plain JSON |
 | Builder, exports, tools | works | works | All JS — runs anywhere Node runs |
-| Retro Game Room emulators | Windows sidecars (pinned) | **arm64 builds, future** | `scripts/retro-tools.lock.json` pins Windows assets; arm64 pins are a later step |
-| FFmpeg sidecar (Media Studio) | win64 build | linux/arm64 build | `install-media-tools.mjs` already branches on platform |
+| Retro Game Room emulators | Windows sidecars (pinned) | **system packages** | On a Pi the launcher resolves dosbox-x / qemu / 86box from PATH — `sudo apt install dosbox-x qemu-system-x86` |
+| FFmpeg sidecar (Media Studio) | win64 build | linux-arm64 build | `install-media-tools.mjs` selects the arm64 asset; run `--pin` once on the Pi to pin its checksum |
 | Godot Game Mode | Windows export | arm64 export | Same `godot-project/`; export per platform |
 
-## Still-future Pi work (not blocking the Windows build)
+## Pi sidecars (the optional offline media/retro features)
 
-- Pin arm64 emulator + FFmpeg assets (the offline Retro Game Room / Media
-  Studio sidecars) in the lock files, the same fail-closed way as the Windows
-  ones.
+- **Media Studio (FFmpeg):** `install-media-tools.mjs` already selects the
+  `linux-arm64` BtbN build. Run it once on the Pi, then `--pin` to record the
+  build's sha256 in `scripts/media-tools.lock.json` (fail-closed until pinned,
+  same as every other sidecar).
+- **Retro Game Room emulators:** on a Pi these come from the package manager,
+  not a bundled download (the right model on Linux) — `sudo apt install
+  dosbox-x qemu-system-x86`. The launch endpoint resolves the emulator from
+  PATH when no sidecar is staged, so an apt-installed binary just works.
+
+## Still-future (not blocking)
+
 - Optionally compile a real Tauri arm64 shell instead of `start.sh` (the
   script launcher is intentionally simpler and works today).
 
 The core builder, exports, tools, content CMS, and data layer all run on the Pi
-today with just `node/bin/node` + `start.sh` — the structure is ready.
+today with just `node/bin/node` + `start.sh` — the structure is ready, and the
+Media Studio + Retro Room have a clean arm64 path.

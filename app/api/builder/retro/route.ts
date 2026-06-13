@@ -93,6 +93,18 @@ async function loadAll(store: NonNullable<Awaited<ReturnType<typeof guard>>["sto
 
 const resolveUserPath = (root: string, p: string) => (isAbsolute(p) ? p : join(root, p));
 
+/** Resolve a bare command name against PATH (system-installed emulator on
+ *  Linux/Pi). Returns the absolute path or null. Never used on Windows. */
+function resolveOnPath(bin: string): string | null {
+  if (isAbsolute(bin)) return existsSync(bin) ? bin : null;
+  for (const dir of (process.env.PATH ?? "").split(":")) {
+    if (!dir) continue;
+    const p = join(dir, bin);
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
 async function gatherFacts(store: NonNullable<Awaited<ReturnType<typeof guard>>["store"]>, enabled: boolean): Promise<HealthFacts> {
   const all = await loadAll(store);
   const safeList = (dir: string): string[] => {
@@ -359,11 +371,17 @@ export async function POST(req: Request): Promise<Response> {
             join(store.root, "retro", "emulators", toolDir, plan.bin === "86Box" ? "86Box.exe" : binName),
             join(store.root, "retro", "emulators", binName),
           ];
-      const binAbs = candidates.find((c) => existsSync(c)) ?? candidates[0];
-      if (!existsSync(binAbs)) {
+      // Prefer a staged sidecar; on Linux/Pi fall back to a system-installed
+      // emulator on PATH (the natural model there — `apt install dosbox-x …`).
+      let binAbs = candidates.find((c) => existsSync(c)) ?? null;
+      if (!binAbs && process.platform !== "win32") binAbs = resolveOnPath(plan.bin);
+      if (!binAbs) {
         return json(409, {
           error: `The ${emu.backend} backend isn't installed`,
-          hint: `One command stages it (verified): node scripts/install-retro-tools.mjs — or place it at portable/retro/emulators/${toolDir}/`,
+          hint:
+            process.platform === "win32"
+              ? `One command stages it (verified): node scripts/install-retro-tools.mjs — or place it at portable/retro/emulators/${toolDir}/`
+              : `Install it from your package manager (Raspberry Pi: sudo apt install dosbox-x qemu-system-x86), or place it at portable/retro/emulators/${toolDir}/`,
         });
       }
 

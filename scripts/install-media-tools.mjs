@@ -39,14 +39,23 @@ const SOURCE = lock.source;
 
 const sha256 = (buf) => createHash("sha256").update(buf).digest("hex");
 
+/** The platform-arch lock key for this machine (win-x64 / linux-x64 /
+ *  linux-arm64 — a Raspberry Pi 5 is linux-arm64), or null where unsupported. */
+function platformKey() {
+  if (process.platform === "win32") return "win-x64";
+  if (process.platform === "linux") return process.arch === "arm64" ? "linux-arm64" : "linux-x64";
+  return null; // macOS: see the note below
+}
+
 /** The pinned asset for this platform + variant, or null on macOS. */
 function pinnedAsset() {
-  const plat = process.platform === "win32" ? "win32" : process.platform === "linux" ? "linux" : null;
-  if (!plat) return null;
-  const entry = lock.variants[variant]?.[plat];
+  const key = platformKey();
+  if (!key) return null;
+  const entry = lock.variants[variant]?.[key];
   if (!entry) return null;
   return {
     ...entry,
+    key,
     url: `${SOURCE}/releases/download/${lock.tag}/${entry.asset}`,
   };
 }
@@ -74,7 +83,7 @@ if (wantsPin) {
   console.log(`  ${Math.round(buf.length / 1024 / 1024)} MB`);
   console.log(`  sha256: ${sha256(buf)}`);
   console.log(`\nCross-check against ${SOURCE} (do NOT trust this number alone), then paste it as`);
-  console.log(`variants.${variant}.${process.platform === "win32" ? "win32" : "linux"}.sha256 in scripts/media-tools.lock.json.`);
+  console.log(`variants.${variant}.${asset.key}.sha256 in scripts/media-tools.lock.json.`);
   process.exit(0);
 }
 
