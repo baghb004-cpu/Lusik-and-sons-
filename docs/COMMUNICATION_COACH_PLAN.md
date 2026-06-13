@@ -1,6 +1,11 @@
 # §28 — Communication Coach (offline professional-communication mode)
 
-*Status: planned + Phase 1 (the offline engine + content) building now. Offline-first,
+*Status: Phases 1–3 BUILT + verified (offline engine + content, the full UI for
+both sub-modes, and Live Call Assist incl. the optional consent-first Microphone
+Assist, the proposal builder, and per-lead follow-up drafts). Remaining: Phase 4
+polish (deeper roleplay/personas, dedicated post-call/post-interview summary
+screens, import/export, optional local STT sidecar for true-offline mic).
+Offline-first,
 privacy-first, honesty-first. No cloud AI, no APIs, no telemetry — the whole
 "conversation brain" is local data + pure functions, exactly like the Tax
 Assistant and Media Studio modules.*
