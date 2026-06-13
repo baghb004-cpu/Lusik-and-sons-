@@ -160,10 +160,26 @@ rest of the app would be unchanged.
   honest limits. PDF/image/source/database are available targets (print-to-PDF,
   the source ZIP, CSV from data apps). Desktop/Mobile/3D stay `preview` (need
   external tooling / the Phase-5 3D tool) — honest, not faked.
-- **Still `planned`/`preview` (next passes):** Embroidery (Phase 5, large — its
-  own sub-project), 3D Design/Export (Phase 5), Knowledge Pack (Phase 6),
-  desktop/mobile app compile. **~36 of ~40 presets now build real offline
-  artifacts.**
+- **Phase 5 (3D) + Phase 6 (data) DONE; embroidery started.**
+  - **3D Design/Export** is `ready`: box/cylinder/sphere with a dependency-free
+    canvas wireframe preview (drag to rotate) and **real `model.obj` + ASCII
+    `model.stl`** exports (open in any slicer/3D app). Export: 3D Model flipped
+    `ready` too.
+  - **Recipe Book, Knowledge Pack, Q&A Pack** are `ready` (book TOC+pages; the
+    data ones are searchable localStorage apps with CSV export).
+  - **Embroidery** ships a working `preview` v1: a printable **counted
+    cross-stitch chart** (configurable grid, bold-every-10 lines), thread list,
+    finished-size + stitch-count estimate, and **honest in-output notes** that
+    it's a chart/visual design, *not* a machine embroidery file (PES/DST/etc.
+    are version-specific and deferred), plus density/hoop warnings.
+- **Current status: 38 of 41 presets build real offline artifacts.** The only
+  non-`ready` presets are honestly deferred: **Embroidery** (deep digitizing /
+  machine-file export — its own large sub-project), **Export: Desktop** and
+  **Export: Mobile** (need external platform tooling). Nothing is faked.
+- **Remaining future work (next sessions):** the deep Embroidery module
+  (digitizing, stitch simulation, machine formats where technically feasible),
+  desktop/mobile app compilation, richer 3D (text/import/scenes), and optional
+  reuse of the `bizapp` encrypted-DB for the data apps.
 - **Phase 4 — Trade automation:** LISP Routine Creator, Dynamo/Revit Automation
   planner, Fixture Schedule Generator, Cut Sheet Package Generator.
 - **Phase 5 — Advanced creative:** Embroidery Design module (beginner-first,

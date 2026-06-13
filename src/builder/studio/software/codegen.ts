@@ -332,6 +332,100 @@ const rulebook: Generator = (f) => {
   return { [`${slug(f.label)}/index.html`]: doc(`${name} — rules`, body) };
 };
 
+// --- 3D design / export (real OBJ + ASCII STL, offline) -------------------
+
+type Mesh = { verts: number[][]; tris: number[][] };
+function boxMesh(w: number, h: number, d: number): Mesh {
+  const x = w / 2, y = h / 2, z = d / 2;
+  const verts = [[-x, -y, -z], [x, -y, -z], [x, y, -z], [-x, y, -z], [-x, -y, z], [x, -y, z], [x, y, z], [-x, y, z]];
+  const quads = [[4, 5, 6, 7], [1, 0, 3, 2], [0, 4, 7, 3], [5, 1, 2, 6], [3, 7, 6, 2], [0, 1, 5, 4]];
+  const tris: number[][] = [];
+  for (const q of quads) { tris.push([q[0], q[1], q[2]], [q[0], q[2], q[3]]); }
+  return { verts, tris };
+}
+function cylinderMesh(r: number, h: number, seg = 24): Mesh {
+  const y = h / 2; const verts: number[][] = []; const tris: number[][] = [];
+  for (let i = 0; i < seg; i++) { const a = (i / seg) * Math.PI * 2; verts.push([Math.cos(a) * r, -y, Math.sin(a) * r], [Math.cos(a) * r, y, Math.sin(a) * r]); }
+  const top = verts.push([0, y, 0]) - 1; const bot = verts.push([0, -y, 0]) - 1;
+  for (let i = 0; i < seg; i++) { const a = (i * 2) % (seg * 2), b = ((i + 1) % seg) * 2; tris.push([a, b, a + 1], [b, b + 1, a + 1], [top, b + 1, a + 1], [bot, a, b]); }
+  return { verts, tris };
+}
+function sphereMesh(r: number, st = 12, sl = 18): Mesh {
+  const verts: number[][] = []; const tris: number[][] = [];
+  for (let i = 0; i <= st; i++) { const phi = (i / st) * Math.PI; for (let j = 0; j <= sl; j++) { const th = (j / sl) * Math.PI * 2; verts.push([r * Math.sin(phi) * Math.cos(th), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(th)]); } }
+  const row = sl + 1;
+  for (let i = 0; i < st; i++) for (let j = 0; j < sl; j++) { const a = i * row + j; tris.push([a, a + 1, a + row], [a + 1, a + row + 1, a + row]); }
+  return { verts, tris };
+}
+function meshFor(shape: string, dims: number[]): Mesh {
+  if (shape === "cylinder") return cylinderMesh(dims[0] / 2, dims[1]);
+  if (shape === "sphere") return sphereMesh(dims[0] / 2);
+  return boxMesh(dims[0], dims[1], dims[2]);
+}
+function toObj(m: Mesh, name: string): string {
+  return `# ${name} — generated offline by Software Creation Mode\n` +
+    m.verts.map((v) => `v ${v[0]} ${v[1]} ${v[2]}`).join("\n") + "\n" +
+    m.tris.map((t) => `f ${t[0] + 1} ${t[1] + 1} ${t[2] + 1}`).join("\n") + "\n";
+}
+function toStl(m: Mesh, name: string): string {
+  const norm = (a: number[], b: number[], c: number[]) => {
+    const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    const len = Math.hypot(n[0], n[1], n[2]) || 1; return [n[0] / len, n[1] / len, n[2] / len];
+  };
+  let s = `solid ${name}\n`;
+  for (const t of m.tris) {
+    const a = m.verts[t[0]], b = m.verts[t[1]], c = m.verts[t[2]], n = norm(a, b, c);
+    s += ` facet normal ${n[0]} ${n[1]} ${n[2]}\n  outer loop\n   vertex ${a.join(" ")}\n   vertex ${b.join(" ")}\n   vertex ${c.join(" ")}\n  endloop\n endfacet\n`;
+  }
+  return s + `endsolid ${name}\n`;
+}
+const design3d: Generator = (f) => {
+  const shape = String(f.options.shape ?? "box");
+  const dims = [Number(f.options.w ?? 40) || 40, Number(f.options.h ?? 40) || 40, Number(f.options.d ?? 40) || 40];
+  const m = meshFor(shape, dims);
+  const name = slug(f.label);
+  const js =
+    "(function(){var V=__V__,T=__T__;var cv=document.getElementById('cv'),ctx=cv.getContext('2d');var a=0.6,b=0.4,m=0.0001;" +
+    "V.forEach(function(p){p.forEach(function(c){m=Math.max(m,Math.abs(c));});});" +
+    "function R(p){var x=p[0],y=p[1],z=p[2];var cy=Math.cos(a),sy=Math.sin(a);var x1=x*cy-z*sy,z1=x*sy+z*cy;var cx=Math.cos(b),sx=Math.sin(b);return [x1,y*cx-z1*sx];}" +
+    "function draw(){ctx.clearRect(0,0,cv.width,cv.height);var s=cv.width/2.6/m,ox=cv.width/2,oy=cv.height/2;ctx.strokeStyle='#1a1612';ctx.lineWidth=0.5;ctx.beginPath();" +
+    "T.forEach(function(t){for(var i=0;i<3;i++){var p1=R(V[t[i]]),p2=R(V[t[(i+1)%3]]);ctx.moveTo(ox+p1[0]*s,oy-p1[1]*s);ctx.lineTo(ox+p2[0]*s,oy-p2[1]*s);}});ctx.stroke();}" +
+    "cv.onpointermove=function(e){if(e.buttons){a+=e.movementX*0.01;b+=e.movementY*0.01;draw();}};setInterval(function(){a+=0.008;draw();},50);draw();})();";
+  const body = `<h1 class="no-print">${esc(f.label)} — 3D preview</h1><p class="no-print">Drag to rotate. Files: <code>model.obj</code> and <code>model.stl</code> (open in any 3D/slicer app). Offline.</p><canvas id="cv" width="400" height="400" style="background:#fff;border:1px solid #e3d9c4;border-radius:12px;touch-action:none"></canvas>`;
+  return {
+    [`${name}/index.html`]: appDoc(`${esc(f.label)} — 3D`, body, js.replace("__V__", embed(m.verts)).replace("__T__", embed(m.tris))),
+    [`${name}/model.obj`]: toObj(m, name),
+    [`${name}/model.stl`]: toStl(m, name),
+  };
+};
+
+// --- Embroidery (beginner cross-stitch chart; honest about machine files) --
+const embroidery: Generator = (f) => {
+  const title = esc(f.options.title ?? f.label);
+  const w = Math.min(Math.max(Number(f.options.gridW ?? 30) || 30, 5), 120);
+  const h = Math.min(Math.max(Number(f.options.gridH ?? 30) || 30, 5), 120);
+  const count = Math.max(Number(f.options.count ?? 14) || 14, 6); // Aida count (holes/inch)
+  let grid = "";
+  for (let r = 0; r < h; r++) { let row = ""; for (let c = 0; c < w; c++) { const bold = (c % 10 === 0 ? " bl" : "") + (r % 10 === 0 ? " bt" : ""); row += `<td class="cell${bold}"></td>`; } grid += `<tr>${row}</tr>`; }
+  const inW = (w / count).toFixed(1), inH = (h / count).toFixed(1);
+  const body =
+    `<h1 class="no-print">${title} — cross-stitch chart</h1>` +
+    `<p class="no-print">A blank counted chart (${w}×${h}, bold lines every 10). Color in cells by hand or in any editor, then stitch. Ctrl/Cmd+P to print.</p>` +
+    `<div class="info"><strong>Finished size</strong> on ${count}-count Aida: ~${inW}" × ${inH}". <strong>Max stitches:</strong> ${w * h}.</div>` +
+    `<table class="chart">${grid}</table>` +
+    `<h2 class="no-print">Thread list</h2><table class="threads"><tr><th>Symbol</th><th>Color / DMC #</th><th>Skeins</th></tr>${[1, 2, 3].map(() => "<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>").join("")}</table>` +
+    `<div class="warn"><strong>Honest notes (read me):</strong><ul>` +
+    `<li>This is a printable <em>counted cross-stitch chart</em> and planning sheet — a visual design, not a machine embroidery file.</li>` +
+    `<li>Machine formats (PES/DST/EXP/JEF…) are version- and machine-specific and are <strong>not</strong> generated yet — that's a later phase.</li>` +
+    `<li>Watch stitch density and hoop size: keep your design inside your hoop's stitchable area, and avoid very dense fills on thin fabric.</li>` +
+    `</ul></div>`;
+  const css = ".chart{border-collapse:collapse}.chart .cell{width:14px;height:14px;border:1px solid #d9cfb6}.chart .bl{border-left:2px solid #1a1612}.chart .bt{border-top:2px solid #1a1612}" +
+    ".threads{border-collapse:collapse;margin-top:6px}.threads th,.threads td{border:1px solid #c9bfa6;padding:4px 10px}.threads th{background:#efe7d4}" +
+    ".info{background:#eef5ee;border:1px solid #bcd6bc;border-radius:10px;padding:8px 12px;margin:8px 0}.warn{background:#fff4e5;border:1px solid #f0c986;border-radius:12px;padding:10px 14px;margin-top:12px}.warn li{margin:4px 0}";
+  return { [`${slug(f.label)}/index.html`]: doc(`${title} — cross-stitch`, body, css) };
+};
+
 const boardGame: Generator = (f) => {
   const name = esc(f.options.gameName ?? f.label);
   const n = Math.min(Math.max(Number(f.options.gridSize ?? 8) || 8, 3), 16);
@@ -351,9 +445,18 @@ const tokenDice: Generator = (f) => {
   return { [`${slug(f.label)}/index.html`]: doc("Tokens & tables", body, ".sheet{display:flex;flex-wrap:wrap;gap:8px}.tok{width:70px;height:70px;border:2px solid #1a1612;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.7rem}") };
 };
 
+const recipeBook: Generator = (f) => {
+  const title = esc(f.options.bookTitle ?? f.label);
+  const recipes = lines(f.options.recipes);
+  const toc = recipes.length ? `<ol>${recipes.map((r, i) => `<li><a href="#r${i}">${esc(r)}</a></li>`).join("")}</ol>` : "<p><em>List one recipe title per line.</em></p>";
+  const pages = recipes.map((r, i) => `<section id="r${i}" style="page-break-before:always"><h2>${esc(r)}</h2><h3>Ingredients</h3><ul><li>…</li></ul><h3>Steps</h3><ol><li>…</li></ol></section>`).join("");
+  return { [`${slug(f.label)}/index.html`]: doc(`${title} — recipe book`, `<h1>${title}</h1><h2>Contents</h2>${toc}${pages}`) };
+};
+
 const GENERATORS: Record<string, Generator> = {
   "label-maker": labelMaker,
   "recipe-card": recipeCard,
+  "recipe-book": recipeBook,
   "manual-creator": manualCreator,
   "spec-writer": specWriter,
   "lisp-creator": lispCreator,
@@ -378,6 +481,9 @@ const GENERATORS: Record<string, Generator> = {
   "board-game-maker": boardGame,
   "token-dice": tokenDice,
   "qa-generator": (f) => ({ [`${slug(f.label)}/index.html`]: tableApp(String(f.options.title ?? f.label), ["question", "answer", "tags"], [], `scm_qa_${slug(f.label)}`) }),
+  "knowledge-pack": (f) => ({ [`${slug(f.label)}/index.html`]: tableApp(String(f.options.title ?? f.label), ["topic", "content", "tags"], [], `scm_kp_${slug(f.label)}`) }),
+  "design-3d": design3d,
+  "embroidery": embroidery,
 };
 
 export function hasGenerator(presetId: string): boolean {

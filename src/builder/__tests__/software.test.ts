@@ -69,9 +69,9 @@ test("health: missing required field is an error; broken dependency flagged", ()
   h = checkProject(proj);
   assert.notEqual(h.level, "error", "required answered → no error");
 
-  // recipe-book dependsOn recipe-card → broken dependency when alone
+  // submittal-package dependsOn cut-sheet → broken dependency when alone
   let p2 = createProject("dep");
-  p2 = addFeature(p2, "recipe-book");
+  p2 = addFeature(p2, "submittal-package");
   const fh = checkFeature(p2.features[0], p2);
   assert.ok(fh.items.some((i) => i.code === "broken-dependency"));
 });
@@ -137,7 +137,7 @@ test("codegen: ready presets build self-contained offline files + manifest", () 
   proj = setFeatureOption(proj, f.instanceId, "title", "Flour");
   proj = setFeatureOption(proj, f.instanceId, "shape", "round");
   assert.ok(hasGenerator("label-maker"));
-  assert.ok(!hasGenerator("embroidery"));
+  assert.ok(!hasGenerator("not-a-real-preset"));
   const files = generateFeature(proj.features[0]);
   const htmlPath = Object.keys(files).find((p) => p.endsWith("index.html"))!;
   assert.match(files[htmlPath], /Flour/);
@@ -148,10 +148,11 @@ test("codegen: ready presets build self-contained offline files + manifest", () 
   assert.equal(out.warnings.length, 0, "all features buildable");
 });
 
-test("codegen: preview-stage features are skipped with an honest warning", () => {
-  let proj = createProject("Mixed");
-  proj = addFeature(proj, "embroidery"); // planned → no generator
-  const out = buildProject(proj);
+test("codegen: features without a generator are skipped with an honest warning", () => {
+  const proj = createProject("Mixed");
+  // simulate a future not-yet-buildable feature (no generator registered)
+  const withFeat = { ...proj, features: [{ instanceId: "x1", presetId: "future-thing", label: "Future Thing", options: {}, addedAt: 0 }] };
+  const out = buildProject(withFeat);
   assert.ok(out.warnings.some((w) => /preview-stage/.test(w)));
   assert.equal(out.manifest.features[0].built, false);
 });
@@ -227,6 +228,33 @@ test("codegen: business/games generators produce expected offline output", () =>
   const tcgHtml = Object.values(generateFeature(tcg.features[0]))[0];
   assert.ok(!tcgHtml.includes("<b>Hero</b>"), "card text escaped");
   assert.match(tcgHtml, /&lt;b&gt;Hero/);
+});
+
+test("codegen: 3D design emits valid OBJ + ASCII STL + offline preview", () => {
+  let proj = createProject("3D");
+  proj = addFeature(proj, "design-3d");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "shape", "box");
+  const files = generateFeature(proj.features[0]);
+  const obj = files[Object.keys(files).find((p) => p.endsWith("model.obj"))!];
+  const stl = files[Object.keys(files).find((p) => p.endsWith("model.stl"))!];
+  assert.equal((obj.match(/^v /gm) || []).length, 8, "box has 8 vertices");
+  assert.equal((obj.match(/^f /gm) || []).length, 12, "box has 12 triangles");
+  assert.match(stl, /^solid /);
+  assert.match(stl, /facet normal/);
+  assert.equal((stl.match(/endfacet/g) || []).length, 12);
+  const html = files[Object.keys(files).find((p) => p.endsWith("index.html"))!];
+  assert.ok(!/https?:\/\//.test(html), "preview has no network refs");
+});
+
+test("codegen: embroidery chart is honest about machine files", () => {
+  let proj = createProject("Emb");
+  proj = addFeature(proj, "embroidery");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "title", "Lusik");
+  const html = Object.values(generateFeature(proj.features[0]))[0];
+  assert.match(html, /cross-stitch/i);
+  assert.match(html, /not a machine embroidery file|not.*generated yet/i);
+  assert.match(html, /Finished size/);
 });
 
 test("registry: every 'ready' preset has a generator (export presets exempt)", () => {

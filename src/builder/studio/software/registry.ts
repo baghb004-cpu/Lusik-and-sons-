@@ -30,12 +30,20 @@ export const PRESETS: Preset[] = [
     { key: "shape", label: "Label shape", type: "choice", required: true, choices: ["round", "square", "rectangle", "oval"], help: "You can change this later.", },
     { key: "title", label: "What goes on the label?", type: "text", required: true, choices: [], help: "" },
   ] }),
-  p({ id: "embroidery", name: "Make Embroidery", icon: "🪡", blurb: "Bibs, names, monograms, the Armenian alphabet — design and preview stitches.", categoryId: "creative", subcategoryId: "make", status: "planned", needsData: true, exports: ["image", "pdf", "source"], creates: ["A stitch design canvas", "Thread color palette", "Hoop & density checks", "Stitch preview"] }),
+  p({ id: "embroidery", name: "Make Embroidery", icon: "🪡", blurb: "Bibs, names, monograms, the Armenian alphabet — a counted cross-stitch chart.", categoryId: "creative", subcategoryId: "make", status: "preview", exports: ["image", "pdf", "source"], creates: ["A printable counted cross-stitch chart", "A thread list", "Finished-size & stitch-count estimate", "Honest machine-file notes"], questions: [
+    { key: "title", label: "Design title", type: "text", required: true, choices: [], help: "" },
+    { key: "gridW", label: "Chart width (stitches, 5–120)", type: "number", required: false, choices: [], help: "" },
+    { key: "gridH", label: "Chart height (stitches, 5–120)", type: "number", required: false, choices: [], help: "" },
+    { key: "count", label: "Aida count (holes per inch, e.g. 14)", type: "number", required: false, choices: [], help: "" },
+  ] }),
   p({ id: "recipe-card", name: "Make a Recipe Card", icon: "🍳", blurb: "One pretty card: ingredients, steps, times, allergens — print or share.", categoryId: "creative", subcategoryId: "print", status: "ready", exports: ["pdf", "image", "static-site"], creates: ["A recipe form", "A printable card layout", "Allergen & diet tags", "PDF/PNG export"], questions: [
     { key: "dish", label: "Dish name", type: "text", required: true, choices: [], help: "" },
     { key: "servings", label: "Servings", type: "number", required: false, choices: [], help: "" },
   ] }),
-  p({ id: "recipe-book", name: "Make a Recipe Book", icon: "📖", blurb: "Collect many recipes into a book with a table of contents.", categoryId: "creative", subcategoryId: "print", status: "planned", dependsOn: ["recipe-card"], exports: ["pdf", "static-site", "web-app"], creates: ["A recipe library", "Chapters / table of contents", "A book PDF"] }),
+  p({ id: "recipe-book", name: "Make a Recipe Book", icon: "📖", blurb: "Collect many recipes into a book with a table of contents.", categoryId: "creative", subcategoryId: "print", status: "ready", exports: ["pdf", "static-site", "web-app"], creates: ["A table of contents", "A page per recipe", "A printable book"], questions: [
+    { key: "bookTitle", label: "Book title", type: "text", required: true, choices: [], help: "" },
+    { key: "recipes", label: "Recipe titles — one per line", type: "longtext", required: true, choices: [], help: "" },
+  ] }),
   p({ id: "manual-creator", name: "Make a Manual", icon: "📘", blurb: "Step-by-step guides with tools, materials, safety notes, and diagrams.", categoryId: "creative", subcategoryId: "make", status: "ready", exports: ["pdf", "static-site", "image"], creates: ["A step editor", "Tool & material lists", "Safety warnings", "A printable manual"], questions: [
     { key: "title", label: "Manual title", type: "text", required: true, choices: [], help: "" },
     { key: "steps", label: "Steps (one per line)", type: "longtext", required: true, choices: [], help: "Each line becomes a numbered step." },
@@ -43,7 +51,12 @@ export const PRESETS: Preset[] = [
     { key: "materials", label: "Materials (one per line)", type: "longtext", required: false, choices: [], help: "" },
     { key: "safety", label: "Safety warnings (one per line)", type: "longtext", required: false, choices: [], help: "" },
   ] }),
-  p({ id: "design-3d", name: "Make a 3D Design", icon: "🧊", blurb: "Simple 3D objects, 3D text, and exploded diagrams you can export.", categoryId: "creative", subcategoryId: "make", status: "planned", pi: true, exports: ["model-3d", "image", "web-app"], creates: ["A 3D scene", "Web preview", "GLB/OBJ/STL export"] }),
+  p({ id: "design-3d", name: "Make a 3D Design", icon: "🧊", blurb: "Simple 3D shapes you can rotate, then export as OBJ/STL for printing.", categoryId: "creative", subcategoryId: "make", status: "ready", pi: true, exports: ["model-3d", "image", "web-app"], creates: ["A rotatable 3D preview (offline)", "model.obj + model.stl files"], questions: [
+    { key: "shape", label: "Shape", type: "choice", required: true, choices: ["box", "cylinder", "sphere"], help: "" },
+    { key: "w", label: "Width / diameter (mm)", type: "number", required: false, choices: [], help: "" },
+    { key: "h", label: "Height (mm)", type: "number", required: false, choices: [], help: "" },
+    { key: "d", label: "Depth (mm, box only)", type: "number", required: false, choices: [], help: "" },
+  ] }),
 
   // 2) Business ------------------------------------------------------------
   p({ id: "food-truck", name: "Make a Food Truck Plan", icon: "🚚", blurb: "Menu, costs, prep schedule, checklists — a starter plan for a food business.", categoryId: "business", subcategoryId: "plan", status: "ready", exports: ["pdf", "static-site", "database"], creates: ["A menu table", "Startup checklist", "A local-rules disclaimer (verify permits locally)"], questions: [
@@ -136,7 +149,9 @@ export const PRESETS: Preset[] = [
   p({ id: "qa-generator", name: "Make a Q&A Pack", icon: "💬", blurb: "Turn notes into question/statement/answer pairs for a local assistant.", categoryId: "data", subcategoryId: "store", status: "ready", exports: ["database", "source"], creates: ["A Q&A app (question/answer/tags)", "Search", "CSV export"], questions: [
     { key: "title", label: "Pack name", type: "text", required: true, choices: [], help: "" },
   ] }),
-  p({ id: "knowledge-pack", name: "Make a Knowledge Pack", icon: "📚", blurb: "Bundle tables, examples, and Q&A into one searchable local pack.", categoryId: "data", subcategoryId: "store", status: "planned", needsData: true, dependsOn: ["qa-generator"], exports: ["database", "source"], creates: ["A combined dataset", "Search index", "A portable pack file"] }),
+  p({ id: "knowledge-pack", name: "Make a Knowledge Pack", icon: "📚", blurb: "A searchable local knowledge base — topics, content, and tags.", categoryId: "data", subcategoryId: "store", status: "ready", exports: ["database", "source"], creates: ["A searchable knowledge app (topic/content/tags)", "CSV export", "Saved on this device"], questions: [
+    { key: "title", label: "Pack name", type: "text", required: true, choices: [], help: "" },
+  ] }),
   p({ id: "csv-json-importer", name: "Import CSV / JSON", icon: "📥", blurb: "Bring an existing CSV or JSON file in as a local table.", categoryId: "data", subcategoryId: "import", status: "ready", exports: ["database", "web-app"], creates: ["A file open screen", "A table view", "Files never leave your device"], questions: [
     { key: "title", label: "Tool title (optional)", type: "text", required: false, choices: [], help: "" },
   ] }),
@@ -155,7 +170,7 @@ export const PRESETS: Preset[] = [
   p({ id: "export-source", name: "Export: Source Code", icon: "💽", blurb: "All the generated source so you own it completely.", categoryId: "export", subcategoryId: "file", status: "ready", exports: ["source"], creates: ["Every generated file in the ZIP — yours to keep"] }),
   p({ id: "export-pdf", name: "Export: PDF", icon: "📄", blurb: "Print-ready PDF of the printable parts of your project.", categoryId: "export", subcategoryId: "file", status: "ready", exports: ["pdf"], creates: ["Print-to-PDF from each printable page (Ctrl/Cmd+P)"] }),
   p({ id: "export-image", name: "Export: Images", icon: "🖼️", blurb: "PNG/SVG images of cards, labels, or designs.", categoryId: "export", subcategoryId: "file", status: "ready", exports: ["image"], creates: ["Print/screenshot each design page to an image"] }),
-  p({ id: "export-3d", name: "Export: 3D Model", icon: "🧱", blurb: "GLB/OBJ/STL files from your 3D designs.", categoryId: "export", subcategoryId: "file", status: "preview", pi: true, exports: ["model-3d"], creates: ["3D model files (with the 3D Design tool — Phase 5)"] }),
+  p({ id: "export-3d", name: "Export: 3D Model", icon: "🧱", blurb: "OBJ/STL files from your 3D designs.", categoryId: "export", subcategoryId: "file", status: "ready", pi: true, exports: ["model-3d"], creates: ["OBJ + STL files from the 3D Design tool"] }),
   p({ id: "export-database", name: "Export: Database", icon: "🗄️", blurb: "Your local tables as CSV/JSON (and SQLite where possible).", categoryId: "export", subcategoryId: "file", status: "ready", exports: ["database"], creates: ["CSV export from each data app", "JSON backup files"] }),
 ];
 
