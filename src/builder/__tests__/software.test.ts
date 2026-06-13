@@ -229,8 +229,28 @@ test("codegen: business/games generators produce expected offline output", () =>
   assert.match(tcgHtml, /&lt;b&gt;Hero/);
 });
 
-test("registry: every 'ready' preset has a generator (no broken build button)", () => {
-  for (const p of PRESETS) if (p.status === "ready") assert.ok(hasGenerator(p.id), `${p.id} is ready but has no generator`);
+test("registry: every 'ready' preset has a generator (export presets exempt)", () => {
+  for (const p of PRESETS) if (p.status === "ready" && p.categoryId !== "export")
+    assert.ok(hasGenerator(p.id), `${p.id} is ready but has no generator`);
+});
+
+test("export presets: adding sets the target; build emits packaging", () => {
+  // Raspberry Pi card → pi target on + start.sh/README packaged.
+  let proj = createProject("PiTest");
+  proj = addFeature(proj, "label-maker");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "title", "Flour");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "shape", "round");
+  proj = addFeature(proj, "export-raspberry-pi");
+  assert.ok(proj.exportTargets.includes("raspberry-pi"), "adding the card sets the target");
+  const out = buildProject(proj);
+  assert.ok(out.files["raspberry-pi/start.sh"] && out.files["raspberry-pi/README.md"]);
+  assert.match(out.files["raspberry-pi/start.sh"], /kiosk/);
+  // thumb-drive default → launcher index.html linking the built feature page
+  assert.ok(out.files["index.html"], "launcher page generated");
+  assert.match(out.files["index.html"], /make-labels\/index\.html/);
+  assert.match(out.files["make-labels/index.html"], /Flour/);
+  // export-category features are NOT reported as preview-stage warnings
+  assert.ok(!out.warnings.some((w) => /Raspberry Pi/.test(w)));
 });
 
 test("backup: round-trips and rejects foreign files", () => {

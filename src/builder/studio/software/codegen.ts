@@ -401,12 +401,37 @@ export function buildProject(project: SoftwareProject): ProjectBuild {
   const files: Record<string, string> = {};
   const warnings: string[] = [];
   const manifestFeatures: ProjectBuild["manifest"]["features"] = [];
+  const entries: Array<{ label: string; path: string }> = [];
 
   for (const f of project.features) {
+    const preset = getPreset(f.presetId);
+    // Export-category presets are packaging toggles — handled below, never warned.
+    if (preset && preset.categoryId === "export") {
+      manifestFeatures.push({ id: f.instanceId, preset: f.presetId, built: true });
+      continue;
+    }
     const built = hasGenerator(f.presetId);
     manifestFeatures.push({ id: f.instanceId, preset: f.presetId, built });
-    if (built) Object.assign(files, generateFeature(f));
-    else warnings.push(`"${f.label}" is preview-stage — it isn't buildable yet, so it was skipped.`);
+    if (built) {
+      const out = generateFeature(f);
+      Object.assign(files, out);
+      const entry = Object.keys(out).find((p) => p.endsWith(".html")) ?? Object.keys(out)[0];
+      if (entry) entries.push({ label: f.label, path: entry });
+    } else {
+      warnings.push(`"${f.label}" is preview-stage — it isn't buildable yet, so it was skipped.`);
+    }
+  }
+
+  // --- packaging from selected export targets ---
+  const targets = project.exportTargets;
+  if (targets.includes("static-site") || targets.includes("thumb-drive")) {
+    files["index.html"] = launcherHtml(project, entries);
+    if (targets.includes("thumb-drive")) files["START-HERE.txt"] = "Open index.html in any web browser. Everything runs offline — no internet needed.\n";
+  }
+  if (targets.includes("web-app")) files["manifest.webmanifest"] = webManifest(project);
+  if (targets.includes("raspberry-pi")) {
+    files["raspberry-pi/start.sh"] = PI_START;
+    files["raspberry-pi/README.md"] = PI_README;
   }
 
   const manifest = {
@@ -419,6 +444,55 @@ export function buildProject(project: SoftwareProject): ProjectBuild {
   files["README.md"] = readme(project, manifestFeatures, warnings);
   return { files, manifest, warnings };
 }
+
+function launcherHtml(project: SoftwareProject, entries: Array<{ label: string; path: string }>): string {
+  const links = entries.length
+    ? entries.map((e) => `<li><a href="${esc(e.path)}">${esc(e.label)}</a></li>`).join("")
+    : "<li><em>No buildable tools yet — add some features and build again.</em></li>";
+  return doc(project.name, `<h1>${esc(project.name)}</h1><p>Everything here runs offline. Open a tool:</p><ul class="menu">${links}</ul>`, ".menu{list-style:none;padding:0}.menu li{margin:8px 0}.menu a{display:block;padding:12px 16px;background:#fff;border:1px solid #e3d9c4;border-radius:12px;text-decoration:none;color:#1a1612;font-weight:600}");
+}
+
+function webManifest(project: SoftwareProject): string {
+  return JSON.stringify({ name: project.name, short_name: project.name.slice(0, 12), start_url: "./index.html", display: "standalone", background_color: "#f5efe3", theme_color: "#1a1612", icons: [] }, null, 2);
+}
+
+const PI_START =
+`#!/usr/bin/env bash
+# Raspberry Pi 5 launcher — opens this project full-screen (kiosk) in Chromium.
+# Make executable: chmod +x raspberry-pi/start.sh   Then run: ./raspberry-pi/start.sh
+set -e
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+URL="file://$DIR/index.html"
+if command -v chromium-browser >/dev/null 2>&1; then
+  exec chromium-browser --kiosk --noerrdialogs --disable-infobars "$URL"
+elif command -v chromium >/dev/null 2>&1; then
+  exec chromium --kiosk --noerrdialogs --disable-infobars "$URL"
+else
+  echo "Install Chromium:  sudo apt install -y chromium-browser"
+  exit 1
+fi
+`;
+
+const PI_README =
+`# Run on Raspberry Pi 5
+
+This project is a set of offline web pages — perfect for a Pi 5 with a touchscreen.
+
+## Quick start
+1. Copy this whole folder onto the Pi (USB drive or \`scp\`).
+2. \`chmod +x raspberry-pi/start.sh\`
+3. \`./raspberry-pi/start.sh\` — opens full-screen in Chromium (kiosk mode).
+
+## Auto-start on boot (optional)
+Add the script to \`~/.config/lxsession/LXDE-pi/autostart\` or a systemd user service.
+
+## Notes & limits
+- 100% offline — no internet required.
+- Touchscreen friendly; works on Pi OS (ARM64).
+- Lightweight: plain HTML/CSS/JS, no heavy runtime. Storage: a few MB. RAM: minimal.
+- Not for Pi: features needing desktop CAD (AutoCAD LISP / Revit-Dynamo) — those
+  exports are meant for a Windows CAD workstation, not the Pi itself.
+`;
 
 function readme(project: SoftwareProject, feats: ProjectBuild["manifest"]["features"], warnings: string[]): string {
   const builtList = feats.filter((f) => f.built).map((f) => `- ${getPreset(f.preset)?.name ?? f.preset} → \`${slug(project.features.find((x) => x.instanceId === f.id)!.label)}/index.html\``);

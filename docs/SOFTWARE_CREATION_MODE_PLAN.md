@@ -153,11 +153,17 @@ rest of the app would be unchanged.
   Plan (menu table + checklist + **local-rules disclaimer**); Trading Card Game
   + Card Template (print-and-cut card sheets), Rule Book, Board Game (printable
   grid), Tokens & Dice; plus the Q&A Pack data app.
-- **Still `planned` (next passes):** Embroidery (Phase 5, large — own
-  sub-project), 3D Design/Export (Phase 5), Knowledge Pack (Phase 6), and the
-  11 Export-Tools presets (these set project export targets; export *codegen*
-  for static-site/web-app/thumb-drive/Pi packaging is the remaining export
-  pipeline work). ~28 of ~40 presets now build real offline artifacts.
+- **Export Tools (DONE).** Dropping an export card now turns on its target and
+  `buildProject` emits real packaging: a **launcher `index.html`** linking every
+  built tool (static-site / thumb-drive) + `START-HERE.txt`, a **web-app
+  manifest**, and a **Raspberry Pi 5** `start.sh` (Chromium kiosk) + README with
+  honest limits. PDF/image/source/database are available targets (print-to-PDF,
+  the source ZIP, CSV from data apps). Desktop/Mobile/3D stay `preview` (need
+  external tooling / the Phase-5 3D tool) — honest, not faked.
+- **Still `planned`/`preview` (next passes):** Embroidery (Phase 5, large — its
+  own sub-project), 3D Design/Export (Phase 5), Knowledge Pack (Phase 6),
+  desktop/mobile app compile. **~36 of ~40 presets now build real offline
+  artifacts.**
 - **Phase 4 — Trade automation:** LISP Routine Creator, Dynamo/Revit Automation
   planner, Fixture Schedule Generator, Cut Sheet Package Generator.
 - **Phase 5 — Advanced creative:** Embroidery Design module (beginner-first,

@@ -49,7 +49,12 @@ export function addFeature(project: SoftwareProject, presetId: string): Software
   const feature: FeatureInstance = {
     instanceId: uid("feat"), presetId, label: preset.name, options: {}, addedAt: Date.now(),
   };
-  return { ...base, features: [...base.features, feature], updatedAt: Date.now() };
+  // Export-category presets are packaging toggles: adding one turns on its
+  // export target(s) so the build emits the matching package.
+  const exportTargets = preset.categoryId === "export" && preset.exports.length
+    ? [...new Set([...base.exportTargets, ...preset.exports])]
+    : base.exportTargets;
+  return { ...base, features: [...base.features, feature], exportTargets, updatedAt: Date.now() };
 }
 
 export function removeFeature(project: SoftwareProject, instanceId: string): SoftwareProject {
