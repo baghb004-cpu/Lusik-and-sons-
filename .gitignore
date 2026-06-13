@@ -54,6 +54,9 @@ playwright-report/
 src/data/cmsCategoriesData.generated.js
 exports/
 
+# Rust / Tauri build output (Cargo.lock IS committed — it pins deps)
+desktop/src-tauri/target/
+
 # Portable environment (private local data — plan §23)
 /portable/
 desktop/game-mode/godot-project/.godot/
