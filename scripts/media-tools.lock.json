@@ -1,0 +1,15 @@
+{
+  "_comment": "Pins for install-media-tools.mjs (the FFmpeg sidecar). FAIL-CLOSED: the installer refuses to stage any download whose bytes don't match the sha256 pinned here, and refuses outright when the pin is null. BtbN publishes rolling builds at the stable `latest` tag, so the URL is fixed but the bytes change over time — pin the CURRENT build's hash deliberately. To pin: `node scripts/install-media-tools.mjs --pin` downloads this platform's asset and prints its sha256; cross-check it against BtbN's release, then paste it below in a commit. If BtbN later rolls the build, the next run fails closed (mismatch) until you re-pin — by design.",
+  "source": "https://github.com/BtbN/FFmpeg-Builds",
+  "tag": "latest",
+  "variants": {
+    "lgpl": {
+      "win32": { "asset": "ffmpeg-master-latest-win64-lgpl-shared.zip", "sha256": null },
+      "linux": { "asset": "ffmpeg-master-latest-linux64-lgpl.tar.xz", "sha256": null }
+    },
+    "gpl": {
+      "win32": { "asset": "ffmpeg-master-latest-win64-gpl-shared.zip", "sha256": null },
+      "linux": { "asset": "ffmpeg-master-latest-linux64-gpl.tar.xz", "sha256": null }
+    }
+  }
+}

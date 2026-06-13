@@ -47,6 +47,25 @@ const MIT_GODOT_URL = "https://raw.githubusercontent.com/godotengine/godot/maste
 function sha256(buf) {
   return createHash("sha256").update(buf).digest("hex");
 }
+function sha512(buf) {
+  return createHash("sha512").update(buf).digest("hex");
+}
+
+// FAIL-CLOSED verification: refuse to use any download that isn't pinned, or
+// whose bytes don't match the pin. `algo` is "sha256" | "sha512".
+function verifyOrThrow(buf, algo, expected, label) {
+  const actual = algo === "sha512" ? sha512(buf) : sha256(buf);
+  if (!expected) {
+    throw new Error(
+      `${label} has no pinned ${algo} in retro-tools.lock.json — refusing to stage an unverified binary. ` +
+        `Pin a hand-verified hash first (node scripts/install-retro-tools.mjs --pin <tool>), then re-run.`
+    );
+  }
+  if (actual.toLowerCase() !== String(expected).toLowerCase()) {
+    throw new Error(`CHECKSUM MISMATCH for ${label}: expected ${expected}, got ${actual} — NOT staging it. The release changed; re-pin the lock deliberately.`);
+  }
+  return actual;
+}
 
 async function fetchBuf(url, label) {
   console.log(`↓ ${label}\n   source: ${url}`);
@@ -59,17 +78,25 @@ async function fetchBuf(url, label) {
 
 async function extractZip(buf, destDir, subdir = "") {
   const { default: JSZip } = await import("jszip");
+  const { resolve, sep } = await import("node:path");
   const zip = await JSZip.loadAsync(buf);
+  const root = resolve(destDir);
   let count = 0;
   for (const [name, entry] of Object.entries(zip.files)) {
     if (entry.dir) continue;
     if (subdir && !name.startsWith(subdir)) continue;
-    const rel = subdir ? name.slice(subdir.length) : name;
-    if (!rel || rel.includes("..")) continue;
-    const dest = join(destDir, rel);
+    const rel = (subdir ? name.slice(subdir.length) : name).replace(/\\/g, "/");
+    if (!rel) continue;
+    // Zip-slip guard: the resolved path must stay inside destDir (handles
+    // "..", absolute names, and backslash separators — not just a substring test).
+    const dest = resolve(root, rel);
+    if (dest !== root && !dest.startsWith(root + sep)) {
+      console.warn(`   ! skipped a zip entry that escapes the target: ${name}`);
+      continue;
+    }
     await mkdir(dirname(dest), { recursive: true });
     await writeFile(dest, await entry.async("nodebuffer"));
-    if (rel.endsWith(".exe") || !rel.includes(".")) await chmod(dest, 0o755).catch(() => {});
+    if (rel.endsWith(".exe")) await chmod(dest, 0o755).catch(() => {}); // only mark known executables
     count++;
   }
   return count;
@@ -98,10 +125,7 @@ async function installZipTool(manifest, id, dirName) {
     return;
   }
   const buf = await fetchBuf(t.url, `${id} ${t.version} (official portable build)`);
-  const hash = sha256(buf);
-  if (t.sha256 && hash !== t.sha256) {
-    throw new Error(`CHECKSUM MISMATCH for ${id}: expected ${t.sha256}, got ${hash} — NOT staging it. The release may have changed; re-pin the lock file deliberately.`);
-  }
+  const hash = verifyOrThrow(buf, "sha256", t.sha256, id); // fail-closed: no pin / mismatch ⇒ throw
   const files = await extractZip(buf, destDir, t.zipSubdir);
   console.log(`   verified sha256 ✓ → staged ${files} files in portable/retro/emulators/${dirName}/`);
   await recordComponent(manifest, {
@@ -124,27 +148,22 @@ async function installQemu(manifest) {
     return;
   }
   console.log(`→ QEMU: ${t.thirdPartyNote}`);
-  // resolve the newest installer from the publisher's directory listing
-  const listing = await (await fetch(t.url, { headers: { "User-Agent": "baghdos-workshop-installer" } })).text();
-  const names = [...listing.matchAll(/href="(qemu-w64-setup-[\w.-]+?\.exe)"/g)].map((m) => m[1]).sort();
-  const installer = names.at(-1);
-  if (!installer) {
+  // No directory scrape, no same-origin checksum: QEMU is staged ONLY from a
+  // hand-pinned installer + hash in the lock. Missing either ⇒ refuse.
+  if (!t.installer || !t.sha512) {
     throw new Error(
-      `could not read the publisher's listing from here — open ${t.url} in a browser, download the newest qemu-w64-setup-*.exe (and its .sha512), then run it with /S /D=portable\\retro\\emulators\\qemu`
+      "QEMU isn't pinned. Download a specific qemu-w64-setup-<ver>.exe from " +
+        `${t.url}, verify it against Stefan Weil's published checksum, then set both \`installer\` and \`sha512\` ` +
+        "for qemu in scripts/retro-tools.lock.json. (Or run with --no-qemu.)"
     );
   }
+  const installer = t.installer;
   const buf = await fetchBuf(t.url + installer, `QEMU Windows installer ${installer}`);
-  // verify against the publisher's own .sha512
-  const sha512Txt = await (await fetch(`${t.url}${installer}.sha512`, { headers: { "User-Agent": "baghdos-workshop-installer" } })).text().catch(() => "");
-  const published = sha512Txt.trim().split(/\s+/)[0]?.toLowerCase();
-  const actual = createHash("sha512").update(buf).digest("hex");
-  if (published && published !== actual) {
-    throw new Error("QEMU installer failed the publisher's sha512 check — NOT staging it.");
-  }
+  const actual = verifyOrThrow(buf, "sha512", t.sha512, "qemu"); // fail-closed against the PINNED hash
   await mkdir(dir, { recursive: true });
   const dest = join(dir, installer);
   await writeFile(dest, buf);
-  console.log(published ? "   publisher sha512 verified ✓" : "   (publisher checksum file unavailable — recorded our own hash)");
+  console.log("   pinned sha512 verified ✓");
   if (process.platform === "win32") {
     console.log("   running the installer silently into the sidecar folder (no admin, no system dirs)…");
     const { spawnSync } = await import("node:child_process");
@@ -170,18 +189,19 @@ async function installGodot(manifest) {
   const dir = join(PORTABLE, "..", "game-mode", "godot-editor");
   console.log(`→ Godot editor + export templates (~1 GB total!) from the official godotengine releases.`);
   const buf = await fetchBuf(t.url, `Godot ${t.version} editor`);
-  const hash = sha256(buf);
-  await extractZip(buf, dir);
+  const editorHash = verifyOrThrow(buf, "sha512", t.sha512, "godot editor"); // fail-closed
   const tpl = await fetchBuf(t.templatesUrl, "Godot export templates (large — this is the slow one)");
+  verifyOrThrow(tpl, "sha512", t.templatesSha512, "godot export templates"); // fail-closed before staging
+  await extractZip(buf, dir);
   await writeFile(join(dir, "export_templates.tpz"), tpl);
-  console.log("   staged: game-mode/godot-editor/ (open the project, install templates from the .tpz via Editor > Manage Export Templates, then Export)");
+  console.log("   pinned sha512 verified ✓ → staged game-mode/godot-editor/ (install templates from the .tpz via Editor > Manage Export Templates, then Export)");
   await recordComponent(manifest, {
     name: "godot",
     version: t.version,
     source: t.source,
     license: "MIT",
     installPath: "game-mode/godot-editor/",
-    sha256: hash,
+    sha512: editorHash,
   });
 }
 
@@ -227,6 +247,34 @@ cloud. Internet is touched only when YOU run an install/update command.
 `
   );
   console.log("✓ portable/licenses/ + THIRD_PARTY_NOTICES.md + COMPONENTS_MANIFEST.json written");
+}
+
+// ── --pin <tool>: download an asset and print its hash so you can
+//    cross-check it against the project's OWN published checksum and paste
+//    it into the lock. This is the ONLY supported way to (re-)pin. ─────────
+const pinIdx = process.argv.indexOf("--pin");
+if (pinIdx !== -1) {
+  const tool = process.argv[pinIdx + 1];
+  const t = lock.tools[tool];
+  if (!t) {
+    console.error(`--pin needs a tool name: ${Object.keys(lock.tools).join(", ")}`);
+    process.exit(1);
+  }
+  const url = tool === "qemu" ? (t.installer ? t.url + t.installer : t.url) : t.url;
+  console.log(`Pinning ${tool} from:\n  ${url}\n`);
+  const buf = await fetchBuf(url, `${tool} (for pinning)`);
+  console.log(`\n  sha256: ${sha256(buf)}`);
+  console.log(`  sha512: ${sha512(buf)}`);
+  if (t.templatesUrl) {
+    const tpl = await fetchBuf(t.templatesUrl, `${tool} templates (for pinning)`);
+    console.log(`\n  templates sha256: ${sha256(tpl)}`);
+    console.log(`  templates sha512: ${sha512(tpl)}`);
+  }
+  console.log(
+    `\nCross-check these against ${t.source}'s OWN published checksums (do NOT trust this number on its own),\n` +
+      `then paste the verified hash into scripts/retro-tools.lock.json in a deliberate commit.`
+  );
+  process.exit(0);
 }
 
 // ── go ──────────────────────────────────────────────────────

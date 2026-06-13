@@ -17,7 +17,8 @@
 // the local server boots from app/, the editor opens. No installs.
 // ============================================================
 
-import { cpSync, existsSync, mkdirSync, writeFileSync, copyFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, writeFileSync, copyFileSync, readFileSync, rmSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
@@ -41,6 +42,9 @@ if (!existsSync(join(repo, ".next"))) {
 
 const NODE_VERSION = "v22.12.0"; // pin; update deliberately
 const nodeZipUrl = `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-win-x64.zip`;
+// sha256 of node-v22.12.0-win-x64.zip from nodejs.org/dist/v22.12.0/SHASUMS256.txt
+// (the publisher's signed manifest). Update this in lockstep with NODE_VERSION.
+const NODE_ZIP_SHA256 = "2b8f2256382f97ad51e29ff71f702961af466c4616393f767455501e6aece9b8";
 
 mkdirSync(target, { recursive: true });
 copyFileSync(exe, join(target, "baghdos-workshop.exe"));
@@ -51,7 +55,16 @@ if (!existsSync(join(nodeCache, "node.exe"))) {
   console.log(`Downloading portable Node ${NODE_VERSION}…`);
   mkdirSync(nodeCache, { recursive: true });
   const zip = join(nodeCache, "node.zip");
-  execSync(`curl -L -o "${zip}" "${nodeZipUrl}"`, { stdio: "inherit" });
+  execSync(`curl -fL -o "${zip}" "${nodeZipUrl}"`, { stdio: "inherit" });
+  // FAIL-CLOSED: verify against the publisher's pinned sha256 before extracting
+  // — the runtime that executes everything on the drive must not be unverified.
+  const actual = createHash("sha256").update(readFileSync(zip)).digest("hex");
+  if (actual !== NODE_ZIP_SHA256) {
+    rmSync(zip, { force: true });
+    console.error(`Node download failed checksum: expected ${NODE_ZIP_SHA256}, got ${actual}. Not extracting.`);
+    process.exit(1);
+  }
+  console.log("  Node sha256 verified ✓");
   execSync(`tar -xf "${zip}" -C "${nodeCache}" --strip-components=1`, { stdio: "inherit" });
 }
 mkdirSync(join(target, "node"), { recursive: true });
