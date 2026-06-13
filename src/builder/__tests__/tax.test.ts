@@ -129,3 +129,32 @@ test("the template rule pack ships with ZERO authoritative figures", () => {
     assert.match(f.source, /irs\.gov/);
   }
 });
+
+// ── subsequent-year updater / scaffolder ────────────────────
+test("a new tax year scaffolds an EMPTY, cited, unverified pack — never inherits amounts", async () => {
+  const { scaffoldRulePack, isPackReady, packReadiness, updateGuidanceFor } = await import("../tax/updater.ts");
+  const pack2028 = scaffoldRulePack(2028);
+  assert.equal(pack2028.taxYear, 2028);
+  assert.equal(pack2028.status, "template");
+  assert.equal(isPackReady(pack2028), false);
+  for (const f of pack2028.figures) {
+    assert.equal(f.value, null);
+    assert.equal(f.verified, false);
+    assert.match(f.source, /irs\.gov/);
+  }
+  // inheriting structure from a prior verified pack keeps KEYS, drops VALUES
+  const next = scaffoldRulePack(2029, VERIFIED_PACK);
+  assert.ok(next.figures.some((f) => f.key === "std_deduction_single"));
+  assert.equal(next.figures.find((f) => f.key === "std_deduction_single")!.value, null, "must NOT carry last year's number");
+  assert.equal(next.figures.find((f) => f.key === "std_deduction_single")!.verified, false);
+
+  // guidance opens official pages and never promises figures
+  const g = updateGuidanceFor(2028);
+  assert.ok(g.sources.every((sxc) => sxc.url.startsWith("https://www.irs.gov")));
+  assert.ok(g.steps.some((step) => /verified/i.test(step)));
+
+  // readiness banner is honest
+  const r = packReadiness(pack2028);
+  assert.equal(r.ready, false);
+  assert.match(r.message, /needs review/i);
+});
