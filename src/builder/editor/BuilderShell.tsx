@@ -1081,6 +1081,13 @@ export function BuilderShell() {
           >
             ▢ Screens
           </button>
+          <a
+            href="/tools"
+            className="rounded-full border border-ink/20 px-3 py-1 text-sm hover:bg-cream"
+            title="Creation Studio — all the offline tools & builder modes"
+          >
+            🎨 Studio
+          </a>
           <button
             type="button"
             onClick={() => setHelpOpen(true)}

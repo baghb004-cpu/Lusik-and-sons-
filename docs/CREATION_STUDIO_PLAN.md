@@ -53,10 +53,15 @@ parser pattern. We don't rebuild a second project system.
   BUILT (`/tools/tour`).
 - ✅ **Phase 9 — Cross-mode Vibe Builder** — BUILT (the prompt box on `/tools`
   routes to + pre-seeds the right mode).
-- ⬜ Phases 10–13 (cross-cutting consolidation) + 14 (MVP rollup) — remaining.
-  All 9 creator/feature modes are now built; what's left is consolidation
-  (shared component catalog doc, unified data-model doc, export-strategy doc,
-  a privacy/perf/licensing audit) and surfacing the hub from the main builder.
+- ✅ **Phases 10–13 — consolidation** — DONE (component vocabulary, data-model
+  map, export strategy, and the privacy/perf/licensing/accessibility audit are
+  written up in `CREATION_STUDIO_OVERVIEW.md`).
+- ✅ **Phase 14 — MVP rollup** — DONE (the main builder header links to the hub
+  "🎨 Studio"; the hub lists + links back to the builder and carries the token
+  forward; the cross-mode vibe box routes a prompt to the right mode).
+
+**All 14 phases complete.** Future (not blocking) items are listed at the end of
+`CREATION_STUDIO_OVERVIEW.md`.
 
 ## Build order (the brief's 14 phases, with our notes)
 
