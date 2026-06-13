@@ -16,6 +16,7 @@ export interface StudioTool {
 
 export const STUDIO_TOOLS: StudioTool[] = [
   { href: "/builder", name: "Website & App Builder", blurb: "The main visual builder — pages, blocks, themes, and exports.", group: "make", emoji: "🧱" },
+  { href: "/tools/software", name: "Software Creation", blurb: "Drag feature cards to build real tools — visual vibe coding, offline.", group: "make", emoji: "🧪" },
   { href: "/tools/immersive", name: "Immersive Builder", blurb: "Scroll-story 3D websites & app screens that reveal as you scroll.", group: "make", emoji: "✨" },
   { href: "/tools/game-lab", name: "Game Lab", blurb: "Make small original games and export real Godot projects.", group: "make", emoji: "🕹️" },
   { href: "/tools/sensors", name: "Sensor Builder", blurb: "Opt-in tilt/shake motion controls with on-screen fallbacks.", group: "make", emoji: "🎛️" },

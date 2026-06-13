@@ -1,0 +1,161 @@
+# §31 — Software Creation Mode ("visual vibe coding")
+
+*Branch `claude/codebase-review-w50a0a`. Offline-first, on-device, thumb-drive
+portable. This doc is the durable spec + architecture + phase tracker so any
+future session can resume without re-deriving intent.*
+
+> **Prime directive:** add a new mode; **do not** replace or break the existing
+> website/app builder, exports, media tools, offline tools, or project
+> save/load. Everything offline-first, no CDN, no cloud AI, no outside APIs for
+> core features. Beginner-first; advanced is opt-in. Build in small, tested,
+> reversible phases — never everything in one pass.
+
+## What the owner asked for (captured verbatim-in-spirit)
+
+A **Software Creation Mode** inside the offline builder where a beginner builds
+real tools by **dragging big feature cards** from a side panel into a project,
+answering plain-English questions, previewing, pressing build, and exporting —
+"visual vibe coding." Flow a five-year-old gets:
+
+> **Pick what you want → drag it in → choose simple options → preview it → press
+> build → export it.**
+
+Hide code/technical settings behind presets, categories, plain-English copy.
+Beginner mode by default; **Advanced mode** lets power users inspect/edit code
+and use a **safe, simplified Linux-style terminal** (approved local commands
+only — inspect files, view logs, run tests/export-checks, trigger builds, run
+repair, view health, shortcuts). Self-checking build system, **Safe Build
+Preview** (sandbox before merge), **Feature Health Check**, rollback,
+auto-save, local database/lookup-table system, Raspberry Pi 5 export profile.
+
+### Preset categories (the left/right drag panel)
+
+1. **Creative Tools** — Label Maker, Embroidery Design Maker, Recipe Card Maker,
+   Recipe Book Maker, Manual Creator, 3D Design Tool.
+2. **Business Tools** — Food Truck Starter, Small Business Planner, Inventory
+   Tracker, Pricing Calculator, Customer Folder System, Printable Package Gen.
+3. **Game Creation Tools** — Trading Card Game Maker, Board Game Maker, Rule Book
+   Maker, Card Template Maker, Token/Dice Table Maker.
+4. **Construction / Trade Tools** — Spec Writer, Fixture Schedule Generator,
+   Equipment Schedule Generator, Cut Sheet Package Gen, Submittal Package Gen,
+   AutoCAD LISP Routine Creator, Dynamo/Revit Automation Creator.
+5. **Data / Local Assistant Tools** — Offline Database Builder, Lookup Table
+   Builder, Q/Statement/Answer Generator, Local Knowledge Pack Builder,
+   CSV/JSON Importer, Template Filler.
+6. **Export Tools** — Thumb-Drive Runnable, Static Website, Web App, Desktop
+   (where possible), Mobile (where possible), Raspberry Pi 5, Source Code, PDF,
+   Image, 3D Model, Database.
+
+Big preset names ("Make Pantry Labels", "Make Baby Bib Embroidery", "Make a Food
+Truck Menu", "Make a Plumbing Fixture Schedule", "Make a Fire Sprinkler
+Submittal Package", "Make an AutoCAD Cleanup Routine", "Make a Revit Schedule
+Automation", "Make a Trading Card Game", "Make a Raspberry Pi Touchscreen App").
+
+Dropping a preset auto-creates: UI screens, forms, local DB tables, local files,
+templates, export settings, example content, docs, validation checks, preview
+mode, **rollback point** — without manual wiring.
+
+## Architecture (the safe design)
+
+Reuses the **exact** module pattern the rest of Creation Studio uses, so it
+can't destabilize anything else. Lives entirely under
+`src/builder/studio/software/` + one route at `app/tools/software/`.
+
+- **Pure engine + registry, zero React, fully unit-tested** — all logic
+  (registry, project ops, health, preview sandbox, terminal interpreter) is
+  pure TypeScript. React only renders it. Same split as `store`, `bizapp`, etc.
+- **Preset registry = pure data** (`registry.ts`). Each preset is metadata: id,
+  big name, icon, plain-English blurb, category/subcategory, `status`
+  (`ready`/`preview`/`planned`), supported export targets, `pi` flag,
+  `needsData`, `creates[]` (what it scaffolds, in plain English), `dependsOn[]`.
+  Adding a preset = adding a data row, never touching the shell. This is the
+  plugin/feature-registry boundary that "keeps features from breaking each
+  other": a preset can only contribute through this typed contract.
+- **Project model** (`schemas.ts`) — `SoftwareProject` = name + `features[]`
+  (instances of presets with user options) + `exportTargets[]` + `history[]`
+  (rollback snapshots) + `mode` (beginner/advanced). One localStorage key
+  (`lusik_software_current`), zod-validated on read; backup/restore file for
+  moving between devices/thumb drives. **No new global storage, no schema
+  changes to the website/app builder.**
+- **Validation pipeline / Feature Health Check** (`health.ts`) — pure functions
+  map a feature+project to status: ready / missing fields / export warning /
+  may-not-work-on-Pi / needs-more-local-data / broken-dependency / passed.
+- **Safe Build Preview** (`preview.ts`) — a sandbox: `previewAdd` returns a
+  *new* project + a plain-English change list + health, **without mutating** the
+  committed project. UI merges only on confirm. This is the rollback-safe
+  "test in a sandbox before merging" requirement.
+- **Rollback** — every committing op pushes a `RollbackPoint` snapshot; `rollbackTo`
+  restores. Bounded history (keeps last N).
+- **Advanced terminal** (`terminal.ts`) — a pure command interpreter, **not** a
+  real shell: `help, status, ls/features, presets, health, preview <id>,
+  add <id>, rm <id>, rollback [id], export-check, test, repair, clear`. Returns
+  text output (+ optional new project for mutating commands). No process spawn,
+  no fs — safe by construction, offline by construction.
+- **Local database / lookup-table system** (Phase 2) — reuses the `store`/`bizapp`
+  record-store + encrypted-DB + CSV/JSON IO primitives already built, exposed as
+  a "Data" preset family. No SQLite binary needed for the core; SQLite export is
+  a later "where technically possible" target.
+- **Export manifest** — each export target is a registry row with a `kind` and a
+  `pi` capability; export codegen is added per-target in later phases (reusing
+  jszip dynamic-import + the existing portable/export pipeline). No target ships
+  until its codegen + tests exist (feature-flagged via `status`).
+- **Bundle safety** — route is `dynamic(..., {ssr:false})`, `robots:{index:false}`,
+  no `src/builder/editor/*` import (the budget sentinel enforces this), jszip is
+  dynamic-imported. Native HTML5 drag-and-drop (no DnD library) to protect the
+  210 KB first-load budget.
+- **Beginner/advanced separation** — a single `mode` flag on the project; the
+  terminal and code-inspection panels render only in advanced. Default beginner.
+
+### Why this can't break the current builder
+
+Additive only: a new folder, a new route, one registry row in
+`studio/tools.ts`. No edits to `builder/editor/*`, the export system, the
+project save/load, or shared schemas. The engine is pure and independently
+tested; the route is isolated and noindexed. If the whole mode were deleted, the
+rest of the app would be unchanged.
+
+## Phase plan + status
+
+- **Phase 1 — Foundation shell (DONE this session).** Preset registry + full
+  category/subcategory taxonomy (all six categories, every listed preset as a
+  typed row with status), project model + engine (create/add/remove/rename/
+  options), rollback, Feature Health Check, Safe Build Preview sandbox, advanced
+  terminal interpreter, the drag-and-drop UI shell with beginner/advanced
+  toggle, localStorage auto-save + backup/restore, hub registration, tests.
+  *All presets start as `planned`/`preview` stubs — they scaffold a feature
+  instance and pass health checks, but per-preset codegen lands in later phases.*
+- **Phase 2 — Preset schema hardening + local DB foundation + export manifest.**
+  Wire the `store`/`bizapp` record-store + encrypted DB + CSV/JSON IO as the
+  "Data" preset family; formalize the export-manifest codegen interface; expand
+  the terminal (logs, file inspection of generated artifacts).
+- **Phase 3 — First real working presets:** Label Maker, Recipe Card Maker,
+  Manual Creator, Basic Spec Writer (flip from `preview` → `ready` with codegen
+  + exports + tests each).
+- **Phase 4 — Trade automation:** LISP Routine Creator, Dynamo/Revit Automation
+  planner, Fixture Schedule Generator, Cut Sheet Package Generator.
+- **Phase 5 — Advanced creative:** Embroidery Design module (beginner-first,
+  original — no proprietary software cloned), Trading Card/Board Game Maker,
+  3D Design/Export module.
+- **Phase 6 — Food dataset + Food Truck planner + local Q&A generator + Raspberry
+  Pi 5 export preset + deeper offline assistant.**
+
+### Embroidery module note (Phase 5, large)
+
+Owner wants a deep embroidery creator (digitizing, stitch editing, lettering,
+thread/hoop, machine export "where technically possible", stitch simulation,
+beginner + pro + production tooling). Build **original** workflows — inspired by
+pro software, copying none. Be honest in-UI about what is *visual preview only*
+vs *machine-ready*, supported formats, experimental features, hoop fit, density,
+thread-jump, and cleanup warnings. Machine file formats land incrementally and
+only where legally/technically feasible; everything else stays a clearly-labeled
+preview. This is its own multi-phase sub-project — do not attempt in one pass.
+
+## Constraints to keep honoring
+
+100% offline core · no cloud AI/CDN/outside APIs · beginner-first, advanced
+opt-in · privacy-first, local-only storage · **never store payment card data**
+(payments only via official Square/Clover/Stripe hosted links) · licensed/own
+assets only · opt-in camera/mic/sensors with consent + visible-when-active + no
+auto-upload + no biometrics · reduced-motion honored with non-motion fallbacks ·
+don't over-engineer v1 · feature-flag unfinished systems via preset `status` ·
+don't ship to thumb drive / compile / merge until told.
