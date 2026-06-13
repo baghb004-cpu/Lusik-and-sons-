@@ -10,7 +10,7 @@ Last updated: 2026-06-13.*
 - **Open PR:** **#254** — "Baghdo's Workshop — the custom CMS + website/app
   builder" → merges everything into `main`. Awaiting Baghdo's review + the
   GitHub token to switch the live site's CMS. CI subscribed.
-- **Tests:** `npm run test:builder` (292 unit, Node type-stripping) + the
+- **Tests:** `npm run test:builder` (296+ unit, Node type-stripping) + the
   Playwright e2e (`tests/e2e/*.spec.mjs`, needs `PW_CHROME=/opt/pw-browsers/
   chromium-1194/chrome-linux/chrome`). `npm run typecheck`, `npm run
   next:build` (also runs the 210 KB bundle budget + editor-isolation gate).
@@ -48,6 +48,10 @@ ships zero code to public routes (enforced by the bundle-budget gate).
   (`scripts/install-retro-tools.mjs`, checksum-pinned), setup wizard, LEGO
   templates, brand-neutral controllers.
 - **Tax Assistant** (§25): `src/builder/tax/` — see below.
+- **Personal tool UIs built** (`/tools/payroll`, `/tools/media-studio`,
+  `/tools/tax`): client pages, ssr:false, noindexed, ~104 KB each, read
+  `#token=` from the launcher; run their pure engines in-browser. Media
+  Studio also calls /api/builder/media-studio (FFmpeg sidecar) for trims.
 - **Payroll / SE-tax calculator** (§27): `src/builder/payroll/` — engine +
   updater + dataset done & tested (282 total). Needs a React UI + Payroll
   section page next (see TAX_ASSISTANT_PLAN.md §27).
@@ -102,7 +106,7 @@ private. Start at its "Phase 1 — smallest safe version" section.
 ## How to resume (suggested first moves)
 
 1. `git checkout claude/codebase-review-w50a0a && npm run test:builder` (expect
-   292 green).
+   296+ green).
 2. Read the relevant plan doc section for whatever Baghdo asks next.
 3. Pattern for any new module: pure engine under `src/builder/<name>/` +
    tests in `src/builder/__tests__/<name>.test.ts` + (if it needs a backend)
