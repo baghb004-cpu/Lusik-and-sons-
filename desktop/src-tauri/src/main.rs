@@ -207,7 +207,14 @@ fn main() {
                 }
 
                 let url = format!("http://127.0.0.1:{PORT}/builder#token={token}");
-                let main = WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(url.parse().unwrap()))
+                let parsed = match url.parse() {
+                    Ok(u) => u,
+                    Err(e) => {
+                        let _ = splash.emit("app-error", &format!("Could not open the builder window: {e}"));
+                        return;
+                    }
+                };
+                let main = WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(parsed))
                     .title("Baghdo's Workshop")
                     .inner_size(1320.0, 860.0)
                     .min_inner_size(900.0, 600.0)
