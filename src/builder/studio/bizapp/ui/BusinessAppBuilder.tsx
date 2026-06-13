@@ -13,6 +13,7 @@ import {
   appBlueprintSchema, FIELD_TYPES, APP_TEMPLATE_LIST, makeAppTemplate, vibeApp, validateBlueprint,
   withDerivedScreens, generateApp, type AppBlueprint, type Field, type Table,
 } from "../index.ts";
+import { BusinessAppRunner } from "./BusinessAppRunner.tsx";
 
 const cardCls = "rounded-2xl border border-ink/10 bg-white/60 p-4";
 const field = "w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none";
@@ -24,6 +25,7 @@ export function BusinessAppBuilder() {
   const [app, setApp] = useState<AppBlueprint | null>(null);
   const [vibe, setVibe] = useState("");
   const [notes, setNotes] = useState<string[]>([]);
+  const [running, setRunning] = useState(false);
 
   useEffect(() => { try { const r = localStorage.getItem(STORE); if (r) setApp(appBlueprintSchema.parse(JSON.parse(r))); } catch { /* */ } }, []);
   useEffect(() => { if (app) try { localStorage.setItem(STORE, JSON.stringify(app)); } catch { /* */ } }, [app]);
@@ -59,11 +61,16 @@ export function BusinessAppBuilder() {
     );
   }
 
+  if (running) return <BusinessAppRunner blueprint={app} onExit={() => setRunning(false)} />;
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 font-body text-ink">
       <div className="flex items-center justify-between gap-2">
         <input value={app.name} onChange={(e) => setApp({ ...app, name: e.target.value })} className="bg-transparent font-display text-2xl focus:outline-none" aria-label="App name" />
-        <button type="button" onClick={() => { setApp(null); setNotes([]); }} className="rounded-full border border-ink/20 px-3 py-1 text-sm">‹ New app</button>
+        <span className="flex gap-2">
+          <button type="button" onClick={() => setRunning(true)} disabled={validateBlueprint(app).some((i) => i.level === "error")} className="rounded-full bg-ink px-3 py-1 text-sm font-medium text-cream disabled:opacity-40">▶ Run app</button>
+          <button type="button" onClick={() => { setApp(null); setNotes([]); }} className="rounded-full border border-ink/20 px-3 py-1 text-sm">‹ New app</button>
+        </span>
       </div>
 
       {issues.length ? (
