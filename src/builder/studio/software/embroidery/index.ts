@@ -8,6 +8,7 @@ export * from "./font.ts";
 export * from "./model.ts";
 export * from "./stitches.ts";
 export * from "./dst.ts";
+export * from "./exp.ts";
 export * from "./metrics.ts";
 export * from "./autodigitize.ts";
 

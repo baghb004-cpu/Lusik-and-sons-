@@ -202,19 +202,29 @@ hub), backed by a pure, fully-tested engine under
   hoop presets — with plain-English warnings.
 - **Auto-digitize from artwork:** import any image → it's contained into the
   grid and each cell maps to the **nearest palette thread** (transparent and
-  near-white pixels are skipped so the fabric shows through). Pure mapper is
-  unit-tested; live-verified (an 8×8 PNG → 900 thread cells). Honest: a flat
-  color-reduction, not artistic digitizing.
+  near-white pixels are skipped so the fabric shows through). Now with optional
+  **Floyd–Steinberg dithering** (smoother photos) and a **max-colors cap**
+  (reduce to the N most-used threads). Pure mappers unit-tested; live-verified.
+- **Text in ANY script (Armenian solved):** besides the blocky 5×7 pixel font,
+  a **"Stamp (any font)"** tool rasterizes typed text with the computer's own
+  installed fonts → the grid, so **Armenian, monograms, any Unicode** stitch
+  offline with no bundled font. Live-verified ("Անի" → 293 stitches).
+- **True cross-stitch:** stitch generation now defaults to an authentic **X per
+  cell** (two diagonal legs, needle up between); "Tatami" (single tack) stays as
+  an option. Drives both the metrics and the machine files.
+- **Two machine formats:** a real Tajima **DST** *and* a Melco/Bernina **EXP**
+  export — both pure encoders proven byte-correct by round-trip-decode unit
+  tests; live-verified (cross-stitch "Անի" → valid 4055-byte DST + 3544-byte EXP).
 - **Exports:** printable **chart (PDF)**, **PNG**, **JSON** save/open, and a
   **real Tajima DST machine file** — the most openly-documented format. The DST
   encoder is proven by a round-trip decode unit test (and large jumps are split
   to ≤121 units); a live export of "LUSIK" produced a valid 737-byte DST
   (`LA:` header, `ST:70`, `0xF3` end record).
-- **Honesty, by design:** chart + size are exact; the DST is labelled
-  **EXPERIMENTAL** (one tacking stitch per cell, not satin/true-cross digitizing)
-  — "test on your machine with stabilizer first." Other machine formats
-  (PES/EXP/JEF…), auto-digitizing from artwork, satin/fill objects, and Armenian
-  glyphs remain future work.
+- **Honesty, by design:** chart + size are exact; the DST/EXP machine files are
+  labelled **EXPERIMENTAL** — "test on your machine with stabilizer first."
+  Remaining future work: **PES (Brother)** — its binary PEC block needs
+  real-hardware validation, so it's deliberately not shipped blind — and true
+  **satin/fill stitch objects** (vs. the current per-cell cross/tatami).
 
 The Software Creation Mode `embroidery` preset still generates its static
 cross-stitch chart for project bundles; the full editor lives at the route above.

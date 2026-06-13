@@ -7,7 +7,7 @@
 // ============================================================
 
 import { bounds, stitchCount, usedColors, type Grid } from "./model.ts";
-import { buildStitchPlan, threadLengthMm } from "./stitches.ts";
+import { buildStitchPlan, threadLengthMm, type StitchStyle } from "./stitches.ts";
 
 export interface Hoop { name: string; wmm: number; hmm: number; }
 export const HOOPS: Hoop[] = [
@@ -32,11 +32,11 @@ export interface DesignMetrics {
 
 // `count` = Aida count (holes per inch) for hand cross-stitch sizing.
 // `mmPerCell` = stitch spacing for the machine file.
-export function metrics(g: Grid, count = 14, mmPerCell = 2): DesignMetrics {
+export function metrics(g: Grid, count = 14, mmPerCell = 2, style: StitchStyle = "cross"): DesignMetrics {
   const b = bounds(g);
   const cw = b ? b.w : 0, ch = b ? b.h : 0;
   const sc = stitchCount(g);
-  const plan = buildStitchPlan(g, mmPerCell);
+  const plan = buildStitchPlan(g, mmPerCell, style);
   return {
     stitches: sc,
     colors: usedColors(g).length,
@@ -53,8 +53,8 @@ export function metrics(g: Grid, count = 14, mmPerCell = 2): DesignMetrics {
 
 export interface Check { level: "ok" | "warn" | "info"; message: string; }
 
-export function checkDesign(g: Grid, hoop: Hoop, count = 14, mmPerCell = 2): Check[] {
-  const m = metrics(g, count, mmPerCell);
+export function checkDesign(g: Grid, hoop: Hoop, count = 14, mmPerCell = 2, style: StitchStyle = "cross"): Check[] {
+  const m = metrics(g, count, mmPerCell, style);
   const out: Check[] = [];
 
   if (m.stitches === 0) { out.push({ level: "warn", message: "Empty design — paint some cells or stamp text." }); return out; }
@@ -73,7 +73,8 @@ export function checkDesign(g: Grid, hoop: Hoop, count = 14, mmPerCell = 2): Che
   if (m.colors > 8) out.push({ level: "warn", message: `${m.colors} thread colors — lots of changes. Consider merging similar shades.` });
 
   // honesty
-  out.push({ level: "info", message: "Chart + size are accurate. The DST machine file is EXPERIMENTAL (one tacking stitch per cell): test on your machine with stabilizer before a final piece." });
+  const how = style === "cross" ? "a real cross-stitch X per cell" : "one tacking stitch per cell";
+  out.push({ level: "info", message: `Chart + size are accurate. The machine file (DST/PES) is EXPERIMENTAL — ${how}: test on your machine with stabilizer before a final piece.` });
   return out;
 }
 

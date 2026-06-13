@@ -13,38 +13,54 @@
 import { getCell, usedColors, type Grid } from "./model.ts";
 
 export type StitchFlag = "stitch" | "jump" | "stop" | "end";
+export type StitchStyle = "cross" | "tatami";
 export interface Stitch { x: number; y: number; flag: StitchFlag; }
 export interface StitchPlan {
   stitches: Stitch[];
   colors: number[];          // thread index per color block, in stitch order
   units: number;             // 0.1mm units per cell
+  style: StitchStyle;
 }
 
-// distance (in cells) above which we lift the needle (jump) instead of stitch
-const JUMP_CELLS = 1.9;
+// distance (in units) above which we lift the needle (jump) instead of stitch
+function jumpDist(units: number) { return units * 1.9; }
 
-export function buildStitchPlan(g: Grid, mmPerCell = 2): StitchPlan {
+// "cross" = an authentic X in each cell (two diagonal stitches, needle up
+// between). "tatami" = a single tacking stitch per cell (lighter, faster).
+export function buildStitchPlan(g: Grid, mmPerCell = 2, style: StitchStyle = "cross"): StitchPlan {
   const units = Math.max(1, Math.round(mmPerCell * 10)); // 0.1mm units per cell
+  const h = units / 2;
   const colors = usedColors(g);
   const stitches: Stitch[] = [];
   const cx = (g.w - 1) / 2;
   const cy = (g.h - 1) / 2;
-  const toX = (x: number) => Math.round((x - cx) * units);
-  const toY = (y: number) => Math.round((cy - y) * units); // Y up
+  const X = (x: number) => Math.round((x - cx) * units);
+  const Y = (y: number) => Math.round((cy - y) * units); // Y up
+  const R = (n: number) => Math.round(n);
 
-  let prevX = -999, prevY = -999, hasPrev = false;
+  let prevX = -99999, prevY = -99999, hasPrev = false;
+  const push = (x: number, y: number, flag: StitchFlag) => { stitches.push({ x, y, flag }); prevX = x; prevY = y; hasPrev = true; };
+
   colors.forEach((color, ci) => {
-    const cellsForColor: Array<{ x: number; y: number }> = [];
+    const cells: Array<{ x: number; y: number }> = [];
     for (let y = 0; y < g.h; y++) {
       const xs: number[] = [];
       for (let x = 0; x < g.w; x++) if (getCell(g, x, y) === color) xs.push(x);
       if (y % 2 === 1) xs.reverse(); // snake
-      for (const x of xs) cellsForColor.push({ x, y });
+      for (const x of xs) cells.push({ x, y });
     }
-    for (const cell of cellsForColor) {
-      const far = !hasPrev || Math.hypot(cell.x - prevX, cell.y - prevY) > JUMP_CELLS;
-      stitches.push({ x: toX(cell.x), y: toY(cell.y), flag: far ? "jump" : "stitch" });
-      prevX = cell.x; prevY = cell.y; hasPrev = true;
+    for (const c of cells) {
+      const ux = X(c.x), uy = Y(c.y);
+      if (style === "tatami") {
+        const far = !hasPrev || Math.hypot(ux - prevX, uy - prevY) > jumpDist(units);
+        push(ux, uy, far ? "jump" : "stitch");
+      } else {
+        // an X: bottom-left → top-right ("/"), then top-left → bottom-right ("\")
+        push(R(ux - h), R(uy - h), "jump");
+        push(R(ux + h), R(uy + h), "stitch");
+        push(R(ux - h), R(uy + h), "jump");
+        push(R(ux + h), R(uy - h), "stitch");
+      }
     }
     if (ci < colors.length - 1 && stitches.length) {
       const lp = stitches[stitches.length - 1];
@@ -56,7 +72,7 @@ export function buildStitchPlan(g: Grid, mmPerCell = 2): StitchPlan {
     const lp = stitches[stitches.length - 1];
     stitches.push({ x: lp.x, y: lp.y, flag: "end" });
   }
-  return { stitches, colors, units };
+  return { stitches, colors, units, style };
 }
 
 // total thread length in millimetres (sum of stitch segment lengths)

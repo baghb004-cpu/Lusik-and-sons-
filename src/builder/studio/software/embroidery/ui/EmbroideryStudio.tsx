@@ -12,16 +12,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   THREADS, thread, createGrid, setCell, getCell, stampText, clearGrid, textWidth,
-  buildStitchPlan, toDst, metrics, checkDesign, HOOPS, gridFromPixels,
+  buildStitchPlan, toDst, toExp, metrics, checkDesign, HOOPS, gridFromPixels,
   EMBROIDERY_STORE_KEY, EMBROIDERY_BACKUP_TAG,
-  type Grid,
+  type Grid, type StitchStyle,
 } from "../index.ts";
 
 const CELL = 15;
 const card = "rounded-2xl border border-ink/10 bg-white/70 p-3";
 const inp = "rounded-xl border border-ink/20 bg-white px-2 py-1 text-sm focus:border-accent focus:outline-none";
 
-interface SavedShape { grid: Grid; count: number; mmPerCell: number; hoopIdx: number; title: string; }
+interface SavedShape { grid: Grid; count: number; mmPerCell: number; hoopIdx: number; title: string; style?: StitchStyle; }
 
 export function EmbroideryStudio() {
   const [grid, setGrid] = useState<Grid>(() => createGrid(40, 30));
@@ -31,6 +31,9 @@ export function EmbroideryStudio() {
   const [count, setCount] = useState(14);
   const [mmPerCell, setMm] = useState(2);
   const [hoopIdx, setHoopIdx] = useState(0);
+  const [style, setStyle] = useState<StitchStyle>("cross");
+  const [maxColors, setMaxColors] = useState(0); // 0 = no cap
+  const [dither, setDither] = useState(false);
   const [text, setText] = useState("");
   const [loaded, setLoaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,14 +44,14 @@ export function EmbroideryStudio() {
   useEffect(() => {
     try {
       const r = localStorage.getItem(EMBROIDERY_STORE_KEY);
-      if (r) { const s = JSON.parse(r) as SavedShape; if (s.grid?.cells) { setGrid(s.grid); setTitle(s.title ?? "My design"); setCount(s.count ?? 14); setMm(s.mmPerCell ?? 2); setHoopIdx(s.hoopIdx ?? 0); } }
+      if (r) { const s = JSON.parse(r) as SavedShape; if (s.grid?.cells) { setGrid(s.grid); setTitle(s.title ?? "My design"); setCount(s.count ?? 14); setMm(s.mmPerCell ?? 2); setHoopIdx(s.hoopIdx ?? 0); setStyle(s.style ?? "cross"); } }
     } catch { /* */ }
     setLoaded(true);
   }, []);
-  useEffect(() => { if (loaded) try { localStorage.setItem(EMBROIDERY_STORE_KEY, JSON.stringify({ grid, count, mmPerCell, hoopIdx, title } satisfies SavedShape)); } catch { /* */ } }, [grid, count, mmPerCell, hoopIdx, title, loaded]);
+  useEffect(() => { if (loaded) try { localStorage.setItem(EMBROIDERY_STORE_KEY, JSON.stringify({ grid, count, mmPerCell, hoopIdx, title, style } satisfies SavedShape)); } catch { /* */ } }, [grid, count, mmPerCell, hoopIdx, title, style, loaded]);
 
-  const m = useMemo(() => metrics(grid, count, mmPerCell), [grid, count, mmPerCell]);
-  const checks = useMemo(() => checkDesign(grid, HOOPS[hoopIdx], count, mmPerCell), [grid, hoopIdx, count, mmPerCell]);
+  const m = useMemo(() => metrics(grid, count, mmPerCell, style), [grid, count, mmPerCell, style]);
+  const checks = useMemo(() => checkDesign(grid, HOOPS[hoopIdx], count, mmPerCell, style), [grid, hoopIdx, count, mmPerCell, style]);
 
   // draw the canvas whenever the design changes
   useEffect(() => {
@@ -93,19 +96,43 @@ export function EmbroideryStudio() {
       const dw = img.width * scale, dh = img.height * scale;
       ctx.drawImage(img, (grid.w - dw) / 2, (grid.h - dh) / 2, dw, dh);
       const data = ctx.getImageData(0, 0, grid.w, grid.h).data;
-      setGrid((g) => ({ ...gridFromPixels(data, g.w, g.h), w: g.w, h: g.h }));
+      setGrid((g) => ({ ...gridFromPixels(data, g.w, g.h, { dither, maxColors }), w: g.w, h: g.h }));
       URL.revokeObjectURL(img.src);
     };
     img.src = URL.createObjectURL(f);
+  };
+
+  // Stamp text in any installed font (covers Armenian and every script) by
+  // rasterizing it to the grid — offline, using the OS's own fonts.
+  const stampFont = () => {
+    if (!text.trim()) return;
+    const off = document.createElement("canvas");
+    off.width = grid.w; off.height = grid.h;
+    const ctx = off.getContext("2d"); if (!ctx) return;
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, grid.w, grid.h);
+    // grow the font until the text fills ~80% of the grid width
+    let px = grid.h;
+    ctx.fillStyle = "#000";
+    for (; px > 4; px--) { ctx.font = `bold ${px}px serif`; if (ctx.measureText(text).width <= grid.w * 0.9) break; }
+    ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    ctx.fillText(text, grid.w / 2, grid.h / 2);
+    const data = ctx.getImageData(0, 0, grid.w, grid.h).data;
+    // map non-white pixels to the chosen thread color (single-color text)
+    setGrid((g) => {
+      const cells = g.cells.slice();
+      for (let i = 0; i < g.w * g.h; i++) { const r = data[i * 4], gg = data[i * 4 + 1], b = data[i * 4 + 2]; if (r < 200 || gg < 200 || b < 200) cells[i] = color; }
+      return { ...g, cells };
+    });
   };
 
   // exports
   const dl = (blob: Blob, name: string) => { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u); };
   const slug = (title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "design");
   const exportPng = () => canvasRef.current?.toBlob((b) => { if (b) dl(b, `${slug}.png`); });
-  const exportDst = () => { const bytes = toDst(buildStitchPlan(grid, mmPerCell), title); dl(new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" }), `${slug}.dst`); };
-  const exportJson = () => dl(new Blob([JSON.stringify({ tag: EMBROIDERY_BACKUP_TAG, grid, count, mmPerCell, hoopIdx, title }, null, 2)], { type: "application/json" }), `${slug}.json`);
-  const importJson = async (f: File) => { try { const o = JSON.parse(await f.text()); if (o.tag !== EMBROIDERY_BACKUP_TAG || !o.grid?.cells) throw new Error("Not an embroidery design file."); setGrid(o.grid); setTitle(o.title ?? "My design"); setCount(o.count ?? 14); setMm(o.mmPerCell ?? 2); setHoopIdx(o.hoopIdx ?? 0); } catch (e) { alert((e as Error).message); } };
+  const exportDst = () => { const bytes = toDst(buildStitchPlan(grid, mmPerCell, style), title); dl(new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" }), `${slug}.dst`); };
+  const exportExp = () => { const bytes = toExp(buildStitchPlan(grid, mmPerCell, style)); dl(new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" }), `${slug}.exp`); };
+  const exportJson = () => dl(new Blob([JSON.stringify({ tag: EMBROIDERY_BACKUP_TAG, grid, count, mmPerCell, hoopIdx, title, style }, null, 2)], { type: "application/json" }), `${slug}.json`);
+  const importJson = async (f: File) => { try { const o = JSON.parse(await f.text()); if (o.tag !== EMBROIDERY_BACKUP_TAG || !o.grid?.cells) throw new Error("Not an embroidery design file."); setGrid(o.grid); setTitle(o.title ?? "My design"); setCount(o.count ?? 14); setMm(o.mmPerCell ?? 2); setHoopIdx(o.hoopIdx ?? 0); setStyle(o.style ?? "cross"); } catch (e) { alert((e as Error).message); } };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 font-body text-ink">
@@ -142,10 +169,16 @@ export function EmbroideryStudio() {
           {/* text-to-stitch */}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a name…" className={inp} aria-label="Text to stitch" maxLength={20} />
-            <button type="button" onClick={stamp} className="rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream">Stamp text</button>
-            <span className="text-xs text-muted">Uses the built-in 5×7 font (A–Z, 0–9).</span>
+            <button type="button" onClick={stamp} className="rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream">Stamp (pixel font)</button>
+            <button type="button" onClick={stampFont} className="rounded-full border border-ink/20 px-4 py-1.5 text-sm" title="Uses your computer's fonts — works for Armenian and any script">Stamp (any font)</button>
+            <span className="text-xs text-muted">“Any font” uses your computer's fonts — Armenian, monograms, any script.</span>
+          </div>
+          {/* auto-digitize image with photo options */}
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <button type="button" onClick={() => imgRef.current?.click()} className="rounded-full border border-ink/20 px-4 py-1.5 text-sm">🖼 Auto-digitize image</button>
             <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) importImage(f); e.target.value = ""; }} />
+            <label className="flex items-center gap-1"><input type="checkbox" className="h-3.5 w-3.5 accent-ink" checked={dither} onChange={(e) => setDither(e.target.checked)} />dither (photos)</label>
+            <label className="flex items-center gap-1">max colors <select value={maxColors} onChange={(e) => setMaxColors(Number(e.target.value))} className={inp}>{[0, 4, 6, 8, 12, 16].map((n) => <option key={n} value={n}>{n === 0 ? "no limit" : n}</option>)}</select></label>
           </div>
         </section>
 
@@ -168,6 +201,7 @@ export function EmbroideryStudio() {
             <label className="mt-1 flex items-center justify-between gap-2 text-sm">Aida count <input type="number" min={6} max={28} value={count} onChange={(e) => setCount(Number(e.target.value) || 14)} className={`${inp} w-20`} /></label>
             <label className="mt-1 flex items-center justify-between gap-2 text-sm">Stitch mm <input type="number" min={1} max={6} step={0.5} value={mmPerCell} onChange={(e) => setMm(Number(e.target.value) || 2)} className={`${inp} w-20`} /></label>
             <label className="mt-1 block text-sm">Hoop<select value={hoopIdx} onChange={(e) => setHoopIdx(Number(e.target.value))} className={`${inp} mt-1 w-full`}>{HOOPS.map((h, i) => <option key={h.name} value={i}>{h.name}</option>)}</select></label>
+            <label className="mt-1 block text-sm">Stitch style<select value={style} onChange={(e) => setStyle(e.target.value as StitchStyle)} className={`${inp} mt-1 w-full`}><option value="cross">Cross-stitch (X per cell)</option><option value="tatami">Tatami (single tack)</option></select></label>
           </div>
 
           <div className={card}>
@@ -187,6 +221,7 @@ export function EmbroideryStudio() {
             <button type="button" onClick={() => window.print()} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">🖨 Chart (PDF)</button>
             <button type="button" onClick={exportPng} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">🖼 PNG</button>
             <button type="button" onClick={exportDst} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Tajima DST machine file">🧵 DST</button>
+            <button type="button" onClick={exportExp} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Melco/Bernina EXP machine file">🧵 EXP</button>
             <button type="button" onClick={exportJson} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">Save</button>
             <button type="button" onClick={() => fileRef.current?.click()} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">Open</button>
             <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importJson(f); e.target.value = ""; }} />
@@ -194,7 +229,7 @@ export function EmbroideryStudio() {
         </aside>
       </div>
 
-      <p className="mt-4 text-[11px] text-muted">Everything is local &amp; offline. The chart and size are accurate; the <strong>DST file is experimental</strong> (one tacking stitch per cell) — test it on your machine with stabilizer before stitching a final piece. Machine formats beyond DST and true satin/cross digitizing are future work.</p>
+      <p className="mt-4 text-[11px] text-muted">Everything is local &amp; offline. The chart and size are accurate; the <strong>machine files (DST &amp; EXP) are experimental</strong> — test on your machine with stabilizer before a final piece. “Cross-stitch” style makes a real X per cell; “Tatami” is one tack per cell. PES (Brother) and true satin/fill digitizing are future work.</p>
     </main>
   );
 }

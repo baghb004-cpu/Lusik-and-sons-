@@ -9,6 +9,8 @@ import { FONT, GLYPH_W, GLYPH_H, glyph } from "../studio/software/embroidery/fon
 import { createGrid, setCell, getCell, stampText, stitchCount, usedColors, bounds, clearGrid } from "../studio/software/embroidery/model.ts";
 import { buildStitchPlan, threadLengthMm } from "../studio/software/embroidery/stitches.ts";
 import { toDst, decodeRecords, dstStitchCount } from "../studio/software/embroidery/dst.ts";
+import { toExp, decodeExp } from "../studio/software/embroidery/exp.ts";
+import { reduceColors } from "../studio/software/embroidery/autodigitize.ts";
 import { metrics, checkDesign, HOOPS } from "../studio/software/embroidery/metrics.ts";
 import { nearestThread } from "../studio/software/embroidery/palette.ts";
 import { gridFromPixels } from "../studio/software/embroidery/autodigitize.ts";
@@ -45,23 +47,36 @@ test("model: set/get, stampText fills the glyph cells, bounds + colors", () => {
   assert.equal(stitchCount(clearGrid(g2)), 0);
 });
 
-test("stitches: one stitch per filled cell + a color stop between colors", () => {
+test("stitches (tatami): one stitch per filled cell + a color stop between colors", () => {
   let g = createGrid(10, 10);
   g = setCell(g, 0, 0, 1);
   g = setCell(g, 1, 0, 1);
   g = setCell(g, 5, 5, 2); // different color, far away
-  const plan = buildStitchPlan(g, 2);
+  const plan = buildStitchPlan(g, 2, "tatami");
   const moves = plan.stitches.filter((s) => s.flag === "stitch" || s.flag === "jump");
   assert.equal(moves.length, 3, "three filled cells → three positioned stitches");
   assert.ok(plan.stitches.some((s) => s.flag === "stop"), "color change emitted");
   assert.equal(plan.stitches[plan.stitches.length - 1].flag, "end");
+  assert.equal(plan.style, "tatami");
   assert.ok(threadLengthMm(plan) >= 0);
+});
+
+test("stitches (cross): each cell is a real X — two diagonal legs", () => {
+  let g = createGrid(10, 10);
+  g = setCell(g, 0, 0, 1);
+  g = setCell(g, 1, 0, 1);
+  const plan = buildStitchPlan(g, 2, "cross"); // default
+  const legs = plan.stitches.filter((s) => s.flag === "stitch").length;
+  const jumps = plan.stitches.filter((s) => s.flag === "jump").length;
+  assert.equal(legs, 4, "2 cells × 2 diagonal stitches");
+  assert.equal(jumps, 4, "2 cells × 2 needle-up moves");
+  assert.equal(buildStitchPlan(g).style, "cross", "cross is the default");
 });
 
 test("DST: header + end record + encode round-trips through decode", () => {
   let g = createGrid(16, 16);
   g = stampText(g, "AB", 1, 2, 3); // two-letter design
-  const plan = buildStitchPlan(g, 2);
+  const plan = buildStitchPlan(g, 2, "tatami");
   const bytes = toDst(plan, "TEST");
   // header
   assert.equal(bytes[0], "L".charCodeAt(0));
@@ -96,6 +111,33 @@ test("DST: large jumps are split but still reconstruct the target point", () => 
   const last = plan.stitches.filter((s) => s.flag !== "end").slice(-1)[0];
   assert.equal(x, last.x, "split jumps still land on the target X");
   assert.equal(y, last.y);
+});
+
+test("EXP: encode round-trips through decode (incl. split jumps + color stop)", () => {
+  let g = createGrid(60, 2);
+  g = setCell(g, 0, 0, 1);
+  g = setCell(g, 59, 0, 1);   // far → forces a >127u split
+  g = setCell(g, 5, 1, 2);    // second color → a color-change record
+  const plan = buildStitchPlan(g, 2, "tatami");
+  const recs = decodeExp(toExp(plan));
+  let x = 0, y = 0;
+  for (const r of recs) { x += r.dx; y += r.dy; }
+  const last = plan.stitches.filter((s) => s.flag !== "end").slice(-1)[0];
+  assert.equal(x, last.x, "reconstructs final X after splits");
+  assert.equal(y, last.y, "reconstructs final Y");
+  assert.ok(recs.some((r) => r.flag === "stop"), "color change preserved");
+});
+
+test("auto-digitize: dithering keeps cells filled; maxColors caps the palette", () => {
+  // a 4x1 gradient grey strip
+  const px = [40, 40, 40, 255, 110, 110, 110, 255, 170, 170, 170, 255, 210, 210, 210, 255];
+  const dithered = gridFromPixels(px, 4, 1, { dither: true, skipWhite: false });
+  assert.equal(dithered.cells.filter((c) => c >= 0).length, 4, "all cells still mapped");
+  // force a 1-color cap on a 2-color design
+  let g = createGrid(4, 1);
+  g = setCell(g, 0, 0, 2); g = setCell(g, 1, 0, 6); g = setCell(g, 2, 0, 6); g = setCell(g, 3, 0, 6);
+  const reduced = reduceColors(g, 1);
+  assert.equal(new Set(reduced.cells.filter((c) => c >= 0)).size, 1, "collapsed to one color");
 });
 
 test("auto-digitize: maps pixels to nearest threads; skips white + transparent", () => {
