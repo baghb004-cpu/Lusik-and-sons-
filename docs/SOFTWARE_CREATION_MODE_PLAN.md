@@ -161,10 +161,13 @@ rest of the app would be unchanged.
   the source ZIP, CSV from data apps). Desktop/Mobile/3D stay `preview` (need
   external tooling / the Phase-5 3D tool) — honest, not faked.
 - **Phase 5 (3D) + Phase 6 (data) DONE; embroidery started.**
-  - **3D Design/Export** is `ready`: box/cylinder/sphere with a dependency-free
-    canvas wireframe preview (drag to rotate) and **real `model.obj` + ASCII
-    `model.stl`** exports (open in any slicer/3D app). Export: 3D Model flipped
-    `ready` too.
+  - **3D Design/Export** is `ready`: box/cylinder/sphere **and extruded 3D text /
+    nameplates** (reuses the 5×7 font), with a dependency-free canvas wireframe
+    preview (drag to rotate) and **real `model.obj` + ASCII `model.stl`** exports
+    (open in any slicer/3D app). Export: 3D Model flipped `ready` too.
+  - **Advanced terminal** gained artifact inspection: `build` (build + list
+    output files), `out` (list generated files), `cat <path>` (print a generated
+    file) — still a pure interpreter, no shell/fs/network.
   - **Recipe Book, Knowledge Pack, Q&A Pack** are `ready` (book TOC+pages; the
     data ones are searchable localStorage apps with CSV export).
   - **Embroidery** ships a working `preview` v1: a printable **counted

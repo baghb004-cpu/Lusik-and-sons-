@@ -9,6 +9,7 @@
 // ============================================================
 
 import { getPreset } from "./registry.ts";
+import { glyph, GLYPH_W, GLYPH_H } from "./embroidery/font.ts";
 import type { FeatureInstance, SoftwareProject } from "./schemas.ts";
 
 function esc(s: unknown): string {
@@ -357,9 +358,39 @@ function sphereMesh(r: number, st = 12, sl = 18): Mesh {
   for (let i = 0; i < st; i++) for (let j = 0; j < sl; j++) { const a = i * row + j; tris.push([a, a + 1, a + row], [a + 1, a + row + 1, a + row]); }
   return { verts, tris };
 }
-function meshFor(shape: string, dims: number[]): Mesh {
+// Append a box (origin corner at x,y,z, size sx,sy,sz) to a mesh in progress.
+function addBox(verts: number[][], tris: number[][], x: number, y: number, z: number, sx: number, sy: number, sz: number) {
+  const base = verts.length;
+  const c = [[x, y, z], [x + sx, y, z], [x + sx, y + sy, z], [x, y + sy, z], [x, y, z + sz], [x + sx, y, z + sz], [x + sx, y + sy, z + sz], [x, y + sy, z + sz]];
+  for (const v of c) verts.push(v);
+  for (const q of [[4, 5, 6, 7], [1, 0, 3, 2], [0, 4, 7, 3], [5, 1, 2, 6], [3, 7, 6, 2], [0, 1, 5, 4]]) {
+    tris.push([base + q[0], base + q[1], base + q[2]], [base + q[0], base + q[2], base + q[3]]);
+  }
+}
+// Extruded 3D text: each filled cell of the 5x7 font becomes a box → a real
+// nameplate mesh, centered on the origin. Falls back to a box if empty.
+function textMesh(text: string, cell = 6, depth = 8): Mesh {
+  const verts: number[][] = []; const tris: number[][] = [];
+  let cx = 0;
+  for (const ch of text) {
+    const rows = glyph(ch);
+    for (let ry = 0; ry < GLYPH_H; ry++) for (let rx = 0; rx < GLYPH_W; rx++) {
+      if (rows[ry][rx] === "#") addBox(verts, tris, (cx + rx) * cell, (GLYPH_H - 1 - ry) * cell, 0, cell, cell, depth);
+    }
+    cx += GLYPH_W + 1;
+  }
+  if (!verts.length) return boxMesh(cell * 4, cell * 4, depth);
+  // center X/Y on the origin
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const v of verts) { minX = Math.min(minX, v[0]); maxX = Math.max(maxX, v[0]); minY = Math.min(minY, v[1]); maxY = Math.max(maxY, v[1]); }
+  const ox = (minX + maxX) / 2, oy = (minY + maxY) / 2;
+  for (const v of verts) { v[0] -= ox; v[1] -= oy; }
+  return { verts, tris };
+}
+function meshFor(shape: string, dims: number[], opts: { text?: string; depth?: number } = {}): Mesh {
   if (shape === "cylinder") return cylinderMesh(dims[0] / 2, dims[1]);
   if (shape === "sphere") return sphereMesh(dims[0] / 2);
+  if (shape === "text") return textMesh(opts.text || "ABC", 6, opts.depth ?? 8);
   return boxMesh(dims[0], dims[1], dims[2]);
 }
 function toObj(m: Mesh, name: string): string {
@@ -383,7 +414,7 @@ function toStl(m: Mesh, name: string): string {
 const design3d: Generator = (f) => {
   const shape = String(f.options.shape ?? "box");
   const dims = [Number(f.options.w ?? 40) || 40, Number(f.options.h ?? 40) || 40, Number(f.options.d ?? 40) || 40];
-  const m = meshFor(shape, dims);
+  const m = meshFor(shape, dims, { text: String(f.options.text ?? "ABC"), depth: Number(f.options.d ?? 8) || 8 });
   const name = slug(f.label);
   const js =
     "(function(){var V=__V__,T=__T__;var cv=document.getElementById('cv'),ctx=cv.getContext('2d');var a=0.6,b=0.4,m=0.0001;" +

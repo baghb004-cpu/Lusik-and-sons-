@@ -12,6 +12,7 @@
 import { addFeature, removeFeature, rollbackTo, canRollback } from "./engine.ts";
 import { checkProject } from "./health.ts";
 import { previewAdd } from "./preview.ts";
+import { buildProject } from "./codegen.ts";
 import { PRESETS, getPreset } from "./registry.ts";
 import type { SoftwareProject } from "./schemas.ts";
 
@@ -33,6 +34,9 @@ const HELP = [
   "  rm <instanceId>      remove a feature (creates a rollback point)",
   "  rollback [id]        undo to the last (or a chosen) checkpoint",
   "  export-check         check the project against its export targets",
+  "  build                build the project + list what it produced",
+  "  out                  list the generated files (after a build)",
+  "  cat <path>           print a generated file (inspect the code/artifact)",
   "  test                 run the built-in validation checks",
   "  repair               auto-remove broken/dangling features",
   "  clear                clear the console",
@@ -116,6 +120,30 @@ export function runCommand(project: SoftwareProject, line: string): TerminalResu
         output: [`Export targets: ${project.exportTargets.join(", ")}`, exportWarns.length ? exportWarns.join("\n") : "  All features support the selected targets."].join("\n"),
         level: exportWarns.length ? "warn" : "ok",
       };
+    }
+
+    case "build": {
+      const out = buildProject(project);
+      const files = Object.keys(out.files);
+      const lines = [`Built ${files.length} file(s):`, ...files.map((p) => `  ${p}`)];
+      if (out.warnings.length) lines.push("", "Notes:", ...out.warnings.map((w) => `  ! ${w}`));
+      lines.push("", "Use: cat <path> to inspect a file.");
+      return { output: lines.join("\n"), level: out.warnings.length ? "warn" : "ok" };
+    }
+
+    case "out": case "ls-out": {
+      const files = Object.keys(buildProject(project).files);
+      return { output: files.length ? files.map((p) => `  ${p}`).join("\n") : "Nothing to build yet." };
+    }
+
+    case "cat": {
+      if (!arg) return { output: "Usage: cat <path>  (try: out)", level: "warn" };
+      const files = buildProject(project).files;
+      const content = files[arg];
+      if (content == null) return { output: `No generated file "${arg}". Try: out`, level: "error" };
+      const lines = content.split("\n");
+      const shown = lines.slice(0, 60).join("\n");
+      return { output: shown + (lines.length > 60 ? `\n… (${lines.length - 60} more lines)` : "") };
     }
 
     case "test": {

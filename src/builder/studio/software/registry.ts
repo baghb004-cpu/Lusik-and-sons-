@@ -51,11 +51,12 @@ export const PRESETS: Preset[] = [
     { key: "materials", label: "Materials (one per line)", type: "longtext", required: false, choices: [], help: "" },
     { key: "safety", label: "Safety warnings (one per line)", type: "longtext", required: false, choices: [], help: "" },
   ] }),
-  p({ id: "design-3d", name: "Make a 3D Design", icon: "🧊", blurb: "Simple 3D shapes you can rotate, then export as OBJ/STL for printing.", categoryId: "creative", subcategoryId: "make", status: "ready", pi: true, exports: ["model-3d", "image", "web-app"], creates: ["A rotatable 3D preview (offline)", "model.obj + model.stl files"], questions: [
-    { key: "shape", label: "Shape", type: "choice", required: true, choices: ["box", "cylinder", "sphere"], help: "" },
+  p({ id: "design-3d", name: "Make a 3D Design", icon: "🧊", blurb: "Simple 3D shapes or 3D text you can rotate, then export as OBJ/STL for printing.", categoryId: "creative", subcategoryId: "make", status: "ready", pi: true, exports: ["model-3d", "image", "web-app"], creates: ["A rotatable 3D preview (offline)", "model.obj + model.stl files", "3D text / nameplates"], questions: [
+    { key: "shape", label: "Shape", type: "choice", required: true, choices: ["box", "cylinder", "sphere", "text"], help: "" },
+    { key: "text", label: "Text (for the 'text' shape)", type: "text", required: false, choices: [], help: "Extruded 3D letters — A–Z, 0–9." },
     { key: "w", label: "Width / diameter (mm)", type: "number", required: false, choices: [], help: "" },
     { key: "h", label: "Height (mm)", type: "number", required: false, choices: [], help: "" },
-    { key: "d", label: "Depth (mm, box only)", type: "number", required: false, choices: [], help: "" },
+    { key: "d", label: "Depth (mm)", type: "number", required: false, choices: [], help: "" },
   ] }),
 
   // 2) Business ------------------------------------------------------------

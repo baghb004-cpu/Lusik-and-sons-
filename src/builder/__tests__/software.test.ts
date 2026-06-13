@@ -247,6 +247,21 @@ test("codegen: 3D design emits valid OBJ + ASCII STL + offline preview", () => {
   assert.ok(!/https?:\/\//.test(html), "preview has no network refs");
 });
 
+test("codegen: 3D text extrudes the font into a real multi-box mesh", () => {
+  let proj = createProject("3DT");
+  proj = addFeature(proj, "design-3d");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "shape", "text");
+  proj = setFeatureOption(proj, f.instanceId, "text", "AB");
+  const files = generateFeature(proj.features[0]);
+  const obj = files[Object.keys(files).find((p) => p.endsWith("model.obj"))!];
+  const verts = (obj.match(/^v /gm) || []).length;
+  const faces = (obj.match(/^f /gm) || []).length;
+  // each filled font cell = a box (8 verts, 12 tris); "AB" has many filled cells
+  assert.ok(verts > 80 && verts % 8 === 0, `text mesh has whole boxes (${verts} verts)`);
+  assert.equal(faces, (verts / 8) * 12, "12 tris per box");
+});
+
 test("codegen: embroidery chart is honest about machine files", () => {
   let proj = createProject("Emb");
   proj = addFeature(proj, "embroidery");
@@ -279,6 +294,18 @@ test("export presets: adding sets the target; build emits packaging", () => {
   assert.match(out.files["make-labels/index.html"], /Flour/);
   // export-category features are NOT reported as preview-stage warnings
   assert.ok(!out.warnings.some((w) => /Raspberry Pi/.test(w)));
+});
+
+test("terminal: build/out/cat inspect generated artifacts", () => {
+  let proj = createProject("Term");
+  proj = addFeature(proj, "label-maker");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "title", "Flour");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "shape", "round");
+  assert.match(runCommand(proj, "build").output, /Built \d+ file/);
+  assert.match(runCommand(proj, "out").output, /index\.html|manifest\.json/);
+  const cat = runCommand(proj, "cat manifest.json");
+  assert.match(cat.output, /"exportTargets"/);
+  assert.equal(runCommand(proj, "cat nope.txt").level, "error");
 });
 
 test("backup: round-trips and rejects foreign files", () => {
