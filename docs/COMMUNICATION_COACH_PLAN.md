@@ -1,14 +1,15 @@
 # §28 — Communication Coach (offline professional-communication mode)
 
-*Status: Phases 1–4 BUILT + verified. 1–3: offline engine + content, full UI for
-both sub-modes, Live Call Assist incl. the optional consent-first Microphone
-Assist, proposal builder, follow-up drafts. 4 (this pass): backup/restore to a
-JSON file (validated), a shared roleplay panel with multiple personas/difficulty
-for BOTH coaches, and post-call fields (interest + next step) on the tracker.
-The ONE remaining item is a genuinely-offline local speech-to-text sidecar
-(bundle a Vosk/whisper model in the portable build) so Microphone Assist needs
-no online service at all — heavy + platform-specific, deferred until needed.
-Offline-first,
+*Status: FEATURE-COMPLETE per the spec (Phases 1–5 built + verified). 1–3:
+offline engine + content, full UI for both sub-modes, Live Call Assist incl.
+the consent-first Microphone Assist, proposal builder, follow-up drafts. 4:
+backup/restore to a validated JSON file, a shared roleplay panel with multiple
+personas/difficulty for BOTH coaches, post-call fields (interest + next step).
+5: a genuinely-offline speech-to-text sidecar (whisper.cpp — `scripts/
+install-stt-tools.mjs` + `app/api/builder/stt`) so Microphone Assist transcribes
+on-device with NO online service; it prefers the sidecar when staged, falls back
+to the browser's recognition, then to typing. (Operator stages the whisper
+binary + a pinned model once, like the other sidecars.) Offline-first,
 privacy-first, honesty-first. No cloud AI, no APIs, no telemetry — the whole
 "conversation brain" is local data + pure functions, exactly like the Tax
 Assistant and Media Studio modules.*
