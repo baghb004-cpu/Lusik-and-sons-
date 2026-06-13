@@ -18,6 +18,7 @@ export const STUDIO_TOOLS: StudioTool[] = [
   { href: "/builder", name: "Website & App Builder", blurb: "The main visual builder — pages, blocks, themes, and exports.", group: "make", emoji: "🧱" },
   { href: "/tools/immersive", name: "Immersive Builder", blurb: "Scroll-story 3D websites & app screens that reveal as you scroll.", group: "make", emoji: "✨" },
   { href: "/tools/game-lab", name: "Game Lab", blurb: "Make small original games and export real Godot projects.", group: "make", emoji: "🕹️" },
+  { href: "/tools/sensors", name: "Sensor Builder", blurb: "Opt-in tilt/shake motion controls with on-screen fallbacks.", group: "make", emoji: "🎛️" },
   { href: "/tools/store", name: "Store Manager", blurb: "Customers, inventory, barcodes, purchase history, CSV reports.", group: "business", emoji: "🏪" },
   { href: "/tools/coach", name: "Communication Coach", blurb: "Practice client outreach calls and interviews, honestly.", group: "business", emoji: "🗣️" },
   { href: "/tools/payroll", name: "Payroll & SE-Tax", blurb: "Calculate take-home and what to set aside, with verified figures.", group: "business", emoji: "💵" },
