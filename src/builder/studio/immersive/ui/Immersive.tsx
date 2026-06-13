@@ -27,7 +27,17 @@ export function Immersive() {
   const [notes, setNotes] = useState<string[]>([]);
   const [showExplain, setShowExplain] = useState(true);
 
-  useEffect(() => { try { const r = localStorage.getItem(STORE); if (r) setProject(scrollProjectSchema.parse(JSON.parse(r))); } catch { /* */ } }, []);
+  useEffect(() => {
+    try { const r = localStorage.getItem(STORE); if (r) setProject(scrollProjectSchema.parse(JSON.parse(r))); } catch { /* */ }
+    // A prompt seeded from the Creation Studio hub → build it immediately.
+    try {
+      const seed = JSON.parse(sessionStorage.getItem("lusik_studio_vibe") || "null");
+      if (seed && seed.mode === "immersive" && seed.text) {
+        sessionStorage.removeItem("lusik_studio_vibe");
+        const rr = vibeScroll(seed.text); setNotes(rr.notes); setProject(rr.project);
+      }
+    } catch { /* */ }
+  }, []);
   useEffect(() => { if (project) try { localStorage.setItem(STORE, JSON.stringify(project)); } catch { /* */ } }, [project]);
 
   const perf = useMemo(() => (project ? scorePerformance(project) : null), [project]);

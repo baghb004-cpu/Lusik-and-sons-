@@ -52,6 +52,16 @@ export function GameLab() {
     setProject(read<GameProject | null>("lusik_gamelab_current", null));
     setAssets(read("lusik_gamelab_assets", {}));
     setTemplates(read("lusik_gamelab_templates", []));
+    // A prompt seeded from the Creation Studio hub → build it immediately.
+    try {
+      const seed = JSON.parse(sessionStorage.getItem("lusik_studio_vibe") || "null");
+      if (seed && seed.mode === "game-lab" && seed.text) {
+        sessionStorage.removeItem("lusik_studio_vibe");
+        const r = vibe(seed.text);
+        setNotes(r.notes);
+        if (r.ok && r.project) { setProject(r.project); setSelectedId(null); }
+      }
+    } catch { /* */ }
   }, []);
   useEffect(() => { if (project) write("lusik_gamelab_current", project); }, [project]);
   useEffect(() => { write("lusik_gamelab_assets", assets); }, [assets]);
