@@ -36,6 +36,14 @@ Shared foundation (Phase 1) = these conventions + the existing storage layer,
 asset/byte-sniff helpers, the bundle-budget gate, and the local "vibe" intent
 parser pattern. We don't rebuild a second project system.
 
+## Progress
+
+- ✅ **Phase 2 — Immersive Builder** (scroll-story 3D) — BUILT (`/tools/immersive`).
+- ✅ **Phase 4 — Store Manager** (customer/inventory/barcode/purchase history) —
+  BUILT (`/tools/store`).
+- ⬜ Phases 1 (shared foundation hardening), 3, 5, 6, 7, 8, 9, 10–13 (cross-cutting),
+  14 (MVP rollup) — remaining.
+
 ## Build order (the brief's 14 phases, with our notes)
 
 1. **Shared foundation** — already largely present (project/save/load, local
