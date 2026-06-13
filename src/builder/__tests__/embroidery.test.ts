@@ -10,6 +10,8 @@ import { createGrid, setCell, getCell, stampText, stitchCount, usedColors, bound
 import { buildStitchPlan, threadLengthMm } from "../studio/software/embroidery/stitches.ts";
 import { toDst, decodeRecords, dstStitchCount } from "../studio/software/embroidery/dst.ts";
 import { metrics, checkDesign, HOOPS } from "../studio/software/embroidery/metrics.ts";
+import { nearestThread } from "../studio/software/embroidery/palette.ts";
+import { gridFromPixels } from "../studio/software/embroidery/autodigitize.ts";
 
 test("palette: refs unique, hex well-formed, indexing wraps", () => {
   const refs = THREADS.map((t) => t.ref);
@@ -94,6 +96,19 @@ test("DST: large jumps are split but still reconstruct the target point", () => 
   const last = plan.stitches.filter((s) => s.flag !== "end").slice(-1)[0];
   assert.equal(x, last.x, "split jumps still land on the target X");
   assert.equal(y, last.y);
+});
+
+test("auto-digitize: maps pixels to nearest threads; skips white + transparent", () => {
+  assert.equal(THREADS[nearestThread(0, 0, 0)].name, "Black");
+  assert.equal(THREADS[nearestThread(255, 255, 255)].name, "White");
+  // 2x1 image: opaque red, then transparent
+  const rgba = [200, 30, 40, 255, /* transparent */ 0, 0, 0, 0];
+  const g = gridFromPixels(rgba, 2, 1);
+  assert.ok(g.cells[0] >= 0, "red cell mapped to a thread");
+  assert.equal(g.cells[1], -1, "transparent cell empty");
+  // near-white is skipped (fabric shows through)
+  const g2 = gridFromPixels([250, 250, 250, 255], 1, 1);
+  assert.equal(g2.cells[0], -1, "near-white skipped");
 });
 
 test("metrics + checks: finished size, hoop fit warning, density, honesty note", () => {

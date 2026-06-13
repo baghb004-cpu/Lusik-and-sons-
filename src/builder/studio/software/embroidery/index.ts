@@ -9,6 +9,7 @@ export * from "./model.ts";
 export * from "./stitches.ts";
 export * from "./dst.ts";
 export * from "./metrics.ts";
+export * from "./autodigitize.ts";
 
 export const EMBROIDERY_STORE_KEY = "lusik_embroidery_current";
 export const EMBROIDERY_BACKUP_TAG = "lusik-embroidery-design";

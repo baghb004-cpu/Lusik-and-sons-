@@ -200,6 +200,11 @@ hub), backed by a pure, fully-tested engine under
 - **Live metrics + honest checks:** stitch count, color count, finished size by
   Aida count, thread-length estimate, fill density, and **hoop-fit** against
   hoop presets — with plain-English warnings.
+- **Auto-digitize from artwork:** import any image → it's contained into the
+  grid and each cell maps to the **nearest palette thread** (transparent and
+  near-white pixels are skipped so the fabric shows through). Pure mapper is
+  unit-tested; live-verified (an 8×8 PNG → 900 thread cells). Honest: a flat
+  color-reduction, not artistic digitizing.
 - **Exports:** printable **chart (PDF)**, **PNG**, **JSON** save/open, and a
   **real Tajima DST machine file** — the most openly-documented format. The DST
   encoder is proven by a round-trip decode unit test (and large jumps are split

@@ -51,3 +51,19 @@ export const THREADS: Thread[] = [
 export function thread(i: number): Thread {
   return THREADS[((i % THREADS.length) + THREADS.length) % THREADS.length];
 }
+
+export function rgbOf(t: Thread): [number, number, number] {
+  const h = t.hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+// Nearest palette thread to an RGB color (Euclidean in RGB — good enough for v1).
+export function nearestThread(r: number, g: number, b: number): number {
+  let best = 0, bestD = Infinity;
+  for (let i = 0; i < THREADS.length; i++) {
+    const [tr, tg, tb] = rgbOf(THREADS[i]);
+    const d = (r - tr) ** 2 + (g - tg) ** 2 + (b - tb) ** 2;
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}

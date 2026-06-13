@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   THREADS, thread, createGrid, setCell, getCell, stampText, clearGrid, textWidth,
-  buildStitchPlan, toDst, metrics, checkDesign, HOOPS,
+  buildStitchPlan, toDst, metrics, checkDesign, HOOPS, gridFromPixels,
   EMBROIDERY_STORE_KEY, EMBROIDERY_BACKUP_TAG,
   type Grid,
 } from "../index.ts";
@@ -80,6 +80,25 @@ export function EmbroideryStudio() {
 
   const stamp = () => { if (!text.trim()) return; const tw = textWidth(text); const ox = Math.max(0, Math.floor((grid.w - tw) / 2)); const oy = Math.max(0, Math.floor((grid.h - 7) / 2)); setGrid((g) => stampText(g, text, ox, oy, color)); };
 
+  const imgRef = useRef<HTMLInputElement>(null);
+  // Auto-digitize: draw the image at the grid size, read pixels, map to threads.
+  const importImage = (f: File) => {
+    const img = new Image();
+    img.onload = () => {
+      const off = document.createElement("canvas");
+      off.width = grid.w; off.height = grid.h;
+      const ctx = off.getContext("2d"); if (!ctx) return;
+      // contain the image in the grid
+      const scale = Math.min(grid.w / img.width, grid.h / img.height);
+      const dw = img.width * scale, dh = img.height * scale;
+      ctx.drawImage(img, (grid.w - dw) / 2, (grid.h - dh) / 2, dw, dh);
+      const data = ctx.getImageData(0, 0, grid.w, grid.h).data;
+      setGrid((g) => ({ ...gridFromPixels(data, g.w, g.h), w: g.w, h: g.h }));
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(f);
+  };
+
   // exports
   const dl = (blob: Blob, name: string) => { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u); };
   const slug = (title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "design");
@@ -125,6 +144,8 @@ export function EmbroideryStudio() {
             <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a name…" className={inp} aria-label="Text to stitch" maxLength={20} />
             <button type="button" onClick={stamp} className="rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream">Stamp text</button>
             <span className="text-xs text-muted">Uses the built-in 5×7 font (A–Z, 0–9).</span>
+            <button type="button" onClick={() => imgRef.current?.click()} className="rounded-full border border-ink/20 px-4 py-1.5 text-sm">🖼 Auto-digitize image</button>
+            <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) importImage(f); e.target.value = ""; }} />
           </div>
         </section>
 
