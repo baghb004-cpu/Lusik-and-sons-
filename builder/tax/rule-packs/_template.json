@@ -1,0 +1,15 @@
+{
+  "_README": "TEMPLATE ONLY. This file is the STRUCTURE for a federal rule pack — it deliberately contains NO authoritative dollar amounts. Copy it to <year>.json, open each figure's official IRS source, enter the real value for your tax year, and set verified:true. Until a figure is verified, the assistant treats it as 'needs review' and will not compute a final number from it. New tax year? Click the updater to open the official IRS page, then fill these in.",
+  "schemaVersion": 1,
+  "taxYear": 2026,
+  "jurisdiction": "us-federal",
+  "status": "template",
+  "officialSource": "https://www.irs.gov/forms-instructions",
+  "figures": [
+    { "key": "std_deduction_single", "value": null, "unit": "usd", "verified": false, "source": "https://www.irs.gov/forms-pubs/about-form-1040", "note": "Standard deduction, Single — verify in the official 1040 instructions for your year." },
+    { "key": "std_deduction_married_jointly", "value": null, "unit": "usd", "verified": false, "source": "https://www.irs.gov/forms-pubs/about-form-1040", "note": "Standard deduction, Married Filing Jointly." },
+    { "key": "std_deduction_married_separately", "value": null, "unit": "usd", "verified": false, "source": "https://www.irs.gov/forms-pubs/about-form-1040", "note": "Standard deduction, Married Filing Separately." },
+    { "key": "std_deduction_head_of_household", "value": null, "unit": "usd", "verified": false, "source": "https://www.irs.gov/forms-pubs/about-form-1040", "note": "Standard deduction, Head of Household." },
+    { "key": "std_deduction_qualifying_surviving_spouse", "value": null, "unit": "usd", "verified": false, "source": "https://www.irs.gov/forms-pubs/about-form-1040", "note": "Standard deduction, Qualifying Surviving Spouse." }
+  ]
+}
