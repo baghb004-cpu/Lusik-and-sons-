@@ -79,3 +79,4 @@ export {
   type ContrastCheck,
 } from "./contrast.ts";
 export { parseCsv } from "./csv.ts";
+export { buildIcs, icsDataHref, icsEscape, icsStamp, googleCalendarUrl, outlookCalendarUrl, BOOKING_PROVIDERS, type CalendarEvent } from "./ics.ts";

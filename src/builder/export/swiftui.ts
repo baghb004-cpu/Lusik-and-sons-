@@ -192,6 +192,12 @@ export function blockToSwift(block: Block): string {
       const head = typeof p.heading === "string" && p.heading ? [`Text("${escapeSwift(p.heading)}").font(.headline)`] : [];
       return `VStack(alignment: .leading, spacing: 8) {\n${[...head, ...lines].map((v) => indent(v, 1)).join("\n")}\n}.padding(16).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 16))`;
     }
+    case "event": {
+      const title = escapeSwift(String(p.title ?? "Event"));
+      return `VStack(alignment: .leading, spacing: 6) { Text("${title}").font(.headline); Text("${escapeSwift(String(p.start ?? ""))}${p.location ? ` · ${escapeSwift(String(p.location))}` : ""}").font(.caption).foregroundColor(Theme.muted); Link("Add to calendar (on the website)", destination: URL(string: "\(AppConfig.webBaseURL)")!).font(.subheadline) }.padding(16).background(Theme.paper).clipShape(RoundedRectangle(cornerRadius: 16))`;
+    }
+    case "bookingButton":
+      return `Link("🗓 ${escapeSwift(String(p.label ?? "Book a time"))}", destination: URL(string: "${escapeSwift(String(p.url ?? "https://example.com"))}")!).buttonStyle(.borderedProminent).tint(Theme.ink)`;
     case "csvTable":
       return placeholder("csvTable (tabular data — view on the website)");
     case "specTable": {

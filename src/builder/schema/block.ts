@@ -444,6 +444,37 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
 
+  // Event with add-to-calendar (every format that matters): renders an
+  // event card whose buttons open the visitor's NATIVE calendar — a
+  // universal .ics file (Apple/Outlook/Android, zero JS, works in
+  // static exports) plus Google Calendar and Outlook.com prefill links.
+  event: z
+    .object({
+      title: translatableRequired,
+      start: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "use the date-time picker format YYYY-MM-DDTHH:MM"),
+      end: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/).optional(),
+      allDay: z.boolean().optional(),
+      location: z.string().max(160).optional(),
+      details: translatableSchema.optional(),
+      showIcs: z.boolean().optional(), // Apple/universal — default on
+      showGoogle: z.boolean().optional(),
+      showOutlook: z.boolean().optional(),
+      buttonLabel: translatableSchema.optional(),
+    })
+    .strict(),
+
+  // Booking button — presets for free(-tier) scheduling services
+  // (Calendly, the open-source Cal.com) or any custom booking URL.
+  // The button links out; no third-party script ever loads.
+  bookingButton: z
+    .object({
+      provider: z.enum(["calendly", "cal-com", "custom"]),
+      url: z.string().regex(/^https:\/\//, "booking links must be https"),
+      label: translatableSchema.optional(),
+      note: translatableSchema.optional(), // small text under the button
+    })
+    .strict(),
+
   // Opening hours.
   hoursTable: z
     .object({

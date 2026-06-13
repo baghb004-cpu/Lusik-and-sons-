@@ -30,6 +30,8 @@ export const INSERTABLE_TYPES = [
   "hoursTable",
   "specTable",
   "csvTable",
+  "event",
+  "bookingButton",
   "mapLink",
   "searchLauncher",
   "sectionJumper",
@@ -109,6 +111,10 @@ export function newDefaultBlock(type: InsertableType, catalog: CatalogSnapshot):
       return { id, type, props: { heading: "At a glance", rows: [{ label: "Material", value: "100% cotton" }, { label: "Size", value: "90 × 90 cm" }], striped: true } };
     case "csvTable":
       return { id, type, props: { caption: "Pasted data", csv: "Item,Price\nCrib blanket,$165\nBib,$28" } };
+    case "event":
+      return { id, type, props: { title: "Workshop open house", start: "2026-07-04T14:00", end: "2026-07-04T17:00", location: "The workshop", details: "Come say hello!" } };
+    case "bookingButton":
+      return { id, type, props: { provider: "calendly", url: "https://calendly.com/yourname/30min", label: "Book a time with us" } };
     case "mapLink":
       return { id, type, props: { address: "Buena Park, CA", label: "Visit the workshop" } };
     case "searchLauncher":

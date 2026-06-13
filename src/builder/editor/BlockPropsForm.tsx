@@ -22,6 +22,7 @@ import { BLOCK_TYPES, type Block } from "../schema/index.ts";
 import type { RichTextDoc } from "../schema/index.ts";
 import type { CatalogSnapshot } from "../engine/commerce.ts";
 import {
+  FIELD_HELP,
   fieldsForBlockType,
   newRowValue,
   defaultForField,
@@ -96,6 +97,7 @@ export function BlockPropsForm({ block, catalog, locales, defaultLocale, onChang
       {fields.map((f) => (
         <Field
           key={f.name}
+          help={FIELD_HELP[`${block.type}.${f.name}`]}
           field={f}
           value={props[f.name]}
           locale={locale}
@@ -118,6 +120,7 @@ function Field({
   defaultLocale,
   catalog,
   onSet,
+  help,
 }: {
   field: FieldSpec;
   value: unknown;
@@ -125,11 +128,13 @@ function Field({
   defaultLocale: LocaleCode;
   catalog: CatalogSnapshot;
   onSet: (v: unknown) => void;
+  help?: string;
 }) {
   const label = (
     <span className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">
       {field.label}
       {field.required ? <span className="text-accent"> *</span> : null}
+      {help ? <span className="mt-0.5 block normal-case tracking-normal text-[10px] text-muted/90">{help}</span> : null}
     </span>
   );
 

@@ -50,6 +50,8 @@ export const TRANSLATABLE_FIELDS: Record<string, FieldSpec> = {
   socialRow: { strings: ["label"] },
   hoursTable: { strings: ["heading", "note"], arrays: [{ prop: "rows", strings: ["days", "hours"] }] },
   csvTable: { strings: ["caption"] },
+  event: { strings: ["title", "details", "buttonLabel"] },
+  bookingButton: { strings: ["label", "note"] },
   specTable: { strings: ["heading"], arrays: [{ prop: "rows", strings: ["label", "value", "detail"] }] },
   mapLink: { strings: ["label"] },
 };

@@ -311,6 +311,20 @@ export function plainTextToDoc(text: string): RichTextDoc {
   };
 }
 
+/** Plain-language help shown under fields in the generated form —
+ *  "what is this for, what do I achieve" (keyed "type.field"). */
+export const FIELD_HELP: Record<string, string> = {
+  "event.start": "When it begins. Visitors' calendar apps convert it to their device automatically.",
+  "event.showIcs": "The universal button (.ics file): tapping it on iPhone/iPad opens Apple Calendar, on Android the native calendar, on desktop Outlook/Apple Calendar. Works offline, works in every export.",
+  "event.showGoogle": "A 'Google Calendar' button that opens calendar.google.com with the event pre-filled — for visitors who live in Google's calendar.",
+  "event.showOutlook": "An 'Outlook' button that opens outlook.com with the event pre-filled — for Microsoft-calendar visitors.",
+  "event.allDay": "All-day events show a date with no start time (festivals, closures).",
+  "bookingButton.provider": "Calendly: free tier, one event type, visitors pick a slot. Cal.com: open-source with a generous free plan (self-hostable later). Custom: any booking page URL.",
+  "bookingButton.url": "Your personal booking page link from the service (https only). The button sends visitors there — no tracking script ever loads on your site.",
+  "video.kind": "Local file plays natively. YouTube/Vimeo show a privacy facade: nothing loads from them until the visitor presses play.",
+  "contactForm.provider": "Netlify: zero-config when hosted on Netlify. Formspree/Web3Forms: work on ANY host with your free account key. Mailto: no backend at all — opens the visitor's email app.",
+};
+
 /** The block types whose dedicated editors take precedence over the generic form. */
 export const DEDICATED_EDITORS: ReadonlySet<string> = new Set(["pillNav"]);
 

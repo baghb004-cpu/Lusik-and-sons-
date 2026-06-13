@@ -23,6 +23,7 @@ import { tokenToCss } from "./style.ts";
 import { glassPresetToCss } from "../theme/css.ts";
 import { resolveProductRef, type CatalogProductSnapshot, type CatalogSnapshot } from "../engine/commerce.ts";
 import { parseCsv } from "../engine/csv.ts";
+import { icsDataHref, googleCalendarUrl, outlookCalendarUrl, BOOKING_PROVIDERS, type CalendarEvent } from "../engine/ics.ts";
 import { JUMPER_STOP_SELECTORS, jumperDomId, sectionJumperScript, sectionJumperCss } from "./jumperScript.ts";
 import { appearanceDomId, appearanceSwitcherScript, appearanceSwitcherCss, CANDLE_DEFAULTS } from "./appearanceScript.ts";
 import { videoDomId, videoFacadeScript, videoWatchUrl } from "./videoScript.ts";
@@ -995,6 +996,48 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
           ))}
         </dl>
         {p.note ? <p className="mt-3 text-xs text-muted">{p.note}</p> : null}
+      </div>
+    );
+  },
+
+  // Event card: every button opens the visitor's calendar their way —
+  // .ics (Apple/Android/Outlook native, zero JS, offline-safe data link),
+  // Google Calendar, Outlook.com. Pure links; static-export honest.
+  event: (block) => {
+    const p = block.props as unknown as CalendarEvent & { showIcs?: boolean; showGoogle?: boolean; showOutlook?: boolean; buttonLabel?: string };
+    const when = new Date(p.start);
+    const dateText = when.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    const timeText = p.allDay ? "All day" : when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    const btn = "rounded-full border border-ink/20 px-4 py-1.5 text-sm transition hover:border-accent";
+    return (
+      <div className="rounded-2xl border border-ink/10 bg-white/60 p-5 shadow-sm">
+        <h3 className="font-display text-lg">{p.title}</h3>
+        <p className="mt-1 text-sm text-muted">📅 {dateText} · {timeText}{p.location ? ` · 📍 ${p.location}` : ""}</p>
+        {p.details ? <p className="mt-2 text-sm">{p.details}</p> : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {p.showIcs !== false ? (
+            <a href={icsDataHref(p, block.id)} download={`${block.id}.ics`} className={cx(btn, "bg-ink text-cream hover:opacity-90")}>
+              {p.buttonLabel ?? "📲 Add to calendar"}
+            </a>
+          ) : null}
+          {p.showGoogle !== false ? <a href={googleCalendarUrl(p)} target="_blank" rel="noreferrer" className={btn}>Google Calendar</a> : null}
+          {p.showOutlook !== false ? <a href={outlookCalendarUrl(p)} target="_blank" rel="noreferrer" className={btn}>Outlook</a> : null}
+        </div>
+      </div>
+    );
+  },
+
+  // Booking button: links out to the owner's scheduling page (Calendly,
+  // the open-source Cal.com, or any URL) — no third-party script loads.
+  bookingButton: (block) => {
+    const p = block.props as { provider: string; url: string; label?: string; note?: string };
+    const provider = BOOKING_PROVIDERS.find((x) => x.id === p.provider);
+    return (
+      <div>
+        <a href={p.url} target="_blank" rel="noreferrer" className="inline-block rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-cream transition hover:opacity-90">
+          🗓 {p.label ?? `Book a time${provider && provider.id !== "custom" ? ` (${provider.label})` : ""}`}
+        </a>
+        {p.note ? <p className="mt-1 text-xs text-muted">{p.note}</p> : null}
       </div>
     );
   },
