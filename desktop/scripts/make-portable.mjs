@@ -40,6 +40,10 @@ const argv = process.argv.slice(2);
 const target = argv.find((a) => !a.startsWith("--"));
 const targetIdx = argv.indexOf("--target");
 const platform = targetIdx !== -1 ? argv[targetIdx + 1] : "win-x64";
+// --scaffold-only: lay down just the launchers + folder skeleton (no Node
+// runtime download, no app copy) — handy to refresh the launcher on an existing
+// drive, or to inspect the drive layout quickly.
+const scaffoldOnly = argv.includes("--scaffold-only");
 
 if (!target) {
   console.error("Usage: node desktop/scripts/make-portable.mjs <target-folder> [--target win-x64|linux-arm64]");
@@ -72,17 +76,12 @@ console.log(`Assembling a ${platform} portable drive at ${target}\n`);
 
 // The built app must exist (its .next is architecture-independent, but the
 // app/node_modules we copy below is NOT — see the header note).
-if (!existsSync(join(repo, ".next"))) {
+if (!scaffoldOnly && !existsSync(join(repo, ".next"))) {
   console.error("Build the app first: npm run next:build (in the repo root)");
   process.exit(1);
 }
-if (cfg.launcher === "exe") {
-  const exe = join(repo, "desktop", "src-tauri", "target", "release", "baghdos-workshop.exe");
-  if (!existsSync(exe)) {
-    console.error("Build the shell first: cd desktop && npm run tauri:build (on Windows)");
-    process.exit(1);
-  }
-}
+// The polished Tauri .exe is OPTIONAL — if it isn't built, the drive uses the
+// no-compile start.bat launcher (launch.mjs) instead, which is perfect for review.
 if (platform === "linux-arm64" && process.arch !== "arm64") {
   console.warn(
     "⚠ Building a linux-arm64 drive on a non-arm64 machine: app/node_modules will carry the WRONG\n" +
@@ -99,18 +98,15 @@ mkdirSync(target, { recursive: true });
 // (so node/bin/node). The two never collide, so a drive can hold both.
 const nodeCache = join(repo, "desktop", ".node-cache", `${NODE_VERSION}-${platform}`);
 const nodeDir = join(target, "node");
-mkdirSync(nodeDir, { recursive: true });
-
-if (platform === "win-x64") {
-  if (!existsSync(join(nodeCache, "node.exe"))) {
-    stageNodeDownload(nodeCache);
+if (!scaffoldOnly) {
+  mkdirSync(nodeDir, { recursive: true });
+  if (platform === "win-x64") {
+    if (!existsSync(join(nodeCache, "node.exe"))) stageNodeDownload(nodeCache);
+    copyFileSync(join(nodeCache, "node.exe"), join(nodeDir, "node.exe"));
+  } else {
+    if (!existsSync(join(nodeCache, "bin", "node"))) stageNodeDownload(nodeCache);
+    cpSync(nodeCache, nodeDir, { recursive: true });
   }
-  copyFileSync(join(nodeCache, "node.exe"), join(nodeDir, "node.exe"));
-} else {
-  if (!existsSync(join(nodeCache, "bin", "node"))) {
-    stageNodeDownload(nodeCache);
-  }
-  cpSync(nodeCache, nodeDir, { recursive: true });
 }
 
 function stageNodeDownload(dest) {
@@ -133,8 +129,28 @@ function stageNodeDownload(dest) {
 }
 
 // ── the launcher ────────────────────────────────────────────
+// The cross-platform Node launcher (no compiler needed) goes on every drive.
+copyFileSync(join(repo, "desktop", "scripts", "launch.mjs"), join(target, "launch.mjs"));
+
 if (cfg.launcher === "exe") {
-  copyFileSync(join(repo, "desktop", "src-tauri", "target", "release", "baghdos-workshop.exe"), join(target, "baghdos-workshop.exe"));
+  // Windows: a double-clickable start.bat is always written (no Tauri build
+  // required); the polished .exe is copied too if it happens to be built.
+  const startBat = [
+    "@echo off",
+    "title Baghdo's Workshop",
+    "echo Starting Baghdo's Workshop... a browser window will open shortly.",
+    '"%~dp0node\\node.exe" "%~dp0launch.mjs"',
+    "pause",
+    "",
+  ].join("\r\n");
+  writeFileSync(join(target, "start.bat"), startBat);
+  const exe = join(repo, "desktop", "src-tauri", "target", "release", "baghdos-workshop.exe");
+  if (existsSync(exe)) {
+    copyFileSync(exe, join(target, "baghdos-workshop.exe"));
+    console.log("  bundled the Tauri .exe (polished launcher) + start.bat (no-compile fallback)");
+  } else {
+    console.log("  no Tauri .exe found — using start.bat (no compile needed). Double-click it to run.");
+  }
 } else {
   const sh = readFileSync(join(repo, "desktop", "scripts", "start-pi.sh"), "utf8");
   const out = join(target, "start.sh");
@@ -143,42 +159,46 @@ if (cfg.launcher === "exe") {
 }
 
 // ── the app folder: production build + everything the server needs ──
-console.log("Copying the app…");
 const appDir = join(target, "app");
-for (const item of [
-  ".next", "node_modules", "builder", "content", "public", "scripts", "src", "app",
-  "netlify", "package.json", "package-lock.json", "next.config.mjs", "tailwind.config.mjs", "postcss.config.mjs", "tsconfig.json",
-]) {
-  const src = join(repo, item);
-  if (existsSync(src)) cpSync(src, join(appDir, item), { recursive: true });
-}
+if (!scaffoldOnly) {
+  console.log("Copying the app…");
+  for (const item of [
+    ".next", "node_modules", "builder", "content", "public", "scripts", "src", "app",
+    "netlify", "package.json", "package-lock.json", "next.config.mjs", "tailwind.config.mjs", "postcss.config.mjs", "tsconfig.json",
+  ]) {
+    const src = join(repo, item);
+    if (existsSync(src)) cpSync(src, join(appDir, item), { recursive: true });
+  }
 
-// Prune dev dependencies (Playwright, Lighthouse CI, type packages, the
-// bundle analyzer…): `next start` needs only production deps, and the copied
-// node_modules is ~800 MB otherwise. Offline-safe — prune just deletes from
-// the tree. (Runs against THIS machine's arch; see the header note for arm64.)
-console.log("Pruning dev dependencies (smaller drive footprint)…");
-try {
-  execSync("npm prune --omit=dev", { cwd: appDir, stdio: "inherit" });
-} catch {
-  console.warn("  prune skipped (npm not on PATH) — the drive will be larger but still works.");
-}
+  // Prune dev dependencies (Playwright, Lighthouse CI, type packages, the
+  // bundle analyzer…): `next start` needs only production deps, and the copied
+  // node_modules is ~800 MB otherwise. Offline-safe — prune just deletes from
+  // the tree. (Runs against THIS machine's arch; see the header note for arm64.)
+  console.log("Pruning dev dependencies (smaller drive footprint)…");
+  try {
+    execSync("npm prune --omit=dev", { cwd: appDir, stdio: "inherit" });
+  } catch {
+    console.warn("  prune skipped (npm not on PATH) — the drive will be larger but still works.");
+  }
 
-// Give the app folder its own git repo so the History panel works on the
-// drive: fs-mode saves auto-commit (see src/builder/storage/fs.ts), and this
-// is the repo they commit into. Best-effort.
-console.log("Initializing version history…");
-try {
-  execSync("git init -q", { cwd: appDir, stdio: "inherit" });
-  execSync('git -c user.email=workshop@local -c user.name=Workshop add builder content', { cwd: appDir, stdio: "ignore" });
-  execSync('git -c user.email=workshop@local -c user.name=Workshop -c commit.gpgsign=false commit -q -m "Initial workshop state"', { cwd: appDir, stdio: "ignore" });
-} catch {
-  console.warn("  git not found on this machine — History will be empty on the drive (Backup/Restore still works).");
+  // Give the app folder its own git repo so the History panel works on the
+  // drive: fs-mode saves auto-commit (see src/builder/storage/fs.ts), and this
+  // is the repo they commit into. Best-effort.
+  console.log("Initializing version history…");
+  try {
+    execSync("git init -q", { cwd: appDir, stdio: "inherit" });
+    execSync('git -c user.email=workshop@local -c user.name=Workshop add builder content', { cwd: appDir, stdio: "ignore" });
+    execSync('git -c user.email=workshop@local -c user.name=Workshop -c commit.gpgsign=false commit -q -m "Initial workshop state"', { cwd: appDir, stdio: "ignore" });
+  } catch {
+    console.warn("  git not found on this machine — History will be empty on the drive (Backup/Restore still works).");
+  }
+} else {
+  console.log("Scaffold-only: skipped the Node runtime + app copy (launchers + skeleton only).");
 }
 
 const launchLine =
   cfg.launcher === "exe"
-    ? "Double-click baghdos-workshop.exe."
+    ? "Double-click start.bat (or baghdos-workshop.exe if it's present)."
     : "Run ./start.sh (on a Raspberry Pi 5 or arm64 Linux).";
 writeFileSync(
   join(target, "README.txt"),
@@ -189,7 +209,8 @@ Everything lives in this folder: your pages, products, theme and shipping data
 are plain files under app/builder and app/content — git-friendly, backup-friendly.
 
 Layout:
-  ${cfg.launcher === "exe" ? "baghdos-workshop.exe   the launcher (Windows)" : "start.sh               the launcher (Pi / Linux)"}
+  ${cfg.launcher === "exe" ? "start.bat              the launcher (Windows — double-click; no install)" : "start.sh               the launcher (Pi / Linux)"}
+  launch.mjs             the cross-platform launcher the above calls
   node/                  the portable Node runtime
   app/                   the built builder project
   portable/              your private data (profiles, saves, settings)
