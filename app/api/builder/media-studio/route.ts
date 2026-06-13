@@ -35,6 +35,100 @@ function safePath(rel: string): string {
   return abs;
 }
 
+/** Resolve a path and keep it inside portable/media/ specifically — the
+ *  preview endpoint serves bytes to the browser, so it must NEVER reach the
+ *  tax vault or anything else under portable/. */
+function safeMediaPath(rel: string): string {
+  const abs = safePath(rel); // contained under portable/
+  const mediaRoot = join(ROOT(), "media");
+  if (abs !== mediaRoot && !abs.startsWith(mediaRoot + sep)) throw new Error("only media/ files can be previewed");
+  return abs;
+}
+
+// Content types for the preview stream, keyed by extension. Kept local (the
+// format pack carries support levels, not MIME) and intentionally narrow.
+const MIME: Record<string, string> = {
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+  avif: "image/avif", gif: "image/gif", bmp: "image/bmp", tif: "image/tiff",
+  tiff: "image/tiff", svg: "image/svg+xml", heic: "image/heic", heif: "image/heif",
+  mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime", mkv: "video/x-matroska",
+  m4v: "video/x-m4v", avi: "video/x-msvideo",
+  wav: "audio/wav", mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac",
+  flac: "audio/flac", ogg: "audio/ogg", opus: "audio/ogg", aiff: "audio/aiff",
+};
+function mimeFor(name: string): string {
+  return MIME[name.toLowerCase().split(".").pop() ?? ""] ?? "application/octet-stream";
+}
+
+/** Re-present the request with the ?token= query param as an Authorization
+ *  header so the shared verifier can check it. Media elements (<img>/<video>/
+ *  <audio>) can't send headers, so the file branch falls back to the query
+ *  param — the token is still required and verified the same way. */
+function reqWithToken(req: Request, url: URL): Request {
+  if (req.headers.get("authorization")) return req;
+  const token = url.searchParams.get("token");
+  if (!token) return req;
+  const h = new Headers(req.headers);
+  h.set("authorization", `Bearer ${token}`);
+  return new Request(req.url, { headers: h });
+}
+
+/** Stream a local media file to the browser with HTTP Range support (so video
+ *  scrubbing works). Originals are read-only here; this never writes. */
+async function serveFile(rel: string, req: Request): Promise<Response> {
+  let abs: string;
+  try {
+    abs = safeMediaPath(rel);
+  } catch (e) {
+    return json(400, { error: (e as Error).message });
+  }
+  if (!existsSync(abs)) return json(404, { error: "That media file isn't there.", path: rel });
+
+  const { statSync, createReadStream } = await import("node:fs");
+  const total = statSync(abs).size;
+
+  // Wrap a Node read stream as a web ReadableStream by hand — Next's bundling
+  // doesn't reliably expose stream.Readable.toWeb in the route runtime.
+  const toWeb = (opts?: { start: number; end: number }): ReadableStream => {
+    const node = createReadStream(abs, opts);
+    return new ReadableStream({
+      start(controller) {
+        node.on("data", (chunk) => controller.enqueue(new Uint8Array(chunk as Buffer)));
+        node.on("end", () => controller.close());
+        node.on("error", (err) => controller.error(err));
+      },
+      cancel() { node.destroy(); },
+    });
+  };
+  const headers: Record<string, string> = {
+    "Content-Type": mimeFor(rel),
+    "Accept-Ranges": "bytes",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+  };
+
+  const range = req.headers.get("range");
+  if (range) {
+    const m = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+    if (m) {
+      const start = m[1] ? parseInt(m[1], 10) : 0;
+      let end = m[2] ? parseInt(m[2], 10) : total - 1;
+      if (Number.isNaN(start) || Number.isNaN(end) || start > end || start >= total) {
+        return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${total}` } });
+      }
+      end = Math.min(end, total - 1);
+      return new Response(toWeb({ start, end }), {
+        status: 206,
+        headers: { ...headers, "Content-Range": `bytes ${start}-${end}/${total}`, "Content-Length": String(end - start + 1) },
+      });
+    }
+  }
+  return new Response(toWeb(), {
+    status: 200,
+    headers: { ...headers, "Content-Length": String(total) },
+  });
+}
+
 /** Find ffmpeg/ffprobe: the sidecar folder first, then PATH. */
 function findBin(name: "ffmpeg" | "ffprobe"): string {
   const win = process.platform === "win32" ? ".exe" : "";
@@ -70,9 +164,17 @@ const NOT_INSTALLED = {
 };
 
 export async function GET(req: Request): Promise<Response> {
-  const auth = await requireBuilderAdmin(req);
+  const url = new URL(req.url);
+  const fileRel = url.searchParams.get("file");
+
+  // The file (preview) branch also accepts ?token= because media elements
+  // can't send an Authorization header; the token is still required + verified.
+  const auth = await requireBuilderAdmin(fileRel ? reqWithToken(req, url) : req);
   if (!auth.ok) return auth.response!;
   if (getBuilderStorage().backend !== "fs") return json(501, { error: "The Media Studio runs in local (fs) mode." });
+
+  if (fileRel) return serveFile(fileRel, req);
+
   // List media under portable/media (NEVER the tax vault). Returns
   // relative paths + the format support level from the data pack.
   const { readdirSync, statSync } = await import("node:fs");
