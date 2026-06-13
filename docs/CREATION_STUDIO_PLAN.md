@@ -38,12 +38,13 @@ parser pattern. We don't rebuild a second project system.
 
 ## Progress
 
+- ✅ **Phase 1 — Creation Studio hub** — BUILT (`/tools`): one front door listing
+  every offline tool, with Workshop-token carry-forward.
 - ✅ **Phase 2 — Immersive Builder** (scroll-story 3D) — BUILT (`/tools/immersive`).
 - ✅ **Phase 4 — Store Manager** (customer/inventory/barcode/purchase history) —
   BUILT (`/tools/store`).
 - ✅ **Phase 8 — Event Photo Booth Builder** — BUILT (`/tools/photo-booth`).
-- ⬜ Phases 1 (foundation hardening), 3, 5, 6, 7, 9, 10–13 (cross-cutting),
-  14 (MVP rollup) — remaining.
+- ⬜ Phases 3, 5, 6, 7, 9, 10–13 (cross-cutting), 14 (MVP rollup) — remaining.
 
 ## Build order (the brief's 14 phases, with our notes)
 
