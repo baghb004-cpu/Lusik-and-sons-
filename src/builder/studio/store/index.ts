@@ -4,3 +4,5 @@
 export * from "./schemas.ts";
 export * from "./engine.ts";
 export * from "./io.ts";
+export * from "./xlsx.ts";
+export * from "./reports.ts";

@@ -16,7 +16,9 @@ import {
   searchCustomers, searchProducts, lookupByBarcode, lowStock, recordOrder, purchaseHistory, customerTotals,
   adjustStock, anonymizeCustomer, deleteCustomer, orderTotalCents, applyRetention,
 } from "../engine.ts";
-import { customersCsv, productsCsv, ordersCsv, lowStockCsv, serializeStore, parseStoreBackup } from "../io.ts";
+import { toCsv, serializeStore, parseStoreBackup } from "../io.ts";
+import { STORE_REPORTS, reportHtml } from "../reports.ts";
+import { xlsxParts } from "../xlsx.ts";
 
 const card = "rounded-2xl border border-ink/10 bg-white/60 p-4";
 const field = "w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none";
@@ -28,7 +30,10 @@ const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 const toCents = (v: string) => Math.max(0, Math.round((Number(v.replace(/[^\d.]/g, "")) || 0) * 100));
 
 function dl(text: string, filename: string, type = "text/csv") {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+  dlBlob(new Blob([text], { type }), filename);
+}
+function dlBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
@@ -81,7 +86,7 @@ export function StoreManager() {
       {view === "customers" ? <Customers store={store} setStore={setStore} /> : null}
       {view === "inventory" ? <Inventory store={store} setStore={setStore} low={low} /> : null}
       {view === "order" ? <NewOrder store={store} setStore={setStore} setMsg={setMsg} /> : null}
-      {view === "reports" ? <Reports store={store} low={low} /> : null}
+      {view === "reports" ? <Reports store={store} /> : null}
       {view === "settings" ? <Settings store={store} setStore={setStore} setMsg={setMsg} /> : null}
       {msg ? <p className="mt-3 text-xs" data-testid="store-msg">{msg}</p> : null}
     </main>
@@ -255,17 +260,36 @@ function NewOrder({ store, setStore, setMsg }: { store: Store; setStore: (s: Sto
   );
 }
 
-function Reports({ store, low }: { store: Store; low: Product[] }) {
-  const btn = "rounded-full border border-ink/30 px-4 py-2 text-sm hover:bg-cream";
+function Reports({ store }: { store: Store }) {
+  const csv = (rid: string) => { const r = STORE_REPORTS.find((x) => x.id === rid)!.build(store); dl(toCsv(r.headers, r.rows), `${rid}.csv`); };
+  const xlsx = async (rid: string) => {
+    const r = STORE_REPORTS.find((x) => x.id === rid)!.build(store);
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    for (const [path, content] of Object.entries(xlsxParts([{ name: r.title, headers: r.headers, rows: r.rows }]))) zip.file(path, content);
+    dlBlob(await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${rid}.xlsx`);
+  };
+  const print = (rid: string) => {
+    const r = STORE_REPORTS.find((x) => x.id === rid)!.build(store);
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(reportHtml(r, store.settings.storeName)); w.document.close(); }
+  };
+  const small = "rounded-full border border-ink/20 px-2.5 py-1 text-xs hover:bg-cream";
   return (
     <div className="mt-4">
-      <p className="text-xs text-muted">Download spreadsheet reports (open in Excel/Numbers/Sheets). Exports contain customer data — keep them safe.</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={() => dl(customersCsv(store), "customers.csv")} className={btn}>Customers CSV</button>
-        <button type="button" onClick={() => dl(productsCsv(store), "products.csv")} className={btn}>Products CSV</button>
-        <button type="button" onClick={() => dl(ordersCsv(store), "orders.csv")} className={btn}>Orders CSV</button>
-        <button type="button" onClick={() => dl(lowStockCsv(store, low), "low-stock.csv")} className={btn}>Low-stock CSV</button>
-      </div>
+      <p className="text-xs text-muted">Reports open in Excel/Numbers/Sheets (CSV/XLSX) or print to PDF. Exports may contain customer data — keep them safe. No payment card data is ever included.</p>
+      <ul className="mt-3 space-y-1">
+        {STORE_REPORTS.map((r) => (
+          <li key={r.id} className="flex items-center justify-between rounded-lg border border-ink/10 px-3 py-2 text-sm">
+            <span>{r.name}</span>
+            <span className="flex gap-1.5">
+              <button type="button" onClick={() => csv(r.id)} className={small}>CSV</button>
+              <button type="button" onClick={() => void xlsx(r.id)} className={small}>XLSX</button>
+              <button type="button" onClick={() => print(r.id)} className={small}>Print / PDF</button>
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
