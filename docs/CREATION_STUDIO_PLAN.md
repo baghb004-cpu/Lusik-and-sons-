@@ -45,7 +45,9 @@ parser pattern. We don't rebuild a second project system.
   BUILT (`/tools/store`).
 - ✅ **Phase 7 — Sensor Interaction Builder** — BUILT (`/tools/sensors`).
 - ✅ **Phase 8 — Event Photo Booth Builder** — BUILT (`/tools/photo-booth`).
-- ⬜ Phases 3, 5, 6, 9, 10–13 (cross-cutting), 14 (MVP rollup) — remaining.
+- ✅ **Phase 9 — Cross-mode Vibe Builder** — BUILT (the prompt box on `/tools`
+  routes to + pre-seeds the right mode).
+- ⬜ Phases 3, 5, 6, 10–13 (cross-cutting), 14 (MVP rollup) — remaining.
 
 ## Build order (the brief's 14 phases, with our notes)
 
