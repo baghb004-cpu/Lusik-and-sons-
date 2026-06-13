@@ -69,6 +69,33 @@ const NOT_INSTALLED = {
   hint: "Run: node scripts/install-media-tools.mjs (stages the official FFmpeg into portable/media-studio/bin), or drop ffmpeg/ffprobe there yourself.",
 };
 
+export async function GET(req: Request): Promise<Response> {
+  const auth = await requireBuilderAdmin(req);
+  if (!auth.ok) return auth.response!;
+  if (getBuilderStorage().backend !== "fs") return json(501, { error: "The Media Studio runs in local (fs) mode." });
+  // List media under portable/media (NEVER the tax vault). Returns
+  // relative paths + the format support level from the data pack.
+  const { readdirSync, statSync } = await import("node:fs");
+  const { formatFor } = await import("../../../../src/builder/media-studio/formats.ts");
+  const mediaRoot = join(ROOT(), "media");
+  const files: Array<{ path: string; bytes: number; support: string; kind: string }> = [];
+  const walk = (dir: string, rel: string, depth = 0) => {
+    if (depth > 4) return;
+    let entries: import("node:fs").Dirent[];
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const abs = join(dir, e.name);
+      const r = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) { walk(abs, r, depth + 1); continue; }
+      const fmt = formatFor(e.name);
+      if (!fmt) continue; // only recognized media
+      files.push({ path: `media/${r}`, bytes: statSync(abs).size, support: fmt.support, kind: fmt.kind });
+    }
+  };
+  walk(mediaRoot, "");
+  return json(200, { ok: true, files });
+}
+
 export async function POST(req: Request): Promise<Response> {
   const auth = await requireBuilderAdmin(req);
   if (!auth.ok) return auth.response!;
