@@ -1531,6 +1531,33 @@ export function BuilderShell() {
                       {"</> Code"}
                     </ActionBtn>
                   ) : null}
+                  {isBuilderPage && parsedPage ? (
+                    <ActionBtn
+                      onClick={async () => {
+                        setStatus("Checking SEO…");
+                        try {
+                          const res = await api("/api/builder/seo", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ slug: parsedPage.slug }),
+                          });
+                          const body = await res.json();
+                          if (!res.ok) { setStatus(body.error || "SEO check failed"); return; }
+                          const scores = body.report.scores.map((x: { category: string; score: number; estimate: boolean }) => `${x.category}: ${x.score}${x.estimate ? "*" : ""}`).join(" · ");
+                          const todo = body.report.fixes.length;
+                          setStatus(`SEO — ${scores}${todo ? ` · ${todo} fix(es) to reach 100% (see console)` : " · 100% 🎉"}`);
+                          if (todo) {
+                            // eslint-disable-next-line no-console
+                            console.table(body.report.fixes.map((f: { category: string; title: string; status: string; fix: string }) => ({ category: f.category, audit: f.title, status: f.status, fix: f.fix })));
+                          }
+                        } catch (e) {
+                          setStatus(String((e as Error).message || e));
+                        }
+                      }}
+                    >
+                      🔍 SEO
+                    </ActionBtn>
+                  ) : null}
                   <ActionBtn onClick={downloadDoc}>Export ↓</ActionBtn>
                   <ActionBtn onClick={() => deleteDoc(doc.path)} danger>Delete</ActionBtn>
                 </div>
