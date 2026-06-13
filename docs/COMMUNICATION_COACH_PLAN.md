@@ -1,10 +1,13 @@
 # §28 — Communication Coach (offline professional-communication mode)
 
-*Status: Phases 1–3 BUILT + verified (offline engine + content, the full UI for
-both sub-modes, and Live Call Assist incl. the optional consent-first Microphone
-Assist, the proposal builder, and per-lead follow-up drafts). Remaining: Phase 4
-polish (deeper roleplay/personas, dedicated post-call/post-interview summary
-screens, import/export, optional local STT sidecar for true-offline mic).
+*Status: Phases 1–4 BUILT + verified. 1–3: offline engine + content, full UI for
+both sub-modes, Live Call Assist incl. the optional consent-first Microphone
+Assist, proposal builder, follow-up drafts. 4 (this pass): backup/restore to a
+JSON file (validated), a shared roleplay panel with multiple personas/difficulty
+for BOTH coaches, and post-call fields (interest + next step) on the tracker.
+The ONE remaining item is a genuinely-offline local speech-to-text sidecar
+(bundle a Vosk/whisper model in the portable build) so Microphone Assist needs
+no online service at all — heavy + platform-specific, deferred until needed.
 Offline-first,
 privacy-first, honesty-first. No cloud AI, no APIs, no telemetry — the whole
 "conversation brain" is local data + pure functions, exactly like the Tax
