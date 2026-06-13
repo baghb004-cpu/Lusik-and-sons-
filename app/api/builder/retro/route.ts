@@ -14,9 +14,9 @@
 // can show "Locate File Again".
 // ============================================================
 
-import { join, isAbsolute } from "node:path";
+import { join, isAbsolute, dirname } from "node:path";
 import { existsSync, readdirSync } from "node:fs";
-import { copyFile, stat } from "node:fs/promises";
+import { copyFile, stat, mkdir } from "node:fs/promises";
 
 import { requireBuilderAdmin } from "../../../../src/builder/server/auth.ts";
 import { getBuilderStorage } from "../../../../src/builder/storage/index.ts";
@@ -322,7 +322,9 @@ export async function POST(req: Request): Promise<Response> {
       if (!body.confirm) {
         return json(200, { ok: true, needsConfirm: true, sizeMB: Math.round(size / 1024 / 1024), dest: destRel });
       }
-      await copyFile(src, join(store.root, destRel));
+      const dest = join(store.root, destRel);
+      await mkdir(dirname(dest), { recursive: true }); // the isos/ dir may not exist yet
+      await copyFile(src, dest);
       const updated = { ...game, isoPath: destRel };
       await store.write(`retro/library/${body.id}.json`, JSON.stringify(updated, null, 2) + "\n");
       return json(200, { ok: true, imported: destRel });

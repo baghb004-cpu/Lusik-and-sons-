@@ -122,9 +122,14 @@ export function translationCoverage(blocks: Block[], locale: LocaleCode): { tota
         if (map && map[locale]) translated++;
       };
       for (const k of spec.strings ?? []) count(props[k]);
+      for (const k of spec.docs ?? []) count(props[k]);
       for (const arr of spec.arrays ?? []) {
         const items = props[arr.prop];
-        if (Array.isArray(items)) for (const it of items) for (const k of arr.strings ?? []) count((it as Record<string, unknown>)[k]);
+        if (Array.isArray(items))
+          for (const it of items) {
+            for (const k of arr.strings ?? []) count((it as Record<string, unknown>)[k]);
+            for (const k of arr.docs ?? []) count((it as Record<string, unknown>)[k]);
+          }
       }
     }
     b.children?.forEach(visit);

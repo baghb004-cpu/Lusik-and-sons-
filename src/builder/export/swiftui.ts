@@ -140,20 +140,20 @@ export function blockToSwift(block: Block): string {
     case "accordion": {
       const items = (p.items as Array<{ id: string; title: string; body: RichTextDoc }>) ?? [];
       const groups = items.map(
-        (it) => `DisclosureGroup("${escapeSwift(it.title)}") {\n${indent(richTextToSwift(it.body), 1)}\n}`
+        (it) => `DisclosureGroup("${escapeSwift(String(it.title ?? ""))}") {\n${indent(richTextToSwift(it.body), 1)}\n}`
       );
       return `VStack(spacing: 8) {\n${groups.map((g) => indent(g, 1)).join("\n")}\n}`;
     }
     case "tabs": {
       const items = (p.items as Array<{ id: string; label: string; body: RichTextDoc }>) ?? [];
       const tabs = items.map(
-        (it, i) => `${richTextToSwift(it.body)}.tabItem { Text("${escapeSwift(it.label)}") }.tag(${i})`
+        (it, i) => `${richTextToSwift(it.body)}.tabItem { Text("${escapeSwift(String(it.label ?? ""))}") }.tag(${i})`
       );
       return `TabView {\n${tabs.map((t) => indent(t, 1)).join("\n")}\n}.frame(minHeight: 200)`;
     }
     case "breadcrumbs": {
       const items = (p.items as Array<{ label: string }>) ?? [];
-      const labels = items.map((it) => `Text("${escapeSwift(it.label)}")`).join(` + Text(" › ").foregroundColor(Theme.muted) + `);
+      const labels = items.map((it) => `Text("${escapeSwift(String(it.label ?? ""))}")`).join(` + Text(" › ").foregroundColor(Theme.muted) + `);
       return `(${labels || 'Text("")'}).font(.caption).foregroundColor(Theme.muted)`;
     }
     // Commerce: present the product, link to the web page for purchase.
@@ -181,7 +181,7 @@ export function blockToSwift(block: Block): string {
       const links = (p.links as Array<{ platform: string; href: string }>) ?? [];
       const items = links
         .filter((l) => /^https?:|^mailto:|^tel:/.test(l.href))
-        .map((l) => `Link("${escapeSwift(l.platform)}", destination: URL(string: "${escapeSwift(l.href)}")!)`);
+        .map((l) => `Link("${escapeSwift(String(l.platform ?? ""))}", destination: URL(string: "${escapeSwift(l.href)}")!)`);
       return `HStack(spacing: 14) {\n${items.map((v) => indent(v, 1)).join("\n")}\n}.font(.subheadline).tint(Theme.accent)`;
     }
     case "hoursTable": {

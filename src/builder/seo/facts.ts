@@ -69,19 +69,24 @@ export function extractFacts(file: string, html: string, sizeOf: SizeLookup = ()
   const htmlTag = html.match(/<html\b[^>]*>/i)?.[0] ?? "";
   const titleText = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null;
 
+  // Scan the head's <meta> and <link> tags ONCE, then read every signal off
+  // the cached lists (was re-running the regex per signal).
+  const headMetas = tagsOf(head, "meta");
+  const headLinks = tagsOf(head, "link");
+
   const metaDesc = (() => {
-    for (const t of tagsOf(head, "meta")) {
+    for (const t of headMetas) {
       if ((attr(t, "name") ?? "").toLowerCase() === "description") return (attr(t, "content") ?? "").trim();
     }
     return null;
   })();
 
-  const robots = tagsOf(head, "meta").some(
+  const robots = headMetas.some(
     (t) => (attr(t, "name") ?? "").toLowerCase() === "robots" && /noindex/i.test(attr(t, "content") ?? "")
   );
 
   const canonical = (() => {
-    for (const t of tagsOf(head, "link")) if ((attr(t, "rel") ?? "").toLowerCase() === "canonical") return attr(t, "href");
+    for (const t of headLinks) if ((attr(t, "rel") ?? "").toLowerCase() === "canonical") return attr(t, "href");
     return null;
   })();
 
@@ -117,7 +122,7 @@ export function extractFacts(file: string, html: string, sizeOf: SizeLookup = ()
     return { src, inlineBytes: src ? 0 : Buffer.byteLength(inline, "utf8"), async: has(open, "async"), defer: has(open, "defer") };
   });
 
-  const stylesheets = tagsOf(head, "link")
+  const stylesheets = headLinks
     .filter((t) => (attr(t, "rel") ?? "").toLowerCase() === "stylesheet")
     .map((t) => {
       const href = attr(t, "href") ?? "";
@@ -137,8 +142,8 @@ export function extractFacts(file: string, html: string, sizeOf: SizeLookup = ()
     titleLen: titleText?.length ?? 0,
     metaDescription: metaDesc,
     metaDescriptionLen: metaDesc?.length ?? 0,
-    hasViewport: tagsOf(head, "meta").some((t) => (attr(t, "name") ?? "").toLowerCase() === "viewport"),
-    hasCharset: tagsOf(head, "meta").some((t) => has(t, "charset")),
+    hasViewport: headMetas.some((t) => (attr(t, "name") ?? "").toLowerCase() === "viewport"),
+    hasCharset: headMetas.some((t) => has(t, "charset")),
     canonical,
     robotsNoindex: robots,
     h1Count: headings.filter((h) => h === 1).length,
@@ -146,8 +151,8 @@ export function extractFacts(file: string, html: string, sizeOf: SizeLookup = ()
     images,
     links,
     hasJsonLd: /<script[^>]+type\s*=\s*["']application\/ld\+json["']/i.test(html),
-    ogTitle: tagsOf(head, "meta").some((t) => (attr(t, "property") ?? "").toLowerCase() === "og:title"),
-    ogImage: tagsOf(head, "meta").some((t) => (attr(t, "property") ?? "").toLowerCase() === "og:image"),
+    ogTitle: headMetas.some((t) => (attr(t, "property") ?? "").toLowerCase() === "og:title"),
+    ogImage: headMetas.some((t) => (attr(t, "property") ?? "").toLowerCase() === "og:image"),
     scripts,
     stylesheets,
     totalBytes: htmlBytes + imgBytes + cssBytes + jsBytes,

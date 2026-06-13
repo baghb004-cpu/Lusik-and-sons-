@@ -691,13 +691,20 @@ export function BuilderShell() {
     return { featured: f ? `${f.category}/${f.slug}` : undefined };
   }, []);
 
-  const parsedPage = useMemo(() => {
-    if (!doc || !doc.path.startsWith("builder/pages/")) return null;
+  const parsed = useMemo(() => {
+    if (!doc || !doc.path.startsWith("builder/pages/")) return { page: null, issues: [] as ValidationIssue[] };
     const result = validatePage(doc.content);
     const commerce = result.page ? validateCommerceRefs(result.page.sections, catalogSnapshot) : [];
-    setIssues([...result.issues, ...commerce]);
-    return result.page;
+    return { page: result.page, issues: [...result.issues, ...commerce] };
   }, [doc, catalogSnapshot]);
+  const parsedPage = parsed.page;
+  // Reflect the parsed page's issues into state in an effect — never setState
+  // during render/useMemo. (Server-side validation still sets issues directly
+  // in the save/publish handlers; a doc change recomputes and supersedes, the
+  // same precedence as before.)
+  useEffect(() => {
+    setIssues(parsed.issues);
+  }, [parsed]);
 
   const resolved = useMemo(() => {
     if (!parsedPage) return null;

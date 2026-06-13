@@ -13,20 +13,24 @@ export function NotesPanel({ api, slug, selectedBlockId, setStatus }: { api: Api
   const [doc, setDoc] = useState<Reviews | null>(null);
   const [text, setText] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<Reviews | null> => {
     const res = await api(`/api/builder/docs?path=${encodeURIComponent(path)}`);
-    if (res.status === 404) {
-      setDoc({ schemaVersion: 1, slug, notes: [] });
-      return;
-    }
-    if (!res.ok) return;
+    if (res.status === 404) return { schemaVersion: 1, slug, notes: [] };
+    if (!res.ok) return null;
     const parsed = reviewsSchema.safeParse((await res.json()).content);
-    if (parsed.success) setDoc(parsed.data);
+    return parsed.success ? parsed.data : null;
   }, [api, path, slug]);
 
   useEffect(() => {
+    // Guard against a stale slug's fetch resolving after a newer one.
+    let active = true;
     setDoc(null);
-    void load();
+    void load().then((d) => {
+      if (active && d) setDoc(d);
+    });
+    return () => {
+      active = false;
+    };
   }, [load]);
 
   const save = async (next: Reviews) => {
