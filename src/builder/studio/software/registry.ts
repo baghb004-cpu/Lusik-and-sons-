@@ -26,12 +26,12 @@ function p(row: Partial<Preset> & Pick<Preset, "id" | "name" | "blurb" | "catego
 
 export const PRESETS: Preset[] = [
   // 1) Creative ------------------------------------------------------------
-  p({ id: "label-maker", name: "Make Labels", icon: "🏷️", blurb: "Pantry, spice, jar, file, shipping — pick a shape, type the words, print.", categoryId: "creative", subcategoryId: "print", status: "preview", exports: ["pdf", "image", "static-site"], creates: ["A label editor screen", "Label-size templates", "A printable sheet layout", "PDF/PNG/SVG export"], questions: [
+  p({ id: "label-maker", name: "Make Labels", icon: "🏷️", blurb: "Pantry, spice, jar, file, shipping — pick a shape, type the words, print.", categoryId: "creative", subcategoryId: "print", status: "ready", exports: ["pdf", "image", "static-site"], creates: ["A label editor screen", "Label-size templates", "A printable sheet layout", "PDF/PNG/SVG export"], questions: [
     { key: "shape", label: "Label shape", type: "choice", required: true, choices: ["round", "square", "rectangle", "oval"], help: "You can change this later.", },
     { key: "title", label: "What goes on the label?", type: "text", required: true, choices: [], help: "" },
   ] }),
   p({ id: "embroidery", name: "Make Embroidery", icon: "🪡", blurb: "Bibs, names, monograms, the Armenian alphabet — design and preview stitches.", categoryId: "creative", subcategoryId: "make", status: "planned", needsData: true, exports: ["image", "pdf", "source"], creates: ["A stitch design canvas", "Thread color palette", "Hoop & density checks", "Stitch preview"] }),
-  p({ id: "recipe-card", name: "Make a Recipe Card", icon: "🍳", blurb: "One pretty card: ingredients, steps, times, allergens — print or share.", categoryId: "creative", subcategoryId: "print", status: "preview", exports: ["pdf", "image", "static-site"], creates: ["A recipe form", "A printable card layout", "Allergen & diet tags", "PDF/PNG export"], questions: [
+  p({ id: "recipe-card", name: "Make a Recipe Card", icon: "🍳", blurb: "One pretty card: ingredients, steps, times, allergens — print or share.", categoryId: "creative", subcategoryId: "print", status: "ready", exports: ["pdf", "image", "static-site"], creates: ["A recipe form", "A printable card layout", "Allergen & diet tags", "PDF/PNG export"], questions: [
     { key: "dish", label: "Dish name", type: "text", required: true, choices: [], help: "" },
     { key: "servings", label: "Servings", type: "number", required: false, choices: [], help: "" },
   ] }),

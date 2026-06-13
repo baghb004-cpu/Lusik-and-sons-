@@ -15,7 +15,7 @@ import {
   CATEGORIES, PRESETS, getPreset, presetsInCategory,
   createProject, addFeature, removeFeature, renameFeature, setFeatureOption,
   rollbackTo, canRollback, serializeProject, parseProjectBackup,
-  checkProject, previewAdd, runCommand, type TerminalResult,
+  checkProject, readyToBuild, previewAdd, runCommand, buildProject, type TerminalResult,
   softwareProjectSchema, SOFTWARE_STORE_KEY,
   type SoftwareProject, type Preset, type BuildPreview,
 } from "../index.ts";
@@ -48,6 +48,23 @@ export function SoftwareCreation() {
 
   const askPreview = (presetId: string) => setPreview({ presetId, pv: previewAdd(proj, presetId) });
   const confirmAdd = () => { if (preview) { setProj(addFeature(proj, preview.presetId)); setPreview(null); } };
+
+  const [building, setBuilding] = useState(false);
+  const buildAndExport = async () => {
+    setBuilding(true);
+    try {
+      const out = buildProject(proj);
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      for (const [path, content] of Object.entries(out.files)) zip.file(path, content);
+      const blob = await zip.generateAsync({ type: "blob" });
+      const u = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = u;
+      a.download = `${proj.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "project"}.zip`;
+      a.click(); URL.revokeObjectURL(u);
+      if (out.warnings.length) alert(`Exported. Notes:\n\n${out.warnings.join("\n")}`);
+    } finally { setBuilding(false); }
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 font-body text-ink">
@@ -101,7 +118,10 @@ export function SoftwareCreation() {
         >
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-display text-lg">Your project</h2>
-            {canRollback(proj) ? <button type="button" onClick={() => setProj(rollbackTo(proj))} className="rounded-full border border-ink/20 px-3 py-1 text-xs">↶ Undo</button> : null}
+            <span className="flex gap-2">
+              {canRollback(proj) ? <button type="button" onClick={() => setProj(rollbackTo(proj))} className="rounded-full border border-ink/20 px-3 py-1 text-xs">↶ Undo</button> : null}
+              <button type="button" onClick={() => void buildAndExport()} disabled={!readyToBuild(proj) || building} className="rounded-full bg-ink px-4 py-1 text-xs font-medium text-cream disabled:opacity-40">{building ? "Building…" : "⬇ Build & Export (ZIP)"}</button>
+            </span>
           </div>
           <p className="mb-3 text-xs text-muted">{health.summary}</p>
 

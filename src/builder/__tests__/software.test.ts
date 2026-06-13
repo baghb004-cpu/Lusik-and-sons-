@@ -14,6 +14,7 @@ import {
 import { checkProject, checkFeature, readyToBuild } from "../studio/software/health.ts";
 import { previewAdd } from "../studio/software/preview.ts";
 import { runCommand } from "../studio/software/terminal.ts";
+import { buildProject, hasGenerator, generateFeature } from "../studio/software/codegen.ts";
 
 test("registry: validates, covers all six categories, ids unique, deps resolve", () => {
   assert.equal(assertRegistry(), true);
@@ -123,6 +124,43 @@ test("terminal: help/status/ls/add/rm/rollback are safe and update the project",
   // unknown verbs never throw, just hint
   assert.equal(runCommand(proj, "rm -rf /").level, "error"); // rm with bad id → error, no fs touched
   assert.match(runCommand(proj, "sudo reboot").output, /Unknown command/);
+});
+
+test("codegen: ready presets build self-contained offline files + manifest", () => {
+  let proj = createProject("Build");
+  proj = addFeature(proj, "label-maker");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "title", "Flour");
+  proj = setFeatureOption(proj, f.instanceId, "shape", "round");
+  assert.ok(hasGenerator("label-maker"));
+  assert.ok(!hasGenerator("embroidery"));
+  const files = generateFeature(proj.features[0]);
+  const htmlPath = Object.keys(files).find((p) => p.endsWith("index.html"))!;
+  assert.match(files[htmlPath], /Flour/);
+  assert.ok(!files[htmlPath].includes("http://") && !files[htmlPath].includes("https://"), "no CDN/network refs");
+
+  const out = buildProject(proj);
+  assert.ok(out.files["manifest.json"] && out.files["README.md"]);
+  assert.equal(out.warnings.length, 0, "all features buildable");
+});
+
+test("codegen: preview-stage features are skipped with an honest warning", () => {
+  let proj = createProject("Mixed");
+  proj = addFeature(proj, "embroidery"); // planned → no generator
+  const out = buildProject(proj);
+  assert.ok(out.warnings.some((w) => /preview-stage/.test(w)));
+  assert.equal(out.manifest.features[0].built, false);
+});
+
+test("codegen: html output escapes user text (no injection)", () => {
+  let proj = createProject("Esc");
+  proj = addFeature(proj, "recipe-card");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "dish", "<script>x</script>");
+  const files = generateFeature(proj.features[0]);
+  const html = files[Object.keys(files).find((p) => p.endsWith("index.html"))!];
+  assert.ok(!html.includes("<script>x"), "user text must be escaped");
+  assert.match(html, /&lt;script&gt;/);
 });
 
 test("backup: round-trips and rejects foreign files", () => {

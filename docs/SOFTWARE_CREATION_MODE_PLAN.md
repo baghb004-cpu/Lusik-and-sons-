@@ -124,13 +124,17 @@ rest of the app would be unchanged.
   toggle, localStorage auto-save + backup/restore, hub registration, tests.
   *All presets start as `planned`/`preview` stubs — they scaffold a feature
   instance and pass health checks, but per-preset codegen lands in later phases.*
-- **Phase 2 — Preset schema hardening + local DB foundation + export manifest.**
-  Wire the `store`/`bizapp` record-store + encrypted DB + CSV/JSON IO as the
-  "Data" preset family; formalize the export-manifest codegen interface; expand
-  the terminal (logs, file inspection of generated artifacts).
-- **Phase 3 — First real working presets:** Label Maker, Recipe Card Maker,
-  Manual Creator, Basic Spec Writer (flip from `preview` → `ready` with codegen
-  + exports + tests each).
+- **Phase 2 — export manifest + codegen interface (DONE this session).**
+  `codegen.ts` defines a per-preset generator contract + `buildProject()` that
+  emits a real offline file map (`manifest.json` + `README.md` + per-feature
+  self-contained HTML, no CDN), with honest "skipped — preview-stage" warnings.
+  UI gained a **Build & Export (ZIP)** button (jszip dynamic import), gated on
+  `readyToBuild`. *Still to do in Phase 2:* wire the `store`/`bizapp`
+  record-store + encrypted DB + CSV/JSON IO as the "Data" preset family; expand
+  the terminal (logs, inspect generated artifacts).
+- **Phase 3 — First real working presets (STARTED).** Label Maker + Recipe Card
+  flipped `preview → ready` with working codegen + ZIP export + tests
+  (escaping verified). *Next:* Manual Creator, Basic Spec Writer.
 - **Phase 4 — Trade automation:** LISP Routine Creator, Dynamo/Revit Automation
   planner, Fixture Schedule Generator, Cut Sheet Package Generator.
 - **Phase 5 — Advanced creative:** Embroidery Design module (beginner-first,

@@ -7,5 +7,6 @@ export * from "./engine.ts";
 export * from "./health.ts";
 export * from "./preview.ts";
 export * from "./terminal.ts";
+export * from "./codegen.ts";
 
 export const SOFTWARE_STORE_KEY = "lusik_software_current";
