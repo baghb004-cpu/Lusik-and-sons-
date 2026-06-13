@@ -111,8 +111,12 @@ async function gatherFacts(store: NonNullable<Awaited<ReturnType<typeof guard>>[
   const portableRoot = join(store.root, "..");
   const godotDir = join(portableRoot, "game-mode", "godot-export");
   const godotExportPresent = safelyHasExecutable(godotDir);
-  const exeCandidate = join(portableRoot, "baghdos-workshop.exe");
-  const launcherExePresent = existsSync(join(portableRoot, "node")) ? existsSync(exeCandidate) : null;
+  // The launcher is baghdos-workshop.exe on Windows, start.sh on the Pi/Linux
+  // drive — accept either. null = no portable node/ dir at all (dev mode).
+  const launcherExePresent =
+    existsSync(join(portableRoot, "node"))
+      ? existsSync(join(portableRoot, "baghdos-workshop.exe")) || existsSync(join(portableRoot, "start.sh"))
+      : null;
   // emulator binaries may sit flat or in per-tool sidecar folders
   const emulatorFiles = safeList("retro/emulators").flatMap((entry) => {
     const sub = safeList(`retro/emulators/${entry}`);
