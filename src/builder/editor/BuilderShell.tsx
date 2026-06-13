@@ -252,6 +252,9 @@ export function BuilderShell() {
   const [screensOpen, setScreensOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<ViewportPreset | null>(null);
   const [liveIssues, setLiveIssues] = useState<LayoutIssue[]>([]);
+  // Phone layout (Pi + phone-as-screen): one pane at a time below lg,
+  // switched by a thumb bar. Desktop keeps the three-column grid.
+  const [mobilePane, setMobilePane] = useState<"docs" | "canvas" | "edit">("canvas");
   // Help modal + first-run tour + save freshness (roadmap #4/#12/#14)
   const [helpOpen, setHelpOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
@@ -1021,6 +1024,21 @@ export function BuilderShell() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 font-body text-ink">
+      {/* phone pane switcher — the editor's own little pill bar */}
+      <nav aria-label="Editor panes" className="fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+        <div className="flex gap-1 rounded-full border border-ink/15 bg-cream/90 p-1 shadow-float backdrop-blur">
+          {([["docs", "📄 Pages"], ["canvas", "🖼 Canvas"], ["edit", "🛠 Edit"]] as const).map(([pane, label]) => (
+            <button
+              key={pane}
+              type="button"
+              onClick={() => setMobilePane(pane)}
+              className={mobilePane === pane ? "min-h-11 rounded-full bg-ink px-4 text-sm font-medium text-cream" : "min-h-11 rounded-full px-4 text-sm"}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
       {helpOpen ? <HelpPanel onClose={() => setHelpOpen(false)} /> : null}
       {tourOpen ? <OnboardingTour onDone={() => setTourOpen(false)} /> : null}
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -1132,9 +1150,9 @@ export function BuilderShell() {
 
       {status ? <p className="mb-3 text-sm text-accent">{status}</p> : null}
 
-      <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)_400px]">
+      <div className="grid gap-4 pb-20 lg:grid-cols-[230px_minmax(0,1fr)_400px] lg:pb-0">
         {/* documents, grouped by collection */}
-        <nav className="space-y-4 rounded-xl border border-ink/10 p-3">
+        <nav className={`space-y-4 rounded-xl border border-ink/10 p-3 ${mobilePane === "docs" ? "" : "hidden"} lg:block`}>
           <div className="flex flex-wrap gap-1.5">
             <button type="button" onClick={() => openDialog("newPage")} className="rounded-full bg-ink px-3 py-1 text-xs text-cream">
               + New page
@@ -1271,7 +1289,7 @@ export function BuilderShell() {
         </nav>
 
         {/* preview (builder pages) */}
-        <main className="min-h-[60vh] overflow-auto rounded-xl border border-ink/10 bg-white/40 p-4">
+        <main className={`min-h-[60vh] overflow-auto rounded-xl border border-ink/10 bg-white/40 p-4 ${mobilePane === "canvas" ? "" : "hidden"} lg:block`}>
           {isBuilderPage && i18nSettings.locales.length > 1 ? (
             <div className="mb-2 flex flex-wrap items-center gap-1 text-xs">
               <span className="text-muted">Preview language:</span>
@@ -1303,6 +1321,8 @@ export function BuilderShell() {
                 if (hit) {
                   e.preventDefault();
                   setSelectedBlockId(hit.getAttribute("data-block-id"));
+                  // phone: a tap selects AND opens the form pane
+                  if (window.innerWidth < 1024) setMobilePane("edit");
                 }
               }}
               onDoubleClick={(e) => {
@@ -1402,7 +1422,7 @@ export function BuilderShell() {
         </main>
 
         {/* edit panel */}
-        <aside className="space-y-3">
+        <aside className={`space-y-3 ${mobilePane === "edit" ? "" : "hidden"} lg:block`}>
           {screensOpen && isBuilderPage ? (
             <ResponsivePreviewPanel
               page={parsedPage}
