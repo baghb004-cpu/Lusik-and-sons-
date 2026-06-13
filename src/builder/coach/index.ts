@@ -15,6 +15,7 @@ export * from "./roleplay.ts";
 export * from "./engine.ts";
 export * from "./proposal.ts";
 export * from "./io.ts";
+export * from "./stt.ts";
 
 export {
   BUSINESS_TYPES,

@@ -13,6 +13,7 @@ import { takeChoice, reflect, type RoleplayTurn } from "../coach/roleplay.ts";
 import { suggestReply, replyForObjection, objectionById, fillScript } from "../coach/engine.ts";
 import { buildProposal } from "../coach/proposal.ts";
 import { serializeCoachData, parseCoachData, COACH_EXPORT_VERSION } from "../coach/io.ts";
+import { parseWhisperText, whisperArgs, toWavArgs } from "../coach/stt.ts";
 import {
   objectionSchema, scenarioSchema, scriptSchema, servicePackageSchema, followUpTemplateSchema,
   interviewQuestionSchema, answerFrameworkSchema, roleplayScenarioSchema,
@@ -134,6 +135,25 @@ test("export/import round-trips and rejects bad or foreign files", () => {
   assert.throws(() => parseCoachData("not json"), /valid JSON/);
   assert.throws(() => parseCoachData(JSON.stringify({ app: "something-else" })), /Communication Coach backup/);
   assert.throws(() => parseCoachData(JSON.stringify({ app: "lusik-communication-coach", version: COACH_EXPORT_VERSION + 5 })), /newer version/);
+});
+
+test("offline STT helpers: argv are arrays; transcript is cleaned of timestamps/noise/logs", () => {
+  assert.deepEqual(toWavArgs("in.webm", "out.wav"), ["-y", "-i", "in.webm", "-ar", "16000", "-ac", "1", "-f", "wav", "out.wav"]);
+  const w = whisperArgs("model.bin", "out.wav");
+  assert.ok(w.includes("-m") && w.includes("model.bin") && w.includes("-nt"));
+  // a hostile path stays a single argv element (spawn shell:false safe)
+  const evil = whisperArgs("m.bin", "x; rm -rf ~.wav");
+  assert.ok(evil.includes("x; rm -rf ~.wav"));
+
+  const raw = [
+    "whisper_init_from_file_with_params_no_state: loading model",
+    "[00:00:00.000 --> 00:00:02.000]   Hello, how much would a website cost?",
+    "[00:00:02.000 --> 00:00:03.000]   [BLANK_AUDIO]",
+    "main: total time = 123 ms",
+    "",
+  ].join("\n");
+  assert.equal(parseWhisperText(raw), "Hello, how much would a website cost?");
+  assert.equal(parseWhisperText("  [silence] \n (music) "), "");
 });
 
 test("content integrity: every objection/question has at least one reply/answer", () => {

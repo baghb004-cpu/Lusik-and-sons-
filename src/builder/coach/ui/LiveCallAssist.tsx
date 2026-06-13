@@ -4,13 +4,14 @@
 // honest reply to adapt. Typing is the offline core; Microphone Assist is
 // optional, consent-first, clearly indicated, and never records.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { suggestReply, objectionById, replyForObjection } from "../engine.ts";
 import { availableStyles } from "../styles.ts";
 import { OUTREACH_SCRIPTS, MIC_DISCLOSURE, MIC_RULES } from "../index.ts";
 import { fillTemplate } from "../variables.ts";
 import type { Style } from "../schemas.ts";
 import { useSpeechRecognition } from "./useSpeechRecognition.ts";
+import { sttStatus, transcribeBlob } from "./sttClient.ts";
 import { CopyButton, StyleChips, Section, card, field } from "./widgets.tsx";
 import type { CoachVars } from "./storage.ts";
 
@@ -32,10 +33,71 @@ export function LiveCallAssist({ vars }: { vars: CoachVars }) {
   const [style, setStyle] = useState<Style>("friendly");
   const [pinned, setPinned] = useState<{ title: string; text: string } | null>(null);
 
-  // When the mic produces final text, feed it to the matcher.
+  // Optional on-device engine (whisper.cpp sidecar). Preferred when present —
+  // it's truly offline. Falls back to the browser's recognition, then typing.
+  const [sttReady, setSttReady] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [recError, setRecError] = useState<string | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void sttStatus().then((s) => {
+      if (active) setSttReady(!!s?.ready);
+    });
+    return () => {
+      active = false;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  // When the browser recognition produces final text, feed it to the matcher.
   useEffect(() => {
     if (speech.finalText) setQuery(speech.finalText);
   }, [speech.finalText]);
+
+  const startRec = async () => {
+    setRecError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const rec = new MediaRecorder(stream);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size) chunksRef.current.push(e.data);
+      };
+      rec.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        setTranscribing(true);
+        try {
+          const text = await transcribeBlob(blob);
+          if (text) setQuery(text);
+          else setRecError("Didn't catch that — try again, or type it.");
+        } catch (err) {
+          setRecError((err as Error).message);
+        } finally {
+          setTranscribing(false);
+        }
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setRecording(true);
+    } catch {
+      setRecError("Couldn't access the microphone. You can type instead.");
+    }
+  };
+  const stopRec = () => {
+    try {
+      recorderRef.current?.stop();
+    } catch {
+      /* already stopped */
+    }
+  };
 
   const suggestion = useMemo(() => (query.trim() ? suggestReply(query, style, vars) : null), [query, style, vars]);
 
@@ -81,7 +143,22 @@ export function LiveCallAssist({ vars }: { vars: CoachVars }) {
 
       {/* microphone assist (optional) */}
       <div className="mt-3">
-        {!speech.supported ? (
+        {sttReady ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+            <p className="text-xs text-emerald-900">On-device voice is available — recordings are transcribed locally on this device, nothing uploaded. Put the call on speakerphone and record a short snippet.</p>
+            {!recording ? (
+              <button type="button" disabled={transcribing} onClick={() => void startRec()} className="mt-2 rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream disabled:opacity-40">
+                {transcribing ? "Transcribing…" : "🎙 Record a snippet (offline)"}
+              </button>
+            ) : (
+              <div className="mt-2 flex items-center justify-between rounded-lg border border-rose-300 bg-rose-50 p-2">
+                <span className="flex items-center gap-2 text-sm font-medium text-rose-800"><span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-rose-600" aria-hidden /> Recording…</span>
+                <button type="button" onClick={stopRec} className="rounded-full border border-rose-300 px-3 py-1 text-xs text-rose-800">Stop &amp; transcribe</button>
+              </div>
+            )}
+            {recError ? <p className="mt-1 text-xs text-amber-800">{recError}</p> : null}
+          </div>
+        ) : !speech.supported ? (
           <p className="text-xs text-muted">Microphone Assist isn't available in this browser — typing works fully offline.</p>
         ) : !speech.listening ? (
           <div className="rounded-xl border border-ink/10 p-3">

@@ -8,7 +8,7 @@
 // no network). Your details + trackers stay on this device.
 // ============================================================
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { OutreachCoach } from "./OutreachCoach.tsx";
 import { InterviewCoach } from "./InterviewCoach.tsx";
 import { DETAIL_FIELDS, useLocalState, readAllCoachData, writeAllCoachData, clearAllCoachData, type CoachVars } from "./storage.ts";
@@ -23,6 +23,21 @@ export function CommunicationCoach() {
   const filledCount = useMemo(() => DETAIL_FIELDS.filter((f) => (vars[f.key] ?? "").trim()).length, [vars]);
   const importRef = useRef<HTMLInputElement | null>(null);
   const [ioMsg, setIoMsg] = useState("");
+
+  // The Workshop launcher hands an admin token via #token=… — store it (shared
+  // key) so the optional offline-voice sidecar is reachable. Strip it from the
+  // URL. The coach works fully without it (typing + browser voice).
+  useEffect(() => {
+    const m = /^#token=(.+)$/.exec(window.location.hash);
+    if (m && m[1].length >= 16) {
+      try {
+        sessionStorage.setItem("lusik_builder_local_token", m[1]);
+      } catch {
+        /* storage disabled — offline voice just won't light up */
+      }
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   function handleExport() {
     const blob = new Blob([serializeCoachData(readAllCoachData())], { type: "application/json" });
