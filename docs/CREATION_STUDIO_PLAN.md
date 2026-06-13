@@ -47,9 +47,11 @@ parser pattern. We don't rebuild a second project system.
 - ✅ **Phase 8 — Event Photo Booth Builder** — BUILT (`/tools/photo-booth`).
 - ✅ **Phase 5 — Reports & documents** — BUILT (Store Manager: CSV/XLSX/Print-PDF
   report set; save-standalone-app-to-drive deferred).
+- ✅ **Phase 6 — Virtual Tour Builder** (360, bundled offline WebGL viewer) —
+  BUILT (`/tools/tour`).
 - ✅ **Phase 9 — Cross-mode Vibe Builder** — BUILT (the prompt box on `/tools`
   routes to + pre-seeds the right mode).
-- ⬜ Phases 3, 6, 10–13 (cross-cutting), 14 (MVP rollup) — remaining.
+- ⬜ Phases 3, 10–13 (cross-cutting), 14 (MVP rollup) — remaining.
 
 ## Build order (the brief's 14 phases, with our notes)
 
