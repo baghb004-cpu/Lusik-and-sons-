@@ -41,6 +41,8 @@ parser pattern. We don't rebuild a second project system.
 - ✅ **Phase 1 — Creation Studio hub** — BUILT (`/tools`): one front door listing
   every offline tool, with Workshop-token carry-forward.
 - ✅ **Phase 2 — Immersive Builder** (scroll-story 3D) — BUILT (`/tools/immersive`).
+- ✅ **Phase 3 — Business App Builder** (blueprint generator) — BUILT
+  (`/tools/business-app`).
 - ✅ **Phase 4 — Store Manager** (customer/inventory/barcode/purchase history) —
   BUILT (`/tools/store`).
 - ✅ **Phase 7 — Sensor Interaction Builder** — BUILT (`/tools/sensors`).
@@ -51,7 +53,10 @@ parser pattern. We don't rebuild a second project system.
   BUILT (`/tools/tour`).
 - ✅ **Phase 9 — Cross-mode Vibe Builder** — BUILT (the prompt box on `/tools`
   routes to + pre-seeds the right mode).
-- ⬜ Phases 3, 10–13 (cross-cutting), 14 (MVP rollup) — remaining.
+- ⬜ Phases 10–13 (cross-cutting consolidation) + 14 (MVP rollup) — remaining.
+  All 9 creator/feature modes are now built; what's left is consolidation
+  (shared component catalog doc, unified data-model doc, export-strategy doc,
+  a privacy/perf/licensing audit) and surfacing the hub from the main builder.
 
 ## Build order (the brief's 14 phases, with our notes)
 
