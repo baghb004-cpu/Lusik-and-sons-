@@ -20,6 +20,7 @@ export const STUDIO_TOOLS: StudioTool[] = [
   { href: "/tools/game-lab", name: "Game Lab", blurb: "Make small original games and export real Godot projects.", group: "make", emoji: "🕹️" },
   { href: "/tools/sensors", name: "Sensor Builder", blurb: "Opt-in tilt/shake motion controls with on-screen fallbacks.", group: "make", emoji: "🎛️" },
   { href: "/tools/store", name: "Store Manager", blurb: "Customers, inventory, barcodes, purchase history, CSV reports.", group: "business", emoji: "🏪" },
+  { href: "/tools/business-app", name: "Business App Builder", blurb: "Scaffold small business tools (appointments, repairs, quotes…).", group: "business", emoji: "🧰" },
   { href: "/tools/coach", name: "Communication Coach", blurb: "Practice client outreach calls and interviews, honestly.", group: "business", emoji: "🗣️" },
   { href: "/tools/payroll", name: "Payroll & SE-Tax", blurb: "Calculate take-home and what to set aside, with verified figures.", group: "business", emoji: "💵" },
   { href: "/tools/tax", name: "Tax Assistant", blurb: "A private organizer — what to gather, which forms, encrypted save.", group: "business", emoji: "🧾" },
