@@ -433,6 +433,24 @@ export const BLOCK_TYPES: Record<string, z.ZodType<unknown>> = {
     })
     .strict(),
 
+  // Call / Text / Email — the beginner "reach me" block. Each button
+  // is tap-to-action: on a phone Call opens the dialer (tel:), Text
+  // opens Messages (sms:), Email opens the mail app (mailto:). At least
+  // one must be set. Zero JS, works in every export, brand-neutral.
+  contactButtons: z
+    .object({
+      phone: z.string().regex(/^[+()\d][\d\s().-]{4,20}$/).optional(), // for the Call button
+      sms: z.string().regex(/^[+()\d][\d\s().-]{4,20}$/).optional(), // for the Text button
+      email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).optional(),
+      callLabel: translatableSchema.optional(), // default "Call us"
+      textLabel: translatableSchema.optional(), // default "Text us"
+      emailLabel: translatableSchema.optional(), // default "Email us"
+      style: z.enum(["buttons", "icons"]).optional(),
+      note: translatableSchema.optional(), // small line under the buttons
+    })
+    .strict()
+    .refine((c) => c.phone || c.sms || c.email, { message: "add at least a phone, text number, or email" }),
+
   // CSV table (dataset-inspired): paste rows, get a real table.
   // First line = headers. Deliberately a static render — sorting/
   // filtering is a Phase-3 enhancement, not a spreadsheet engine.

@@ -198,6 +198,13 @@ export function blockToSwift(block: Block): string {
     }
     case "bookingButton":
       return `Link("🗓 ${escapeSwift(String(p.label ?? "Book a time"))}", destination: URL(string: "${escapeSwift(String(p.url ?? "https://example.com"))}")!).buttonStyle(.borderedProminent).tint(Theme.ink)`;
+    case "contactButtons": {
+      const links: string[] = [];
+      if (p.phone) links.push(`Link("${escapeSwift(String(p.callLabel ?? "Call us"))}", destination: URL(string: "tel:${escapeSwift(String(p.phone).replace(/[^+\d]/g, ""))}")!)`);
+      if (p.sms) links.push(`Link("${escapeSwift(String(p.textLabel ?? "Text us"))}", destination: URL(string: "sms:${escapeSwift(String(p.sms).replace(/[^+\d]/g, ""))}")!)`);
+      if (p.email) links.push(`Link("${escapeSwift(String(p.emailLabel ?? "Email us"))}", destination: URL(string: "mailto:${escapeSwift(String(p.email))}")!)`);
+      return `HStack(spacing: 10) {\n${links.map((v) => indent(v, 1)).join("\n")}\n}.buttonStyle(.bordered).tint(Theme.ink)`;
+    }
     case "csvTable":
       return placeholder("csvTable (tabular data — view on the website)");
     case "specTable": {

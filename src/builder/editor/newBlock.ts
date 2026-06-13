@@ -32,6 +32,7 @@ export const INSERTABLE_TYPES = [
   "csvTable",
   "event",
   "bookingButton",
+  "contactButtons",
   "mapLink",
   "searchLauncher",
   "sectionJumper",
@@ -115,6 +116,8 @@ export function newDefaultBlock(type: InsertableType, catalog: CatalogSnapshot):
       return { id, type, props: { title: "Workshop open house", start: "2026-07-04T14:00", end: "2026-07-04T17:00", location: "The workshop", details: "Come say hello!" } };
     case "bookingButton":
       return { id, type, props: { provider: "calendly", url: "https://calendly.com/yourname/30min", label: "Book a time with us" } };
+    case "contactButtons":
+      return { id, type, props: { phone: "555-123-4567", sms: "555-123-4567", email: "hello@example.com", style: "buttons" } };
     case "mapLink":
       return { id, type, props: { address: "Buena Park, CA", label: "Visit the workshop" } };
     case "searchLauncher":

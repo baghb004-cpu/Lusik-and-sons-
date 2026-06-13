@@ -51,6 +51,7 @@ export const TRANSLATABLE_FIELDS: Record<string, FieldSpec> = {
   hoursTable: { strings: ["heading", "note"], arrays: [{ prop: "rows", strings: ["days", "hours"] }] },
   csvTable: { strings: ["caption"] },
   event: { strings: ["title", "details", "buttonLabel"] },
+  contactButtons: { strings: ["callLabel", "textLabel", "emailLabel", "note"] },
   bookingButton: { strings: ["label", "note"] },
   specTable: { strings: ["heading"], arrays: [{ prop: "rows", strings: ["label", "value", "detail"] }] },
   mapLink: { strings: ["label"] },

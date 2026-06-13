@@ -1042,6 +1042,44 @@ export const BLOCK_COMPONENTS: Record<string, BlockComponent> = {
     );
   },
 
+  // Call / Text / Email — tap-to-action, opens the phone's dialer/
+  // Messages/mail apps. Pure links (tel:/sms:/mailto:), zero JS.
+  contactButtons: (block) => {
+    const p = block.props as { phone?: string; sms?: string; email?: string; callLabel?: string; textLabel?: string; emailLabel?: string; style?: string; note?: string };
+    const icons = p.style === "icons";
+    const tel = (n: string) => `tel:${n.replace(/[^+\d]/g, "")}`;
+    const sms = (n: string) => `sms:${n.replace(/[^+\d]/g, "")}`;
+    const btn = "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium transition";
+    const icon = (d: string) => (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true"><path d={d} {...stroke} /></svg>
+    );
+    return (
+      <div>
+        <div className="flex flex-wrap gap-2">
+          {p.phone ? (
+            <a href={tel(p.phone)} aria-label={p.callLabel ?? "Call us"} className={cx(btn, "bg-ink text-cream hover:opacity-90")}>
+              {icon("M6 3h4l1 5-2.5 1.5a12 12 0 006 6L16 13l5 1v4a2 2 0 01-2 2A16 16 0 014 5a2 2 0 012-2z")}
+              {icons ? null : <span>{p.callLabel ?? "Call us"}</span>}
+            </a>
+          ) : null}
+          {p.sms ? (
+            <a href={sms(p.sms)} aria-label={p.textLabel ?? "Text us"} className={cx(btn, "border border-ink/25 text-ink hover:bg-cream")}>
+              {icon("M4 5h16v11H8l-4 3z")}
+              {icons ? null : <span>{p.textLabel ?? "Text us"}</span>}
+            </a>
+          ) : null}
+          {p.email ? (
+            <a href={`mailto:${p.email}`} aria-label={p.emailLabel ?? "Email us"} className={cx(btn, "border border-ink/25 text-ink hover:bg-cream")}>
+              {icon("M3.5 5.5h17v13h-17zM4.5 7l7.5 6 7.5-6")}
+              {icons ? null : <span>{p.emailLabel ?? "Email us"}</span>}
+            </a>
+          ) : null}
+        </div>
+        {p.note ? <p className="mt-1 text-xs text-muted">{p.note}</p> : null}
+      </div>
+    );
+  },
+
   csvTable: (block) => {
     const p = block.props as { caption?: string; csv: string; headerRow?: boolean };
     const rows = parseCsv(p.csv);
