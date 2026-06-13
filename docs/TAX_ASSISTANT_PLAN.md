@@ -126,3 +126,33 @@ dependents/expenses, backdating, or evading tax.
 5. Optional state module (same rule-pack format, per-state files).
 6. Optional export helpers for official routes (Free File Fillable Forms,
    print-and-mail) — never an unauthorized e-file path.
+
+---
+
+## §27 — Payroll / self-employment tax calculator (built: engine)
+
+A dead-simple "how much do I set aside?" calculator (a sibling section to
+the tax assistant), `src/builder/payroll/`. Same safety design as the tax
+module:
+
+- **Stable statutory percentages are the METHOD** (Social Security 12.4%
+  self / 6.2% employee, Medicare 2.9% / 1.45%, extra Medicare 0.9%, the
+  92.35% net-earnings factor, half-of-SE-tax deductible) — encoded with
+  citations because they've been law for decades.
+- **The year-specific Social Security wage base** is a verified, updatable
+  figure. Below the cap the math is already exact; above it, the engine
+  computes uncapped and flags `approximate` until the wage base is entered.
+- **Scenarios:** `self-employed-1099` (Baghdo's case — both halves, with the
+  deductible half), `w2-employee` (your paycheck FICA), `employer-cost` (the
+  employer match). Pay intervals annualize for the cap; outputs give the
+  headline set-aside, per-payment slice, quarterly amount, and the four
+  estimated-tax due dates.
+- **Ease of use:** every result line carries a five-year-old-simple plain
+  explanation; no income-tax rate entered → a clear 30% cushion rule.
+- **Updater (`updater.ts`):** one-click opens the official SSA wage-base +
+  IRS SE-tax pages and scaffolds a new-year rate pack — stable percentages
+  carry, the wage base always resets to "enter & verify" (never inherits
+  last year's cap). Starter dataset: `builder/payroll/rate-packs/_defaults.json`.
+- **Next (not built):** the React calculator UI + a Payroll section page +
+  wiring the updater button. The engine + dataset + updater are done and
+  tested (8 tests; SE-tax math hand-checked against Schedule SE).

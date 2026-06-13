@@ -48,6 +48,9 @@ ships zero code to public routes (enforced by the bundle-budget gate).
   (`scripts/install-retro-tools.mjs`, checksum-pinned), setup wizard, LEGO
   templates, brand-neutral controllers.
 - **Tax Assistant** (§25): `src/builder/tax/` — see below.
+- **Payroll / SE-tax calculator** (§27): `src/builder/payroll/` — engine +
+  updater + dataset done & tested (282 total). Needs a React UI + Payroll
+  section page next (see TAX_ASSISTANT_PLAN.md §27).
 - Portable packaging: `desktop/scripts/build-windows.ps1`,
   `make-portable.mjs`, `scripts/preflight-portable.mjs`, fonts/emulator
   fetchers.

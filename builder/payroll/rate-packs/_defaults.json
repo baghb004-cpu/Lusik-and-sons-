@@ -1,0 +1,16 @@
+{
+  "_README": "Starter rate pack. The PERCENTAGES are the long-standing statutory FICA/SE-tax method (Social Security 12.4% self / 6.2% employee, Medicare 2.9% self / 1.45% employee, extra Medicare 0.9%, self-employment tax on 92.35% of profit). The Social Security WAGE BASE changes most years — it ships null on purpose. Use the in-app Update button (or edit here) to enter this year's wage base from the official SSA page, then set socialSecurityWageBaseVerified to true. Below the cap, the calculator is already exact without it.",
+  "schemaVersion": 1,
+  "taxYear": 2026,
+  "status": "defaults",
+  "officialSource": "https://www.irs.gov/businesses/small-businesses-self-employed/self-employment-tax-social-security-and-medicare-taxes",
+  "socialSecurityRateSelf": 0.124,
+  "socialSecurityRateEmployee": 0.062,
+  "medicareRateSelf": 0.029,
+  "medicareRateEmployee": 0.0145,
+  "additionalMedicareRate": 0.009,
+  "netEarningsFactor": 0.9235,
+  "socialSecurityWageBase": null,
+  "socialSecurityWageBaseVerified": false,
+  "additionalMedicareThreshold": { "single": 200000, "married-jointly": 250000, "married-separately": 125000, "head-of-household": 200000 }
+}
