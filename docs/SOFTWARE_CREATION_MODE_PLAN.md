@@ -147,6 +147,17 @@ rest of the app would be unchanged.
   Importer** (offline file→table viewer), **Template Filler** (offline
   mail-merge). *Still open in Phase 2:* deeper reuse of the `store`/`bizapp`
   encrypted-DB primitives; terminal log/artifact inspection.
+- **Business + Games presets (DONE).** All `ready` with generators + tests:
+  Pricing Calculator (offline calc app), Small Business Planner, Inventory
+  Tracker + Customer Folders (localStorage apps), Printable Package, Food Truck
+  Plan (menu table + checklist + **local-rules disclaimer**); Trading Card Game
+  + Card Template (print-and-cut card sheets), Rule Book, Board Game (printable
+  grid), Tokens & Dice; plus the Q&A Pack data app.
+- **Still `planned` (next passes):** Embroidery (Phase 5, large — own
+  sub-project), 3D Design/Export (Phase 5), Knowledge Pack (Phase 6), and the
+  11 Export-Tools presets (these set project export targets; export *codegen*
+  for static-site/web-app/thumb-drive/Pi packaging is the remaining export
+  pipeline work). ~28 of ~40 presets now build real offline artifacts.
 - **Phase 4 — Trade automation:** LISP Routine Creator, Dynamo/Revit Automation
   planner, Fixture Schedule Generator, Cut Sheet Package Generator.
 - **Phase 5 — Advanced creative:** Embroidery Design module (beginner-first,

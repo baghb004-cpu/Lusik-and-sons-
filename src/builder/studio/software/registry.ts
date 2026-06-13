@@ -46,19 +46,51 @@ export const PRESETS: Preset[] = [
   p({ id: "design-3d", name: "Make a 3D Design", icon: "🧊", blurb: "Simple 3D objects, 3D text, and exploded diagrams you can export.", categoryId: "creative", subcategoryId: "make", status: "planned", pi: true, exports: ["model-3d", "image", "web-app"], creates: ["A 3D scene", "Web preview", "GLB/OBJ/STL export"] }),
 
   // 2) Business ------------------------------------------------------------
-  p({ id: "food-truck", name: "Make a Food Truck Plan", icon: "🚚", blurb: "Menu, costs, prep schedule, checklists — a starter plan for a food business.", categoryId: "business", subcategoryId: "plan", status: "planned", needsData: true, exports: ["pdf", "static-site", "database"], creates: ["A menu builder", "Recipe costing", "Startup cost planner", "Checklists (permits vary by area — verify locally)"] }),
-  p({ id: "small-business-planner", name: "Make a Business Plan", icon: "📊", blurb: "A simple plan: idea, costs, prices, goals, and a checklist.", categoryId: "business", subcategoryId: "plan", status: "planned", exports: ["pdf", "static-site"], creates: ["A planning workbook", "Cost & goal sheets", "A printable plan"] }),
-  p({ id: "inventory-tracker", name: "Track Inventory", icon: "📦", blurb: "Items, counts, low-stock alerts — a running list you can edit.", categoryId: "business", subcategoryId: "track", status: "planned", exports: ["database", "static-site", "web-app"], creates: ["An items table", "Stock counts", "CSV export"] }),
-  p({ id: "pricing-calculator", name: "Make a Pricing Calculator", icon: "🧮", blurb: "Add up materials, time, and markup to get a fair price.", categoryId: "business", subcategoryId: "plan", status: "planned", exports: ["static-site", "web-app", "pdf"], creates: ["A cost calculator screen", "Markup settings", "A quote output"] }),
-  p({ id: "customer-folders", name: "Make a Customer Folder System", icon: "🗃️", blurb: "A tidy place for each customer's notes, orders, and files — local only.", categoryId: "business", subcategoryId: "track", status: "planned", exports: ["database", "web-app"], creates: ["A customers table", "Per-customer notes/orders", "CSV export"] }),
-  p({ id: "printable-package", name: "Make a Printable Package", icon: "🖨️", blurb: "Bundle several printables into one ready-to-print set.", categoryId: "business", subcategoryId: "plan", status: "planned", exports: ["pdf", "image"], creates: ["A document bundle", "A combined PDF"] }),
+  p({ id: "food-truck", name: "Make a Food Truck Plan", icon: "🚚", blurb: "Menu, costs, prep schedule, checklists — a starter plan for a food business.", categoryId: "business", subcategoryId: "plan", status: "ready", exports: ["pdf", "static-site", "database"], creates: ["A menu table", "Startup checklist", "A local-rules disclaimer (verify permits locally)"], questions: [
+    { key: "concept", label: "Concept / truck name", type: "text", required: true, choices: [], help: "" },
+    { key: "menu", label: "Menu — one per line: Item | Price", type: "longtext", required: false, choices: [], help: "" },
+  ] }),
+  p({ id: "small-business-planner", name: "Make a Business Plan", icon: "📊", blurb: "A simple plan: idea, costs, prices, goals, and a checklist.", categoryId: "business", subcategoryId: "plan", status: "ready", exports: ["pdf", "static-site"], creates: ["An idea & goals plan", "A startup checklist", "A printable plan"], questions: [
+    { key: "bizName", label: "Business name", type: "text", required: true, choices: [], help: "" },
+    { key: "idea", label: "The idea (one point per line)", type: "longtext", required: false, choices: [], help: "" },
+    { key: "goals", label: "Goals (one per line)", type: "longtext", required: false, choices: [], help: "" },
+  ] }),
+  p({ id: "inventory-tracker", name: "Track Inventory", icon: "📦", blurb: "Items, counts, low-stock alerts — a running list you can edit.", categoryId: "business", subcategoryId: "track", status: "ready", exports: ["database", "static-site", "web-app"], creates: ["An items app (item/qty/reorder/notes)", "Search", "CSV export"], questions: [
+    { key: "appName", label: "Tracker name", type: "text", required: true, choices: [], help: "" },
+  ] }),
+  p({ id: "pricing-calculator", name: "Make a Pricing Calculator", icon: "🧮", blurb: "Add up materials, time, and markup to get a fair price.", categoryId: "business", subcategoryId: "plan", status: "ready", exports: ["static-site", "web-app", "pdf"], creates: ["An offline calculator (materials + time + markup)", "A suggested price"], questions: [
+    { key: "hourlyRate", label: "Default hourly rate ($)", type: "number", required: false, choices: [], help: "" },
+    { key: "markupPct", label: "Default markup (%)", type: "number", required: false, choices: [], help: "" },
+  ] }),
+  p({ id: "customer-folders", name: "Make a Customer Folder System", icon: "🗃️", blurb: "A tidy place for each customer's notes, orders, and files — local only.", categoryId: "business", subcategoryId: "track", status: "ready", exports: ["database", "web-app"], creates: ["A customers app (name/phone/email/notes)", "Search", "CSV export"], questions: [
+    { key: "appName", label: "System name", type: "text", required: true, choices: [], help: "" },
+  ] }),
+  p({ id: "printable-package", name: "Make a Printable Package", icon: "🖨️", blurb: "Bundle several printables into one ready-to-print set.", categoryId: "business", subcategoryId: "plan", status: "ready", exports: ["pdf", "image"], creates: ["A package cover & index", "A print checklist"], questions: [
+    { key: "projectName", label: "Package name", type: "text", required: true, choices: [], help: "" },
+    { key: "items", label: "Items — one per line", type: "longtext", required: true, choices: [], help: "" },
+  ] }),
 
   // 3) Games ---------------------------------------------------------------
-  p({ id: "tcg-maker", name: "Make a Trading Card Game", icon: "🃏", blurb: "Design cards with stats, build a deck, and get printable sheets.", categoryId: "games", subcategoryId: "cards", status: "planned", exports: ["pdf", "image", "static-site"], creates: ["A card designer", "A card database", "Print-and-cut sheets", "A rules draft"] }),
-  p({ id: "board-game-maker", name: "Make a Board Game", icon: "🎯", blurb: "Lay out a board, tokens, and rules for a printable board game.", categoryId: "games", subcategoryId: "board", status: "planned", exports: ["pdf", "image"], creates: ["A board layout", "Token & piece sheets", "A setup guide"] }),
-  p({ id: "rulebook-maker", name: "Make a Rule Book", icon: "📕", blurb: "Write clear game rules with sections, examples, and a contents page.", categoryId: "games", subcategoryId: "board", status: "planned", exports: ["pdf", "static-site"], creates: ["A rules editor", "Sections & examples", "A printable rule book"] }),
-  p({ id: "card-template", name: "Make a Card Template", icon: "🎴", blurb: "Design one reusable card frame for characters, items, or abilities.", categoryId: "games", subcategoryId: "cards", status: "planned", exports: ["image", "pdf", "source"], creates: ["A card frame editor", "Reusable templates", "PNG/SVG export"] }),
-  p({ id: "token-dice", name: "Make Tokens & Dice Tables", icon: "🎰", blurb: "Generate tokens and random tables for any game.", categoryId: "games", subcategoryId: "board", status: "planned", exports: ["pdf", "image"], creates: ["A token sheet", "Random tables", "Print sheets"] }),
+  p({ id: "tcg-maker", name: "Make a Trading Card Game", icon: "🃏", blurb: "Design cards with stats, build a deck, and get printable sheets.", categoryId: "games", subcategoryId: "cards", status: "ready", exports: ["pdf", "image", "static-site"], creates: ["Print-and-cut card sheets", "Card stats layout"], questions: [
+    { key: "gameName", label: "Game name", type: "text", required: false, choices: [], help: "" },
+    { key: "cards", label: "Cards — one per line: Name | Type | Stat | Text", type: "longtext", required: true, choices: [], help: "" },
+  ] }),
+  p({ id: "board-game-maker", name: "Make a Board Game", icon: "🎯", blurb: "Lay out a board, tokens, and rules for a printable board game.", categoryId: "games", subcategoryId: "board", status: "ready", exports: ["pdf", "image"], creates: ["A printable grid board", "A setup to theme"], questions: [
+    { key: "gameName", label: "Game name", type: "text", required: false, choices: [], help: "" },
+    { key: "gridSize", label: "Board size (squares per side, 3–16)", type: "number", required: false, choices: [], help: "" },
+  ] }),
+  p({ id: "rulebook-maker", name: "Make a Rule Book", icon: "📕", blurb: "Write clear game rules with sections, examples, and a contents page.", categoryId: "games", subcategoryId: "board", status: "ready", exports: ["pdf", "static-site"], creates: ["A sectioned rule book", "A printable layout"], questions: [
+    { key: "gameName", label: "Game name", type: "text", required: false, choices: [], help: "" },
+    { key: "sections", label: "Section titles — one per line", type: "longtext", required: true, choices: [], help: "" },
+  ] }),
+  p({ id: "card-template", name: "Make a Card Template", icon: "🎴", blurb: "Design one reusable card frame for characters, items, or abilities.", categoryId: "games", subcategoryId: "cards", status: "ready", exports: ["image", "pdf", "source"], creates: ["A reusable card frame", "A print sheet"], questions: [
+    { key: "gameName", label: "Set name", type: "text", required: false, choices: [], help: "" },
+    { key: "cards", label: "Cards — one per line: Name | Type | Stat | Text", type: "longtext", required: true, choices: [], help: "" },
+  ] }),
+  p({ id: "token-dice", name: "Make Tokens & Dice Tables", icon: "🎰", blurb: "Generate tokens and random tables for any game.", categoryId: "games", subcategoryId: "board", status: "ready", exports: ["pdf", "image"], creates: ["A printable token sheet", "A random table"], questions: [
+    { key: "tokens", label: "Tokens — one per line", type: "longtext", required: true, choices: [], help: "" },
+    { key: "table", label: "Random table entries — one per line (optional)", type: "longtext", required: false, choices: [], help: "" },
+  ] }),
 
   // 4) Trade ---------------------------------------------------------------
   p({ id: "spec-writer", name: "Write a Spec", icon: "📝", blurb: "Pick a trade and project, answer questions, get a clean draft spec package.", categoryId: "trade", subcategoryId: "docs", status: "ready", exports: ["pdf", "static-site", "source"], creates: ["A trade & project picker", "A guided spec form", "A draft spec document (review with a pro)"], questions: [
@@ -101,7 +133,9 @@ export const PRESETS: Preset[] = [
     { key: "tableName", label: "Table name", type: "text", required: true, choices: [], help: "" },
     { key: "pairs", label: "Entries — one per line: key | value", type: "longtext", required: false, choices: [], help: "e.g. PVC | Polyvinyl chloride" },
   ] }),
-  p({ id: "qa-generator", name: "Make a Q&A Pack", icon: "💬", blurb: "Turn notes into question/statement/answer pairs for a local assistant.", categoryId: "data", subcategoryId: "store", status: "planned", needsData: true, exports: ["database", "source"], creates: ["A Q&A editor", "Tags & categories", "JSON export"] }),
+  p({ id: "qa-generator", name: "Make a Q&A Pack", icon: "💬", blurb: "Turn notes into question/statement/answer pairs for a local assistant.", categoryId: "data", subcategoryId: "store", status: "ready", exports: ["database", "source"], creates: ["A Q&A app (question/answer/tags)", "Search", "CSV export"], questions: [
+    { key: "title", label: "Pack name", type: "text", required: true, choices: [], help: "" },
+  ] }),
   p({ id: "knowledge-pack", name: "Make a Knowledge Pack", icon: "📚", blurb: "Bundle tables, examples, and Q&A into one searchable local pack.", categoryId: "data", subcategoryId: "store", status: "planned", needsData: true, dependsOn: ["qa-generator"], exports: ["database", "source"], creates: ["A combined dataset", "Search index", "A portable pack file"] }),
   p({ id: "csv-json-importer", name: "Import CSV / JSON", icon: "📥", blurb: "Bring an existing CSV or JSON file in as a local table.", categoryId: "data", subcategoryId: "import", status: "ready", exports: ["database", "web-app"], creates: ["A file open screen", "A table view", "Files never leave your device"], questions: [
     { key: "title", label: "Tool title (optional)", type: "text", required: false, choices: [], help: "" },

@@ -276,6 +276,81 @@ const templateFiller: Generator = (f) => {
   return { [`${slug(f.label)}/index.html`]: appDoc("Template Filler", body, js, "textarea{border:1px solid #c9bfa6;border-radius:8px;padding:8px;font-family:inherit}button{cursor:pointer;border:1px solid #1a1612;background:#1a1612;color:#f5efe3;border-radius:8px;padding:8px 14px}") };
 };
 
+// --- Business -------------------------------------------------------------
+
+const pricingCalculator: Generator = (f) => {
+  const rate = Number(f.options.hourlyRate ?? 25) || 25;
+  const markup = Number(f.options.markupPct ?? 40) || 40;
+  const js =
+    "(function(){var R=__RATE__,M=__MARK__;function n(id){return +document.getElementById(id).value||0;}" +
+    "function calc(){var mat=n('mat'),hrs=n('hrs'),rate=n('rate')||R,mk=n('mk');var cost=mat+hrs*rate;var price=cost*(1+mk/100);" +
+    "document.getElementById('out').textContent='Cost: $'+cost.toFixed(2)+'   →   Suggested price: $'+price.toFixed(2);}" +
+    "document.getElementById('rate').value=R;document.getElementById('mk').value=M;['mat','hrs','rate','mk'].forEach(function(id){document.getElementById(id).oninput=calc;});calc();})();";
+  const row = (id: string, label: string) => `<label style="display:block;margin:6px 0">${label}<br><input id="${id}" type="number" step="0.01" style="padding:6px;border:1px solid #c9bfa6;border-radius:8px;width:160px"></label>`;
+  const body = `<h1>${esc(f.options.title ?? "Pricing Calculator")}</h1>${row("mat", "Material cost ($)")}${row("hrs", "Labor hours")}${row("rate", "Hourly rate ($)")}${row("mk", "Markup (%)")}<p id="out" style="font-weight:600;font-size:1.1rem;margin-top:12px"></p><p class="no-print" style="color:#7a7367">Runs offline. Edit the file to change defaults.</p>`;
+  return { [`${slug(f.label)}/index.html`]: appDoc("Pricing Calculator", body, js.replace("__RATE__", String(rate)).replace("__MARK__", String(markup))) };
+};
+
+const businessPlanner: Generator = (f) => {
+  const name = esc(f.options.bizName ?? f.label);
+  const idea = lines(f.options.idea);
+  const goals = lines(f.options.goals);
+  const sec = (h: string, items: string[], ph: string) => `<h2>${h}</h2>${items.length ? `<ul>${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p><em>${ph}</em></p>`}`;
+  const body = `<h1>${name} — business plan</h1>` + sec("The idea", idea, "Describe what you sell and to whom.") + sec("Goals", goals, "What does success look like in 6–12 months?") +
+    `<h2>Startup checklist</h2><ul>${["Name & branding", "Costs & pricing", "Suppliers", "Sales channels", "Licenses/permits (verify locally)", "First customers"].map((c) => `<li>☐ ${c}</li>`).join("")}</ul>`;
+  return { [`${slug(f.label)}/index.html`]: doc(`${name} — plan`, body, "li{margin:4px 0}") };
+};
+
+const foodTruck: Generator = (f) => {
+  const concept = esc(f.options.concept ?? f.label);
+  const menu = lines(f.options.menu).map((l) => l.split("|").map((c) => c.trim()));
+  const rows = menu.map((m) => `<tr><td>${esc(m[0] ?? "")}</td><td>${esc(m[1] ?? "")}</td></tr>`).join("") || "<tr><td colspan=2><em>Add: Item | Price</em></td></tr>";
+  const body = `<h1>${concept} — food truck plan</h1>` +
+    `<p class="no-print warn">Permits, health-department rules, taxes, insurance, and business licenses vary by location — verify all of these locally before operating.</p>` +
+    `<h2>Menu</h2><table><tr><th>Item</th><th>Price</th></tr>${rows}</table>` +
+    `<h2>Startup checklist</h2><ul>${["Truck / equipment", "Commissary kitchen", "Health permit (verify locally)", "Business license (verify locally)", "Insurance", "POS & payments (official processor only)", "Suppliers & prep schedule"].map((c) => `<li>☐ ${c}</li>`).join("")}</ul>`;
+  return { [`${slug(f.label)}/index.html`]: doc(`${concept} — food truck`, body, "table{border-collapse:collapse;width:100%}th,td{border:1px solid #c9bfa6;padding:6px 10px;text-align:left}th{background:#efe7d4}.warn{background:#fff4e5;border:1px solid #f0c986;border-radius:12px;padding:10px 14px}li{margin:4px 0}") };
+};
+
+// --- Games ----------------------------------------------------------------
+
+// Printable card sheet: "Name | Type | Stat | Text" rows → cut-and-print cards.
+const cardSheet: Generator = (f) => {
+  const cards = lines(f.options.cards).map((l) => l.split("|").map((c) => c.trim()));
+  const cardHtml = cards.map((c) =>
+    `<div class="card"><div class="ct">${esc(c[0] ?? "Card")}</div><div class="cs">${esc(c[1] ?? "")}${c[2] ? ` · ${esc(c[2])}` : ""}</div><div class="cb">${esc(c[3] ?? "")}</div></div>`,
+  ).join("") || '<div class="card"><div class="ct">Add cards</div><div class="cb">One per line: Name | Type | Stat | Text</div></div>';
+  const css = ".sheet{display:flex;flex-wrap:wrap;gap:8px}.card{width:180px;height:250px;border:2px solid #1a1612;border-radius:12px;padding:10px;display:flex;flex-direction:column}.ct{font-weight:700;font-size:1.05rem}.cs{font-size:.75rem;color:#7a7367;margin:2px 0 8px}.cb{font-size:.85rem;flex:1}";
+  const body = `<h1 class="no-print">${esc(f.options.gameName ?? "Trading cards")}</h1><p class="no-print">Print on cardstock and cut. Offline.</p><div class="sheet">${cardHtml}</div>`;
+  return { [`${slug(f.label)}/index.html`]: doc(`${esc(f.options.gameName ?? "Cards")} — print sheet`, body, css) };
+};
+
+const rulebook: Generator = (f) => {
+  const name = esc(f.options.gameName ?? f.label);
+  const secs = lines(f.options.sections);
+  const body = `<h1>${name} — rule book</h1>` + (secs.length ? secs.map((s, i) => `<h2>${i + 1}. ${esc(s)}</h2><p>[Write this section.]</p>`).join("") : "<p><em>List one section title per line.</em></p>");
+  return { [`${slug(f.label)}/index.html`]: doc(`${name} — rules`, body) };
+};
+
+const boardGame: Generator = (f) => {
+  const name = esc(f.options.gameName ?? f.label);
+  const n = Math.min(Math.max(Number(f.options.gridSize ?? 8) || 8, 3), 16);
+  let cells = "";
+  for (let i = 0; i < n * n; i++) cells += `<div class="sq">${i + 1}</div>`;
+  const css = `.board{display:grid;grid-template-columns:repeat(${n},1fr);gap:2px;max-width:600px;border:2px solid #1a1612}.sq{aspect-ratio:1;border:1px solid #c9bfa6;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#7a7367}`;
+  const body = `<h1 class="no-print">${name} — board</h1><p class="no-print">A ${n}×${n} printable board. Edit the file to theme it.</p><div class="board">${cells}</div>`;
+  return { [`${slug(f.label)}/index.html`]: doc(`${name} — board`, body, css) };
+};
+
+const tokenDice: Generator = (f) => {
+  const tokens = lines(f.options.tokens);
+  const tHtml = tokens.map((t) => `<div class="tok">${esc(t)}</div>`).join("") || '<div class="tok">Token</div>';
+  const table = lines(f.options.table);
+  const tableHtml = table.length ? `<h2>Random table (d${table.length})</h2><ol>${table.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : "";
+  const body = `<h1 class="no-print">${esc(f.label)}</h1><p class="no-print">Print &amp; cut tokens.</p><div class="sheet">${tHtml}</div>${tableHtml}`;
+  return { [`${slug(f.label)}/index.html`]: doc("Tokens & tables", body, ".sheet{display:flex;flex-wrap:wrap;gap:8px}.tok{width:70px;height:70px;border:2px solid #1a1612;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.7rem}") };
+};
+
 const GENERATORS: Record<string, Generator> = {
   "label-maker": labelMaker,
   "recipe-card": recipeCard,
@@ -291,6 +366,18 @@ const GENERATORS: Record<string, Generator> = {
   "lookup-table": lookupTable,
   "csv-json-importer": csvJsonImporter,
   "template-filler": templateFiller,
+  "pricing-calculator": pricingCalculator,
+  "small-business-planner": businessPlanner,
+  "inventory-tracker": (f) => ({ [`${slug(f.label)}/index.html`]: tableApp(String(f.options.appName ?? f.label), ["item", "quantity", "reorder at", "notes"], [], `scm_inv_${slug(f.label)}`) }),
+  "customer-folders": (f) => ({ [`${slug(f.label)}/index.html`]: tableApp(String(f.options.appName ?? f.label), ["name", "phone", "email", "notes"], [], `scm_cust_${slug(f.label)}`) }),
+  "printable-package": packageBuilder("Printable Package"),
+  "food-truck": foodTruck,
+  "tcg-maker": cardSheet,
+  "card-template": cardSheet,
+  "rulebook-maker": rulebook,
+  "board-game-maker": boardGame,
+  "token-dice": tokenDice,
+  "qa-generator": (f) => ({ [`${slug(f.label)}/index.html`]: tableApp(String(f.options.title ?? f.label), ["question", "answer", "tags"], [], `scm_qa_${slug(f.label)}`) }),
 };
 
 export function hasGenerator(presetId: string): boolean {

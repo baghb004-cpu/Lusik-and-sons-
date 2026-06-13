@@ -208,6 +208,27 @@ test("codegen: data apps embed seed safely (no </script> breakout)", () => {
   assert.ok(!/src=["']https?:/.test(html), "no external scripts");
 });
 
+test("codegen: business/games generators produce expected offline output", () => {
+  // Food truck must carry the local-rules disclaimer.
+  let ft = createProject("FT"); ft = addFeature(ft, "food-truck");
+  ft = setFeatureOption(ft, ft.features[0].instanceId, "concept", "Tacos");
+  const ftHtml = generateFeature(ft.features[0])[`${"tacos"}/index.html`] ?? Object.values(generateFeature(ft.features[0]))[0];
+  assert.match(ftHtml, /vary by location/i);
+
+  // Pricing calculator is a self-contained offline calc.
+  let pc = createProject("PC"); pc = addFeature(pc, "pricing-calculator");
+  const pcHtml = Object.values(generateFeature(pc.features[0]))[0];
+  assert.match(pcHtml, /Suggested price/);
+  assert.ok(!/https?:\/\//.test(pcHtml), "no network refs");
+
+  // Card sheet escapes user text.
+  let tcg = createProject("TCG"); tcg = addFeature(tcg, "tcg-maker");
+  tcg = setFeatureOption(tcg, tcg.features[0].instanceId, "cards", "<b>Hero</b> | Unit | 5/5 | Strikes first");
+  const tcgHtml = Object.values(generateFeature(tcg.features[0]))[0];
+  assert.ok(!tcgHtml.includes("<b>Hero</b>"), "card text escaped");
+  assert.match(tcgHtml, /&lt;b&gt;Hero/);
+});
+
 test("registry: every 'ready' preset has a generator (no broken build button)", () => {
   for (const p of PRESETS) if (p.status === "ready") assert.ok(hasGenerator(p.id), `${p.id} is ready but has no generator`);
 });
