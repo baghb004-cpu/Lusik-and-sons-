@@ -1,8 +1,14 @@
 # §29 — Game Lab (offline mini-game builder → Godot projects)
 
-*Status: planned + Phase 1 (the offline engine: data model, presets, logic
-blocks, the local "vibe" intent parser, the Godot/GDScript code generator, and
-safety rails) building now. Offline-first, beginner-first, zero-royalty.*
+*Status: Phases 1–2 BUILT + verified. Phase 1 = the offline engine (data model,
+presets, logic blocks, the local "vibe" intent parser, the Godot/GDScript code
+generator, safety rails). Phase 2 = the UI at /tools/game-lab: a drag-and-drop
+canvas scene editor + full per-object inspector, asset import (TextureRect),
+complete controllers for every kind, a 2D/3D toggle with a minimal Node3D
+generator, and save flows (template library + 'Save to drive' via the
+admin-gated app/api/builder/gamelab). Remaining (Phase 4): richer 3D per kind,
+.glb model import, multi-level, the optional Python sandbox, C#/C++ paths.
+Offline-first, beginner-first, zero-royalty.*
 
 ## Name
 
