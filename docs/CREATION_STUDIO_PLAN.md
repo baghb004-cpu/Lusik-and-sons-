@@ -41,7 +41,8 @@ parser pattern. We don't rebuild a second project system.
 - ✅ **Phase 2 — Immersive Builder** (scroll-story 3D) — BUILT (`/tools/immersive`).
 - ✅ **Phase 4 — Store Manager** (customer/inventory/barcode/purchase history) —
   BUILT (`/tools/store`).
-- ⬜ Phases 1 (shared foundation hardening), 3, 5, 6, 7, 8, 9, 10–13 (cross-cutting),
+- ✅ **Phase 8 — Event Photo Booth Builder** — BUILT (`/tools/photo-booth`).
+- ⬜ Phases 1 (foundation hardening), 3, 5, 6, 7, 9, 10–13 (cross-cutting),
   14 (MVP rollup) — remaining.
 
 ## Build order (the brief's 14 phases, with our notes)
