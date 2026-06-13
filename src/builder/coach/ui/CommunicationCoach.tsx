@@ -8,12 +8,12 @@
 // no network). Your details + trackers stay on this device.
 // ============================================================
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { OutreachCoach } from "./OutreachCoach.tsx";
 import { InterviewCoach } from "./InterviewCoach.tsx";
-import { DETAIL_FIELDS, useLocalState, type CoachVars } from "./storage.ts";
+import { DETAIL_FIELDS, useLocalState, readAllCoachData, writeAllCoachData, clearAllCoachData, type CoachVars } from "./storage.ts";
 import { Section, card, field } from "./widgets.tsx";
-import { MIC_RULES, MIC_DISCLOSURE, DATA_NOTE, OUTREACH_HONESTY_NOTE, INTERVIEW_HONESTY_NOTE } from "../index.ts";
+import { MIC_RULES, MIC_DISCLOSURE, DATA_NOTE, OUTREACH_HONESTY_NOTE, INTERVIEW_HONESTY_NOTE, serializeCoachData, parseCoachData } from "../index.ts";
 
 type View = "home" | "outreach" | "interview" | "details" | "privacy";
 
@@ -21,6 +21,35 @@ export function CommunicationCoach() {
   const [view, setView] = useState<View>("home");
   const [vars, setVars] = useLocalState<CoachVars>("vars", {});
   const filledCount = useMemo(() => DETAIL_FIELDS.filter((f) => (vars[f.key] ?? "").trim()).length, [vars]);
+  const importRef = useRef<HTMLInputElement | null>(null);
+  const [ioMsg, setIoMsg] = useState("");
+
+  function handleExport() {
+    const blob = new Blob([serializeCoachData(readAllCoachData())], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `communication-coach-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setIoMsg("✅ Saved a backup to your downloads.");
+  }
+  async function handleImport(file: File) {
+    try {
+      const data = parseCoachData(await file.text());
+      writeAllCoachData(data);
+      setIoMsg("✅ Imported. Reloading…");
+      setTimeout(() => window.location.reload(), 600);
+    } catch (e) {
+      setIoMsg(`⚠️ ${(e as Error).message}`);
+    }
+  }
+  function handleClear() {
+    if (typeof window !== "undefined" && window.confirm("Clear all your details and trackers on this device? This can't be undone.")) {
+      clearAllCoachData();
+      window.location.reload();
+    }
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 font-body text-ink">
@@ -75,6 +104,17 @@ export function CommunicationCoach() {
         <Section title="Settings & privacy" subtitle="Plain-English promises this coach keeps.">
           <div className={`${card} space-y-3 text-sm`}>
             <p>{DATA_NOTE}</p>
+            <div>
+              <p className="font-medium">Backup &amp; restore</p>
+              <p className="text-xs text-muted">Save everything (your details + both trackers) to one file, or bring it onto another device. Stays offline.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={handleExport} className="rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream hover:opacity-90">Export to file</button>
+                <input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleImport(f); e.target.value = ""; }} />
+                <button type="button" onClick={() => importRef.current?.click()} className="rounded-full border border-ink/30 px-4 py-1.5 text-sm">Import a backup…</button>
+                <button type="button" onClick={handleClear} className="rounded-full border border-red-300 px-4 py-1.5 text-sm text-red-700">Clear everything</button>
+              </div>
+              {ioMsg ? <p className="mt-2 text-xs" data-testid="io-message">{ioMsg}</p> : null}
+            </div>
             <div>
               <p className="font-medium">Honesty</p>
               <p className="text-xs text-muted">{OUTREACH_HONESTY_NOTE}</p>

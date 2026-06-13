@@ -5,8 +5,34 @@
 // the "My details" variable definitions used to fill scripts.
 
 import { useCallback, useEffect, useState } from "react";
+import type { CoachData } from "../io.ts";
 
 const PREFIX = "lusik_coach_";
+
+// Read every piece of coach data straight from localStorage (for export).
+export function readAllCoachData(): CoachData {
+  const get = <T>(k: string, fallback: T): T => {
+    try {
+      const r = localStorage.getItem(PREFIX + k);
+      return r != null ? (JSON.parse(r) as T) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  return { vars: get("vars", {}), outreachLeads: get("outreach_leads", []), interviewLeads: get("interview_leads", []) };
+}
+
+// Overwrite all coach data (for import). Caller should reload so mounted
+// components re-read from storage.
+export function writeAllCoachData(d: CoachData): void {
+  localStorage.setItem(PREFIX + "vars", JSON.stringify(d.vars));
+  localStorage.setItem(PREFIX + "outreach_leads", JSON.stringify(d.outreachLeads));
+  localStorage.setItem(PREFIX + "interview_leads", JSON.stringify(d.interviewLeads));
+}
+
+export function clearAllCoachData(): void {
+  for (const k of ["vars", "outreach_leads", "interview_leads"]) localStorage.removeItem(PREFIX + k);
+}
 
 /** A useState that mirrors to localStorage (offline, per-device). */
 export function useLocalState<T>(key: string, initial: T): [T, (v: T | ((p: T) => T)) => void] {

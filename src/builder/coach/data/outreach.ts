@@ -8,7 +8,7 @@
 // Pure data — validated by schemas, exercised by tests.
 // ============================================================
 
-import type { Objection, Scenario, Script, ServicePackage, FollowUpTemplate, PhraseGuard } from "../schemas.ts";
+import type { Objection, Scenario, Script, ServicePackage, FollowUpTemplate, PhraseGuard, RoleplayScenario } from "../schemas.ts";
 
 export const BUSINESS_TYPES = [
   "Restaurant", "Cafe", "Barbershop", "Church", "Community organization", "Dentist", "Doctor",
@@ -351,6 +351,47 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
   { id: "ecommerce-basic", name: "Basic Online Setup", summary: "Simple way to sell or take orders/appointments.", includes: ["A few products or services", "Order or appointment links", "Mobile-friendly checkout link", "Clear contact info"], startingNote: "Scope and tools vary — I'll explain options and quote honestly." },
   { id: "maintenance", name: "Monthly Maintenance (optional)", summary: "Keep a site updated, backed up, and current.", includes: ["Small content updates", "Backups", "Plugin/security updates", "Quick fixes"], startingNote: "Completely optional and month-to-month — never required to get your site." },
   { id: "custom", name: "Custom Quote", summary: "Anything outside the standard packages.", includes: ["We discuss exactly what you need", "I scope it honestly", "You get a clear written quote"], startingNote: "No surprises — I quote after I understand the work." },
+];
+
+export const OUTREACH_ROLEPLAY: RoleplayScenario[] = [
+  {
+    id: "cold-call-owner",
+    title: "Practice a cold call (business owner)",
+    persona: "Busy business owner",
+    difficulty: "beginner",
+    startId: "o1",
+    nodes: [
+      {
+        id: "o1",
+        persona: "Busy business owner",
+        prompt: "Hello? This is the owner. What can I do for you?",
+        choices: [
+          { label: "Introduce yourself politely and ask if it's an okay time.", nextId: "o2", feedback: "Great — polite, and you respected their time.", score: 3 },
+          { label: "Launch straight into a long pitch about websites.", nextId: "o2", feedback: "Slow down — ask if it's a good time first.", score: 1 },
+          { label: "\"Your website is really outdated, you need a new one.\"", nextId: "o2", feedback: "Too pushy and a little insulting. Lead with helping.", score: 0 },
+        ],
+      },
+      {
+        id: "o2",
+        persona: "Busy business owner",
+        prompt: "We already have a website, though.",
+        choices: [
+          { label: "\"That's great — I'm not here to replace it. I just help modernize or clean up sites if that's ever useful. Okay if I send a quick example?\"", nextId: "o3", feedback: "Perfect — calm, honest, no pressure.", score: 3 },
+          { label: "\"But is it mobile-friendly? Most aren't.\"", nextId: "o3", feedback: "Okay, but softer is better — don't put them on the defensive.", score: 1 },
+        ],
+      },
+      {
+        id: "o3",
+        persona: "Busy business owner",
+        prompt: "Maybe. How much does something like that cost?",
+        choices: [
+          { label: "\"It depends on what you need, so I'd rather quote honestly. Small refreshes start small — can I learn a bit about your site and send a clear quote?\"", feedback: "Strong — honest, no made-up number.", score: 3 },
+          { label: "\"I guarantee it'll pay for itself in new customers.\"", feedback: "Avoid that — you can't guarantee customers. Stay honest.", score: 0 },
+          { label: "\"Whatever you can afford, really.\"", feedback: "Sounds unsure. Give an honest 'starts small, clear quote after we talk.'", score: 1 },
+        ],
+      },
+    ],
+  },
 ];
 
 export const OUTREACH_FAQ = [

@@ -12,6 +12,7 @@ import { checkHonesty, isHonest } from "../coach/safety.ts";
 import { takeChoice, reflect, type RoleplayTurn } from "../coach/roleplay.ts";
 import { suggestReply, replyForObjection, objectionById, fillScript } from "../coach/engine.ts";
 import { buildProposal } from "../coach/proposal.ts";
+import { serializeCoachData, parseCoachData, COACH_EXPORT_VERSION } from "../coach/io.ts";
 import {
   objectionSchema, scenarioSchema, scriptSchema, servicePackageSchema, followUpTemplateSchema,
   interviewQuestionSchema, answerFrameworkSchema, roleplayScenarioSchema,
@@ -117,6 +118,22 @@ test("buildProposal fills details, lists chosen packages, and never promises a p
   assert.ok(!/\[USER_NAME\]/.test(text)); // variables resolved
   // empty selection still produces an honest, usable proposal
   assert.ok(buildProposal([], { USER_NAME: "Sam" }).includes("mobile-friendly"));
+});
+
+test("export/import round-trips and rejects bad or foreign files", () => {
+  const data = {
+    vars: { USER_NAME: "Sam" },
+    outreachLeads: [{ id: "l1", businessName: "Joe's", businessType: "", phone: "", website: "", contact: "", dateCalled: "", callResult: "", interest: "high" as const, followUpDate: "", notes: "n", nextStep: "", status: "Interested" as const }],
+    interviewLeads: [],
+  };
+  const json = serializeCoachData(data);
+  const back = parseCoachData(json);
+  assert.equal(back.vars.USER_NAME, "Sam");
+  assert.equal(back.outreachLeads[0].businessName, "Joe's");
+  assert.equal(back.outreachLeads[0].status, "Interested");
+  assert.throws(() => parseCoachData("not json"), /valid JSON/);
+  assert.throws(() => parseCoachData(JSON.stringify({ app: "something-else" })), /Communication Coach backup/);
+  assert.throws(() => parseCoachData(JSON.stringify({ app: "lusik-communication-coach", version: COACH_EXPORT_VERSION + 5 })), /newer version/);
 });
 
 test("content integrity: every objection/question has at least one reply/answer", () => {

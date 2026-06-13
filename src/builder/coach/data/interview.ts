@@ -262,6 +262,61 @@ export const INTERVIEW_ROLEPLAY: RoleplayScenario[] = [
       },
     ],
   },
+  {
+    id: "strict-manager",
+    title: "Strict manager (tougher questions)",
+    persona: "Strict manager",
+    difficulty: "confident",
+    startId: "s1",
+    nodes: [
+      {
+        id: "s1",
+        persona: "Strict manager",
+        prompt: "You don't have much experience. Why should I take a chance on you?",
+        choices: [
+          { label: "\"I'm honest about being early in my career, but I'm dependable, I learn fast, and I'll put in the work. I'd start with the basics and grow.\"", nextId: "s2", feedback: "Excellent — honest, confident, no overselling.", score: 3 },
+          { label: "\"I actually have tons of experience.\"", nextId: "s2", feedback: "Don't exaggerate. Honesty beats a claim you can't back up.", score: 0 },
+          { label: "\"I really need this job.\"", nextId: "s2", feedback: "Focus on what you offer, not need.", score: 1 },
+        ],
+      },
+      {
+        id: "s2",
+        persona: "Strict manager",
+        prompt: "How do you handle being corrected when you get something wrong?",
+        choices: [
+          { label: "\"I take it as information — show me the better way and I'll do it. I'd rather learn than keep making the same mistake.\"", feedback: "Great — coachable and calm.", score: 3 },
+          { label: "\"I usually don't get things wrong.\"", feedback: "Sounds defensive. Show you can take feedback.", score: 0 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "website-client",
+    title: "Client meeting (they ask about your website services)",
+    persona: "Small business client",
+    difficulty: "beginner",
+    startId: "w1",
+    nodes: [
+      {
+        id: "w1",
+        persona: "Small business client",
+        prompt: "So what exactly would you do for my business's website?",
+        choices: [
+          { label: "Explain simply: a clean, modern, mobile-friendly site (or an update), and offer to show an example.", nextId: "w2", feedback: "Clear and honest — and you offered proof.", score: 3 },
+          { label: "Use a lot of technical jargon.", nextId: "w2", feedback: "Keep it plain — clients want clarity, not buzzwords.", score: 1 },
+        ],
+      },
+      {
+        id: "w2",
+        persona: "Small business client",
+        prompt: "And can you promise it'll get me more sales?",
+        choices: [
+          { label: "\"I can't promise sales, honestly — but I can make it easy for customers to find and contact you, and I do careful work.\"", feedback: "Perfect — honest about what you can and can't promise.", score: 3 },
+          { label: "\"Definitely, you'll see way more business.\"", feedback: "Don't promise results you can't guarantee.", score: 0 },
+        ],
+      },
+    ],
+  },
 ];
 
 export const INTERVIEW_FOLLOWUPS: FollowUpTemplate[] = [

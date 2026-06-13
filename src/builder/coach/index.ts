@@ -14,6 +14,7 @@ export * from "./safety.ts";
 export * from "./roleplay.ts";
 export * from "./engine.ts";
 export * from "./proposal.ts";
+export * from "./io.ts";
 
 export {
   BUSINESS_TYPES,
@@ -23,6 +24,7 @@ export {
   FOLLOW_UPS,
   SERVICE_PACKAGES,
   OUTREACH_FAQ,
+  OUTREACH_ROLEPLAY,
   AVOID_PHRASES,
   PREFER_PHRASES,
 } from "./data/outreach.ts";

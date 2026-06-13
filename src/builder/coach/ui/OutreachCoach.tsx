@@ -4,7 +4,7 @@
 
 import { useMemo, useState } from "react";
 import {
-  OUTREACH_SCENARIOS, OUTREACH_OBJECTIONS, SERVICE_PACKAGES, FOLLOW_UPS, PREFER_PHRASES, OUTREACH_HONESTY_NOTE,
+  OUTREACH_SCENARIOS, OUTREACH_OBJECTIONS, SERVICE_PACKAGES, FOLLOW_UPS, PREFER_PHRASES, OUTREACH_HONESTY_NOTE, OUTREACH_ROLEPLAY,
 } from "../index.ts";
 import { replyForObjection, fillScript, fillFollowUp } from "../engine.ts";
 import { availableStyles } from "../styles.ts";
@@ -15,6 +15,7 @@ import { useLocalState, type CoachVars } from "./storage.ts";
 import { CopyButton, StyleChips, Section, card, field } from "./widgets.tsx";
 import { LiveCallAssist } from "./LiveCallAssist.tsx";
 import { ProposalBuilder } from "./ProposalBuilder.tsx";
+import { RoleplayPanel } from "./RoleplayPanel.tsx";
 import { OUTREACH_STATUS, type OutreachLead } from "../schemas.ts";
 
 const newId = () => `lead-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -115,6 +116,8 @@ export function OutreachCoach({ vars }: { vars: CoachVars }) {
         <ul className="list-disc px-6 pb-3 text-sm">{PREFER_PHRASES.map((p) => <li key={p}>{p}</li>)}</ul>
       </details>
 
+      <RoleplayPanel scenarios={OUTREACH_ROLEPLAY} title="Practice the call" subtitle="Run through a mock call before you dial — pick a reply and see how it lands." />
+
       <ProposalBuilder vars={vars} />
 
       <OutreachTracker vars={vars} />
@@ -166,6 +169,13 @@ function OutreachTracker({ vars }: { vars: CoachVars }) {
                 {OUTREACH_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
               <input value={l.followUpDate} onChange={(e) => update(l.id, { followUpDate: e.target.value })} placeholder="Follow-up date" className={field} aria-label="Follow-up date" />
+              <select value={l.interest} onChange={(e) => update(l.id, { interest: e.target.value as OutreachLead["interest"] })} className={field} aria-label="Interest level">
+                <option value="">Interest level…</option>
+                <option value="low">Low interest</option>
+                <option value="medium">Medium interest</option>
+                <option value="high">High interest</option>
+              </select>
+              <input value={l.nextStep} onChange={(e) => update(l.id, { nextStep: e.target.value })} placeholder="Next step" className={field} aria-label="Next step" />
             </div>
             <textarea value={l.notes} onChange={(e) => update(l.id, { notes: e.target.value })} rows={2} placeholder="Notes" className={`mt-2 ${field}`} aria-label="Notes" />
             {drafts[l.id] ? (

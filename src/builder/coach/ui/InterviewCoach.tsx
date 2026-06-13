@@ -2,18 +2,18 @@
 
 // Interview Coach — honest interview prep, practice, and follow-ups.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   INTERVIEW_QUESTIONS, ANSWER_FRAMEWORKS, INTERVIEW_ROLEPLAY, INTERVIEW_FOLLOWUPS, PREP_CHECKLIST,
   CONFIDENCE_PROMPTS, INTERVIEW_AVOID, INTERVIEW_HONESTY_NOTE,
 } from "../index.ts";
 import { pickVariant, availableStyles } from "../styles.ts";
 import { fillTemplate } from "../variables.ts";
-import { takeChoice, reflect, nodeById, type RoleplayTurn } from "../roleplay.ts";
 import { fillFollowUp } from "../engine.ts";
 import { INTERVIEW_STATUS, type InterviewLead, type Style, type InterviewQuestion } from "../schemas.ts";
 import { useLocalState, type CoachVars } from "./storage.ts";
 import { CopyButton, StyleChips, Section, card, field } from "./widgets.tsx";
+import { RoleplayPanel } from "./RoleplayPanel.tsx";
 
 const newId = () => `iv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
@@ -50,7 +50,7 @@ export function InterviewCoach({ vars }: { vars: CoachVars }) {
         </div>
       </Section>
 
-      <Roleplay />
+      <RoleplayPanel scenarios={INTERVIEW_ROLEPLAY} title="Practice roleplay" subtitle="A safe mock conversation. Pick a persona, choose a reply, and see how it lands." />
 
       <Section title="Before the interview" subtitle="A quick checklist — no internet required.">
         <ul className="space-y-1 text-sm">{PREP_CHECKLIST.map((p) => <li key={p} className="flex gap-2"><span aria-hidden>☐</span><span>{p}</span></li>)}</ul>
@@ -99,53 +99,6 @@ function QuestionDetail({ question, vars }: { question: InterviewQuestion; vars:
       {question.tips.length ? <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-muted">{question.tips.map((t) => <li key={t}>{t}</li>)}</ul> : null}
       {fw ? <p className="mt-2 text-[11px] text-muted">Tip: try the <strong>{fw.name}</strong>.</p> : null}
     </div>
-  );
-}
-
-function Roleplay() {
-  const scenario = INTERVIEW_ROLEPLAY[0];
-  const [nodeId, setNodeId] = useState<string | null>(scenario.startId);
-  const [turns, setTurns] = useState<RoleplayTurn[]>([]);
-  const [lastFeedback, setLastFeedback] = useState<string | null>(null);
-  const node = nodeId ? nodeById(scenario, nodeId) : null;
-  const done = nodeId === null;
-  const summary = useMemo(() => (done ? reflect(turns) : null), [done, turns]);
-
-  const choose = (i: number) => {
-    if (!nodeId) return;
-    const step = takeChoice(scenario, nodeId, i);
-    if (!step) return;
-    setTurns((prev) => [...prev, step.turn]);
-    setLastFeedback(step.turn.feedback);
-    setNodeId(step.nextId);
-  };
-  const restart = () => { setNodeId(scenario.startId); setTurns([]); setLastFeedback(null); };
-
-  return (
-    <Section title={`Practice roleplay — ${scenario.title}`} subtitle="A safe mock conversation. Pick a reply and see how it lands.">
-      <div className={card}>
-        {node ? (
-          <>
-            <p className="text-xs text-muted">{node.persona} says:</p>
-            <p className="mt-0.5 text-sm font-medium">“{node.prompt}”</p>
-            <div className="mt-3 space-y-1.5">
-              {node.choices.map((c, i) => (
-                <button key={i} type="button" onClick={() => choose(i)} className="block w-full rounded-xl border border-ink/20 px-3 py-2 text-left text-sm hover:bg-cream">{c.label}</button>
-              ))}
-            </div>
-            {lastFeedback ? <p className="mt-2 text-xs text-muted">Last reply: {lastFeedback}</p> : null}
-          </>
-        ) : summary ? (
-          <div>
-            <p className="text-sm font-medium">Nice work — you finished the practice.</p>
-            <p className="mt-1 text-sm">Score: <strong>{summary.percent}%</strong> ({summary.grade}).</p>
-            {summary.best ? <p className="mt-1 text-xs text-muted">Strongest: “{summary.best.choiceLabel}” — {summary.best.feedback}</p> : null}
-            {summary.improve && summary.improve.score < 3 ? <p className="mt-1 text-xs text-muted">To improve: “{summary.improve.choiceLabel}” — {summary.improve.feedback}</p> : null}
-            <button type="button" onClick={restart} className="mt-3 rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream hover:opacity-90">Practice again</button>
-          </div>
-        ) : null}
-      </div>
-    </Section>
   );
 }
 
