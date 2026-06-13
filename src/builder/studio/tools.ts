@@ -25,6 +25,7 @@ export const STUDIO_TOOLS: StudioTool[] = [
   { href: "/tools/tax", name: "Tax Assistant", blurb: "A private organizer — what to gather, which forms, encrypted save.", group: "business", emoji: "🧾" },
   { href: "/tools/media-studio", name: "Media Studio", blurb: "Trim and convert your photos, video, and recordings locally.", group: "media", emoji: "🎬" },
   { href: "/tools/photo-booth", name: "Photo Booth Builder", blurb: "Build an event photo booth — countdown, frames, local save.", group: "media", emoji: "📸" },
+  { href: "/tools/tour", name: "Virtual Tour Builder", blurb: "360 photo/video tours with hotspots — a bundled offline viewer.", group: "media", emoji: "🧭" },
 ];
 
 export const STUDIO_GROUPS: Array<{ id: StudioTool["group"]; title: string }> = [
