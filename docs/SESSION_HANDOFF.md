@@ -83,25 +83,40 @@ cited pack for any future year; never inherits or invents amounts).
 number — the engine returns "needs-review" instead. The shipped pack is a
 TEMPLATE with zero amounts (a test enforces this).
 
-**Next for tax (Phase 2–6, not built):**
-- A guided-interview **UI** + a Tax section page (the data model + questions
-  exist; needs the React surface). Likely `app/tax/` + `src/builder/tax/ui`.
-- OCR import (OPTIONAL, local-only, always-confirm — never auto-trust). No
-  dependency chosen yet; tesseract.js is the offline candidate. Design says
-  every value stays manually confirmable.
-- The rule-pack updater **button/route** wiring (`updater.ts` is ready).
+**Done (Phase 2 polish — `src/builder/tax/ui/`):**
+- The guided-interview **UI** + `/tools/tax` page (built earlier).
+- **Encrypted save/load** — `sessionCrypto.ts`, a browser WebCrypto twin of
+  the server `crypto.ts` (AES-256-GCM + PBKDF2, `BTAXW1` marker). Save
+  downloads one `.btax`; Open restores the session. No passphrase ⇒ no
+  decryption, no recovery, stated in the UI.
+- **Optional OCR import** — `ocr.ts`, always-confirm. Loads an OPTIONAL local
+  engine from a vendor path on the drive (no CDN, no bundler import → first-load
+  JS unchanged); degrades to an honest "type it in" message when not staged.
+  Extracted amounts are only ever tap-to-suggest; never written as a trusted
+  figure. (Staging the vendor tesseract assets is a packaging step, not built.)
+- **Next-year updater button** — wires `updater.ts`: shows official IRS steps/
+  links + scaffolds & downloads an EMPTY, cited rule pack for next year.
+
+**Next for tax (Phase 5–6, not built):**
 - State module (Phase 5, same rule-pack format, per-state files).
 - Export helpers for Free File Fillable Forms / print-and-mail (Phase 6) —
   never an unauthorized e-file path.
 
-## Next module queued: Offline Media Studio (§26)
+## Offline Media Studio (§26) — Phase 1 + live preview BUILT
 
-**Phase 1 foundation is BUILT** (`src/builder/media-studio/`: schemas +
-format/help data pack + trim/split/save-as-new-clip logic, 8 tests). The
-FFmpeg sidecar + API route + editor UI are next — see `docs/MEDIA_STUDIO_PLAN.md`. It's a new SECTION in the app (photo/
-video/audio import-organize-trim-convert-export, offline, FFmpeg sidecar),
-sharing a mini-OS file library with the website/app builders, tax vault kept
-private. Start at its "Phase 1 — smallest safe version" section.
+`src/builder/media-studio/` (schemas + format/help data pack + trim/split/
+save-as-new-clip logic), the FFmpeg sidecar (`ffmpeg.ts` composers +
+`scripts/install-media-tools.mjs`), the admin-gated API
+(`app/api/builder/media-studio/route.ts`), and the `/tools/media-studio` UI
+are all built. The **live-preview polish** is in: the API has a contained,
+Range-capable `GET ?file=<media-relative path>` branch (token via `?token=`
+fallback since media elements can't send headers; restricted to
+`portable/media/` — the tax vault is refused; web ReadableStream built by
+hand because the route runtime lacks `stream.Readable.toWeb`), and the UI has
+a `<img>/<video>/<audio>` preview + a visual draggable timeline (grab-handles,
+click-to-seek playhead, set-start/end-to-playhead, split-at-playhead → save
+either half). Originals are never overwritten. Remaining (not built): richer
+multi-clip editing, image export presets via the sidecar.
 
 ## How to resume (suggested first moves)
 
