@@ -36,7 +36,13 @@ export const PRESETS: Preset[] = [
     { key: "servings", label: "Servings", type: "number", required: false, choices: [], help: "" },
   ] }),
   p({ id: "recipe-book", name: "Make a Recipe Book", icon: "📖", blurb: "Collect many recipes into a book with a table of contents.", categoryId: "creative", subcategoryId: "print", status: "planned", dependsOn: ["recipe-card"], exports: ["pdf", "static-site", "web-app"], creates: ["A recipe library", "Chapters / table of contents", "A book PDF"] }),
-  p({ id: "manual-creator", name: "Make a Manual", icon: "📘", blurb: "Step-by-step guides with tools, materials, safety notes, and diagrams.", categoryId: "creative", subcategoryId: "make", status: "preview", exports: ["pdf", "static-site", "image"], creates: ["A step editor", "Tool & material lists", "Safety warnings", "A printable manual"] }),
+  p({ id: "manual-creator", name: "Make a Manual", icon: "📘", blurb: "Step-by-step guides with tools, materials, safety notes, and diagrams.", categoryId: "creative", subcategoryId: "make", status: "ready", exports: ["pdf", "static-site", "image"], creates: ["A step editor", "Tool & material lists", "Safety warnings", "A printable manual"], questions: [
+    { key: "title", label: "Manual title", type: "text", required: true, choices: [], help: "" },
+    { key: "steps", label: "Steps (one per line)", type: "longtext", required: true, choices: [], help: "Each line becomes a numbered step." },
+    { key: "tools", label: "Tools (one per line)", type: "longtext", required: false, choices: [], help: "" },
+    { key: "materials", label: "Materials (one per line)", type: "longtext", required: false, choices: [], help: "" },
+    { key: "safety", label: "Safety warnings (one per line)", type: "longtext", required: false, choices: [], help: "" },
+  ] }),
   p({ id: "design-3d", name: "Make a 3D Design", icon: "🧊", blurb: "Simple 3D objects, 3D text, and exploded diagrams you can export.", categoryId: "creative", subcategoryId: "make", status: "planned", pi: true, exports: ["model-3d", "image", "web-app"], creates: ["A 3D scene", "Web preview", "GLB/OBJ/STL export"] }),
 
   // 2) Business ------------------------------------------------------------
@@ -55,26 +61,55 @@ export const PRESETS: Preset[] = [
   p({ id: "token-dice", name: "Make Tokens & Dice Tables", icon: "🎰", blurb: "Generate tokens and random tables for any game.", categoryId: "games", subcategoryId: "board", status: "planned", exports: ["pdf", "image"], creates: ["A token sheet", "Random tables", "Print sheets"] }),
 
   // 4) Trade ---------------------------------------------------------------
-  p({ id: "spec-writer", name: "Write a Spec", icon: "📝", blurb: "Pick a trade and project, answer questions, get a clean draft spec package.", categoryId: "trade", subcategoryId: "docs", status: "preview", needsData: true, exports: ["pdf", "static-site", "source"], creates: ["A trade & project picker", "A guided spec form", "A draft spec document"], questions: [
+  p({ id: "spec-writer", name: "Write a Spec", icon: "📝", blurb: "Pick a trade and project, answer questions, get a clean draft spec package.", categoryId: "trade", subcategoryId: "docs", status: "ready", exports: ["pdf", "static-site", "source"], creates: ["A trade & project picker", "A guided spec form", "A draft spec document (review with a pro)"], questions: [
     { key: "trade", label: "Trade", type: "choice", required: true, choices: ["plumbing", "mechanical", "electrical", "fire protection", "fire sprinkler", "architecture", "general"], help: "" },
+    { key: "projectType", label: "Project name / type", type: "text", required: true, choices: [], help: "" },
+    { key: "scope", label: "Scope items (one per line)", type: "longtext", required: false, choices: [], help: "" },
   ] }),
-  p({ id: "fixture-schedule", name: "Make a Fixture Schedule", icon: "🚿", blurb: "Build a plumbing/equipment fixture schedule from simple inputs.", categoryId: "trade", subcategoryId: "docs", status: "planned", needsData: true, exports: ["pdf", "database", "source"], creates: ["A fixtures table", "A formatted schedule", "CSV/PDF export"] }),
-  p({ id: "equipment-schedule", name: "Make an Equipment Schedule", icon: "🌡️", blurb: "Tag and schedule mechanical/electrical equipment.", categoryId: "trade", subcategoryId: "docs", status: "planned", needsData: true, exports: ["pdf", "database", "source"], creates: ["An equipment table", "A formatted schedule", "CSV/PDF export"] }),
-  p({ id: "cut-sheet", name: "Make a Cut Sheet Package", icon: "📎", blurb: "Collect product cut sheets into one ordered submittal-style package.", categoryId: "trade", subcategoryId: "docs", status: "planned", exports: ["pdf", "source"], creates: ["A cut-sheet list", "An ordered package", "A combined PDF"] }),
-  p({ id: "submittal-package", name: "Make a Submittal Package", icon: "📦", blurb: "Assemble a trade submittal: cover, index, sections, cut sheets.", categoryId: "trade", subcategoryId: "docs", status: "planned", dependsOn: ["cut-sheet"], exports: ["pdf", "source"], creates: ["A submittal cover & index", "Section organization", "A combined PDF"] }),
-  p({ id: "lisp-creator", name: "Make an AutoCAD Cleanup Routine", icon: "📐", blurb: "Answer a few questions and get a commented AutoCAD LISP routine.", categoryId: "trade", subcategoryId: "automation", status: "planned", pi: false, exports: ["source"], creates: ["A trade & goal picker", "A generated .lsp routine with comments", "Usage instructions & warnings"], questions: [
+  p({ id: "fixture-schedule", name: "Make a Fixture Schedule", icon: "🚿", blurb: "Build a plumbing/equipment fixture schedule from simple inputs.", categoryId: "trade", subcategoryId: "docs", status: "ready", exports: ["pdf", "database", "source"], creates: ["A fixtures table", "A formatted schedule", "CSV/PDF export"], questions: [
+    { key: "trade", label: "Trade (optional)", type: "text", required: false, choices: [], help: "" },
+    { key: "rows", label: "Rows — one per line: TAG | Description | Model/Notes", type: "longtext", required: true, choices: [], help: "e.g. P-1 | Water closet | American Standard 2234" },
+  ] }),
+  p({ id: "equipment-schedule", name: "Make an Equipment Schedule", icon: "🌡️", blurb: "Tag and schedule mechanical/electrical equipment.", categoryId: "trade", subcategoryId: "docs", status: "ready", exports: ["pdf", "database", "source"], creates: ["An equipment table", "A formatted schedule", "CSV/PDF export"], questions: [
+    { key: "trade", label: "Trade (optional)", type: "text", required: false, choices: [], help: "" },
+    { key: "rows", label: "Rows — one per line: TAG | Description | Model/Notes", type: "longtext", required: true, choices: [], help: "e.g. AHU-1 | Air handler | Trane 25-ton" },
+  ] }),
+  p({ id: "cut-sheet", name: "Make a Cut Sheet Package", icon: "📎", blurb: "Collect product cut sheets into one ordered submittal-style package.", categoryId: "trade", subcategoryId: "docs", status: "ready", exports: ["pdf", "source"], creates: ["A cut-sheet list", "An ordered package index", "A print checklist"], questions: [
+    { key: "projectName", label: "Project name", type: "text", required: true, choices: [], help: "" },
+    { key: "items", label: "Items — one per line", type: "longtext", required: true, choices: [], help: "Each product/cut sheet on its own line, in order." },
+  ] }),
+  p({ id: "submittal-package", name: "Make a Submittal Package", icon: "📦", blurb: "Assemble a trade submittal: cover, index, sections, cut sheets.", categoryId: "trade", subcategoryId: "docs", status: "ready", dependsOn: ["cut-sheet"], exports: ["pdf", "source"], creates: ["A submittal cover & index", "Section organization", "A print checklist"], questions: [
+    { key: "projectName", label: "Project name", type: "text", required: true, choices: [], help: "" },
+    { key: "items", label: "Items / sections — one per line", type: "longtext", required: true, choices: [], help: "" },
+  ] }),
+  p({ id: "lisp-creator", name: "Make an AutoCAD Cleanup Routine", icon: "📐", blurb: "Answer a few questions and get a commented AutoCAD LISP routine.", categoryId: "trade", subcategoryId: "automation", status: "ready", pi: false, exports: ["source"], creates: ["A trade & goal picker", "A generated .lsp routine with comments", "Usage instructions & warnings"], questions: [
     { key: "trade", label: "What trade?", type: "choice", required: true, choices: ["plumbing", "mechanical", "electrical", "fire protection", "fire sprinkler", "architecture"], help: "" },
     { key: "goal", label: "What do you want it to do?", type: "choice", required: true, choices: ["clean drawing", "hide background", "freeze layers", "tag fixtures", "prep for export"], help: "" },
+    { key: "layers", label: "Layers to freeze (comma-separated)", type: "text", required: false, choices: [], help: "Only used for 'hide background' / 'freeze layers'." },
   ] }),
-  p({ id: "dynamo-creator", name: "Make a Revit/Dynamo Automation", icon: "🧩", blurb: "Get a beginner-friendly Dynamo node plan for a trade task.", categoryId: "trade", subcategoryId: "automation", status: "planned", pi: false, exports: ["source"], creates: ["A task picker", "A Dynamo node plan / outline", "A plain-English explanation of what it does"] }),
+  p({ id: "dynamo-creator", name: "Make a Revit/Dynamo Automation", icon: "🧩", blurb: "Get a beginner-friendly Dynamo node plan for a trade task.", categoryId: "trade", subcategoryId: "automation", status: "ready", pi: false, exports: ["source"], creates: ["A task picker", "A Dynamo node plan / outline", "A plain-English explanation of what it does"], questions: [
+    { key: "trade", label: "What trade?", type: "choice", required: true, choices: ["plumbing", "mechanical", "electrical", "fire protection", "fire sprinkler", "architecture"], help: "" },
+    { key: "task", label: "What task?", type: "choice", required: true, choices: ["auto-generate schedules", "clean views", "filter backgrounds", "create fixture schedules", "organize sheets"], help: "" },
+  ] }),
 
   // 5) Data ----------------------------------------------------------------
-  p({ id: "database-builder", name: "Make an Offline Database", icon: "🛢️", blurb: "Design tables and fields, then add records — all stored locally.", categoryId: "data", subcategoryId: "store", status: "planned", exports: ["database", "web-app"], creates: ["A table/field designer", "A record screen", "CSV/JSON export"] }),
-  p({ id: "lookup-table", name: "Make a Lookup Table", icon: "🔎", blurb: "A searchable key→value table other tools can read.", categoryId: "data", subcategoryId: "store", status: "planned", exports: ["database", "source"], creates: ["A key/value table", "Search", "CSV/JSON export"] }),
+  p({ id: "database-builder", name: "Make an Offline Database", icon: "🛢️", blurb: "Design tables and fields, then add records — all stored locally.", categoryId: "data", subcategoryId: "store", status: "ready", exports: ["database", "web-app"], creates: ["A record screen", "Search", "CSV export", "Saved on this device (localStorage)"], questions: [
+    { key: "appName", label: "Database name", type: "text", required: true, choices: [], help: "" },
+    { key: "columns", label: "Columns (comma-separated)", type: "text", required: true, choices: [], help: "e.g. name, phone, notes" },
+  ] }),
+  p({ id: "lookup-table", name: "Make a Lookup Table", icon: "🔎", blurb: "A searchable key→value table other tools can read.", categoryId: "data", subcategoryId: "store", status: "ready", exports: ["database", "source"], creates: ["A searchable key/value app", "CSV export"], questions: [
+    { key: "tableName", label: "Table name", type: "text", required: true, choices: [], help: "" },
+    { key: "pairs", label: "Entries — one per line: key | value", type: "longtext", required: false, choices: [], help: "e.g. PVC | Polyvinyl chloride" },
+  ] }),
   p({ id: "qa-generator", name: "Make a Q&A Pack", icon: "💬", blurb: "Turn notes into question/statement/answer pairs for a local assistant.", categoryId: "data", subcategoryId: "store", status: "planned", needsData: true, exports: ["database", "source"], creates: ["A Q&A editor", "Tags & categories", "JSON export"] }),
   p({ id: "knowledge-pack", name: "Make a Knowledge Pack", icon: "📚", blurb: "Bundle tables, examples, and Q&A into one searchable local pack.", categoryId: "data", subcategoryId: "store", status: "planned", needsData: true, dependsOn: ["qa-generator"], exports: ["database", "source"], creates: ["A combined dataset", "Search index", "A portable pack file"] }),
-  p({ id: "csv-json-importer", name: "Import CSV / JSON", icon: "📥", blurb: "Bring an existing CSV or JSON file in as a local table.", categoryId: "data", subcategoryId: "import", status: "planned", exports: ["database"], creates: ["An import screen", "A new table from your file"] }),
-  p({ id: "template-filler", name: "Make a Template Filler", icon: "🧾", blurb: "Merge a table of data into a template to mass-produce documents.", categoryId: "data", subcategoryId: "import", status: "planned", exports: ["pdf", "source"], creates: ["A template editor", "A data → document merge", "Batch output"] }),
+  p({ id: "csv-json-importer", name: "Import CSV / JSON", icon: "📥", blurb: "Bring an existing CSV or JSON file in as a local table.", categoryId: "data", subcategoryId: "import", status: "ready", exports: ["database", "web-app"], creates: ["A file open screen", "A table view", "Files never leave your device"], questions: [
+    { key: "title", label: "Tool title (optional)", type: "text", required: false, choices: [], help: "" },
+  ] }),
+  p({ id: "template-filler", name: "Make a Template Filler", icon: "🧾", blurb: "Merge a table of data into a template to mass-produce documents.", categoryId: "data", subcategoryId: "import", status: "ready", exports: ["web-app", "source"], creates: ["A template editor", "A data → document merge", "Batch output"], questions: [
+    { key: "title", label: "Tool title (optional)", type: "text", required: false, choices: [], help: "" },
+    { key: "template", label: "Template (use {{field}} placeholders)", type: "longtext", required: false, choices: [], help: "" },
+  ] }),
 
   // 6) Export --------------------------------------------------------------
   p({ id: "export-thumb-drive", name: "Export: Thumb-Drive Runnable", icon: "💾", blurb: "Package the project so it runs straight from a USB drive, offline.", categoryId: "export", subcategoryId: "run", status: "planned", exports: ["thumb-drive"], creates: ["A portable runnable folder", "A start file", "A README"] }),

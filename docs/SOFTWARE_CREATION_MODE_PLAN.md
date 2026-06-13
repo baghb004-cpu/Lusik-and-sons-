@@ -129,12 +129,24 @@ rest of the app would be unchanged.
   emits a real offline file map (`manifest.json` + `README.md` + per-feature
   self-contained HTML, no CDN), with honest "skipped — preview-stage" warnings.
   UI gained a **Build & Export (ZIP)** button (jszip dynamic import), gated on
-  `readyToBuild`. *Still to do in Phase 2:* wire the `store`/`bizapp`
-  record-store + encrypted DB + CSV/JSON IO as the "Data" preset family; expand
-  the terminal (logs, inspect generated artifacts).
-- **Phase 3 — First real working presets (STARTED).** Label Maker + Recipe Card
-  flipped `preview → ready` with working codegen + ZIP export + tests
-  (escaping verified). *Next:* Manual Creator, Basic Spec Writer.
+  `readyToBuild`; `longtext` questions render as textareas.
+- **Phase 3 — First real working presets (DONE).** Label Maker, Recipe Card,
+  **Manual Creator**, and **Spec Writer** are `ready` with working codegen + ZIP
+  export + tests. (Spec output is an honest CSI 3-part *draft* with a
+  review-with-a-pro warning.)
+- **Phase 4 — Trade automation (DONE).** All `ready` with generators + tests:
+  **AutoCAD LISP Routine Creator** (emits real commented `.lsp` per trade+goal,
+  freeze/purge/audit/prep, with APPLOAD instructions), **Dynamo/Revit**
+  node-plan generator (honest markdown plan, not a version-locked `.dyn`),
+  **Fixture + Equipment Schedule** generators (HTML table + CSV from piped
+  rows), and **Cut Sheet / Submittal Package** builders (cover + ordered index +
+  checklist).
+- **Phase 2 data family (DONE).** `ready` with generators + tests: **Offline
+  Database** + **Lookup Table** (standalone localStorage CRUD apps with search +
+  CSV export, seed embedded safely against `</script>` breakout), **CSV/JSON
+  Importer** (offline file→table viewer), **Template Filler** (offline
+  mail-merge). *Still open in Phase 2:* deeper reuse of the `store`/`bizapp`
+  encrypted-DB primitives; terminal log/artifact inspection.
 - **Phase 4 — Trade automation:** LISP Routine Creator, Dynamo/Revit Automation
   planner, Fixture Schedule Generator, Cut Sheet Package Generator.
 - **Phase 5 — Advanced creative:** Embroidery Design module (beginner-first,

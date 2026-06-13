@@ -100,7 +100,11 @@ test("preview: sandbox does not mutate the project; reports changes", () => {
 test("readyToBuild: false when empty or has errors, true once clean", () => {
   let proj = createProject("R");
   assert.equal(readyToBuild(proj), false, "empty");
-  proj = addFeature(proj, "manual-creator"); // no required questions
+  proj = addFeature(proj, "manual-creator");
+  assert.equal(readyToBuild(proj), false, "required fields unanswered");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "title", "How to seat a faucet");
+  proj = setFeatureOption(proj, f.instanceId, "steps", "Shut off water\nRemove old faucet");
   assert.equal(readyToBuild(proj), true);
 });
 
@@ -161,6 +165,51 @@ test("codegen: html output escapes user text (no injection)", () => {
   const html = files[Object.keys(files).find((p) => p.endsWith("index.html"))!];
   assert.ok(!html.includes("<script>x"), "user text must be escaped");
   assert.match(html, /&lt;script&gt;/);
+});
+
+test("codegen: LISP creator emits a real commented routine + README", () => {
+  let proj = createProject("CAD");
+  proj = addFeature(proj, "lisp-creator");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "trade", "plumbing");
+  proj = setFeatureOption(proj, f.instanceId, "goal", "freeze layers");
+  proj = setFeatureOption(proj, f.instanceId, "layers", "A-WALL, A-DOOR");
+  const files = generateFeature(proj.features[0]);
+  const lsp = files[Object.keys(files).find((p) => p.endsWith("routine.lsp"))!];
+  assert.match(lsp, /\(defun c:PLBFREEZE/);
+  assert.match(lsp, /A-WALL/);
+  assert.match(lsp, /APPLOAD/);
+  assert.ok(Object.keys(files).some((p) => p.endsWith("README.md")));
+});
+
+test("codegen: schedules emit an HTML table + CSV from piped rows", () => {
+  let proj = createProject("Sch");
+  proj = addFeature(proj, "fixture-schedule");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "rows", "P-1 | Water closet | AS 2234\nP-2 | Lavatory | Kohler K-1");
+  const files = generateFeature(proj.features[0]);
+  const csv = files[Object.keys(files).find((p) => p.endsWith(".csv"))!];
+  assert.match(csv, /Water closet/);
+  assert.match(csv, /Tag,Description/);
+  const html = files[Object.keys(files).find((p) => p.endsWith(".html"))!];
+  assert.match(html, /<table>/);
+});
+
+test("codegen: data apps embed seed safely (no </script> breakout)", () => {
+  let proj = createProject("Data");
+  proj = addFeature(proj, "lookup-table");
+  const f = proj.features[0];
+  proj = setFeatureOption(proj, f.instanceId, "tableName", "Materials");
+  proj = setFeatureOption(proj, f.instanceId, "pairs", "PVC | Polyvinyl </script> chloride");
+  const files = generateFeature(proj.features[0]);
+  const html = files[Object.keys(files).find((p) => p.endsWith("index.html"))!];
+  assert.ok(!html.includes("</script> chloride"), "seed must not break out of the script tag");
+  assert.ok(html.includes("localStorage"), "table app persists locally");
+  assert.ok(!/src=["']https?:/.test(html), "no external scripts");
+});
+
+test("registry: every 'ready' preset has a generator (no broken build button)", () => {
+  for (const p of PRESETS) if (p.status === "ready") assert.ok(hasGenerator(p.id), `${p.id} is ready but has no generator`);
 });
 
 test("backup: round-trips and rejects foreign files", () => {

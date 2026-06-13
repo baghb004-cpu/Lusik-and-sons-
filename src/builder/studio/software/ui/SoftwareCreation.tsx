@@ -152,7 +152,7 @@ export function SoftwareCreation() {
                     {preset?.questions.length ? (
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         {preset.questions.map((q) => (
-                          <label key={q.key} className="text-xs">
+                          <label key={q.key} className={`text-xs ${q.type === "longtext" ? "sm:col-span-2" : ""}`}>
                             <span className="mb-0.5 block text-muted">{q.label}{q.required ? " *" : ""}</span>
                             {q.type === "choice" ? (
                               <select className={inp} value={String(f.options[q.key] ?? "")} onChange={(e) => setProj(setFeatureOption(proj, f.instanceId, q.key, e.target.value))}>
@@ -160,6 +160,8 @@ export function SoftwareCreation() {
                               </select>
                             ) : q.type === "bool" ? (
                               <input type="checkbox" className="h-4 w-4 accent-ink" checked={Boolean(f.options[q.key])} onChange={(e) => setProj(setFeatureOption(proj, f.instanceId, q.key, e.target.checked))} />
+                            ) : q.type === "longtext" ? (
+                              <textarea rows={3} className={inp} value={String(f.options[q.key] ?? "")} onChange={(e) => setProj(setFeatureOption(proj, f.instanceId, q.key, e.target.value))} placeholder={q.help} />
                             ) : (
                               <input type={q.type === "number" ? "number" : "text"} className={inp} value={String(f.options[q.key] ?? "")} onChange={(e) => setProj(setFeatureOption(proj, f.instanceId, q.key, e.target.value))} />
                             )}
