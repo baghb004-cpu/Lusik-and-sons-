@@ -1,0 +1,179 @@
+"use client";
+
+// ============================================================
+// Embroidery Studio (§31, Phase 5) — interactive counted design editor
+// ============================================================
+// Paint a counted cross-stitch design, stamp names/monograms with the built-in
+// 5x7 font, see live size/thread/hoop/density numbers, and export a printable
+// chart, a PNG, a JSON you can reopen, and an EXPERIMENTAL Tajima DST machine
+// file. 100% offline, local, no libraries. Honest about preview vs machine.
+// ============================================================
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  THREADS, thread, createGrid, setCell, getCell, stampText, clearGrid, textWidth,
+  buildStitchPlan, toDst, metrics, checkDesign, HOOPS,
+  EMBROIDERY_STORE_KEY, EMBROIDERY_BACKUP_TAG,
+  type Grid,
+} from "../index.ts";
+
+const CELL = 15;
+const card = "rounded-2xl border border-ink/10 bg-white/70 p-3";
+const inp = "rounded-xl border border-ink/20 bg-white px-2 py-1 text-sm focus:border-accent focus:outline-none";
+
+interface SavedShape { grid: Grid; count: number; mmPerCell: number; hoopIdx: number; title: string; }
+
+export function EmbroideryStudio() {
+  const [grid, setGrid] = useState<Grid>(() => createGrid(40, 30));
+  const [title, setTitle] = useState("My design");
+  const [color, setColor] = useState(2); // black
+  const [tool, setTool] = useState<"paint" | "erase">("paint");
+  const [count, setCount] = useState(14);
+  const [mmPerCell, setMm] = useState(2);
+  const [hoopIdx, setHoopIdx] = useState(0);
+  const [text, setText] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawing = useRef(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // load + autosave
+  useEffect(() => {
+    try {
+      const r = localStorage.getItem(EMBROIDERY_STORE_KEY);
+      if (r) { const s = JSON.parse(r) as SavedShape; if (s.grid?.cells) { setGrid(s.grid); setTitle(s.title ?? "My design"); setCount(s.count ?? 14); setMm(s.mmPerCell ?? 2); setHoopIdx(s.hoopIdx ?? 0); } }
+    } catch { /* */ }
+    setLoaded(true);
+  }, []);
+  useEffect(() => { if (loaded) try { localStorage.setItem(EMBROIDERY_STORE_KEY, JSON.stringify({ grid, count, mmPerCell, hoopIdx, title } satisfies SavedShape)); } catch { /* */ } }, [grid, count, mmPerCell, hoopIdx, title, loaded]);
+
+  const m = useMemo(() => metrics(grid, count, mmPerCell), [grid, count, mmPerCell]);
+  const checks = useMemo(() => checkDesign(grid, HOOPS[hoopIdx], count, mmPerCell), [grid, hoopIdx, count, mmPerCell]);
+
+  // draw the canvas whenever the design changes
+  useEffect(() => {
+    const cv = canvasRef.current; if (!cv) return;
+    const ctx = cv.getContext("2d"); if (!ctx) return;
+    cv.width = grid.w * CELL; cv.height = grid.h * CELL;
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+    for (let y = 0; y < grid.h; y++) for (let x = 0; x < grid.w; x++) {
+      const c = getCell(grid, x, y);
+      if (c >= 0) { ctx.fillStyle = thread(c).hex; ctx.fillRect(x * CELL, y * CELL, CELL, CELL); }
+    }
+    // grid lines, bold every 10
+    for (let x = 0; x <= grid.w; x++) { ctx.strokeStyle = x % 10 === 0 ? "#1a1612" : "#d9cfb6"; ctx.lineWidth = x % 10 === 0 ? 1.4 : 0.5; ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, cv.height); ctx.stroke(); }
+    for (let y = 0; y <= grid.h; y++) { ctx.strokeStyle = y % 10 === 0 ? "#1a1612" : "#d9cfb6"; ctx.lineWidth = y % 10 === 0 ? 1.4 : 0.5; ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(cv.width, y * CELL); ctx.stroke(); }
+  }, [grid]);
+
+  const cellAt = (e: React.PointerEvent) => {
+    const cv = canvasRef.current!; const r = cv.getBoundingClientRect();
+    return { x: Math.floor(((e.clientX - r.left) / r.width) * grid.w), y: Math.floor(((e.clientY - r.top) / r.height) * grid.h) };
+  };
+  const paint = (e: React.PointerEvent) => { const { x, y } = cellAt(e); setGrid((g) => setCell(g, x, y, tool === "erase" ? -1 : color)); };
+
+  const resize = (w: number, h: number) => setGrid((g) => {
+    const ng = createGrid(w, h);
+    const cells = ng.cells.slice();
+    for (let y = 0; y < Math.min(h, g.h); y++) for (let x = 0; x < Math.min(w, g.w); x++) cells[y * ng.w + x] = g.cells[y * g.w + x];
+    return { ...ng, cells };
+  });
+
+  const stamp = () => { if (!text.trim()) return; const tw = textWidth(text); const ox = Math.max(0, Math.floor((grid.w - tw) / 2)); const oy = Math.max(0, Math.floor((grid.h - 7) / 2)); setGrid((g) => stampText(g, text, ox, oy, color)); };
+
+  // exports
+  const dl = (blob: Blob, name: string) => { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u); };
+  const slug = (title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "design");
+  const exportPng = () => canvasRef.current?.toBlob((b) => { if (b) dl(b, `${slug}.png`); });
+  const exportDst = () => { const bytes = toDst(buildStitchPlan(grid, mmPerCell), title); dl(new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" }), `${slug}.dst`); };
+  const exportJson = () => dl(new Blob([JSON.stringify({ tag: EMBROIDERY_BACKUP_TAG, grid, count, mmPerCell, hoopIdx, title }, null, 2)], { type: "application/json" }), `${slug}.json`);
+  const importJson = async (f: File) => { try { const o = JSON.parse(await f.text()); if (o.tag !== EMBROIDERY_BACKUP_TAG || !o.grid?.cells) throw new Error("Not an embroidery design file."); setGrid(o.grid); setTitle(o.title ?? "My design"); setCount(o.count ?? 14); setMm(o.mmPerCell ?? 2); setHoopIdx(o.hoopIdx ?? 0); } catch (e) { alert((e as Error).message); } };
+
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-6 font-body text-ink">
+      <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <a href="/tools" className="text-xs text-muted hover:underline">‹ Creation Studio</a>
+          <h1 className="font-display text-2xl">🪡 Embroidery Studio</h1>
+        </div>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} className={`${inp} font-display`} aria-label="Design title" />
+      </header>
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+        {/* canvas */}
+        <section className={card}>
+          <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+            <div className="flex overflow-hidden rounded-full border border-ink/20 text-xs">
+              <button type="button" onClick={() => setTool("paint")} className={`px-3 py-1 ${tool === "paint" ? "bg-ink text-cream" : ""}`}>✏️ Paint</button>
+              <button type="button" onClick={() => setTool("erase")} className={`px-3 py-1 ${tool === "erase" ? "bg-ink text-cream" : ""}`}>🧽 Erase</button>
+            </div>
+            <button type="button" onClick={() => { if (confirm("Clear the whole design?")) setGrid((g) => clearGrid(g)); }} className="rounded-full border border-ink/20 px-3 py-1 text-xs">Clear</button>
+            <span className="ml-auto text-xs text-muted">Grid {grid.w}×{grid.h}</span>
+          </div>
+          <div className="max-h-[60vh] overflow-auto rounded-xl border border-ink/10 bg-cream/40 p-2">
+            <canvas
+              ref={canvasRef}
+              className="touch-none"
+              style={{ width: grid.w * CELL, height: grid.h * CELL, imageRendering: "pixelated", cursor: "crosshair" }}
+              onPointerDown={(e) => { drawing.current = true; (e.target as HTMLElement).setPointerCapture?.(e.pointerId); paint(e); }}
+              onPointerMove={(e) => { if (drawing.current) paint(e); }}
+              onPointerUp={() => { drawing.current = false; }}
+              onPointerLeave={() => { drawing.current = false; }}
+            />
+          </div>
+          {/* text-to-stitch */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a name…" className={inp} aria-label="Text to stitch" maxLength={20} />
+            <button type="button" onClick={stamp} className="rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream">Stamp text</button>
+            <span className="text-xs text-muted">Uses the built-in 5×7 font (A–Z, 0–9).</span>
+          </div>
+        </section>
+
+        {/* controls */}
+        <aside className="space-y-3">
+          <div className={card}>
+            <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Thread</h2>
+            <div className="grid grid-cols-9 gap-1">
+              {THREADS.map((t, i) => (
+                <button key={t.ref} type="button" title={`${t.ref} — ${t.name}`} onClick={() => { setColor(i); setTool("paint"); }} className={`h-6 w-6 rounded ${color === i ? "ring-2 ring-ink ring-offset-1" : ""}`} style={{ background: t.hex, border: "1px solid #0002" }} />
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted">{thread(color).ref} — {thread(color).name}</p>
+          </div>
+
+          <div className={card}>
+            <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Size & hoop</h2>
+            <label className="flex items-center justify-between gap-2 text-sm">Width <input type="number" min={5} max={200} value={grid.w} onChange={(e) => resize(Number(e.target.value) || grid.w, grid.h)} className={`${inp} w-20`} /></label>
+            <label className="mt-1 flex items-center justify-between gap-2 text-sm">Height <input type="number" min={5} max={200} value={grid.h} onChange={(e) => resize(grid.w, Number(e.target.value) || grid.h)} className={`${inp} w-20`} /></label>
+            <label className="mt-1 flex items-center justify-between gap-2 text-sm">Aida count <input type="number" min={6} max={28} value={count} onChange={(e) => setCount(Number(e.target.value) || 14)} className={`${inp} w-20`} /></label>
+            <label className="mt-1 flex items-center justify-between gap-2 text-sm">Stitch mm <input type="number" min={1} max={6} step={0.5} value={mmPerCell} onChange={(e) => setMm(Number(e.target.value) || 2)} className={`${inp} w-20`} /></label>
+            <label className="mt-1 block text-sm">Hoop<select value={hoopIdx} onChange={(e) => setHoopIdx(Number(e.target.value))} className={`${inp} mt-1 w-full`}>{HOOPS.map((h, i) => <option key={h.name} value={i}>{h.name}</option>)}</select></label>
+          </div>
+
+          <div className={card}>
+            <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">This design</h2>
+            <ul className="text-xs">
+              <li>Stitches: <strong>{m.stitches}</strong></li>
+              <li>Colors: <strong>{m.colors}</strong></li>
+              <li>Finished: <strong>{m.finishedInW}″ × {m.finishedInH}″</strong> ({m.finishedMmW}×{m.finishedMmH}mm)</li>
+              <li>Thread: <strong>~{m.threadMeters} m</strong> · Fill {m.fillPct}%</li>
+            </ul>
+            <ul className="mt-2 space-y-1 text-[11px]">
+              {checks.map((c, i) => <li key={i} className={c.level === "warn" ? "text-amber-700" : c.level === "info" ? "text-muted" : "text-emerald-700"}>• {c.message}</li>)}
+            </ul>
+          </div>
+
+          <div className={`${card} flex flex-wrap gap-2`}>
+            <button type="button" onClick={() => window.print()} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">🖨 Chart (PDF)</button>
+            <button type="button" onClick={exportPng} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">🖼 PNG</button>
+            <button type="button" onClick={exportDst} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Tajima DST machine file">🧵 DST</button>
+            <button type="button" onClick={exportJson} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">Save</button>
+            <button type="button" onClick={() => fileRef.current?.click()} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">Open</button>
+            <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importJson(f); e.target.value = ""; }} />
+          </div>
+        </aside>
+      </div>
+
+      <p className="mt-4 text-[11px] text-muted">Everything is local &amp; offline. The chart and size are accurate; the <strong>DST file is experimental</strong> (one tacking stitch per cell) — test it on your machine with stabilizer before stitching a final piece. Machine formats beyond DST and true satin/cross digitizing are future work.</p>
+    </main>
+  );
+}

@@ -188,7 +188,33 @@ rest of the app would be unchanged.
 - **Phase 6 — Food dataset + Food Truck planner + local Q&A generator + Raspberry
   Pi 5 export preset + deeper offline assistant.**
 
-### Embroidery module note (Phase 5, large)
+### Embroidery Studio — first-class tool DONE (DST export shipped)
+
+`/tools/embroidery` is now a real interactive offline editor (registered in the
+hub), backed by a pure, fully-tested engine under
+`src/builder/studio/software/embroidery/`:
+
+- **Paint** a counted design on a canvas (paint/erase, bold-every-10 grid),
+  **stamp text** (names/monograms) with a built-in **5×7 font** (A–Z, 0–9),
+  pick from a **brand-neutral thread palette**.
+- **Live metrics + honest checks:** stitch count, color count, finished size by
+  Aida count, thread-length estimate, fill density, and **hoop-fit** against
+  hoop presets — with plain-English warnings.
+- **Exports:** printable **chart (PDF)**, **PNG**, **JSON** save/open, and a
+  **real Tajima DST machine file** — the most openly-documented format. The DST
+  encoder is proven by a round-trip decode unit test (and large jumps are split
+  to ≤121 units); a live export of "LUSIK" produced a valid 737-byte DST
+  (`LA:` header, `ST:70`, `0xF3` end record).
+- **Honesty, by design:** chart + size are exact; the DST is labelled
+  **EXPERIMENTAL** (one tacking stitch per cell, not satin/true-cross digitizing)
+  — "test on your machine with stabilizer first." Other machine formats
+  (PES/EXP/JEF…), auto-digitizing from artwork, satin/fill objects, and Armenian
+  glyphs remain future work.
+
+The Software Creation Mode `embroidery` preset still generates its static
+cross-stitch chart for project bundles; the full editor lives at the route above.
+
+### Embroidery module note (Phase 5, large) — remaining
 
 Owner wants a deep embroidery creator (digitizing, stitch editing, lettering,
 thread/hoop, machine export "where technically possible", stitch simulation,
