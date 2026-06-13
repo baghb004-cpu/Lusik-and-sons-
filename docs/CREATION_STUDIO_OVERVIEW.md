@@ -103,7 +103,28 @@ Confirmed across the modes:
   pre-seeds the vibe-capable builders.
 - The Workshop launcher token flows hub → every tool (same-origin sessionStorage).
 
-**Future (not blocking):** a true runtime that *runs* Business App blueprints
-(today it generates them; the Store Manager is the running reference); richer 3D
-(WebGL/GLB) in Immersive; advanced 360 editing; Square/Clover/Stripe payment
-integration via official APIs; encrypted local DB; multi-device sync.
+## Loose ends — status
+
+**Closed (offline, built + tested):**
+
+- ✅ **Business App runtime** — generated blueprints now RUN (generic record
+  store + screen renderer; `▶ Run app` in the builder). `bizapp/runtime.ts`.
+- ✅ **Encrypted local DB** — optional AES-256-GCM + PBKDF2 per-app passphrase
+  lock. `bizapp/secure.ts`.
+- ✅ **Payments (official-only connector)** — stores an official hosted checkout
+  link (Square/Clover/Stripe), validated host+https, **never card data**.
+  `bizapp/payments.ts`. (A real OAuth/API charge flow needs the provider's keys
+  + internet and is out of the offline core by design.)
+- ✅ **Move data between devices** — offline answer is built: every app + the
+  Store have **backup → restore** (a file you carry over). True *live* cloud
+  sync needs a server and is intentionally not in the offline build.
+
+**Genuinely needs online/hardware (deliberately deferred):**
+
+- **Richer 3D (WebGL/GLB) in Immersive** — a from-scratch glTF loader + PBR
+  renderer with **no CDN/library** isn't worth hand-rolling; the offline v1
+  (scroll + CSS-3D + the dependency-free 360 viewer) is the shippable tradeoff.
+- **Live multi-device cloud sync / cloud backup** — requires a backend.
+- **Square/Clover/Stripe live charges** — official APIs need keys + internet.
+- **Compile the Windows `.exe`, merge PR #254, SwiftUI on a Mac, Godot export**
+  — hardware/credentials + a shipping decision (the owner is holding "ship").
