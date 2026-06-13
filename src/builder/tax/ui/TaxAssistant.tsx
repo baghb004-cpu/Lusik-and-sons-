@@ -11,11 +11,13 @@
 // invents a tax number. Not tax advice.
 // ============================================================
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { INTERVIEW, neededDocuments, likelyForms } from "../checklist.ts";
 import { compareDeductions } from "../engine.ts";
 import { taxProject, rulePack } from "../schemas.ts";
-import { updateGuidanceFor } from "../updater.ts";
+import { updateGuidanceFor, scaffoldRulePack } from "../updater.ts";
+import { encryptSession, decryptSession } from "./sessionCrypto.ts";
+import { runOcr, type OcrResult } from "./ocr.ts";
 
 type FilingStatus = "single" | "married-jointly" | "married-separately" | "head-of-household" | "qualifying-surviving-spouse";
 const STATUSES: Array<{ id: FilingStatus; label: string }> = [
@@ -35,9 +37,78 @@ export function TaxAssistant() {
   const [stdDeduction, setStdDeduction] = useState(""); // user enters from the official page
   const [stdVerified, setStdVerified] = useState(false);
 
+  // encrypted save/load
+  const [passphrase, setPassphrase] = useState("");
+  const [saveMsg, setSaveMsg] = useState("");
+  const loadInputRef = useRef<HTMLInputElement | null>(null);
+
+  // optional OCR import (always-confirm)
+  const [ocr, setOcr] = useState<OcrResult | null>(null);
+  const [ocrMsg, setOcrMsg] = useState("");
+  const ocrInputRef = useRef<HTMLInputElement | null>(null);
+
   const docs = useMemo(() => neededDocuments(answers), [answers]);
   const forms = useMemo(() => likelyForms(answers), [answers]);
   const guidance = updateGuidanceFor(year);
+
+  // Everything that makes up "your session" — the only thing saved/loaded.
+  const session = () => ({ v: 1, filingStatus, answers, itemized, stdDeduction, stdVerified });
+
+  async function handleSave() {
+    setSaveMsg("");
+    try {
+      const blob = await encryptSession(session(), passphrase);
+      const file = new Blob([blob], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tax-${year}-encrypted.btax`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setSaveMsg("✅ Saved an encrypted file to your downloads. There is no recovery without this passphrase — keep it safe.");
+    } catch (e) {
+      setSaveMsg(`⚠️ ${(e as Error).message}`);
+    }
+  }
+
+  async function handleLoad(file: File) {
+    setSaveMsg("");
+    try {
+      const text = await file.text();
+      const data = await decryptSession<ReturnType<typeof session>>(text, passphrase);
+      setFilingStatus(data.filingStatus);
+      setAnswers(data.answers ?? {});
+      setItemized(data.itemized ?? "");
+      setStdDeduction(data.stdDeduction ?? "");
+      setStdVerified(!!data.stdVerified);
+      setSaveMsg("✅ Loaded your saved session.");
+    } catch (e) {
+      setSaveMsg(`⚠️ ${(e as Error).message}`);
+    }
+  }
+
+  async function handleOcr(file: File) {
+    setOcr(null);
+    setOcrMsg("Reading the photo on this device…");
+    try {
+      const result = await runOcr(file);
+      setOcr(result);
+      setOcrMsg(result.amounts.length ? "Read it. Tap an amount to use it as your itemized total — then check it against the document yourself." : "Read it, but I couldn't spot a dollar amount. Type the figure in from the document.");
+    } catch (e) {
+      setOcrMsg((e as Error).message);
+    }
+  }
+
+  function scaffoldNextYear() {
+    const pack = scaffoldRulePack(year + 1);
+    const file = new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rule-pack-${year + 1}-template.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const comparison = useMemo(() => {
     const project = taxProject.parse({
@@ -158,6 +229,66 @@ export function TaxAssistant() {
             ))}
           </ul>
         </details>
+      </section>
+
+      {/* optional OCR import — always confirm, never auto-trust */}
+      <section className="mt-6 rounded-2xl border border-ink/10 bg-white/60 p-4">
+        <h2 className="font-display text-lg">📷 Read a document photo (optional)</h2>
+        <p className="mt-1 text-xs text-muted">
+          Snap or pick a photo of a W-2 or 1099 and I'll try to read the numbers — entirely on this device, nothing uploaded.
+          It only ever <strong>suggests</strong> a figure; you always check it against the paper and confirm it yourself.
+        </p>
+        <input ref={ocrInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleOcr(f); e.target.value = ""; }} />
+        <button type="button" onClick={() => ocrInputRef.current?.click()} className="mt-2 rounded-full border border-ink/30 px-4 py-1.5 text-sm">Choose a photo…</button>
+        {ocrMsg ? <p className="mt-2 text-xs text-muted" data-testid="ocr-message">{ocrMsg}</p> : null}
+        {ocr && ocr.amounts.length ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {ocr.amounts.map((a) => (
+              <button key={a} type="button" onClick={() => setItemized(a)} className="rounded-full border border-ink/20 bg-cream/60 px-2.5 py-1 text-xs tabular-nums">${a}</button>
+            ))}
+          </div>
+        ) : null}
+        {ocr?.text ? (
+          <details className="mt-2 text-xs">
+            <summary className="cursor-pointer text-muted">What it read (verify against your document)</summary>
+            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-cream/60 p-2 text-[11px]">{ocr.text}</pre>
+          </details>
+        ) : null}
+      </section>
+
+      {/* encrypted save / load — stays on the device, no recovery by design */}
+      <section className="mt-6 rounded-2xl border border-ink/10 bg-white/60 p-4">
+        <h2 className="font-display text-lg">🔒 Save or reopen privately</h2>
+        <p className="mt-1 text-xs text-muted">
+          Save your answers as one encrypted file (AES-256). It never leaves this device, and there is
+          <strong> no way to recover it without your passphrase</strong> — that's the privacy guarantee.
+        </p>
+        <label className="mt-2 block text-sm">
+          <span className="mb-1 block text-xs text-muted">Passphrase (at least 8 characters)</span>
+          <input type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} placeholder="A long passphrase you'll remember" className={field} aria-label="Passphrase" />
+        </label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" onClick={() => void handleSave()} disabled={passphrase.length < 8} className="rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream disabled:opacity-40">Save encrypted file</button>
+          <input ref={loadInputRef} type="file" accept=".btax,application/octet-stream" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleLoad(f); e.target.value = ""; }} />
+          <button type="button" onClick={() => loadInputRef.current?.click()} disabled={passphrase.length < 8} className="rounded-full border border-ink/30 px-4 py-1.5 text-sm disabled:opacity-40">Open a saved file…</button>
+        </div>
+        {saveMsg ? <p className="mt-2 text-xs" data-testid="save-message">{saveMsg}</p> : null}
+      </section>
+
+      {/* next-year updater — opens official pages + scaffolds an EMPTY cited pack */}
+      <section className="mt-6 rounded-2xl border border-ink/10 bg-white/60 p-4">
+        <h2 className="font-display text-lg">🗓️ Start next year (tax year {year + 1})</h2>
+        <p className="mt-1 text-xs text-muted">
+          When a new tax year arrives, the figures change. This never guesses them — it opens the official IRS pages and
+          builds an <strong>empty, source-cited</strong> template you fill in from those pages.
+        </p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-muted">
+          {guidance.steps.map((s) => <li key={s}>{s}</li>)}
+        </ol>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" onClick={scaffoldNextYear} className="rounded-full border border-ink/30 px-4 py-1.5 text-sm">Scaffold a {year + 1} rule pack</button>
+          <a href={guidance.sources[0].url} target="_blank" rel="noreferrer" className="rounded-full border border-ink/20 px-4 py-1.5 text-sm">Open official IRS pages ↗</a>
+        </div>
       </section>
 
       <p className="mt-6 text-[11px] text-muted">
