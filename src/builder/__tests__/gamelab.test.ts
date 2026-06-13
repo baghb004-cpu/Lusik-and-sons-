@@ -92,6 +92,29 @@ test("codegen emits a runnable-shaped Godot project (placeholders only, commente
   assert.deepEqual(generateProject(p).files, files);
 });
 
+test("3D dimension generates a Node3D project; sprites swap in a TextureRect", () => {
+  const p3d = makePreset("top-down", "3d1")!;
+  p3d.dimension = "3d";
+  const gd3 = generateProject(p3d).files["game-project/scripts/Main.gd"];
+  assert.ok(gd3.includes("extends Node3D"));
+  assert.ok(gd3.includes("Camera3D") && gd3.includes("BoxMesh"));
+
+  const p = makePreset("platformer", "spr1")!;
+  p.entities[0].props = { ...p.entities[0].props, sprite: "hero.png" };
+  const files = generateProject(p).files;
+  assert.ok(files["game-project/scripts/Main.gd"].includes("TextureRect"));
+  assert.ok(files["game-project/scripts/Main.gd"].includes('"hero.png"')); // referenced in embedded config
+});
+
+test("space-shooter + puzzle controllers are generated", () => {
+  const shooter = generateProject(makePreset("space-shooter", "s1")!).files["game-project/scripts/Main.gd"];
+  assert.ok(shooter.includes("_fire(") && shooter.includes("_update_shots("));
+  const puzzle = generateProject(makePreset("puzzle", "pz1")!).files["game-project/scripts/Main.gd"];
+  assert.ok(puzzle.includes("_check_buttons(") && puzzle.includes("_open_gates("));
+  const runner = generateProject(makePreset("endless-runner", "r1")!).files["game-project/scripts/Main.gd"];
+  assert.ok(runner.includes("_move_platformer(delta, true)")); // auto-run
+});
+
 test("click-based kinds generate input handling", () => {
   const clicker = generateProject(makePreset("clicker", "c1")!).files["game-project/scripts/Main.gd"];
   assert.ok(clicker.includes("_unhandled_input"));

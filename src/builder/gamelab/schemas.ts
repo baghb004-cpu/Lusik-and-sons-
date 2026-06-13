@@ -79,7 +79,7 @@ export const gameProjectSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).default("My Game"),
   kind: gameKindSchema,
-  dimension: z.literal("2d").default("2d"),
+  dimension: z.enum(["2d", "3d"]).default("2d"),
   style: z.string().default("simple"),
   difficulty: difficultySchema.default("normal"),
   // tunables: gravity, playerSpeed, jumpForce, enemySpeed, scoreGoal, timeLimit,
