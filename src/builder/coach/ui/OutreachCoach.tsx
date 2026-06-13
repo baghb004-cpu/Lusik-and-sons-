@@ -6,26 +6,25 @@ import { useMemo, useState } from "react";
 import {
   OUTREACH_SCENARIOS, OUTREACH_OBJECTIONS, SERVICE_PACKAGES, FOLLOW_UPS, PREFER_PHRASES, OUTREACH_HONESTY_NOTE,
 } from "../index.ts";
-import { suggestReply, replyForObjection, fillScript, fillFollowUp } from "../engine.ts";
+import { replyForObjection, fillScript, fillFollowUp } from "../engine.ts";
 import { availableStyles } from "../styles.ts";
 import { checkHonesty } from "../safety.ts";
 import { fillTemplate } from "../variables.ts";
 import type { Objection, Style } from "../schemas.ts";
 import { useLocalState, type CoachVars } from "./storage.ts";
 import { CopyButton, StyleChips, Section, card, field } from "./widgets.tsx";
+import { LiveCallAssist } from "./LiveCallAssist.tsx";
+import { ProposalBuilder } from "./ProposalBuilder.tsx";
 import { OUTREACH_STATUS, type OutreachLead } from "../schemas.ts";
 
 const newId = () => `lead-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 export function OutreachCoach({ vars }: { vars: CoachVars }) {
-  const [heard, setHeard] = useState("");
-  const [style, setStyle] = useState<Style>("friendly");
   const [draft, setDraft] = useState("");
   const [openObjId, setOpenObjId] = useState<string | null>(null);
   const [scenarioId, setScenarioId] = useState(OUTREACH_SCENARIOS[0].id);
   const [followId, setFollowId] = useState(FOLLOW_UPS[0].id);
 
-  const suggestion = useMemo(() => (heard.trim() ? suggestReply(heard, style, vars) : null), [heard, style, vars]);
   const honesty = useMemo(() => (draft.trim() ? checkHonesty(draft) : []), [draft]);
   const scenario = OUTREACH_SCENARIOS.find((s) => s.id === scenarioId)!;
   const follow = FOLLOW_UPS.find((f) => f.id === followId)!;
@@ -35,24 +34,7 @@ export function OutreachCoach({ vars }: { vars: CoachVars }) {
     <div className="font-body text-ink">
       <p className="rounded-lg bg-cream/70 px-3 py-2 text-xs">{OUTREACH_HONESTY_NOTE}</p>
 
-      {/* Type what they said → suggested reply */}
-      <Section title="Type what they said" subtitle="Paste or type what the business said, and get an honest reply you can adapt.">
-        <textarea value={heard} onChange={(e) => setHeard(e.target.value)} rows={2} placeholder='e.g. "We already have a website."' className={field} aria-label="What they said" />
-        <div className="mt-2">
-          {suggestion?.objection ? (
-            <div className={card}>
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-xs text-muted">Sounds like: <strong className="text-ink">“{suggestion.objection.says}”</strong></span>
-                <CopyButton text={suggestion.reply ?? ""} />
-              </div>
-              <StyleChips available={availableStyles(suggestion.objection.replies)} value={style} onChange={setStyle} />
-              <p className="mt-2 text-sm">{suggestion.reply}</p>
-            </div>
-          ) : heard.trim() ? (
-            <p className="text-sm text-muted">I'm not sure which objection that is — pick a common one below.</p>
-          ) : null}
-        </div>
-      </Section>
+      <LiveCallAssist vars={vars} />
 
       {/* Quick objections */}
       <Section title="Common objections" subtitle="Tap one to see calm, honest replies — switch the style with the chips.">
@@ -133,6 +115,8 @@ export function OutreachCoach({ vars }: { vars: CoachVars }) {
         <ul className="list-disc px-6 pb-3 text-sm">{PREFER_PHRASES.map((p) => <li key={p}>{p}</li>)}</ul>
       </details>
 
+      <ProposalBuilder vars={vars} />
+
       <OutreachTracker vars={vars} />
     </div>
   );
@@ -154,6 +138,12 @@ function ObjectionDetail({ objection, vars }: { objection: Objection; vars: Coac
 
 function OutreachTracker({ vars }: { vars: CoachVars }) {
   const [leads, setLeads] = useLocalState<OutreachLead[]>("outreach_leads", []);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const draftFollowUp = (l: OutreachLead) => {
+    const tpl = FOLLOW_UPS.find((f) => f.id === "text-after-call")!;
+    const filled = fillFollowUp(tpl, { ...vars, BUSINESS_NAME: l.businessName, CONTACT_NAME: l.contact });
+    setDrafts((prev) => ({ ...prev, [l.id]: filled.body }));
+  };
   const add = () =>
     setLeads((prev) => [
       { id: newId(), businessName: vars.BUSINESS_NAME ?? "", businessType: vars.BUSINESS_TYPE ?? "", phone: "", website: "", contact: vars.CONTACT_NAME ?? "", dateCalled: new Date().toISOString().slice(0, 10), callResult: "", interest: "", followUpDate: "", notes: "", nextStep: "", status: "Called" },
@@ -178,7 +168,16 @@ function OutreachTracker({ vars }: { vars: CoachVars }) {
               <input value={l.followUpDate} onChange={(e) => update(l.id, { followUpDate: e.target.value })} placeholder="Follow-up date" className={field} aria-label="Follow-up date" />
             </div>
             <textarea value={l.notes} onChange={(e) => update(l.id, { notes: e.target.value })} rows={2} placeholder="Notes" className={`mt-2 ${field}`} aria-label="Notes" />
-            <div className="mt-1 flex justify-end"><button type="button" onClick={() => remove(l.id)} className="text-xs text-red-700">Remove</button></div>
+            {drafts[l.id] ? (
+              <div className="mt-2 rounded-xl border border-ink/10 bg-cream/50 p-2">
+                <div className="mb-1 flex justify-end"><CopyButton text={drafts[l.id]} /></div>
+                <p className="whitespace-pre-wrap text-xs">{drafts[l.id]}</p>
+              </div>
+            ) : null}
+            <div className="mt-1 flex justify-between">
+              <button type="button" onClick={() => draftFollowUp(l)} className="text-xs text-accent underline underline-offset-2">Draft follow-up text</button>
+              <button type="button" onClick={() => remove(l.id)} className="text-xs text-red-700">Remove</button>
+            </div>
           </div>
         ))}
       </div>

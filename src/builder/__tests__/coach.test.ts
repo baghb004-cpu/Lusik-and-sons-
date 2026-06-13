@@ -11,6 +11,7 @@ import { pickVariant, availableStyles } from "../coach/styles.ts";
 import { checkHonesty, isHonest } from "../coach/safety.ts";
 import { takeChoice, reflect, type RoleplayTurn } from "../coach/roleplay.ts";
 import { suggestReply, replyForObjection, objectionById, fillScript } from "../coach/engine.ts";
+import { buildProposal } from "../coach/proposal.ts";
 import {
   objectionSchema, scenarioSchema, scriptSchema, servicePackageSchema, followUpTemplateSchema,
   interviewQuestionSchema, answerFrameworkSchema, roleplayScenarioSchema,
@@ -103,6 +104,19 @@ test("content integrity: every pack validates against its schema", () => {
   z.array(answerFrameworkSchema).parse(ANSWER_FRAMEWORKS);
   z.array(roleplayScenarioSchema).parse(INTERVIEW_ROLEPLAY);
   z.array(followUpTemplateSchema).parse(INTERVIEW_FOLLOWUPS);
+});
+
+test("buildProposal fills details, lists chosen packages, and never promises a price", () => {
+  const text = buildProposal(["starter", "maintenance"], { USER_NAME: "Sam", BUSINESS_NAME: "Joe's Cafe", USER_EMAIL: "sam@x.com" });
+  assert.ok(text.includes("Joe's Cafe"));
+  assert.ok(text.includes("Sam"));
+  assert.ok(text.includes("sam@x.com"));
+  assert.ok(text.includes("Starter Website Package"));
+  assert.ok(text.includes("Monthly Maintenance"));
+  assert.ok(/clear written quote/.test(text)); // honest close, not a fixed price
+  assert.ok(!/\[USER_NAME\]/.test(text)); // variables resolved
+  // empty selection still produces an honest, usable proposal
+  assert.ok(buildProposal([], { USER_NAME: "Sam" }).includes("mobile-friendly"));
 });
 
 test("content integrity: every objection/question has at least one reply/answer", () => {

@@ -13,6 +13,7 @@ export * from "./match.ts";
 export * from "./safety.ts";
 export * from "./roleplay.ts";
 export * from "./engine.ts";
+export * from "./proposal.ts";
 
 export {
   BUSINESS_TYPES,
