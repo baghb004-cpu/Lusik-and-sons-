@@ -32,7 +32,7 @@ export function icsStamp(iso: string, allDay = false): string {
 
 /** RFC 5545 text escaping: backslash, semicolon, comma, newline. */
 export function icsEscape(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 }
 
 export function buildIcs(e: CalendarEvent, uidSeed = "workshop"): string {

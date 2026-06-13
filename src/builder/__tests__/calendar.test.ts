@@ -12,8 +12,8 @@ const EVENT = { title: "Open house; bring snacks, ok?", start: "2026-07-04T14:00
 test("ics: RFC escaping, CRLF lines, local wall-clock stamps, all-day variant", () => {
   const ics = buildIcs(EVENT, "b_evt00000001");
   assert.match(ics, /^BEGIN:VCALENDAR\r\n/);
-  assert.match(ics, /SUMMARY:Open house\;\ bring snacks\\, ok\?/.source ? /SUMMARY:Open house/ : /x/);
-  assert.ok(ics.includes("\;") || ics.includes("\\,"), "separators escaped");
+  // RFC 5545: semicolon AND comma are both backslash-escaped in text values.
+  assert.match(ics, /SUMMARY:Open house\\; bring snacks\\, ok\?/);
   assert.ok(ics.includes("DESCRIPTION:Line1\\nLine2"));
   assert.ok(ics.includes("DTSTART:20260704T140000"));
   assert.ok(ics.includes("END:VCALENDAR"));
@@ -22,7 +22,7 @@ test("ics: RFC escaping, CRLF lines, local wall-clock stamps, all-day variant", 
   assert.ok(allDay.includes("DTSTART;VALUE=DATE:20260704"));
   // the zero-JS native-app door
   assert.ok(icsDataHref(EVENT).startsWith("data:text/calendar;charset=utf-8,BEGIN"));
-  assert.equal(icsEscape("a;b,c\nd"), "a\;b\\,c\\nd");
+  assert.equal(icsEscape("a;b,c\nd"), "a\\;b\\,c\\nd");
 });
 
 test("prefill URLs: Google + Outlook carry title/dates/location", () => {

@@ -26,6 +26,12 @@ export const dynamic = "force-dynamic";
 
 const MAX_QUICKSAVE_BYTES = 256 * 1024;
 
+// The only paths a restore may write — exactly what `backup` writes. Anything
+// else in the zip (a crafted entry, a traversal attempt) is rejected in the
+// validate phase, before a single file is written, keeping restore all-or-nothing.
+const RESTORABLE_PATH =
+  /^(settings\.json|profiles\/[\w-]+\.json|quicksaves\/[\w-]+\.json|retro\/(library|emulator-profiles|controller-profiles)\/[\w-]+\.json)$/;
+
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -150,12 +156,22 @@ export async function POST(req: Request): Promise<Response> {
       }
       const { default: JSZip } = await import("jszip");
       const zip = await JSZip.loadAsync(await readFile(join(store.root, body.file)));
-      // ALL-OR-NOTHING: validate every entry against its family first.
+      // ALL-OR-NOTHING: validate every entry's PATH and SCHEMA before writing
+      // anything. A crafted backup can neither escape portable/ nor write a
+      // path outside the known backup families — one bad entry, nothing restored.
       const writes: Array<{ rel: string; content: string }> = [];
       for (const [rel, entry] of Object.entries(zip.files)) {
         if (entry.dir) continue;
+        if (!RESTORABLE_PATH.test(rel)) {
+          return json(422, { error: `Backup entry isn't a restorable file: ${rel} — nothing was restored` });
+        }
         const content = await entry.async("string");
-        const data = JSON.parse(content);
+        let data: unknown;
+        try {
+          data = JSON.parse(content);
+        } catch {
+          return json(422, { error: `Backup entry isn't valid JSON: ${rel} — nothing was restored` });
+        }
         const okay =
           rel === "settings.json"
             ? portableSettingsSchema.safeParse(data).success
@@ -163,7 +179,7 @@ export async function POST(req: Request): Promise<Response> {
               ? profileSchema.safeParse(data).success
               : rel.startsWith("quicksaves/")
                 ? quickSaveSchema.safeParse(data).success
-                : rel.startsWith("retro/"); // retro families re-validate on read in /retro
+                : true; // retro families re-validate on read in /retro
         if (!okay) return json(422, { error: `Backup entry fails validation: ${rel} — nothing was restored` });
         writes.push({ rel, content });
       }

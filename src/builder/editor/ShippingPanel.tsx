@@ -137,7 +137,12 @@ export function ShippingPanel({
           ))}
           <button
             type="button"
-            onClick={() => set({ zones: [...config.zones, { id: `zone-${config.zones.length + 1}`, label: `Zone ${config.zones.length + 1}`, prefixes: ["9"], rateCents: 800 }] })}
+            onClick={() => {
+              // Next number from the highest existing zone-N suffix, not the
+              // count — so adding after a removal can't reuse a live id.
+              const n = Math.max(0, ...config.zones.map((z) => Number(/^zone-(\d+)$/.exec(z.id)?.[1] ?? 0))) + 1;
+              set({ zones: [...config.zones, { id: `zone-${n}`, label: `Zone ${n}`, prefixes: ["9"], rateCents: 800 }] });
+            }}
             className="rounded-full border border-ink/20 px-2.5 py-0.5 text-[11px] hover:bg-cream"
           >
             + Add zone

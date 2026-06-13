@@ -118,6 +118,19 @@ test("composeLaunch returns argv arrays (no shell strings); hostile paths stay i
   assert.ok(composeLaunch(gameEntrySchema.parse(GAME), raw).warnings.some((w) => w.includes("qcow2")));
 });
 
+test("dosboxConf can't be injected via a newline in a path (no autoexec escape)", () => {
+  // The conf is RUN by the emulator; a newline in a path must not become a
+  // new [autoexec] command line.
+  const evil = { ...GAME, isoPath: 'a.iso"\nformat c:\nshutdown -f' };
+  const plan = composeLaunch(gameEntrySchema.parse(evil), emulatorProfileSchema.parse(EMU));
+  const conf = plan.generated.find((g) => g.path.endsWith(".dosbox-x.conf"));
+  assert.ok(conf, "a conf is generated");
+  assert.ok(!/^format c:/m.test(conf!.content), "no injected format line");
+  assert.ok(!/^shutdown/m.test(conf!.content), "no injected shutdown line");
+  // the mount stays a single line — the newline was stripped, not honored
+  assert.equal(conf!.content.split("\n").filter((l) => l.startsWith("imgmount")).length, 1);
+});
+
 test("pathsToVerify lists every configured file for the Locate-Again flow", () => {
   const emu = emulatorProfileSchema.parse({ ...EMU, machinePath: "retro/vm-images/win98" });
   const fields = pathsToVerify(gameEntrySchema.parse({ ...GAME, installPath: "retro/installed/sb" }), emu).map((p) => p.field).sort();

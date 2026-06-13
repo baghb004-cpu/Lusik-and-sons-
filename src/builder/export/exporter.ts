@@ -31,7 +31,7 @@ import { materializeMobileOnly } from "../engine/overrides.ts";
 import { overridePath } from "../engine/index.ts";
 import type { BuilderStorage } from "../storage/index.ts";
 import { renderPageBody } from "./render.tsx";
-import { assembleHtmlDocument, pageFileName, DECK_CSS } from "./static.ts";
+import { assembleHtmlDocument, DECK_CSS } from "./static.ts";
 import { buildManifest } from "./manifest.ts";
 import { MEDIA_DIR } from "../media/paths.ts";
 import { sitemapXml, robotsTxt, type SitemapEntry } from "./seoFiles.ts";
