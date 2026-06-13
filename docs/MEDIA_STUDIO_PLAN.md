@@ -1,4 +1,14 @@
-# Offline Media Studio — plan & architecture (§26, NOT built yet)
+# Offline Media Studio — plan & architecture (§26)
+
+> **Phase 1 FOUNDATION is built** (`src/builder/media-studio/`): schemas
+> (MediaItem, MediaProject, timeline Clip/Track with privacy levels),
+> the offline format + export-preset data pack (`formats.ts`), the
+> grab-bar/trim/split/save-as-new-clip LOGIC (`engine.ts`, pure +
+> originals-preserved), and the offline help pack (`help.ts`). 8 tests.
+> **Still to build:** the FFmpeg/Sharp sidecar (do the real decode/
+> encode/thumbnail/waveform), the `/api/builder/media-studio` route, and
+> the editor UI (library grid, preview, the timeline with handles).
+> Pick up at step 3 of the implementation plan below.
 
 *A new SECTION inside Baghdo's Workshop (not a separate product): a private,
 fully offline photo / video / audio editor that shares a local file library

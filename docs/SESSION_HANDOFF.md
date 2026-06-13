@@ -10,7 +10,7 @@ Last updated: 2026-06-13.*
 - **Open PR:** **#254** — "Baghdo's Workshop — the custom CMS + website/app
   builder" → merges everything into `main`. Awaiting Baghdo's review + the
   GitHub token to switch the live site's CMS. CI subscribed.
-- **Tests:** `npm run test:builder` (274 unit, Node type-stripping) + the
+- **Tests:** `npm run test:builder` (292 unit, Node type-stripping) + the
   Playwright e2e (`tests/e2e/*.spec.mjs`, needs `PW_CHROME=/opt/pw-browsers/
   chromium-1194/chrome-linux/chrome`). `npm run typecheck`, `npm run
   next:build` (also runs the 210 KB bundle budget + editor-isolation gate).
@@ -92,8 +92,9 @@ TEMPLATE with zero amounts (a test enforces this).
 
 ## Next module queued: Offline Media Studio (§26)
 
-Full plan + architecture answers are in **`docs/MEDIA_STUDIO_PLAN.md`**
-(written this session, NOT built). It's a new SECTION in the app (photo/
+**Phase 1 foundation is BUILT** (`src/builder/media-studio/`: schemas +
+format/help data pack + trim/split/save-as-new-clip logic, 8 tests). The
+FFmpeg sidecar + API route + editor UI are next — see `docs/MEDIA_STUDIO_PLAN.md`. It's a new SECTION in the app (photo/
 video/audio import-organize-trim-convert-export, offline, FFmpeg sidecar),
 sharing a mini-OS file library with the website/app builders, tax vault kept
 private. Start at its "Phase 1 — smallest safe version" section.
@@ -101,7 +102,7 @@ private. Start at its "Phase 1 — smallest safe version" section.
 ## How to resume (suggested first moves)
 
 1. `git checkout claude/codebase-review-w50a0a && npm run test:builder` (expect
-   274 green).
+   292 green).
 2. Read the relevant plan doc section for whatever Baghdo asks next.
 3. Pattern for any new module: pure engine under `src/builder/<name>/` +
    tests in `src/builder/__tests__/<name>.test.ts` + (if it needs a backend)
