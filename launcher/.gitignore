@@ -1,0 +1,4 @@
+/build/
+/dist-portable/
+/app-data/logs/
+*.exe
