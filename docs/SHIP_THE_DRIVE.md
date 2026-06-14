@@ -40,9 +40,15 @@ install, fully offline.
 ### The one‑click way
 1. Plug in your USB stick (note its letter, e.g. `E:`).
 2. In the project folder, **double‑click `make-drive.bat`**.
-3. When it asks, type the drive folder, e.g. `E:\Workshop`, and press Enter.
-4. Wait (a few minutes — it copies the app + a private Node runtime).
-5. Open the USB stick and **double‑click `start.bat`**. The Workshop opens.
+   *(It automatically copies the project to your computer's fast disk and builds
+   there — so it's fine even if the project is sitting on the USB stick.)*
+3. First time only: install **Node.js (LTS)** from nodejs.org if it asks.
+4. When it asks, type the drive folder, e.g. `E:\Workshop`, and press Enter.
+5. Wait (a few minutes — it copies the app + a private Node runtime).
+6. Open the USB stick and **double‑click `start.bat`**. The Workshop opens.
+
+> If it still errors, copy me the **last 2–3 lines** in the black window
+> (above "Press any key…") and I'll pinpoint it.
 
 ### The same thing as three commands (if you prefer the terminal)
 ```
