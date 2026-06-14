@@ -14,7 +14,7 @@ import {
 import { checkProject, checkFeature, readyToBuild } from "../studio/software/health.ts";
 import { previewAdd } from "../studio/software/preview.ts";
 import { runCommand } from "../studio/software/terminal.ts";
-import { buildProject, hasGenerator, generateFeature } from "../studio/software/codegen.ts";
+import { buildProject, hasGenerator, generateFeature, toGltf, toGlb, parseObj, parseStlAscii } from "../studio/software/codegen.ts";
 
 test("registry: validates, covers all six categories, ids unique, deps resolve", () => {
   assert.equal(assertRegistry(), true);
@@ -245,6 +245,37 @@ test("codegen: 3D design emits valid OBJ + ASCII STL + offline preview", () => {
   assert.equal((stl.match(/endfacet/g) || []).length, 12);
   const html = files[Object.keys(files).find((p) => p.endsWith("index.html"))!];
   assert.ok(!/https?:\/\//.test(html), "preview has no network refs");
+});
+
+test("3D: OBJ/STL import round-trips + glTF (.gltf/.glb) export is valid", () => {
+  let proj = createProject("GL");
+  proj = addFeature(proj, "design-3d");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "shape", "box");
+  const files = generateFeature(proj.features[0]);
+  // a model.gltf is now emitted and is valid JSON with accessors
+  const gltfFile = JSON.parse(files[Object.keys(files).find((p) => p.endsWith("model.gltf"))!]);
+  assert.equal(gltfFile.asset.version, "2.0");
+  assert.equal(gltfFile.accessors[0].count, 8, "box has 8 positions");
+
+  // import the emitted OBJ back into a mesh
+  const obj = files[Object.keys(files).find((p) => p.endsWith("model.obj"))!];
+  const mesh = parseObj(obj);
+  assert.equal(mesh.verts.length, 8);
+  assert.equal(mesh.tris.length, 12);
+
+  // glTF from the imported mesh
+  const gltf = JSON.parse(toGltf(mesh, "box"));
+  assert.match(gltf.buffers[0].uri, /^data:application\/octet-stream;base64,/);
+
+  // GLB binary: magic "glTF" + version 2
+  const glb = toGlb(mesh, "box");
+  const dv = new DataView(glb.buffer);
+  assert.equal(dv.getUint32(0, true), 0x46546c67, "glTF magic");
+  assert.equal(dv.getUint32(4, true), 2, "glb version 2");
+
+  // STL import (ASCII): 12 triangles
+  const stl = files[Object.keys(files).find((p) => p.endsWith("model.stl"))!];
+  assert.equal(parseStlAscii(stl).tris.length, 12);
 });
 
 test("codegen: 3D text extrudes the font into a real multi-box mesh", () => {

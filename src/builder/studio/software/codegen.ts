@@ -411,6 +411,87 @@ function toStl(m: Mesh, name: string): string {
   }
   return s + `endsolid ${name}\n`;
 }
+// --- 3D interchange: glTF export + OBJ/STL import (pure) -------------------
+
+function meshBuffers(m: Mesh): { bin: Uint8Array; posBytes: number; idxBytes: number; vCount: number; iCount: number; min: number[]; max: number[] } {
+  const vCount = m.verts.length, iCount = m.tris.length * 3;
+  const pos = new Float32Array(vCount * 3);
+  const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+  m.verts.forEach((v, i) => { for (let k = 0; k < 3; k++) { pos[i * 3 + k] = v[k]; min[k] = Math.min(min[k], v[k]); max[k] = Math.max(max[k], v[k]); } });
+  const idx = new Uint32Array(iCount);
+  m.tris.forEach((t, i) => { idx[i * 3] = t[0]; idx[i * 3 + 1] = t[1]; idx[i * 3 + 2] = t[2]; });
+  const posBytes = pos.byteLength, idxBytes = idx.byteLength;
+  const bin = new Uint8Array(posBytes + idxBytes);
+  bin.set(new Uint8Array(pos.buffer), 0);
+  bin.set(new Uint8Array(idx.buffer), posBytes);
+  return { bin, posBytes, idxBytes, vCount, iCount, min, max };
+}
+function b64(bytes: Uint8Array): string {
+  let s = ""; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  const g = globalThis as unknown as { btoa?: (x: string) => string };
+  return g.btoa ? g.btoa(s) : "";
+}
+function gltfJson(m: Mesh, name: string, embedUri: boolean): { json: string; bin: Uint8Array } {
+  const b = meshBuffers(m);
+  const buffer = embedUri ? { byteLength: b.bin.length, uri: `data:application/octet-stream;base64,${b64(b.bin)}` } : { byteLength: b.bin.length };
+  const doc = {
+    asset: { version: "2.0", generator: "Baghdo's Workshop" },
+    scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0, name }],
+    meshes: [{ name, primitives: [{ attributes: { POSITION: 0 }, indices: 1 }] }],
+    buffers: [buffer],
+    bufferViews: [
+      { buffer: 0, byteOffset: 0, byteLength: b.posBytes, target: 34962 },
+      { buffer: 0, byteOffset: b.posBytes, byteLength: b.idxBytes, target: 34963 },
+    ],
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: b.vCount, type: "VEC3", min: b.min, max: b.max },
+      { bufferView: 1, componentType: 5125, count: b.iCount, type: "SCALAR" },
+    ],
+  };
+  return { json: JSON.stringify(doc), bin: b.bin };
+}
+// Self-contained .gltf (geometry embedded as base64) — opens in any glTF viewer.
+export function toGltf(m: Mesh, name = "model"): string { return gltfJson(m, name, true).json; }
+
+// Binary .glb (header + JSON chunk + BIN chunk). Returns bytes.
+export function toGlb(m: Mesh, name = "model"): Uint8Array {
+  const { json, bin } = gltfJson(m, name, false);
+  const enc = new TextEncoder();
+  let jsonBytes = enc.encode(json);
+  while (jsonBytes.length % 4 !== 0) jsonBytes = enc.encode(json + " ".repeat(4 - (jsonBytes.length % 4)));
+  const binPad = (4 - (bin.length % 4)) % 4;
+  const total = 12 + 8 + jsonBytes.length + 8 + bin.length + binPad;
+  const out = new Uint8Array(total); const dv = new DataView(out.buffer);
+  dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, total, true);
+  let o = 12;
+  dv.setUint32(o, jsonBytes.length, true); dv.setUint32(o + 4, 0x4e4f534a, true); out.set(jsonBytes, o + 8); o += 8 + jsonBytes.length;
+  dv.setUint32(o, bin.length + binPad, true); dv.setUint32(o + 4, 0x004e4942, true); out.set(bin, o + 8);
+  return out;
+}
+
+export function parseObj(text: string): Mesh {
+  const verts: number[][] = []; const tris: number[][] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const p = line.trim().split(/\s+/);
+    if (p[0] === "v") verts.push([Number(p[1]), Number(p[2]), Number(p[3])]);
+    else if (p[0] === "f") {
+      const idx = p.slice(1).map((tok) => { const n = parseInt(tok.split("/")[0], 10); return n > 0 ? n - 1 : verts.length + n; });
+      for (let i = 1; i + 1 < idx.length; i++) tris.push([idx[0], idx[i], idx[i + 1]]); // fan-triangulate
+    }
+  }
+  return { verts, tris };
+}
+
+export function parseStlAscii(text: string): Mesh {
+  const verts: number[][] = []; const tris: number[][] = [];
+  let cur: number[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const p = line.trim().split(/\s+/);
+    if (p[0] === "vertex") { verts.push([Number(p[1]), Number(p[2]), Number(p[3])]); cur.push(verts.length - 1); if (cur.length === 3) { tris.push([cur[0], cur[1], cur[2]]); cur = []; } }
+  }
+  return { verts, tris };
+}
+
 const design3d: Generator = (f) => {
   const shape = String(f.options.shape ?? "box");
   const dims = [Number(f.options.w ?? 40) || 40, Number(f.options.h ?? 40) || 40, Number(f.options.d ?? 40) || 40];
@@ -423,11 +504,12 @@ const design3d: Generator = (f) => {
     "function draw(){ctx.clearRect(0,0,cv.width,cv.height);var s=cv.width/2.6/m,ox=cv.width/2,oy=cv.height/2;ctx.strokeStyle='#1a1612';ctx.lineWidth=0.5;ctx.beginPath();" +
     "T.forEach(function(t){for(var i=0;i<3;i++){var p1=R(V[t[i]]),p2=R(V[t[(i+1)%3]]);ctx.moveTo(ox+p1[0]*s,oy-p1[1]*s);ctx.lineTo(ox+p2[0]*s,oy-p2[1]*s);}});ctx.stroke();}" +
     "cv.onpointermove=function(e){if(e.buttons){a+=e.movementX*0.01;b+=e.movementY*0.01;draw();}};setInterval(function(){a+=0.008;draw();},50);draw();})();";
-  const body = `<h1 class="no-print">${esc(f.label)} — 3D preview</h1><p class="no-print">Drag to rotate. Files: <code>model.obj</code> and <code>model.stl</code> (open in any 3D/slicer app). Offline.</p><canvas id="cv" width="400" height="400" style="background:#fff;border:1px solid #e3d9c4;border-radius:12px;touch-action:none"></canvas>`;
+  const body = `<h1 class="no-print">${esc(f.label)} — 3D preview</h1><p class="no-print">Drag to rotate. Files: <code>model.obj</code>, <code>model.stl</code>, <code>model.gltf</code> (open in any 3D/slicer/glTF app). Offline.</p><canvas id="cv" width="400" height="400" style="background:#fff;border:1px solid #e3d9c4;border-radius:12px;touch-action:none"></canvas>`;
   return {
     [`${name}/index.html`]: appDoc(`${esc(f.label)} — 3D`, body, js.replace("__V__", embed(m.verts)).replace("__T__", embed(m.tris))),
     [`${name}/model.obj`]: toObj(m, name),
     [`${name}/model.stl`]: toStl(m, name),
+    [`${name}/model.gltf`]: toGltf(m, name),
   };
 };
 
