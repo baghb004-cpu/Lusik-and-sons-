@@ -652,6 +652,17 @@ export function buildProject(project: SoftwareProject): ProjectBuild {
     files["raspberry-pi/start.sh"] = PI_START;
     files["raspberry-pi/README.md"] = PI_README;
   }
+  if (targets.includes("desktop")) {
+    const s = slug(project.name);
+    files["desktop/main.js"] = ELECTRON_MAIN;
+    files["desktop/package.json"] = JSON.stringify({ name: s, version: "1.0.0", main: "main.js", scripts: { start: "electron .", dist: "electron-builder" }, devDependencies: { electron: "^31.0.0", "electron-builder": "^24.13.3" } }, null, 2);
+    files["desktop/README.md"] = DESKTOP_README;
+  }
+  if (targets.includes("mobile")) {
+    const s = slug(project.name);
+    files["mobile/capacitor.config.json"] = JSON.stringify({ appId: `com.workshop.${s.replace(/-/g, "")}`, appName: project.name, webDir: ".." }, null, 2);
+    files["mobile/README.md"] = MOBILE_README;
+  }
 
   const manifest = {
     name: project.name,
@@ -711,6 +722,53 @@ Add the script to \`~/.config/lxsession/LXDE-pi/autostart\` or a systemd user se
 - Lightweight: plain HTML/CSS/JS, no heavy runtime. Storage: a few MB. RAM: minimal.
 - Not for Pi: features needing desktop CAD (AutoCAD LISP / Revit-Dynamo) — those
   exports are meant for a Windows CAD workstation, not the Pi itself.
+`;
+
+const ELECTRON_MAIN =
+`// Electron wrapper — turns your exported site into a desktop app.
+const { app, BrowserWindow } = require("electron");
+const path = require("path");
+function createWindow() {
+  const win = new BrowserWindow({ width: 1200, height: 800, title: "App" });
+  win.loadFile(path.join(__dirname, "..", "index.html"));
+}
+app.whenReady().then(() => {
+  createWindow();
+  app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+});
+app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+`;
+
+const DESKTOP_README =
+`# Desktop app (Electron)
+
+This wraps your exported site (the index.html one folder up) as a desktop app.
+
+## Build it (needs Node.js on your computer)
+1. \`cd desktop\`
+2. \`npm install\`
+3. \`npm start\` — run it now, or
+4. \`npm run dist\` — build an installer for your OS (via electron-builder).
+
+The app loads \`../index.html\`, so keep this \`desktop/\` folder next to your
+exported site. Everything runs offline. (Final packaging needs the platform's
+build tools — e.g. building a Windows .exe is easiest on Windows.)
+`;
+
+const MOBILE_README =
+`# Mobile app (Capacitor)
+
+This wraps your exported site as a mobile app shell.
+
+## Build it (needs Node.js + Android Studio / Xcode)
+1. \`cd mobile\`
+2. \`npm install @capacitor/core @capacitor/cli @capacitor/android\`
+3. \`npx cap init\`  (uses capacitor.config.json)
+4. \`npx cap add android\`  (and/or \`ios\` on a Mac)
+5. \`npx cap copy\` then \`npx cap open android\` → build/run in Android Studio.
+
+\`webDir\` points at your exported site (\`..\`). Everything runs offline. Final
+app stores require the platform SDKs + a developer account.
 `;
 
 function readme(project: SoftwareProject, feats: ProjectBuild["manifest"]["features"], warnings: string[]): string {

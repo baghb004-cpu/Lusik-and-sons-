@@ -308,6 +308,21 @@ test("registry: every 'ready' preset has a generator (export presets exempt)", (
     assert.ok(hasGenerator(p.id), `${p.id} is ready but has no generator`);
 });
 
+test("export presets: desktop + mobile emit real scaffolds", () => {
+  let proj = createProject("Apps");
+  proj = addFeature(proj, "manual-creator");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "title", "Guide");
+  proj = setFeatureOption(proj, proj.features[0].instanceId, "steps", "Step one");
+  proj = addFeature(proj, "export-desktop");
+  proj = addFeature(proj, "export-mobile");
+  assert.ok(proj.exportTargets.includes("desktop") && proj.exportTargets.includes("mobile"));
+  const out = buildProject(proj);
+  assert.match(out.files["desktop/main.js"], /BrowserWindow/);
+  assert.ok(out.files["desktop/package.json"].includes("electron"));
+  assert.ok(JSON.parse(out.files["mobile/capacitor.config.json"]).webDir === "..");
+  assert.ok(!out.warnings.some((w) => /Desktop|Mobile/.test(w)), "export cards never warn");
+});
+
 test("export presets: adding sets the target; build emits packaging", () => {
   // Raspberry Pi card → pi target on + start.sh/README packaged.
   let proj = createProject("PiTest");

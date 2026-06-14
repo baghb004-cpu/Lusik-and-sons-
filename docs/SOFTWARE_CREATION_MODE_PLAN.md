@@ -175,10 +175,12 @@ rest of the app would be unchanged.
     finished-size + stitch-count estimate, and **honest in-output notes** that
     it's a chart/visual design, *not* a machine embroidery file (PES/DST/etc.
     are version-specific and deferred), plus density/hoop warnings.
-- **Current status: 38 of 41 presets build real offline artifacts.** The only
-  non-`ready` presets are honestly deferred: **Embroidery** (deep digitizing /
-  machine-file export — its own large sub-project), **Export: Desktop** and
-  **Export: Mobile** (need external platform tooling). Nothing is faked.
+- **Current status: every preset is `ready`.** Export: **Desktop** (Electron
+  wrapper scaffold) and **Mobile** (Capacitor scaffold) now emit real
+  build-it-yourself packages — the final compile uses the user's own
+  Node/Android Studio/Xcode (honest, stated in the generated README). Embroidery
+  is `preview` only because its deep machine-export is a clearly-labelled
+  experimental sub-project. Nothing is faked.
 - **Remaining future work (next sessions):** the deep Embroidery module
   (digitizing, stitch simulation, machine formats where technically feasible),
   desktop/mobile app compilation, richer 3D (text/import/scenes), and optional
