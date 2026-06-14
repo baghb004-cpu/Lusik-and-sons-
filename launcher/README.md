@@ -9,30 +9,39 @@ from the Lusik & Sons website.
 
 ## 1. Architecture summary
 
-- **Native Win32 GUI written in Go (pure standard library, no cgo, no
-  dependencies).** It compiles to a single ~1.7 MB `Launcher.exe` that runs on
-  any Windows (7→11) with **nothing installed**.
+- **One self-contained Go EXE (~2.6 MB) with the whole UI embedded inside it.**
+  It opens a clean app window using **WebView2** — a component that ships *inside
+  Windows 10/11* — to render a polished dark UI with a **real-time live
+  preview** (edit on the left, the preview updates instantly on the right).
+- **No Node, no npm, no Vite, no Next, no localhost, no dev server, no browser
+  tab.** WebView2 is the app's own window (the standard way native apps like VS
+  Code render UI), not a browser the user opens. The entire HTML/CSS/JS UI is
+  embedded in the EXE via `//go:embed`; nothing is fetched and no server runs.
 - **Why this approach** (vs. the rejected one): the old portable build wrapped
   the Next.js *website* and started a bundled **Node.js** server, opening a
-  **browser at localhost**. That is exactly what you didn't want. This launcher
-  uses no web stack at all — it draws its own dark UI with the OS's GDI, so
-  there is no Node, no Next, no Vite, no localhost, no browser, no WebView.
-- **Considered & rejected for v1:** Tauri/Rust and .NET+WebView2 are clean, but
-  both still render via a browser engine (WebView2) and need a heavier Windows
-  build toolchain (Rust+MSVC, or the .NET SDK). The native Go path is smaller,
-  has zero runtime, and cross-compiles to the EXE from any OS.
-- **Robust inside, simple outside:** portable path handling (everything relative
-  to the EXE), a timestamped startup log, missing-file detection that
-  self-heals, and a recovery screen — but the user only ever sees one EXE, a
-  loading screen, and a menu.
+  browser at localhost — exactly what you didn't want. And a *pure-native* menu
+  (an earlier draft) looked clunky and can't show a real-time web-style preview.
+  WebView2 gives the clean, modern UI + live preview while staying one offline
+  EXE with no Node.
+- **Cross-compiles to the Windows EXE from any OS** (built here on Linux:
+  `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build`). The only build-time deps
+  are Go + a pure-Go WebView2 binding (no cgo). The end user needs nothing.
+- **Robust inside, simple outside:** portable paths (everything relative to the
+  EXE, no hard-coded paths), a timestamped startup log, self-healing folders,
+  and a clean message if WebView2 is somehow absent — but the user only ever
+  sees one EXE, a black loading screen, then the app.
+- **One requirement on the PC:** the WebView2 runtime, which is **pre-installed
+  on Windows 10 (21H2+) and Windows 11**. On older machines it's a free one-time
+  Microsoft install; the app shows a friendly message if it's missing.
 
 ## 2. Cleaned folder structure
 
 ```
 launcher/                      # isolated — imports NOTHING from the website
-├── go.mod                     # module: baghdos-launcher (stdlib only)
-├── main_windows.go            # the launcher: loading screen → menu, paths, logs
-├── winapi_windows.go          # thin Win32 bindings (user32/gdi32/kernel32/shell32)
+├── go.mod / go.sum            # module: baghdos-launcher (Go + pure-Go WebView2)
+├── app_windows.go             # the app: opens WebView2, embeds the UI, save/load
+├── ui/app.html                # the ENTIRE UI in one file (loading + live preview)
+├── winapi_windows.go          # tiny Win32 helpers (message box, open folder)
 ├── main_other.go              # no-op stub so it compiles on non-Windows hosts
 ├── resources/                 # bundled local tools/assets (shipped on the drive)
 ├── templates/README_FIRST.txt # the end-user note copied into the release
@@ -47,19 +56,18 @@ launcher/                      # isolated — imports NOTHING from the website
 
 ## 3. Launcher implementation
 
-- `main_windows.go` — registers a window class, creates a fixed centered window,
-  runs a message loop. A small state machine renders three phases:
-  **loading** (title + status line cycling through "Checking portable files…",
-  "Loading local tools…", "Preparing your workspace…", "Starting workspace…" +
-  a gold progress bar), **menu** (owner-drawn dark buttons with hover), and
-  **error/recovery**. Menu actions: open *my files* (app-data), open *tools*
-  (resources), view *startup log*, *About*, *Quit* — all native, no web.
-- `winapi_windows.go` — minimal `syscall.NewLazyDLL` bindings + structs
-  (`WNDCLASSEXW`, `MSG`, `PAINTSTRUCT`, `RECT`) + helpers (fonts, brushes,
-  `DrawTextW`, `RoundRect`, `ShellExecuteW`).
-- Portable + robust: paths derive from `GetModuleFileNameW` (no hard-coded
-  paths); the only writes are under `./app-data`; every run writes
-  `app-data/logs/launch-*.log`; missing folders are recreated and logged.
+- `app_windows.go` — opens the WebView2 window, embeds `ui/app.html` via
+  `//go:embed`, and exposes a few in-process functions to the UI (no server):
+  `appSave`/`appLoad` (persist projects to `app-data`), `appExport` (write a
+  standalone page to `app-data/exports` + open the folder), `appOpenFolder`,
+  `appLog`. Portable paths from `os.Executable()`; startup log in
+  `app-data/logs/launch-*.log`; clean message if WebView2 is missing.
+- `ui/app.html` — the entire UI in one self-contained file (inline CSS+JS, no
+  frameworks): a **black-box loading screen** (status messages + progress bar)
+  that fades into the app, then a clean editor (left) + **live preview** (right)
+  that re-renders on every keystroke. Save/Export call the bound Go functions.
+- `winapi_windows.go` — tiny Win32 helpers (`MessageBoxW`, `ShellExecuteW`) for
+  the runtime-missing message and "open folder".
 
 ## 4. Packaging / release process
 
