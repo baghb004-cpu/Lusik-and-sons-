@@ -1,4 +1,7 @@
 /build/
 /dist-portable/
-/app-data/logs/
+/logs/
+/exports/
+/projects/
+/app-data/
 *.exe

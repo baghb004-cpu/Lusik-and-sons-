@@ -1,25 +1,30 @@
 ========================================================
-  Baghdo's Workshop  —  portable
+  Baghdo's Workshop  —  portable visual builder
 ========================================================
 
 HOW TO RUN
   1. Plug in this drive (or open this folder).
   2. Double-click:  Launcher.exe
-  3. A black loading screen appears, then the app opens.
+  3. A black loading screen appears, then the builder opens.
 
-You build on the left, and the LIVE PREVIEW on the right updates as you type.
-Press Save to keep your work, or Export page to save a finished web page.
+USING IT
+  - LEFT: pick a component (shapes, text, buttons, icons, maps, and more).
+    Drag it onto the canvas, or just click it.
+  - CENTER: your canvas. Click an item to select it; drag to move; drag the
+    blue corner to resize.
+  - RIGHT: change its settings (color, size, text, action, and more).
+  - Add an action: WHEN clicked -> DO bounce -> THEN show a message.
+  - Press Preview to try it. Press Save to keep your work. Export makes a file.
 
-Nothing to install. Works offline. No internet needed.
-
-WHAT'S IN THIS FOLDER
-  Launcher.exe     <- the program (just double-click this)
-  app-data/        your saved work, exports, and logs (created automatically)
-  resources/       bundled local tools & files
-  runtime/         (empty - the program is fully self-contained)
+WHERE THINGS GO (all inside this folder)
+  Launcher.exe   the program (just double-click this)
+  projects/      your saved projects
+  exports/       finished files you export
+  logs/          startup.log, app.log, export.log
+  app-data/      settings (remembers your last project)
+  resources/     bundled assets
 
 NOTES
-  - You do NOT need Node.js, npm, a code editor, or any developer tools.
+  - No Node.js, no install, no internet needed. Fully offline.
   - Uses Microsoft WebView2, which is built into Windows 10 & 11.
-  - All your data stays in app-data/ next to the program.
-  - To move it: copy this whole folder to any Windows PC or USB stick.
+  - Copy this whole folder to any Windows PC or USB stick to move it.

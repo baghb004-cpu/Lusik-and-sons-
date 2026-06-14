@@ -1,139 +1,139 @@
-# Baghdo's Workshop — portable launcher
+# Baghdo's Workshop — portable visual builder
 
-A standalone, native Windows launcher that runs from a thumb drive. **One EXE,
-black-box loading screen, then a simple menu.** No Node.js, no browser, no
-localhost, no install, no runtime — at runtime. This folder is fully isolated
-from the Lusik & Sons website.
+A standalone, portable Windows program. **One EXE → black loading screen →
+visual drag-and-drop builder.** No Node, no npm, no Vite, no Next, no localhost,
+no install, no internet — at runtime. Isolated from the Lusik & Sons website.
 
 ---
 
-## 1. Architecture summary
+## 1. Audit report (what the previous build had)
 
-- **One self-contained Go EXE (~2.6 MB) with the whole UI embedded inside it.**
-  It opens a clean app window using **WebView2** — a component that ships *inside
-  Windows 10/11* — to render a polished dark UI with a **real-time live
-  preview** (edit on the left, the preview updates instantly on the right).
-- **No Node, no npm, no Vite, no Next, no localhost, no dev server, no browser
-  tab.** WebView2 is the app's own window (the standard way native apps like VS
-  Code render UI), not a browser the user opens. The entire HTML/CSS/JS UI is
-  embedded in the EXE via `//go:embed`; nothing is fetched and no server runs.
-- **Why this approach** (vs. the rejected one): the old portable build wrapped
-  the Next.js *website* and started a bundled **Node.js** server, opening a
-  browser at localhost — exactly what you didn't want. And a *pure-native* menu
-  (an earlier draft) looked clunky and can't show a real-time web-style preview.
-  WebView2 gives the clean, modern UI + live preview while staying one offline
-  EXE with no Node.
-- **Cross-compiles to the Windows EXE from any OS** (built here on Linux:
-  `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build`). The only build-time deps
-  are Go + a pure-Go WebView2 binding (no cgo). The end user needs nothing.
-- **Robust inside, simple outside:** portable paths (everything relative to the
-  EXE, no hard-coded paths), a timestamped startup log, self-healing folders,
-  and a clean message if WebView2 is somehow absent — but the user only ever
-  sees one EXE, a black loading screen, then the app.
-- **One requirement on the PC:** the WebView2 runtime, which is **pre-installed
-  on Windows 10 (21H2+) and Windows 11**. On older machines it's a free one-time
-  Microsoft install; the app shows a friendly message if it's missing.
+- **Solid & kept:** the one-EXE shell — Go + an embedded **WebView2** window
+  (an OS component on Win10/11, *not* a browser the user opens, no localhost),
+  with the whole UI embedded in the EXE, portable paths, save/load/export
+  bindings, and a startup log. This architecture was right.
+- **Replaced:** the UI itself. It had gone from a native menu → a 5-tab "tools"
+  page; neither was the **visual drag-and-drop builder** you wanted. Rewritten.
+- **Removed/avoided:** all website baggage — the old `desktop/` Tauri+Next
+  wrapper that booted Node to serve the storefront, plus `make-drive.bat`. The
+  launcher imports **nothing** from `src/`, `app/`, or `netlify/`.
 
-## 2. Cleaned folder structure
+## 2. Keep / remove / rewrite plan
+
+| Action | Item |
+| --- | --- |
+| **Kept** | `winapi_windows.go` (message box + open folder), `main_other.go`, `go.mod/go.sum` (pure-Go WebView2), build/clean/test scripts |
+| **Rewrote** | `app_windows.go` — portable folders (`projects/ logs/ exports/ resources/ app-data/`) + project/settings/export bindings; `ui/app.html` — the visual builder |
+| **Removed** | the old 5-tab tools UI; the `runtime/` placeholder folder |
+| **Isolated** | the entire website (untouched on its branch; not referenced) |
+
+## 3. Architecture summary
+
+One Go EXE (~2.6 MB) embeds the **entire UI** (`//go:embed ui/app.html`) and
+opens it in a **WebView2** window. WebView2 renders the app's own UI (the
+standard way native apps like VS Code do it) — there is no Node, no server, no
+localhost, no browser tab. The UI talks to the EXE through a handful of bound
+in-process Go functions (save/load/list/delete projects, settings, export, open
+folder, log) — never a network. Cross-compiles to the Windows EXE from any OS.
+
+## 4. Clean folder structure (the portable release)
 
 ```
-launcher/                      # isolated — imports NOTHING from the website
-├── go.mod / go.sum            # module: baghdos-launcher (Go + pure-Go WebView2)
-├── app_windows.go             # the app: opens WebView2, embeds the UI, save/load
-├── ui/app.html                # the ENTIRE UI in one file (loading + live preview)
-├── winapi_windows.go          # tiny Win32 helpers (message box, open folder)
-├── main_other.go              # no-op stub so it compiles on non-Windows hosts
-├── resources/                 # bundled local tools/assets (shipped on the drive)
-├── templates/README_FIRST.txt # the end-user note copied into the release
-├── scripts/                   # build / package / clean / test (sh + ps1)
-└── dist-portable/             # RELEASE OUTPUT (git-ignored) ↓
-    ├── Launcher.exe
-    ├── app-data/   (your saved work + logs, created at runtime)
-    ├── resources/
-    ├── runtime/    (empty — self-contained)
-    └── README_FIRST.txt
+dist-portable/                 # copy this whole folder to a thumb drive
+├── Launcher.exe               # the program — double-click this
+├── projects/                  # your saved projects (project.json + backups/ + assets/)
+├── exports/                   # finished files you export
+├── logs/                      # startup.log · app.log · export.log
+├── app-data/                  # settings (remembers your last project) + webview cache
+├── resources/                 # bundled assets
+└── README_FIRST.txt
 ```
+(The program itself is embedded in the EXE, so there is no separate `app/` to
+ship.) Source lives in `launcher/` (`app_windows.go`, `ui/app.html`,
+`winapi_windows.go`, `scripts/`), isolated from the website.
 
-## 3. Launcher implementation
+## 5. One-EXE launcher flow
 
-- `app_windows.go` — opens the WebView2 window, embeds `ui/app.html` via
-  `//go:embed`, and exposes a few in-process functions to the UI (no server):
-  `appSave`/`appLoad` (persist projects to `app-data`), `appExport` (write a
-  standalone page to `app-data/exports` + open the folder), `appOpenFolder`,
-  `appLog`. Portable paths from `os.Executable()`; startup log in
-  `app-data/logs/launch-*.log`; clean message if WebView2 is missing.
-- `ui/app.html` — the entire UI in one self-contained file (inline CSS+JS, no
-  frameworks): a **black-box loading screen** (status messages + progress bar)
-  that fades into the app, then a clean editor (left) + **live preview** (right)
-  that re-renders on every keystroke. Save/Export call the bound Go functions.
-- `winapi_windows.go` — tiny Win32 helpers (`MessageBoxW`, `ShellExecuteW`) for
-  the runtime-missing message and "open folder".
+Double-click `Launcher.exe` → it derives all paths from its own location (no
+hard-coded paths), creates the portable folders if missing, writes
+`logs/startup.log`, opens the WebView2 window (or shows a friendly message if
+the WebView2 runtime is somehow absent), and loads the builder. No terminal
+window, no internet, no install.
 
-## 4. Packaging / release process
+## 6. Black loading screen
 
-Commands (run from `launcher/`):
+A dark full-screen loader: pulsing logo, app name, a progress bar, and friendly
+status messages — "Starting portable workspace…", "Checking local files…",
+"Loading visual builder…", "Preparing canvas…", "Opening your workspace…" — then
+it fades into the builder. No console/developer look.
+
+## 7. Visual builder shell
+
+- **Left:** big friendly component categories (see §8). Drag an item onto the
+  canvas, or click it to add.
+- **Center:** a device canvas (Phone / Desktop toggle) with a grid. Items can be
+  **selected, moved (drag), resized (corner handle), duplicated (Ctrl+D),
+  deleted (Del), layered, snapped** — and previewed.
+- **Right:** a beginner-friendly inspector (Name, Move X/Y, Width/Height, Change
+  Color, Change Text, Text size, Rounded corners, Opacity, Bring forward / Send
+  back, Show on phone / desktop, Add Action) + Duplicate / Delete.
+- **Advanced** (hidden by default): a bottom drawer with the live project data,
+  plus a per-item custom-code field.
+
+## 8. Component categories (left panel)
+
+Basic Shapes · Text · Buttons · Images · Icons (Apple, Star, Heart, Home, Pin,
+Camera) · Layout Blocks · Forms · **Maps** (with presets) · Media & More (Video,
+360 Photo, Photo Booth, Gallery, 3D Object, Game Object) · Business & Data
+(Business Tool, Database Block, App Component). Map presets carry honest labels:
+**Offline Placeholder (Fully offline)**, **Open Source Simple (needs internet)**,
+**Vector**, **Advanced GIS**, **Google Maps (needs internet + API key, may
+cost)** — and nothing breaks offline.
+
+## 9. Visual logic — WHEN → DO → THEN
+
+Per item: **WHEN** (clicked / hovered / screen opens / timer finishes) → **DO**
+(bounce / show message / change color / make bigger / hide / move / open another
+screen / play sound) → **THEN** (an optional message). Example, with no code:
+*WHEN the apple is clicked → DO bounce → THEN show "You clicked the apple."* —
+it runs in Preview.
+
+## 10. Portable storage
+
+Projects autosave to `projects/<name>/project.json` (with timestamped
+`backups/`); the last-open project is remembered in `app-data/settings.json` and
+restored on launch; exports go to `exports/`; logs to `logs/`. New / open /
+rename(save-as) / delete / duplicate / export — all local, all inside the folder.
+
+## 11. Packaging process
+
+From `launcher/`:
 
 | Goal | macOS/Linux | Windows |
 | --- | --- | --- |
-| **Build launcher** | `bash scripts/build-launcher.sh` | `scripts\build-launcher.ps1` |
-| **Package portable release** | `bash scripts/package-portable.sh` | `scripts\package-portable.ps1` |
-| **Clean release** | `bash scripts/clean.sh` | `scripts\clean.ps1` |
-| **Test portable launch** | `bash scripts/test-portable.sh` | (run the .sh, or just open the EXE) |
+| Build the EXE | `bash scripts/build-launcher.sh` | `scripts\build-launcher.ps1` |
+| Package the release | `bash scripts/package-portable.sh` | `scripts\package-portable.ps1` |
+| Clean | `bash scripts/clean.sh` | `scripts\clean.ps1` |
+| Test the package | `bash scripts/test-portable.sh` | — |
 
-The only build-time dependency is **Go** (https://go.dev/dl/). Node.js is never
-involved. `package-portable` produces `dist-portable/` — copy that whole folder
-to a thumb drive.
+Only build-time dependency: **Go** (no Node). Output: `dist-portable/`.
 
-> You don't even have to build it yourself: a ready `Launcher.exe` was compiled
-> and sent to you. Drop it into the `dist-portable/` layout (or run
-> `package-portable`) and you're done.
+## 12. Runtime proof — Node is NOT required
 
-## 5. Removed / excluded website baggage (audit)
+The release is a single native `PE32+ (GUI) x86-64` Windows EXE. Static check
+(`test-portable.sh`) confirms **no** `node.exe` / `node_modules` / `next` /
+`vite` / `localhost` strings. It bundles no Node and starts no server.
 
-The launcher **isolates** the website rather than copying it. None of the
-following — all pulled in by the *old* `desktop/` + `make-portable.mjs` portable
-path — is part of this launcher:
+## 13. Test checklist (verified)
 
-- the Next.js app (`app/**` routes, `.next/`, `next.config.mjs`)
-- the website React UI (`src/components/**`, storefront, product/cart/checkout
-  pages, blog/journal, CMS/Studio pages)
-- Stripe checkout logic, Netlify functions/config (`netlify/**`, `netlify.toml`)
-- website SEO files (`sitemap.xml`, `robots.txt`), analytics/ad pixels
-- website CSS/themes, fonts, and storefront images
-- `node_modules/` and any Node runtime
+UI logic verified in a real headless browser (the bound functions fall back to
+local storage, so the logic is fully testable here): ✅ loads to the builder;
+✅ click/drag a component onto the canvas (Apple icon → object created);
+✅ select it → inspector populates; ✅ change settings (color/size); ✅ Save with
+a name; ✅ reload → the saved project is recovered; ✅ Preview → clicking the
+apple bounces it; ✅ zero console/page errors. Cross-compiled to a clean GUI EXE.
 
-The launcher's Go module imports **only the Go standard library**. It references
-zero files from `src/`, `app/`, or `netlify/`. The old `desktop/` Tauri+Next
-wrapper and `make-drive.bat` are **superseded** for the launcher use-case (left
-in place so the website branch stays untouched — see §7).
-
-## 6. Test checklist — proves Node.js is NOT required at runtime
-
-Automated (here, via `scripts/test-portable.sh`): ✅ the binary is a native
-`PE32+ (GUI) x86-64` Windows exe; ✅ it contains **no** `node.exe`,
-`node_modules`, `localhost`, `next/dist`, or `vite` strings; ✅ ~1.7 MB.
-
-On a clean Windows PC (manual — your acceptance test):
-
-- [ ] PC has **no Node.js / npm** installed
-- [ ] **No internet** connection
-- [ ] No dev server running
-- [ ] Copy `dist-portable/` to a USB stick; run from the **USB path**
-- [ ] Also run from a **different folder path** (proves no hard-coded paths)
-- [ ] Double-click **`Launcher.exe`** — black loading screen appears
-- [ ] **No terminal window** stays open; no npm/localhost text shown
-- [ ] The **menu** opens — **no website storefront** anywhere
-- [ ] `app-data/logs/launch-*.log` is written next to the EXE
-
-## 7. Do-not-touch confirmation
-
-This work is only in `launcher/` on the `claude/codebase-review-w50a0a` branch.
-**Untouched:** `main`, the production website branch, Netlify production config,
-Stripe checkout, and all live website code.
-
-## How to run from a thumb drive
-
-1. Copy the `dist-portable` folder onto your USB stick.
-2. Plug the stick into any Windows PC.
-3. Open the folder and double-click **`Launcher.exe`**.
-4. A clean black loading screen appears, then the menu — done. Offline, no setup.
+Your clean-PC acceptance run: no Node/npm, no internet, copy `dist-portable/` to
+a USB and run from there (and from a different path), double-click `Launcher.exe`
+→ black loading screen → builder; drag an item, edit it, Save, close, reopen →
+it loads again; logs appear in `logs/`.
