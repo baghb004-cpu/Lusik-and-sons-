@@ -3,7 +3,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { probeCmd, thumbnailCmd, extractFrameCmd, waveformCmd, trimCmd, detachAudioCmd, imageExportCmd, videoExportCmd, parseProbeJson } from "../media-studio/ffmpeg.ts";
+import { probeCmd, thumbnailCmd, extractFrameCmd, waveformCmd, trimCmd, detachAudioCmd, imageExportCmd, videoExportCmd, parseProbeJson, IMAGE_PRESETS, imagePresetCmd } from "../media-studio/ffmpeg.ts";
+
+test("image presets: crop fills+trims, fit keeps aspect, format-only has no -vf", () => {
+  const crop = IMAGE_PRESETS.find((p) => p.id === "ig-square")!;
+  const c = imagePresetCmd("media/a.jpg", "media/out.jpg", crop);
+  assert.equal(c.bin, "ffmpeg");
+  assert.ok(c.args.join(" ").includes("crop=1080:1080"), "crop preset trims to size");
+  const fit = imagePresetCmd("media/a.jpg", "media/out.png", IMAGE_PRESETS.find((p) => p.id === "web-1200")!);
+  assert.ok(fit.args.join(" ").includes("scale=1200"), "fit preset scales");
+  const conv = imagePresetCmd("media/a.png", "media/out.webp", IMAGE_PRESETS.find((p) => p.id === "as-is")!);
+  assert.ok(!conv.args.includes("-vf"), "format-only has no scale filter");
+  assert.equal(conv.args[conv.args.length - 1], "media/out.webp", "output last → format from extension");
+  const evil = imagePresetCmd("media/x; rm -rf ~.jpg", "o.jpg", crop);
+  assert.ok(evil.args.includes("media/x; rm -rf ~.jpg"), "hostile filename stays one argv entry");
+});
 
 test("commands are argv arrays — a hostile filename stays a single argument", () => {
   const evil = "media/videos/x; rm -rf ~/.mp4";

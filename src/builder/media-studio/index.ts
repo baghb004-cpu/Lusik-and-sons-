@@ -13,4 +13,4 @@ export {
   timelineDuration, newClipName, saveAsNewClip, detachAudioSpec, type NewClipSpec,
 } from "./engine.ts";
 export { HELP, helpById, type HelpEntry } from "./help.ts";
-export { probeCmd, thumbnailCmd, extractFrameCmd, waveformCmd, trimCmd, detachAudioCmd, imageExportCmd, videoExportCmd, parseProbeJson, type FfCommand } from "./ffmpeg.ts";
+export { probeCmd, thumbnailCmd, extractFrameCmd, waveformCmd, trimCmd, detachAudioCmd, imageExportCmd, videoExportCmd, parseProbeJson, IMAGE_PRESETS, imagePresetCmd, type FfCommand, type ImagePreset } from "./ffmpeg.ts";
