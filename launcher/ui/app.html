@@ -14,74 +14,87 @@
     font-family:'Segoe UI',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
   button{font-family:inherit;cursor:pointer}
 
-  /* ---------- black-box loading screen ---------- */
+  /* loading screen */
   #loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
     align-items:center;justify-content:center;gap:18px;z-index:50;transition:opacity .5s ease}
   #loader.hidden{opacity:0;pointer-events:none}
   #loader .logo{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#7a6533);
     display:flex;align-items:center;justify-content:center;font-size:26px}
-  #loader h1{margin:0;font-size:26px;font-weight:700;letter-spacing:.3px}
+  #loader h1{margin:0;font-size:26px;font-weight:700}
   #loader .status{color:var(--muted);font-size:14px;min-height:18px}
   #loader .bar{width:280px;height:6px;border-radius:6px;background:var(--panel2);overflow:hidden}
   #loader .fill{height:100%;width:0;background:var(--accent);transition:width .3s ease}
 
-  /* ---------- app shell ---------- */
   #app{display:none;height:100%;flex-direction:column}
   #app.show{display:flex}
   .topbar{height:56px;flex:0 0 56px;display:flex;align-items:center;gap:12px;padding:0 16px;
     background:var(--panel);border-bottom:1px solid var(--border)}
   .brand{display:flex;align-items:center;gap:10px;font-weight:700}
   .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7a6533)}
+  .toolname{color:var(--muted);font-size:13px}
   .spacer{flex:1}
-  .tbtn{background:var(--panel2);border:1px solid var(--border);color:var(--text);
-    padding:8px 14px;border-radius:10px;font-size:13px}
+  .tbtn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:10px;font-size:13px}
   .tbtn:hover{background:#272219}
   .tbtn.primary{background:var(--accent);color:#1a160c;border-color:var(--accent);font-weight:600}
 
-  .main{flex:1;display:grid;grid-template-columns:380px 1fr;min-height:0}
-  .editor{overflow-y:auto;padding:20px;border-right:1px solid var(--border)}
-  .editor h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 8px}
+  .main{flex:1;display:grid;grid-template-columns:188px 340px 1fr;min-height:0}
+  .rail{background:var(--panel);border-right:1px solid var(--border);padding:10px;overflow-y:auto}
+  .railbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;
+    color:var(--muted);padding:10px 12px;border-radius:10px;font-size:14px;margin-bottom:2px}
+  .railbtn:hover{background:var(--panel2);color:var(--text)}
+  .railbtn.active{background:var(--panel2);color:var(--text)}
+  .railbtn .ic{font-size:18px;width:22px;text-align:center}
+
+  .editor{overflow-y:auto;padding:18px;border-right:1px solid var(--border)}
+  .editor h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
   .editor h2:first-child{margin-top:0}
-  .field{margin:10px 0}
+  .field{margin:9px 0}
   .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
-  .field input[type=text],.field textarea{width:100%;background:var(--panel2);border:1px solid var(--border);
-    color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit}
-  .field input:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
-  .row{display:flex;gap:10px}
-  .row .field{flex:1}
-  .color-row{display:flex;align-items:center;gap:10px}
-  .color-row input[type=color]{width:42px;height:34px;border:1px solid var(--border);border-radius:8px;background:none;padding:2px}
+  .field input[type=text],.field input[type=number],.field textarea,.field select{
+    width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;padding:9px 11px;font-size:14px;font-family:inherit}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent)}
+  .row{display:flex;gap:10px}.row .field{flex:1}
+  input[type=color]{width:44px;height:34px;border:1px solid var(--border);border-radius:8px;background:none;padding:2px}
+  .swatches{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+  .sw{width:26px;height:26px;border-radius:7px;border:1px solid #0004;cursor:pointer}
+  .sw.sel{outline:2px solid var(--text);outline-offset:1px}
   .card-edit{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:10px;margin:8px 0}
   .card-edit .x{float:right;color:#c97;background:none;border:none;font-size:14px}
-  .addbtn{width:100%;background:none;border:1px dashed var(--border);color:var(--muted);
-    padding:10px;border-radius:10px;font-size:13px;margin-top:6px}
+  .addbtn{width:100%;background:none;border:1px dashed var(--border);color:var(--muted);padding:9px;border-radius:10px;font-size:13px;margin-top:6px}
   .addbtn:hover{color:var(--text);border-color:var(--accent)}
+  .smallbtn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:9px;font-size:13px;margin-right:6px}
+  .readout{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
 
-  /* ---------- live preview ---------- */
-  .previewwrap{display:flex;align-items:center;justify-content:center;background:#080706;padding:24px;overflow:auto}
-  .device{width:380px;max-width:100%;border-radius:28px;overflow:hidden;border:1px solid var(--border);
-    box-shadow:0 30px 80px rgba(0,0,0,.6);background:#fff}
-  .page{min-height:560px;display:flex;flex-direction:column}
-  .hero{padding:40px 26px;color:#fff;background:#1a4d8f}
-  .hero h1{margin:0 0 8px;font-size:30px;line-height:1.1}
-  .hero p{margin:0 0 18px;font-size:15px;opacity:.92}
-  .hero .cta{display:inline-block;padding:11px 20px;border-radius:999px;font-weight:600;font-size:14px;color:#1a160c}
-  .cards{padding:18px 22px;display:flex;flex-direction:column;gap:12px;background:#fff;color:#1a1a1a;flex:1}
-  .pcard{border:1px solid #eee;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-  .pcard h3{margin:0 0 4px;font-size:16px}
-  .pcard p{margin:0;font-size:13px;color:#555}
-  .previewlabel{position:absolute;top:14px;left:0;right:0;text-align:center;color:var(--muted);font-size:12px}
+  .previewwrap{display:flex;align-items:center;justify-content:center;background:#080706;padding:24px;overflow:auto;position:relative}
+  .previewlabel{position:absolute;top:12px;left:0;right:0;text-align:center;color:var(--muted);font-size:12px}
 
-  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);
-    background:var(--accent);color:#1a160c;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;
-    opacity:0;transition:all .25s;z-index:60}
+  /* page preview */
+  .device{width:360px;max-width:100%;border-radius:26px;overflow:hidden;border:1px solid var(--border);box-shadow:0 26px 70px rgba(0,0,0,.6);background:#fff}
+  .page{min-height:520px;display:flex;flex-direction:column}
+  .hero{padding:38px 24px;color:#fff}.hero h1{margin:0 0 8px;font-size:28px;line-height:1.1}
+  .hero p{margin:0 0 16px;font-size:15px;opacity:.92}
+  .hero .cta{display:inline-block;padding:10px 18px;border-radius:999px;font-weight:600;font-size:14px;color:#1a160c}
+  .pcards{padding:16px 20px;display:flex;flex-direction:column;gap:10px;background:#fff;color:#1a1a1a;flex:1}
+  .pcard{border:1px solid #eee;border-radius:14px;padding:13px 15px}.pcard h3{margin:0 0 4px;font-size:16px}.pcard p{margin:0;font-size:13px;color:#555}
+
+  /* generic white sheet preview (labels/recipe/pricing/stitch chart) */
+  .sheet{background:#fff;color:#1a1a1a;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:22px}
+  .labels{display:grid;gap:10px}
+  .label{border:1.5px solid #333;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:600;padding:8px}
+  .recipe{width:360px}.recipe h2{margin:0 0 4px}.recipe .meta{color:#777;font-size:13px;margin-bottom:10px}
+  .recipe h4{margin:12px 0 4px}.recipe ul,.recipe ol{margin:0;padding-left:20px;font-size:14px}
+  .price{width:300px;text-align:center}.price .big{font-size:34px;font-weight:700;margin:10px 0}.price .sub{color:#777}
+  canvas{image-rendering:pixelated;touch-action:none;background:#fff;border-radius:8px}
+
+  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);
+    color:#1a160c;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .25s;z-index:60}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
   <div id="loader">
-    <div class="logo">🛠️</div>
-    <h1>Baghdo's Workshop</h1>
+    <div class="logo">🛠️</div><h1>Baghdo's Workshop</h1>
     <div class="status" id="lstatus">Starting…</div>
     <div class="bar"><div class="fill" id="lfill"></div></div>
   </div>
@@ -89,159 +102,176 @@
   <div id="app">
     <div class="topbar">
       <div class="brand"><div class="dot"></div> Baghdo's Workshop</div>
+      <span class="toolname" id="toolName"></span>
       <div class="spacer"></div>
       <button class="tbtn" onclick="openFolder()">📂 My files</button>
-      <button class="tbtn" onclick="exportPage()">⬇ Export page</button>
-      <button class="tbtn primary" onclick="save()">Save</button>
+      <button class="tbtn" onclick="doExport()">⬇ Export</button>
+      <button class="tbtn primary" onclick="doSave()">Save</button>
     </div>
     <div class="main">
-      <div class="editor">
-        <h2>Page</h2>
-        <div class="field"><label>Title</label><input type="text" id="f_title" /></div>
-        <div class="field"><label>Subtitle</label><input type="text" id="f_subtitle" /></div>
-        <div class="field"><label>Button label</label><input type="text" id="f_button" /></div>
-        <h2>Colors</h2>
-        <div class="color-row">
-          <div class="field" style="flex:1"><label>Background</label></div>
-          <input type="color" id="f_bg" />
-          <div class="field" style="flex:1"><label>Accent</label></div>
-          <input type="color" id="f_accent" />
-        </div>
-        <h2>Cards</h2>
-        <div id="cards"></div>
-        <button class="addbtn" onclick="addCard()">+ Add card</button>
-      </div>
-
-      <div class="previewwrap" style="position:relative">
-        <div class="previewlabel">Live preview — updates as you type</div>
-        <div class="device">
-          <div class="page">
-            <div class="hero" id="p_hero">
-              <h1 id="p_title"></h1>
-              <p id="p_subtitle"></p>
-              <span class="cta" id="p_cta"></span>
-            </div>
-            <div class="cards" id="p_cards"></div>
-          </div>
-        </div>
+      <div class="rail" id="rail"></div>
+      <div class="editor" id="editor"></div>
+      <div class="previewwrap">
+        <div class="previewlabel">Live preview — updates as you work</div>
+        <div id="preview"></div>
       </div>
     </div>
   </div>
-
   <div id="toast"></div>
 
 <script>
 "use strict";
-// ---- state ----
-var state = {
-  title: "Mount Fuji",
-  subtitle: "A featured landmark from the collection.",
-  button: "Learn more",
-  bg: "#1a4d8f",
-  accent: "#c8a85a",
-  cards: [
-    { title: "Asia", text: "Mount Fuji, Wulingyuan" },
-    { title: "Africa", text: "Sahara Desert" }
-  ]
-};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function el(tag,props,kids){var e=document.createElement(tag);if(props)for(var k in props){if(k==='style')e.style.cssText=props[k];else if(k==='class')e.className=props[k];else if(k.slice(0,2)==='on')e[k]=props[k];else e.setAttribute(k,props[k]);}(kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});return e;}
+function field(l,inp){return el('div',{class:'field'},[el('label',{},[l]),inp]);}
+function txt(v,on){var i=el('input',{type:'text'});i.value=v||'';i.addEventListener('input',function(){on(i.value);});return i;}
+function area(v,on,rows){var t=el('textarea',{rows:String(rows||4)});t.value=v||'';t.addEventListener('input',function(){on(t.value);});return t;}
+function numf(v,on){var i=el('input',{type:'number'});i.value=v;i.addEventListener('input',function(){on(parseFloat(i.value)||0);});return i;}
+function colorf(v,on){var i=el('input',{type:'color'});i.value=v||'#1a4d8f';i.addEventListener('input',function(){on(i.value);});return i;}
+function selectf(v,opts,on){var s=el('select');opts.forEach(function(o){var op=el('option',{value:o});op.textContent=o;if(o===v)op.selected=true;s.appendChild(op);});s.addEventListener('change',function(){on(s.value);});return s;}
+function lines(s){return String(s||'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);}
 
-// ---- persistence via the host app (no browser, no server). Falls back to
-// localStorage if opened outside the app, so it's still testable. ----
-function hostSave(name, content){ try{ if(window.appSave) return window.appSave(name, content); localStorage.setItem("scm_"+name, content); }catch(e){} }
-async function hostLoad(name){ try{ if(window.appLoad){ return await window.appLoad(name); } return localStorage.getItem("scm_"+name)||""; }catch(e){ return ""; } }
-function hostLog(m){ try{ if(window.appLog) window.appLog(m); }catch(e){} }
+// ---- host bridge (no server / no browser tab). Falls back to localStorage. ----
+function hostSave(n,c){try{if(window.appSave)return window.appSave(n,c);localStorage.setItem('scm_'+n,c);}catch(e){}}
+async function hostLoad(n){try{if(window.appLoad)return await window.appLoad(n);return localStorage.getItem('scm_'+n)||'';}catch(e){return'';}}
+function hostExport(n,h){try{if(window.appExport){window.appExport(n,h);return true;}}catch(e){}var a=document.createElement('a');a.href='data:text/html;charset=utf-8,'+encodeURIComponent(h);a.download=n;a.click();return false;}
+function hostLog(m){try{if(window.appLog)window.appLog(m);}catch(e){}}
+function openFolder(){try{if(window.appOpenFolder)window.appOpenFolder();}catch(e){}}
 
-// ---- live preview render (real time) ----
-function render(){
-  document.getElementById("p_title").textContent = state.title || "Your title";
-  document.getElementById("p_subtitle").textContent = state.subtitle || "";
-  var cta = document.getElementById("p_cta");
-  cta.textContent = state.button || "";
-  cta.style.display = state.button ? "inline-block" : "none";
-  cta.style.background = state.accent;
-  document.getElementById("p_hero").style.background = state.bg;
-  var wrap = document.getElementById("p_cards");
-  wrap.innerHTML = "";
-  state.cards.forEach(function(c){
-    var d = document.createElement("div"); d.className = "pcard";
-    var h = document.createElement("h3"); h.textContent = c.title || "Card";
-    var p = document.createElement("p"); p.textContent = c.text || "";
-    d.appendChild(h); d.appendChild(p); wrap.appendChild(d);
-  });
-}
+var THREADS=['#1a1a1a','#c72b3b','#ff7b1c','#fed26a','#3aa83a','#1aa3d8','#173a73','#8e5aa6','#d62783','#7a4a26','#dab384','#fcfcfc'];
 
-// ---- editor → state bindings ----
-function bindInput(id, key){
-  var el = document.getElementById(id);
-  el.value = state[key];
-  el.addEventListener("input", function(){ state[key] = el.value; render(); });
+// ===================== TOOLS =====================
+var TOOLS=[
+{
+  id:'page',name:'Web page',icon:'🌐',
+  defaults:function(){return{title:'Mount Fuji',subtitle:'A featured landmark.',button:'Learn more',bg:'#1a4d8f',accent:'#c8a85a',cards:[{title:'Asia',text:'Mount Fuji'},{title:'Africa',text:'Sahara Desert'}]};},
+  editor:function(s,ch){var f=document.createDocumentFragment();
+    f.appendChild(el('h2',{},['Page']));
+    f.appendChild(field('Title',txt(s.title,function(v){s.title=v;ch();})));
+    f.appendChild(field('Subtitle',txt(s.subtitle,function(v){s.subtitle=v;ch();})));
+    f.appendChild(field('Button label',txt(s.button,function(v){s.button=v;ch();})));
+    f.appendChild(el('h2',{},['Colors']));
+    var r=el('div',{class:'row'});r.appendChild(field('Background',colorf(s.bg,function(v){s.bg=v;ch();})));r.appendChild(field('Accent',colorf(s.accent,function(v){s.accent=v;ch();})));f.appendChild(r);
+    f.appendChild(el('h2',{},['Cards']));
+    var box=el('div');
+    function renderCards(){box.innerHTML='';s.cards.forEach(function(c,i){var d=el('div',{class:'card-edit'});var x=el('button',{class:'x',onclick:function(){s.cards.splice(i,1);renderCards();ch();}},['✕']);d.appendChild(x);d.appendChild(field('Card title',txt(c.title,function(v){c.title=v;ch();})));d.appendChild(field('Card text',txt(c.text,function(v){c.text=v;ch();})));box.appendChild(d);});}
+    renderCards();f.appendChild(box);
+    f.appendChild(el('button',{class:'addbtn',onclick:function(){s.cards.push({title:'New card',text:''});renderCards();ch();}},['+ Add card']));
+    return f;},
+  preview:function(s,host){host.innerHTML='<div class="device"><div class="page"><div class="hero"><h1></h1><p></p><span class="cta"></span></div><div class="pcards"></div></div></div>';
+    host.querySelector('.hero').style.background=s.bg;host.querySelector('h1').textContent=s.title||'Your title';host.querySelector('.hero p').textContent=s.subtitle||'';
+    var cta=host.querySelector('.cta');cta.textContent=s.button||'';cta.style.display=s.button?'inline-block':'none';cta.style.background=s.accent;
+    var pc=host.querySelector('.pcards');s.cards.forEach(function(c){pc.appendChild(el('div',{class:'pcard'},[el('h3',{},[c.title||'Card']),el('p',{},[c.text||''])]));});},
+  exportHtml:function(s){var cards=s.cards.map(function(c){return '<div style="border:1px solid #eee;border-radius:14px;padding:14px;margin:10px 0"><h3 style="margin:0 0 4px">'+esc(c.title)+'</h3><p style="margin:0;color:#555">'+esc(c.text)+'</p></div>';}).join('');
+    return '<!doctype html><meta charset=utf-8><title>'+esc(s.title)+'</title><body style="margin:0;font-family:system-ui,sans-serif"><div style="padding:42px 26px;color:#fff;background:'+esc(s.bg)+'"><h1 style="margin:0 0 8px;font-size:32px">'+esc(s.title)+'</h1><p style="opacity:.92">'+esc(s.subtitle)+'</p>'+(s.button?'<span style="display:inline-block;margin-top:10px;padding:11px 20px;border-radius:999px;font-weight:600;background:'+esc(s.accent)+';color:#1a160c">'+esc(s.button)+'</span>':'')+'</div><div style="padding:18px 22px;max-width:640px;margin:0 auto">'+cards+'</div>';}
+},
+{
+  id:'label',name:'Labels',icon:'🏷️',
+  defaults:function(){return{text:'FLOUR',shape:'rectangle',cols:3,rows:4,bg:'#ffffff',fg:'#1a1a1a'};},
+  editor:function(s,ch){var f=document.createDocumentFragment();
+    f.appendChild(el('h2',{},['Label']));
+    f.appendChild(field('Text',txt(s.text,function(v){s.text=v;ch();})));
+    f.appendChild(field('Shape',selectf(s.shape,['rectangle','round','square'],function(v){s.shape=v;ch();})));
+    var r=el('div',{class:'row'});r.appendChild(field('Columns',numf(s.cols,function(v){s.cols=Math.max(1,Math.min(6,v));ch();})));r.appendChild(field('Rows',numf(s.rows,function(v){s.rows=Math.max(1,Math.min(8,v));ch();})));f.appendChild(r);
+    var r2=el('div',{class:'row'});r2.appendChild(field('Label color',colorf(s.bg,function(v){s.bg=v;ch();})));r2.appendChild(field('Text color',colorf(s.fg,function(v){s.fg=v;ch();})));f.appendChild(r2);
+    return f;},
+  preview:function(s,host){var radius=s.shape==='round'?'50%':s.shape==='square'?'10px':'12px';
+    var wh=s.shape==='square'||s.shape==='round'?'74px':'108px';var hh=s.shape==='square'||s.shape==='round'?'74px':'52px';
+    var sheet=el('div',{class:'sheet'});var grid=el('div',{class:'labels',style:'grid-template-columns:repeat('+s.cols+',1fr)'});
+    for(var i=0;i<s.cols*s.rows;i++){grid.appendChild(el('div',{class:'label',style:'border-radius:'+radius+';width:'+wh+';height:'+hh+';background:'+s.bg+';color:'+s.fg},[s.text||'Label']));}
+    sheet.appendChild(grid);host.appendChild(sheet);},
+  exportHtml:function(s){var radius=s.shape==='round'?'50%':s.shape==='square'?'10px':'12px';var one='<div style="border:1.5px solid #333;border-radius:'+radius+';display:inline-flex;align-items:center;justify-content:center;text-align:center;font-weight:600;width:'+(s.shape==='rectangle'?'200px':'130px')+';height:'+(s.shape==='rectangle'?'90px':'130px')+';margin:6px;background:'+esc(s.bg)+';color:'+esc(s.fg)+'">'+esc(s.text)+'</div>';var all='';for(var i=0;i<s.cols*s.rows;i++)all+=one;return '<!doctype html><meta charset=utf-8><title>Labels</title><body style="font-family:system-ui;text-align:center">'+all+'</body>';}
+},
+{
+  id:'recipe',name:'Recipe card',icon:'🍳',
+  defaults:function(){return{dish:'Armenian Pilaf',servings:'4',ingredients:'1 cup rice\n2 cups broth\nButter\nVermicelli',steps:'Toast vermicelli in butter\nAdd rice and broth\nSimmer 18 minutes'};},
+  editor:function(s,ch){var f=document.createDocumentFragment();f.appendChild(el('h2',{},['Recipe']));
+    f.appendChild(field('Dish name',txt(s.dish,function(v){s.dish=v;ch();})));
+    f.appendChild(field('Servings',txt(s.servings,function(v){s.servings=v;ch();})));
+    f.appendChild(field('Ingredients (one per line)',area(s.ingredients,function(v){s.ingredients=v;ch();},5)));
+    f.appendChild(field('Steps (one per line)',area(s.steps,function(v){s.steps=v;ch();},5)));return f;},
+  preview:function(s,host){var c=el('div',{class:'sheet recipe'});c.appendChild(el('h2',{},[s.dish||'Recipe']));if(s.servings)c.appendChild(el('div',{class:'meta'},['Serves '+s.servings]));
+    c.appendChild(el('h4',{},['Ingredients']));var ul=el('ul');lines(s.ingredients).forEach(function(x){ul.appendChild(el('li',{},[x]));});c.appendChild(ul);
+    c.appendChild(el('h4',{},['Steps']));var ol=el('ol');lines(s.steps).forEach(function(x){ol.appendChild(el('li',{},[x]));});c.appendChild(ol);host.appendChild(c);},
+  exportHtml:function(s){var ing=lines(s.ingredients).map(function(x){return '<li>'+esc(x)+'</li>';}).join('');var st=lines(s.steps).map(function(x){return '<li>'+esc(x)+'</li>';}).join('');return '<!doctype html><meta charset=utf-8><title>'+esc(s.dish)+'</title><body style="font-family:system-ui;max-width:520px;margin:24px auto"><h1>'+esc(s.dish)+'</h1><p style="color:#777">Serves '+esc(s.servings)+'</p><h3>Ingredients</h3><ul>'+ing+'</ul><h3>Steps</h3><ol>'+st+'</ol>';}
+},
+{
+  id:'stitch',name:'Cross-stitch',icon:'🪡',
+  defaults:function(){return{w:30,h:24,color:'#c72b3b',cells:{}};},
+  editor:function(s,ch){var f=document.createDocumentFragment();f.appendChild(el('h2',{},['Design']));
+    var r=el('div',{class:'row'});r.appendChild(field('Width',numf(s.w,function(v){s.w=Math.max(5,Math.min(80,Math.round(v)));ch();})));r.appendChild(field('Height',numf(s.h,function(v){s.h=Math.max(5,Math.min(80,Math.round(v)));ch();})));f.appendChild(r);
+    f.appendChild(el('h2',{},['Thread']));var sw=el('div',{class:'swatches'});
+    THREADS.forEach(function(c){var b=el('div',{class:'sw'+(c===s.color?' sel':''),style:'background:'+c,onclick:function(){s.color=c;ch();}});sw.appendChild(b);});f.appendChild(sw);
+    f.appendChild(el('div',{class:'field',style:'margin-top:2px'},[el('label',{},['Custom color']),colorf(s.color,function(v){s.color=v;ch();})]));
+    f.appendChild(el('h2',{},['Text → stitches']));var stampVal={t:''};
+    f.appendChild(field('Type a name (any language)',txt('',function(v){stampVal.t=v;})));
+    f.appendChild(el('button',{class:'smallbtn',onclick:function(){stampText(s,stampVal.t);ch();}},['Stamp text']));
+    f.appendChild(el('button',{class:'smallbtn',onclick:function(){s.cells={};ch();}},['Clear']));
+    var cnt=Object.keys(s.cells).length;
+    f.appendChild(el('div',{class:'readout',id:'stitchReadout'},['Stitches: '+cnt+'  ·  Finished ~'+(s.w/14).toFixed(1)+'″ × '+(s.h/14).toFixed(1)+'″ (14-count)  ·  Click the grid to paint']));
+    return f;},
+  preview:function(s,host){var cell=Math.max(7,Math.min(16,Math.floor(420/s.w)));var cv=el('canvas');cv.width=s.w*cell;cv.height=s.h*cell;
+    function draw(){var x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height);
+      for(var k in s.cells){var p=k.split(',');x.fillStyle=s.cells[k];x.fillRect(p[0]*cell,p[1]*cell,cell,cell);}
+      for(var i=0;i<=s.w;i++){x.strokeStyle=i%10===0?'#1a1612':'#d9cfb6';x.lineWidth=i%10===0?1.3:0.5;x.beginPath();x.moveTo(i*cell,0);x.lineTo(i*cell,cv.height);x.stroke();}
+      for(var j=0;j<=s.h;j++){x.strokeStyle=j%10===0?'#1a1612':'#d9cfb6';x.lineWidth=j%10===0?1.3:0.5;x.beginPath();x.moveTo(0,j*cell);x.lineTo(cv.width,j*cell);x.stroke();}}
+    var drawing=false,erase=false;
+    function paint(e){var rt=cv.getBoundingClientRect();var cx=Math.floor((e.clientX-rt.left)/rt.width*s.w);var cy=Math.floor((e.clientY-rt.top)/rt.height*s.h);if(cx<0||cy<0||cx>=s.w||cy>=s.h)return;var key=cx+','+cy;if(erase)delete s.cells[key];else s.cells[key]=s.color;draw();updateReadout(s);autosave();}
+    cv.addEventListener('pointerdown',function(e){drawing=true;erase=e.button===2;cv.setPointerCapture(e.pointerId);paint(e);});
+    cv.addEventListener('pointermove',function(e){if(drawing)paint(e);});
+    cv.addEventListener('pointerup',function(){drawing=false;});
+    cv.addEventListener('contextmenu',function(e){e.preventDefault();});
+    var wrap=el('div',{class:'sheet'});wrap.appendChild(cv);host.appendChild(wrap);draw();},
+  exportHtml:function(s){var cell=12;var rects='';for(var k in s.cells){var p=k.split(',');rects+='<rect x="'+(p[0]*cell)+'" y="'+(p[1]*cell)+'" width="'+cell+'" height="'+cell+'" fill="'+esc(s.cells[k])+'"/>';}
+    var grid='';for(var i=0;i<=s.w;i++)grid+='<line x1="'+(i*cell)+'" y1="0" x2="'+(i*cell)+'" y2="'+(s.h*cell)+'" stroke="'+(i%10===0?'#333':'#ccc')+'" stroke-width="'+(i%10===0?1.2:0.4)+'"/>';for(var j=0;j<=s.h;j++)grid+='<line x1="0" y1="'+(j*cell)+'" x2="'+(s.w*cell)+'" y2="'+(j*cell)+'" stroke="'+(j%10===0?'#333':'#ccc')+'" stroke-width="'+(j%10===0?1.2:0.4)+'"/>';
+    return '<!doctype html><meta charset=utf-8><title>Cross-stitch chart</title><body style="font-family:system-ui;text-align:center"><h2>Cross-stitch chart ('+s.w+'×'+s.h+')</h2><svg width="'+(s.w*cell)+'" height="'+(s.h*cell)+'" xmlns="http://www.w3.org/2000/svg">'+rects+grid+'</svg></body>';}
+},
+{
+  id:'pricing',name:'Pricing',icon:'🧮',
+  defaults:function(){return{material:8,hours:2,rate:25,markup:40};},
+  editor:function(s,ch){var f=document.createDocumentFragment();f.appendChild(el('h2',{},['Pricing calculator']));
+    f.appendChild(field('Material cost ($)',numf(s.material,function(v){s.material=v;ch();})));
+    f.appendChild(field('Labor hours',numf(s.hours,function(v){s.hours=v;ch();})));
+    f.appendChild(field('Hourly rate ($)',numf(s.rate,function(v){s.rate=v;ch();})));
+    f.appendChild(field('Markup (%)',numf(s.markup,function(v){s.markup=v;ch();})));return f;},
+  preview:function(s,host){var cost=(s.material||0)+(s.hours||0)*(s.rate||0);var price=cost*(1+(s.markup||0)/100);
+    var c=el('div',{class:'sheet price'});c.appendChild(el('div',{class:'sub'},['Suggested price']));c.appendChild(el('div',{class:'big'},['$'+price.toFixed(2)]));
+    c.appendChild(el('div',{class:'sub'},['Your cost: $'+cost.toFixed(2)+'  ·  Profit: $'+(price-cost).toFixed(2)]));host.appendChild(c);},
+  exportHtml:function(s){var cost=(s.material||0)+(s.hours||0)*(s.rate||0);var price=cost*(1+(s.markup||0)/100);return '<!doctype html><meta charset=utf-8><title>Quote</title><body style="font-family:system-ui;max-width:420px;margin:30px auto;text-align:center"><h1>$'+price.toFixed(2)+'</h1><p>Materials $'+(+s.material).toFixed(2)+' + '+s.hours+'h × $'+s.rate+' + '+s.markup+'% markup</p>';}
 }
-function renderCardsEditor(){
-  var box = document.getElementById("cards"); box.innerHTML = "";
-  state.cards.forEach(function(c, i){
-    var d = document.createElement("div"); d.className = "card-edit";
-    d.innerHTML = '<button class="x" title="remove">✕</button>'+
-      '<div class="field"><label>Card title</label><input type="text" class="ct"/></div>'+
-      '<div class="field"><label>Card text</label><input type="text" class="cx"/></div>';
-    var t = d.querySelector(".ct"), x = d.querySelector(".cx");
-    t.value = c.title; x.value = c.text;
-    t.addEventListener("input", function(){ c.title = t.value; render(); });
-    x.addEventListener("input", function(){ c.text = x.value; render(); });
-    d.querySelector(".x").addEventListener("click", function(){ state.cards.splice(i,1); renderCardsEditor(); render(); });
-    box.appendChild(d);
-  });
-}
-function addCard(){ state.cards.push({title:"New card", text:""}); renderCardsEditor(); render(); }
+];
 
-// ---- toolbar actions ----
-function toast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(function(){t.classList.remove("show");},1600); }
-function save(){ hostSave("project", JSON.stringify(state)); toast("Saved ✓"); hostLog("project saved"); }
-function openFolder(){ try{ if(window.appOpenFolder) window.appOpenFolder(); }catch(e){} }
-function buildStandaloneHtml(){
-  var cards = state.cards.map(function(c){
-    return '<div style="border:1px solid #eee;border-radius:14px;padding:14px 16px;margin:10px 0">'+
-      '<h3 style="margin:0 0 4px">'+esc(c.title)+'</h3><p style="margin:0;color:#555">'+esc(c.text)+'</p></div>';
-  }).join("");
-  return '<!doctype html><meta charset=utf-8><title>'+esc(state.title)+'</title>'+
-    '<body style="margin:0;font-family:system-ui,sans-serif">'+
-    '<div style="padding:44px 26px;color:#fff;background:'+esc(state.bg)+'">'+
-    '<h1 style="margin:0 0 8px;font-size:34px">'+esc(state.title)+'</h1>'+
-    '<p style="margin:0 0 18px;opacity:.92">'+esc(state.subtitle)+'</p>'+
-    (state.button?'<span style="display:inline-block;padding:11px 20px;border-radius:999px;font-weight:600;background:'+esc(state.accent)+';color:#1a160c">'+esc(state.button)+'</span>':'')+
-    '</div><div style="padding:18px 22px;max-width:640px;margin:0 auto">'+cards+'</div>';
-}
-function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-function exportPage(){
-  var html = buildStandaloneHtml();
-  try{ if(window.appExport){ window.appExport("page.html", html); toast("Exported to My files ✓"); return; } }catch(e){}
-  // fallback: download
-  var a=document.createElement("a"); a.href="data:text/html;charset=utf-8,"+encodeURIComponent(html); a.download="page.html"; a.click();
-  toast("Exported ✓");
-}
+// text → stitches by rasterizing with the OS fonts (works for any language)
+function stampText(s,text){if(!text||!text.trim())return;var c=document.createElement('canvas');c.width=s.w;c.height=s.h;var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,s.w,s.h);x.fillStyle='#000';var px=s.h;for(;px>4;px--){x.font='bold '+px+'px serif';if(x.measureText(text).width<=s.w*0.9)break;}x.textAlign='center';x.textBaseline='middle';x.fillText(text,s.w/2,s.h/2);var d=x.getImageData(0,0,s.w,s.h).data;for(var yy=0;yy<s.h;yy++)for(var xx=0;xx<s.w;xx++){var i=(yy*s.w+xx)*4;if(d[i]<160||d[i+1]<160||d[i+2]<160)s.cells[xx+','+yy]=s.color;}}
+function updateReadout(s){var r=document.getElementById('stitchReadout');if(r)r.textContent='Stitches: '+Object.keys(s.cells).length+'  ·  Finished ~'+(s.w/14).toFixed(1)+'″ × '+(s.h/14).toFixed(1)+'″ (14-count)  ·  Click the grid to paint';}
 
-// ---- startup: loading screen → load saved → app ----
-var steps = ["Checking portable files…","Loading local tools…","Preparing your workspace…","Starting workspace…"];
+// ===================== app shell =====================
+var project={activeTool:'page'};
+function tool(id){for(var i=0;i<TOOLS.length;i++)if(TOOLS[i].id===id)return TOOLS[i];return TOOLS[0];}
+var saveTimer;function autosave(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){hostSave('workshop',JSON.stringify(project));},800);}
+
+function renderRail(){var rail=document.getElementById('rail');rail.innerHTML='';TOOLS.forEach(function(t){var b=el('button',{class:'railbtn'+(t.id===project.activeTool?' active':''),onclick:function(){setActive(t.id);}},[el('span',{class:'ic'},[t.icon]),t.name]);rail.appendChild(b);});}
+function renderEditor(){var t=tool(project.activeTool);var e=document.getElementById('editor');e.innerHTML='';e.appendChild(t.editor(project[t.id],change));document.getElementById('toolName').textContent='· '+t.name;}
+function renderPreview(){var t=tool(project.activeTool);var p=document.getElementById('preview');p.innerHTML='';t.preview(project[t.id],p);}
+function change(){renderPreview();if(project.activeTool==='stitch')updateReadout(project.stitch);autosave();}
+function setActive(id){project.activeTool=id;renderRail();renderEditor();renderPreview();autosave();}
+
+function doSave(){hostSave('workshop',JSON.stringify(project));toast('Saved ✓');hostLog('saved');}
+function doExport(){var t=tool(project.activeTool);if(!t.exportHtml){toast('Nothing to export here');return;}var html=t.exportHtml(project[t.id]);hostExport(t.id+'.html',html);toast('Exported to My files ✓');}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1600);}
+
+var steps=['Checking portable files…','Loading local tools…','Preparing your workspace…','Starting workspace…'];
 async function boot(){
-  var fill=document.getElementById("lfill"), status=document.getElementById("lstatus");
-  for(var i=0;i<steps.length;i++){
-    status.textContent = steps[i];
-    fill.style.width = Math.round((i+1)/steps.length*100)+"%";
-    await new Promise(function(r){ setTimeout(r, 320); });
-  }
-  // load saved project (if any)
-  try{ var saved = await hostLoad("project"); if(saved){ var s=JSON.parse(saved); if(s&&s.title!=null) state=s; } }catch(e){}
-  if(!state.cards) state.cards=[];
-  // wire editor
-  bindInput("f_title","title"); bindInput("f_subtitle","subtitle"); bindInput("f_button","button");
-  var bg=document.getElementById("f_bg"), ac=document.getElementById("f_accent");
-  bg.value=state.bg; ac.value=state.accent;
-  bg.addEventListener("input",function(){state.bg=bg.value;render();});
-  ac.addEventListener("input",function(){state.accent=ac.value;render();});
-  renderCardsEditor(); render();
-  // reveal
-  document.getElementById("loader").classList.add("hidden");
-  document.getElementById("app").classList.add("show");
-  hostLog("workspace ready");
+  var fill=document.getElementById('lfill'),status=document.getElementById('lstatus');
+  for(var i=0;i<steps.length;i++){status.textContent=steps[i];fill.style.width=Math.round((i+1)/steps.length*100)+'%';await new Promise(function(r){setTimeout(r,300);});}
+  // init every tool's state from defaults, then overlay saved
+  TOOLS.forEach(function(t){project[t.id]=t.defaults();});
+  try{var saved=await hostLoad('workshop');if(saved){var sv=JSON.parse(saved);for(var k in sv){if(k==='activeTool')project.activeTool=sv[k];else if(project[k])for(var kk in sv[k])project[k][kk]=sv[k][kk];}}}catch(e){}
+  if(!tool(project.activeTool))project.activeTool='page';
+  renderRail();renderEditor();renderPreview();
+  document.getElementById('loader').classList.add('hidden');
+  document.getElementById('app').classList.add('show');
+  hostLog('workspace ready');
 }
 boot();
 </script>
