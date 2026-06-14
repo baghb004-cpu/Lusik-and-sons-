@@ -78,8 +78,11 @@ it fades into the builder. No console/developer look.
 - **Right:** a beginner-friendly inspector (Name, Move X/Y, Width/Height, Change
   Color, Change Text, Text size, Rounded corners, Opacity, Bring forward / Send
   back, Show on phone / desktop, Add Action) + Duplicate / Delete.
-- **Advanced** (hidden by default): a bottom drawer with the live project data,
-  plus a per-item custom-code field.
+- **Developer mode** (hidden by default, the ⌘ Developer button): a bottom panel
+  with three tabs — **Code** (the live generated HTML/CSS/JS of your design,
+  with Copy), **Data** (the live project JSON), and **Console** (a safe command
+  console: `add`, `list`, `select`, `delete`, `export`, `save`, `clear` — pure,
+  no shell/network) — plus a per-item custom-code field in the inspector.
 
 ## 8. Component categories (left panel)
 

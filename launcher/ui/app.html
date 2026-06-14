@@ -92,10 +92,15 @@
   .bm input{width:40px;text-align:center;background:var(--panel3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 2px;font-size:11px}
   .bm .content{min-width:54px;min-height:24px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10px}
 
-  .drawer{position:fixed;left:0;right:0;bottom:0;height:240px;background:var(--panel);border-top:1px solid var(--border);transform:translateY(100%);transition:transform .25s;z-index:40;display:flex;flex-direction:column}
+  .drawer{position:fixed;left:0;right:0;bottom:0;height:340px;background:var(--panel);border-top:1px solid var(--border);transform:translateY(100%);transition:transform .25s;z-index:40;display:flex;flex-direction:column}
   .drawer.open{transform:translateY(0)}
   .drawer .dh{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px}
-  .drawer pre{flex:1;margin:0;overflow:auto;padding:12px 14px;font-family:Consolas,monospace;font-size:12px;color:#bcd}
+  .dtabs{display:flex;gap:4px} .dtabs button{background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:7px;font-size:12px} .dtabs button.sel{background:var(--panel3);color:var(--text)}
+  .devview{flex:1;margin:0;overflow:auto;padding:12px 14px;font-family:Consolas,'Courier New',monospace;font-size:12px;color:#cfe;white-space:pre-wrap;line-height:1.5}
+  #devconsole{display:flex;flex-direction:column;padding:0}
+  #devout{flex:1;overflow:auto;padding:12px 14px;white-space:pre-wrap;color:#cfe}
+  #devin{display:flex;gap:8px;border-top:1px solid var(--border);padding:8px 12px}
+  #devin input{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-family:Consolas,monospace;font-size:12px}
   .modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:90} .modal.show{display:flex}
   .box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;width:380px;max-width:92vw}
   .box h3{margin:0 0 12px;font-size:16px} .plist{max-height:240px;overflow:auto;margin:6px 0}
@@ -118,7 +123,7 @@
     <button class="tbtn" id="previewBtn" onclick="togglePreview()">▶ Preview</button>
     <button class="tbtn" onclick="doExport()">⬇ Export</button>
     <button class="tbtn primary" onclick="saveProject()">Save</button>
-    <button class="tbtn" id="advBtn" onclick="toggleAdvanced()">Advanced</button>
+    <button class="tbtn" id="advBtn" onclick="toggleDev()">⌘ Developer</button>
   </div>
   <div class="main">
     <div class="leftcol">
@@ -133,7 +138,21 @@
   </div>
 </div>
 
-<div class="drawer" id="drawer"><div class="dh"><strong>Advanced</strong> · live project data (saved to /projects, logs in /logs)<div style="flex:1"></div><button class="tbtn" onclick="toggleAdvanced()">Close</button></div><pre id="json"></pre></div>
+<div class="drawer" id="drawer">
+  <div class="dh"><strong>⌘ Developer mode</strong>
+    <div class="dtabs" id="dtabs"><button data-t="code" class="sel">Code</button><button data-t="data">Data</button><button data-t="console">Console</button></div>
+    <div style="flex:1"></div>
+    <button class="tbtn" id="devCopy">Copy code</button>
+    <button class="tbtn" onclick="hOpenFolder()">Open files</button>
+    <button class="tbtn" onclick="toggleDev()">Close</button>
+  </div>
+  <pre id="devcode" class="devview"></pre>
+  <pre id="devdata" class="devview" style="display:none"></pre>
+  <div id="devconsole" class="devview" style="display:none">
+    <div id="devout"></div>
+    <div id="devin"><span style="color:#7c8;align-self:center;font-family:Consolas,monospace">$</span><input id="devcmd" placeholder="type a command — e.g. help" autocomplete="off" spellcheck="false"/></div>
+  </div>
+</div>
 <div class="modal" id="modal"><div class="box" id="modalbox"></div></div>
 <div id="toast"></div>
 
@@ -299,7 +318,7 @@ function renderCanvas(){var dev=$("device");dev.className="device "+project.devi
       if(TEXTY.indexOf(o.type)>=0){node.title="Double-click to edit text";node.addEventListener("dblclick",function(ev){ev.stopPropagation();var inr=node.querySelector("div");if(!inr)return;editing=true;inr.setAttribute("contenteditable","true");inr.style.outline="none";inr.focus();try{var rg=document.createRange();rg.selectNodeContents(inr);var sc=window.getSelection();sc.removeAllRanges();sc.addRange(rg);}catch(e2){}inr.addEventListener("blur",function(){o.text=inr.innerText.replace(/\s+$/,"");inr.removeAttribute("contenteditable");editing=false;renderCanvas();renderInspector();autosave();},{once:true});});}
       if(o.id===selectedId){var h=el("div",{class:"handle"});h.addEventListener("pointerdown",function(e){startResize(e,o);});node.appendChild(h);}}
     dev.appendChild(node);});
-  if(advanced)$("json").textContent=JSON.stringify(project,null,2);}
+  if(advanced)renderDev();}
 function renderAll(){renderCanvas();renderInspector();renderLayers();}
 
 // ---- move/resize ----
@@ -387,7 +406,25 @@ function beep(){try{var a=new (window.AudioContext||window.webkitAudioContext)()
 function togglePreview(){previewing=!previewing;$("previewBtn").classList.toggle("on",previewing);$("previewBtn").textContent=previewing?"■ Stop preview":"▶ Preview";if(previewing)selectedId=null;$("hint").style.display="none";renderAll();}
 
 function setDevice(d){project.device=d;$("seg-phone").classList.toggle("sel",d==="phone");$("seg-desktop").classList.toggle("sel",d==="desktop");renderCanvas();autosave();}
-function toggleAdvanced(){advanced=!advanced;$("advBtn").classList.toggle("on",advanced);$("drawer").classList.toggle("open",advanced);renderInspector();renderCanvas();}
+
+// ---- developer mode ----
+var devTab="code";
+function toggleDev(){advanced=!advanced;$("advBtn").classList.toggle("on",advanced);$("drawer").classList.toggle("open",advanced);if(advanced)renderDev();renderInspector();renderCanvas();}
+function renderDev(){if(!advanced)return;$("devcode").textContent=generateHtml();$("devdata").textContent=JSON.stringify(project,null,2);}
+function setDevTab(t){devTab=t;$("devcode").style.display=t==="code"?"block":"none";$("devdata").style.display=t==="data"?"block":"none";$("devconsole").style.display=t==="console"?"flex":"none";Array.prototype.forEach.call($("dtabs").children,function(b){b.classList.toggle("sel",b.getAttribute("data-t")===t);});if(t!=="console")renderDev();else $("devcmd").focus();}
+function devEcho(s){var o=$("devout");o.appendChild(el("div",{},[s]));o.scrollTop=o.scrollHeight;}
+function runDev(line){line=(line||"").trim();if(!line)return;devEcho("$ "+line);var pp=line.split(/\s+/),cmd=pp[0].toLowerCase(),arg=pp.slice(1).join(" ");
+  if(cmd==="help")devEcho("Commands: help · list · count · add <type> · select <id> · delete <id|selected> · export · save · clear\nTypes: rect, circle, line, heading, paragraph, label, button, image, icon, input, map");
+  else if(cmd==="list"){if(!project.objects.length)devEcho("(no items yet)");project.objects.forEach(function(o){devEcho("  #"+o.id+"  "+o.type+'  "'+o.name+'"');});}
+  else if(cmd==="count")devEcho(project.objects.length+" item(s)");
+  else if(cmd==="add"){var it=null;COMPONENTS.forEach(function(c){c.items.forEach(function(x){if(x.type===arg.toLowerCase()||x.label.toLowerCase()===arg.toLowerCase())it=it||x;});});if(it){addObject(it);renderDev();devEcho("added "+it.label+" (#"+selectedId+")");}else devEcho('unknown type "'+arg+'" — try: rect, circle, heading, button, icon, image, map');}
+  else if(cmd==="select"){var o=getObj(parseInt(arg,10));if(o){selectedId=o.id;renderAll();devEcho("selected #"+o.id);}else devEcho("no item #"+arg);}
+  else if(cmd==="delete"){var id=arg==="selected"?selectedId:parseInt(arg,10);var o2=getObj(id);if(o2){deleteObj(o2);renderDev();devEcho("deleted #"+id);}else devEcho("no item to delete");}
+  else if(cmd==="export"){doExport();devEcho("exported to /exports.");}
+  else if(cmd==="save"){saveProject();devEcho("saved.");}
+  else if(cmd==="clear"){$("devout").innerHTML="";}
+  else devEcho('unknown command "'+cmd+'". type "help"');
+}
 
 var saveTimer;function autosave(){clearTimeout(saveTimer);saveTimer=setTimeout(doSaveSilently,800);}
 function doSaveSilently(){hSaveProject(project.name,JSON.stringify(project));hSaveSettings(JSON.stringify({last:project.name}));}
@@ -395,7 +432,8 @@ function saveProject(){if(project.name==="Untitled"){askName("Name your project"
 function newProject(){askName("New project name","My Project",function(n){project={name:n,device:"phone",nextId:1,objects:[]};selectedId=null;$("pname").textContent=n;setDevice("phone");renderAll();$("hint").style.display="block";doSaveSilently();closeModal();toast("New project ✓");});}
 async function openProjects(){var list=await hListProjects();var box=$("modalbox");box.innerHTML="";box.appendChild(el("h3",{},["Your projects"]));box.appendChild(el("div",{style:"color:var(--muted);font-size:12px;margin:-6px 0 8px"},["Saved on this drive · click one to open it."]));var pl=el("div",{class:"plist"});if(!list.length)pl.appendChild(el("div",{class:"empty",style:"margin:10px"},["No saved projects yet."]));list.forEach(function(n){var row=el("div",{class:"prow"});row.appendChild(el("button",{style:"font-size:13px",onclick:function(){loadProjectByName(n);}},["📄 "+n]));row.appendChild(el("button",{style:"color:#e88",onclick:function(){hDeleteProject(n);openProjects();}},["✕"]));pl.appendChild(row);});box.appendChild(pl);var b=el("div",{class:"ibtns"});b.appendChild(el("button",{onclick:newProject},["+ New"]));b.appendChild(el("button",{onclick:hOpenFolder},["Open files folder"]));b.appendChild(el("button",{onclick:closeModal},["Close"]));box.appendChild(b);$("modal").classList.add("show");}
 async function loadProjectByName(n){var raw=await hLoadProject(n);if(!raw){toast("Could not open project");return;}try{var pr=JSON.parse(raw);project=pr;if(!project.objects)project.objects=[];project.objects.forEach(normalize);selectedId=null;$("pname").textContent=project.name;setDevice(project.device||"phone");renderAll();$("hint").style.display=project.objects.length?"none":"block";closeModal();}catch(e){toast("That project file looks damaged.");}}
-function doExport(){var sz=deviceSize();var body=project.objects.slice().sort(function(a,b){return a.z-b.z;}).map(objToHtml).join("");var html='<!doctype html><meta charset=utf-8><title>'+esc(project.name)+'</title><body style="margin:0;background:#eee"><div style="position:relative;width:'+sz.w+'px;height:'+sz.h+'px;margin:20px auto;background:#fff;box-shadow:0 10px 40px #0003;overflow:hidden">'+body+'</div>';hExport((project.name||"project")+".html",html);toast("Exported to /exports ✓");}
+function generateHtml(){var sz=deviceSize();var body=project.objects.slice().sort(function(a,b){return a.z-b.z;}).map(objToHtml).join("\n    ");return '<!doctype html>\n<html lang="en">\n<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(project.name)+'</title></head>\n<body style="margin:0;background:#eee">\n  <div style="position:relative;width:'+sz.w+'px;height:'+sz.h+'px;margin:20px auto;background:#fff;box-shadow:0 10px 40px #0003;overflow:hidden">\n    '+body+'\n  </div>\n</body>\n</html>';}
+function doExport(){hExport((project.name||"project")+".html",generateHtml());toast("Exported to /exports ✓");}
 function objToHtml(o){var base='position:absolute;left:'+o.x+'px;top:'+o.y+'px;width:'+o.w+'px;height:'+o.h+'px;opacity:'+o.opacity+';transform:rotate('+o.rotate+'deg);box-shadow:'+(SHADOWS[o.shadow]||'none')+';border-radius:'+(o.type==="circle"?'50%':(o.radius||0)+'px')+';'+(o.borderW>0?'border:'+o.borderW+'px solid '+esc(o.borderColor)+';':'')+'padding:'+o.pad.t+'px '+o.pad.r+'px '+o.pad.b+'px '+o.pad.l+'px;';
   if(BOX.indexOf(o.type)>=0&&TEXTY.indexOf(o.type)<0)return '<div style="'+base+'background:'+esc(o.fill)+'"></div>';
   if(TEXTY.indexOf(o.type)>=0)return '<div style="'+base+(o.type==="button"?'background:'+esc(o.fill)+';':'')+'display:flex;align-items:center;justify-content:'+(o.align==="left"?"flex-start":o.align==="right"?"flex-end":"center")+'"><span style="color:'+(o.type==="button"?"#1a160c":esc(o.fill))+';font-size:'+o.fontSize+'px;font-weight:'+o.weight+';line-height:'+o.lineHeight+';letter-spacing:'+o.letterSpacing+'px;text-align:'+o.align+';font-family:'+(o.font==="system"?"system-ui,sans-serif":esc(o.font))+'">'+esc(o.text)+'</span></div>';
@@ -405,6 +443,10 @@ function objToHtml(o){var base='position:absolute;left:'+o.x+'px;top:'+o.y+'px;w
 function closeModal(){$("modal").classList.remove("show");}
 function askName(title,def,cb){var box=$("modalbox");box.innerHTML="";box.appendChild(el("h3",{},[title]));var i=el("input",{type:"text",style:"width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 11px;font-size:14px"});i.value=def;box.appendChild(i);var b=el("div",{class:"ibtns"});b.appendChild(el("button",{style:"background:var(--accent);color:#1a160c;font-weight:600",onclick:function(){var v=i.value.trim();if(v)cb(v);}},["OK"]));b.appendChild(el("button",{onclick:closeModal},["Cancel"]));box.appendChild(b);$("modal").classList.add("show");setTimeout(function(){i.focus();i.select();},30);i.addEventListener("keydown",function(e){if(e.key==="Enter"){var v=i.value.trim();if(v)cb(v);}});}
 $("modal").addEventListener("pointerdown",function(e){if(e.target.id==="modal")closeModal();});
+// developer-mode wiring
+$("dtabs").addEventListener("click",function(e){var t=e.target.getAttribute("data-t");if(t)setDevTab(t);});
+$("devCopy").addEventListener("click",function(){var ta=document.createElement("textarea");ta.value=generateHtml();document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("Code copied ✓");}catch(e){toast("Select + copy from the Code tab");}ta.remove();});
+$("devcmd").addEventListener("keydown",function(e){if(e.key==="Enter"){runDev($("devcmd").value);$("devcmd").value="";}});
 
 var steps=["Starting portable workspace…","Checking local files…","Loading visual builder…","Preparing canvas…","Opening your workspace…"];
 async function boot(){var fill=$("lfill"),status=$("lstatus");for(var i=0;i<steps.length;i++){status.textContent=steps[i];fill.style.width=Math.round((i+1)/steps.length*100)+"%";await new Promise(function(r){setTimeout(r,300);});}
