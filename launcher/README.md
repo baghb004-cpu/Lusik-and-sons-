@@ -2,7 +2,8 @@
 
 A standalone, portable Windows program. **One EXE → black loading screen →
 visual drag-and-drop builder.** No Node, no npm, no Vite, no Next, no localhost,
-no install, no internet — at runtime. Isolated from the Lusik & Sons website.
+no install, no internet — at runtime. A clean, standalone builder that contains
+**none** of any other project's content, branding, templates, or product names.
 
 ---
 
