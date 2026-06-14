@@ -80,3 +80,38 @@ export function bounds(g: Grid): Bounds | null {
 }
 
 export function clearGrid(g: Grid): Grid { return { ...g, cells: new Array(g.w * g.h).fill(-1) }; }
+
+// Resize-and-recalculate: nearest-neighbor resample the design to a new cell
+// count (keeps the picture, changes the stitch resolution).
+export function resampleGrid(g: Grid, newW: number, newH: number): Grid {
+  const W = Math.max(MIN_DIM, Math.min(MAX_DIM, Math.round(newW)));
+  const H = Math.max(MIN_DIM, Math.min(MAX_DIM, Math.round(newH)));
+  const out = createGrid(W, H);
+  const cells = out.cells.slice();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const sx = Math.min(g.w - 1, Math.floor((x / W) * g.w));
+    const sy = Math.min(g.h - 1, Math.floor((y / H) * g.h));
+    cells[y * W + x] = g.cells[sy * g.w + sx];
+  }
+  return { ...out, cells };
+}
+
+export interface HoopTile { grid: Grid; col: number; row: number; ox: number; oy: number; }
+
+// Split a design too big for one hoop into hoop-sized tiles you can stitch in
+// sections. `cellsPerTileW/H` come from the hoop size ÷ stitch spacing.
+export function splitForHoop(g: Grid, cellsPerTileW: number, cellsPerTileH: number): HoopTile[] {
+  const tw = Math.max(MIN_DIM, Math.floor(cellsPerTileW));
+  const th = Math.max(MIN_DIM, Math.floor(cellsPerTileH));
+  const tiles: HoopTile[] = [];
+  for (let oy = 0, row = 0; oy < g.h; oy += th, row++) {
+    for (let ox = 0, col = 0; ox < g.w; ox += tw, col++) {
+      const w = Math.min(tw, g.w - ox), hh = Math.min(th, g.h - oy);
+      const tile = createGrid(Math.max(MIN_DIM, w), Math.max(MIN_DIM, hh));
+      const cells = tile.cells.slice();
+      for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) cells[y * tile.w + x] = g.cells[(oy + y) * g.w + (ox + x)];
+      tiles.push({ grid: { ...tile, cells }, col, row, ox, oy });
+    }
+  }
+  return tiles;
+}

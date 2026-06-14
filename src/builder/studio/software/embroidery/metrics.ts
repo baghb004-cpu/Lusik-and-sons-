@@ -79,3 +79,22 @@ export function checkDesign(g: Grid, hoop: Hoop, count = 14, mmPerCell = 2, styl
 }
 
 function round1(n: number): number { return Math.round(n * 10) / 10; }
+
+// cells that fit in a hoop at the current stitch spacing (for multi-hoop split)
+export function hoopCells(hoop: Hoop, mmPerCell: number): { w: number; h: number } {
+  return { w: Math.floor(hoop.wmm / Math.max(0.5, mmPerCell)), h: Math.floor(hoop.hmm / Math.max(0.5, mmPerCell)) };
+}
+
+// --- production: job costing + sew-time estimate ---------------------------
+export interface CostInput { stitches: number; colors: number; pieces?: number; ratePerKStitch?: number; setupFee?: number; colorFee?: number; stitchesPerMin?: number; }
+export interface CostResult { minutesEach: number; priceEach: number; priceTotal: number; }
+export function jobCost(i: CostInput): CostResult {
+  const pieces = Math.max(1, i.pieces ?? 1);
+  const ratePerK = i.ratePerKStitch ?? 1.0;
+  const setup = i.setupFee ?? 5;
+  const colorFee = i.colorFee ?? 0.5;
+  const spm = Math.max(60, i.stitchesPerMin ?? 700);
+  const minutesEach = round1(i.stitches / spm);
+  const priceEach = Math.round((setup + (i.stitches / 1000) * ratePerK + i.colors * colorFee) * 100) / 100;
+  return { minutesEach, priceEach, priceTotal: Math.round(priceEach * pieces * 100) / 100 };
+}

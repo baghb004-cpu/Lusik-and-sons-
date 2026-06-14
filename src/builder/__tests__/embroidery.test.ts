@@ -10,7 +10,10 @@ import { createGrid, setCell, getCell, stampText, stitchCount, usedColors, bound
 import { buildStitchPlan, threadLengthMm } from "../studio/software/embroidery/stitches.ts";
 import { toDst, decodeRecords, dstStitchCount } from "../studio/software/embroidery/dst.ts";
 import { toExp, decodeExp } from "../studio/software/embroidery/exp.ts";
+import { toJef, decodeJef } from "../studio/software/embroidery/jef.ts";
 import { reduceColors } from "../studio/software/embroidery/autodigitize.ts";
+import { resampleGrid, splitForHoop } from "../studio/software/embroidery/model.ts";
+import { jobCost, hoopCells } from "../studio/software/embroidery/metrics.ts";
 import { metrics, checkDesign, HOOPS } from "../studio/software/embroidery/metrics.ts";
 import { nearestThread } from "../studio/software/embroidery/palette.ts";
 import { gridFromPixels } from "../studio/software/embroidery/autodigitize.ts";
@@ -126,6 +129,50 @@ test("EXP: encode round-trips through decode (incl. split jumps + color stop)", 
   assert.equal(x, last.x, "reconstructs final X after splits");
   assert.equal(y, last.y, "reconstructs final Y");
   assert.ok(recs.some((r) => r.flag === "stop"), "color change preserved");
+});
+
+test("JEF: encode round-trips through decode (offset-driven, with splits)", () => {
+  let g = createGrid(60, 2);
+  g = setCell(g, 0, 0, 1); g = setCell(g, 59, 0, 1); g = setCell(g, 5, 1, 2);
+  const plan = buildStitchPlan(g, 2, "tatami");
+  const recs = decodeJef(toJef(plan));
+  let x = 0, y = 0; for (const r of recs) { x += r.dx; y += r.dy; }
+  const last = plan.stitches.filter((s) => s.flag !== "end").slice(-1)[0];
+  assert.equal(x, last.x); assert.equal(y, last.y);
+  assert.ok(recs.some((r) => r.flag === "stop"));
+});
+
+test("stitches: running style outlines row-runs; underlay + pull comp change output", () => {
+  let g = createGrid(10, 3);
+  for (let x = 1; x <= 6; x++) g = setCell(g, x, 1, 1); // one run of 6 cells
+  const run = buildStitchPlan(g, 2, "running");
+  assert.equal(run.style, "running");
+  assert.ok(run.stitches.some((s) => s.flag === "jump"), "run starts with a jump");
+  const plain = buildStitchPlan(g, 2, "tatami");
+  const withUnderlay = buildStitchPlan(g, 2, "tatami", { underlay: true });
+  assert.ok(withUnderlay.stitches.length > plain.stitches.length, "underlay adds a pass");
+  // pull compensation enlarges the extent
+  const span = (p: { stitches: Array<{ x: number }> }) => Math.max(...p.stitches.map((s) => Math.abs(s.x)));
+  assert.ok(span(buildStitchPlan(g, 2, "tatami", { pullCompMm: 2 })) >= span(plain));
+});
+
+test("model: resample scales the design; splitForHoop tiles a big design", () => {
+  let g = createGrid(40, 40);
+  g = setCell(g, 0, 0, 3);
+  const small = resampleGrid(g, 20, 20);
+  assert.equal(small.w, 20); assert.equal(small.h, 20);
+  assert.equal(small.cells[0], 3, "top-left content preserved");
+  const tiles = splitForHoop(g, 25, 25); // 40x40 into 25-cell tiles → 2x2
+  assert.equal(tiles.length, 4);
+  assert.ok(tiles.every((t) => t.grid.w <= 25 && t.grid.h <= 25));
+});
+
+test("metrics: job cost + sew time; hoopCells from hoop size", () => {
+  const c = jobCost({ stitches: 5000, colors: 3, pieces: 10 });
+  assert.ok(c.minutesEach > 0 && c.priceEach > 0);
+  assert.equal(c.priceTotal, Math.round(c.priceEach * 10 * 100) / 100);
+  const hc = hoopCells(HOOPS[0], 2); // 100mm / 2mm = 50 cells
+  assert.equal(hc.w, 50);
 });
 
 test("auto-digitize: dithering keeps cells filled; maxColors caps the palette", () => {

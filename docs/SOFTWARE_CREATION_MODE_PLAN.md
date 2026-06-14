@@ -223,11 +223,19 @@ hub), backed by a pure, fully-tested engine under
   encoder is proven by a round-trip decode unit test (and large jumps are split
   to ≤121 units); a live export of "LUSIK" produced a valid 737-byte DST
   (`LA:` header, `ST:70`, `0xF3` end record).
-- **Honesty, by design:** chart + size are exact; the DST/EXP machine files are
-  labelled **EXPERIMENTAL** — "test on your machine with stabilizer first."
-  Remaining future work: **PES (Brother)** — its binary PEC block needs
-  real-hardware validation, so it's deliberately not shipped blind — and true
-  **satin/fill stitch objects** (vs. the current per-cell cross/tatami).
+- **More deep features (Phase 5 wave 2):** a third stitch style **running**
+  (outline/redwork) alongside cross + tatami; optional **underlay** + **pull
+  compensation**; **resize-and-recalculate** (nearest-neighbor resample);
+  **multi-hoop split** (a ZIP of one DST per hoop tile); **job costing + sew-time
+  estimate** and a printable **production worksheet** (cost + thread list);
+  a local **design library** (save/load named designs); and a **third machine
+  format JEF** (Janome) — round-trip-tested like DST + EXP.
+- **Honesty, by design:** chart + size are exact; DST/EXP/JEF are labelled
+  **EXPERIMENTAL** — "test on your machine with stabilizer first." Still
+  future: **PES (Brother)** — its binary PEC block needs real-hardware
+  validation, so it's not shipped blind; true **vector satin/fill objects** (vs.
+  the grid-based styles); and **stitch-out simulation/playback** + **arched/
+  circular lettering** (planned UI polish).
 
 The Software Creation Mode `embroidery` preset still generates its static
 cross-stitch chart for project bundles; the full editor lives at the route above.

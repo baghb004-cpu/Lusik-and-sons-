@@ -12,10 +12,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   THREADS, thread, createGrid, setCell, getCell, stampText, clearGrid, textWidth,
-  buildStitchPlan, toDst, toExp, metrics, checkDesign, HOOPS, gridFromPixels,
+  buildStitchPlan, toDst, toExp, toJef, metrics, checkDesign, HOOPS, gridFromPixels,
+  resampleGrid, splitForHoop, jobCost, hoopCells,
   EMBROIDERY_STORE_KEY, EMBROIDERY_BACKUP_TAG,
   type Grid, type StitchStyle,
 } from "../index.ts";
+
+const LIBRARY_KEY = "lusik_embroidery_library";
 
 const CELL = 15;
 const card = "rounded-2xl border border-ink/10 bg-white/70 p-3";
@@ -34,7 +37,11 @@ export function EmbroideryStudio() {
   const [style, setStyle] = useState<StitchStyle>("cross");
   const [maxColors, setMaxColors] = useState(0); // 0 = no cap
   const [dither, setDither] = useState(false);
+  const [underlay, setUnderlay] = useState(false);
+  const [pullComp, setPullComp] = useState(0);
   const [text, setText] = useState("");
+  const [libName, setLibName] = useState("");
+  const [library, setLibrary] = useState<Array<{ name: string; shape: SavedShape }>>([]);
   const [loaded, setLoaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
@@ -45,6 +52,7 @@ export function EmbroideryStudio() {
     try {
       const r = localStorage.getItem(EMBROIDERY_STORE_KEY);
       if (r) { const s = JSON.parse(r) as SavedShape; if (s.grid?.cells) { setGrid(s.grid); setTitle(s.title ?? "My design"); setCount(s.count ?? 14); setMm(s.mmPerCell ?? 2); setHoopIdx(s.hoopIdx ?? 0); setStyle(s.style ?? "cross"); } }
+      const lib = localStorage.getItem(LIBRARY_KEY); if (lib) setLibrary(JSON.parse(lib));
     } catch { /* */ }
     setLoaded(true);
   }, []);
@@ -126,13 +134,49 @@ export function EmbroideryStudio() {
   };
 
   // exports
+  const planOpts = { underlay, pullCompMm: pullComp };
   const dl = (blob: Blob, name: string) => { const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u); };
   const slug = (title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "design");
+  const bin = (bytes: Uint8Array) => new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" });
   const exportPng = () => canvasRef.current?.toBlob((b) => { if (b) dl(b, `${slug}.png`); });
-  const exportDst = () => { const bytes = toDst(buildStitchPlan(grid, mmPerCell, style), title); dl(new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" }), `${slug}.dst`); };
-  const exportExp = () => { const bytes = toExp(buildStitchPlan(grid, mmPerCell, style)); dl(new Blob([bytes.buffer as ArrayBuffer], { type: "application/octet-stream" }), `${slug}.exp`); };
+  const exportDst = () => dl(bin(toDst(buildStitchPlan(grid, mmPerCell, style, planOpts), title)), `${slug}.dst`);
+  const exportExp = () => dl(bin(toExp(buildStitchPlan(grid, mmPerCell, style, planOpts))), `${slug}.exp`);
+  const exportJef = () => dl(bin(toJef(buildStitchPlan(grid, mmPerCell, style, planOpts))), `${slug}.jef`);
   const exportJson = () => dl(new Blob([JSON.stringify({ tag: EMBROIDERY_BACKUP_TAG, grid, count, mmPerCell, hoopIdx, title, style }, null, 2)], { type: "application/json" }), `${slug}.json`);
   const importJson = async (f: File) => { try { const o = JSON.parse(await f.text()); if (o.tag !== EMBROIDERY_BACKUP_TAG || !o.grid?.cells) throw new Error("Not an embroidery design file."); setGrid(o.grid); setTitle(o.title ?? "My design"); setCount(o.count ?? 14); setMm(o.mmPerCell ?? 2); setHoopIdx(o.hoopIdx ?? 0); setStyle(o.style ?? "cross"); } catch (e) { alert((e as Error).message); } };
+
+  // resize-and-recalculate the design to fit the current grid box
+  const resample = () => { const w = prompt("New width in stitches?", String(grid.w)); const h = prompt("New height in stitches?", String(grid.h)); if (w && h) setGrid((g) => resampleGrid(g, Number(w) || g.w, Number(h) || g.h)); };
+
+  // multi-hoop split → a ZIP of one DST per tile
+  const exportSplit = async () => {
+    const hc = hoopCells(HOOPS[hoopIdx], mmPerCell);
+    const tiles = splitForHoop(grid, hc.w, hc.h);
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    tiles.forEach((t) => zip.file(`${slug}-r${t.row}-c${t.col}.dst`, toDst(buildStitchPlan(t.grid, mmPerCell, style, planOpts), `${slug}-${t.row}-${t.col}`)));
+    dl(await zip.generateAsync({ type: "blob" }), `${slug}-hoops.zip`);
+  };
+
+  // printable production worksheet (cost + thread list + stats)
+  const worksheet = () => {
+    const cost = jobCost({ stitches: m.stitches, colors: m.colors });
+    const palette = [...new Set(grid.cells.filter((c) => c >= 0))].sort((a, b) => a - b);
+    const rows = palette.map((i) => `<tr><td style="background:${thread(i).hex};width:18px"></td><td>${thread(i).ref}</td><td>${thread(i).name}</td></tr>`).join("");
+    const w = window.open("", "_blank"); if (!w) return;
+    w.document.write(`<!doctype html><meta charset=utf-8><title>${slug} worksheet</title><style>body{font-family:system-ui;margin:24px;color:#1a1612}table{border-collapse:collapse;margin-top:8px}td,th{border:1px solid #ccc;padding:4px 8px;text-align:left}</style>` +
+      `<h1>${title}</h1><p>Stitches: <b>${m.stitches}</b> · Colors: <b>${m.colors}</b> · Finished: <b>${m.finishedInW}×${m.finishedInH}in</b> (${m.finishedMmW}×${m.finishedMmH}mm)</p>` +
+      `<p>Est. sew time: <b>${cost.minutesEach} min</b> · Suggested price each: <b>$${cost.priceEach}</b> (edit rates in your own pricing)</p>` +
+      `<h2>Thread list</h2><table><tr><th></th><th>Ref</th><th>Color</th></tr>${rows}</table>` +
+      `<p style="margin-top:16px;color:#777;font-size:12px">Machine files are experimental — test on your machine before a final piece.</p>`);
+    w.document.close(); w.print();
+  };
+
+  // local design library (save/load named designs on this device)
+  const currentShape = (): SavedShape => ({ grid, count, mmPerCell, hoopIdx, title, style });
+  const loadShape = (s: SavedShape) => { setGrid(s.grid); setTitle(s.title); setCount(s.count); setMm(s.mmPerCell); setHoopIdx(s.hoopIdx); setStyle(s.style ?? "cross"); };
+  const saveLibrary = (next: typeof library) => { setLibrary(next); try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(next)); } catch { /* */ } };
+  const addToLibrary = () => { const name = (libName || title).trim(); if (!name) return; const next = [...library.filter((e) => e.name !== name), { name, shape: currentShape() }]; saveLibrary(next); setLibName(""); };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 font-body text-ink">
@@ -201,7 +245,15 @@ export function EmbroideryStudio() {
             <label className="mt-1 flex items-center justify-between gap-2 text-sm">Aida count <input type="number" min={6} max={28} value={count} onChange={(e) => setCount(Number(e.target.value) || 14)} className={`${inp} w-20`} /></label>
             <label className="mt-1 flex items-center justify-between gap-2 text-sm">Stitch mm <input type="number" min={1} max={6} step={0.5} value={mmPerCell} onChange={(e) => setMm(Number(e.target.value) || 2)} className={`${inp} w-20`} /></label>
             <label className="mt-1 block text-sm">Hoop<select value={hoopIdx} onChange={(e) => setHoopIdx(Number(e.target.value))} className={`${inp} mt-1 w-full`}>{HOOPS.map((h, i) => <option key={h.name} value={i}>{h.name}</option>)}</select></label>
-            <label className="mt-1 block text-sm">Stitch style<select value={style} onChange={(e) => setStyle(e.target.value as StitchStyle)} className={`${inp} mt-1 w-full`}><option value="cross">Cross-stitch (X per cell)</option><option value="tatami">Tatami (single tack)</option></select></label>
+            <label className="mt-1 block text-sm">Stitch style<select value={style} onChange={(e) => setStyle(e.target.value as StitchStyle)} className={`${inp} mt-1 w-full`}><option value="cross">Cross-stitch (X per cell)</option><option value="tatami">Tatami (single tack)</option><option value="running">Running (outline / line)</option></select></label>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+              <label className="flex items-center gap-1"><input type="checkbox" className="h-3.5 w-3.5 accent-ink" checked={underlay} onChange={(e) => setUnderlay(e.target.checked)} />underlay</label>
+              <label className="flex items-center gap-1">pull comp (mm) <input type="number" min={0} max={3} step={0.5} value={pullComp} onChange={(e) => setPullComp(Number(e.target.value) || 0)} className={`${inp} w-16`} /></label>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" onClick={resample} className="rounded-full border border-ink/20 px-3 py-1 text-xs">↔ Resize design</button>
+              <button type="button" onClick={() => void exportSplit()} className="rounded-full border border-ink/20 px-3 py-1 text-xs" title="Split a big design into hoop-sized DST tiles">✂ Split into hoops</button>
+            </div>
           </div>
 
           <div className={card}>
@@ -218,18 +270,39 @@ export function EmbroideryStudio() {
           </div>
 
           <div className={`${card} flex flex-wrap gap-2`}>
-            <button type="button" onClick={() => window.print()} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">🖨 Chart (PDF)</button>
+            <button type="button" onClick={() => window.print()} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">🖨 Chart</button>
+            <button type="button" onClick={worksheet} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm" title="Production worksheet: cost, sew time, thread list">📋 Worksheet</button>
             <button type="button" onClick={exportPng} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">🖼 PNG</button>
-            <button type="button" onClick={exportDst} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Tajima DST machine file">🧵 DST</button>
-            <button type="button" onClick={exportExp} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Melco/Bernina EXP machine file">🧵 EXP</button>
+            <button type="button" onClick={exportDst} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Tajima DST">🧵 DST</button>
+            <button type="button" onClick={exportExp} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Melco/Bernina EXP">🧵 EXP</button>
+            <button type="button" onClick={exportJef} className="rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-cream" title="Experimental Janome JEF">🧵 JEF</button>
             <button type="button" onClick={exportJson} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">Save</button>
             <button type="button" onClick={() => fileRef.current?.click()} className="rounded-full border border-ink/20 px-3 py-1.5 text-sm">Open</button>
             <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void importJson(f); e.target.value = ""; }} />
           </div>
+
+          {/* design library (saved on this device) */}
+          <div className={card}>
+            <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Design library</h2>
+            <div className="flex gap-2">
+              <input value={libName} onChange={(e) => setLibName(e.target.value)} placeholder="Save current as…" className={`${inp} flex-1`} />
+              <button type="button" onClick={addToLibrary} className="rounded-full bg-ink px-3 py-1 text-xs font-medium text-cream">Save</button>
+            </div>
+            {library.length ? (
+              <ul className="mt-2 space-y-1 text-xs">
+                {library.map((e) => (
+                  <li key={e.name} className="flex items-center justify-between gap-2">
+                    <button type="button" onClick={() => loadShape(e.shape)} className="truncate text-left hover:underline">{e.name}</button>
+                    <button type="button" onClick={() => saveLibrary(library.filter((x) => x.name !== e.name))} className="text-red-700">✕</button>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="mt-1 text-[11px] text-muted">No saved designs yet.</p>}
+          </div>
         </aside>
       </div>
 
-      <p className="mt-4 text-[11px] text-muted">Everything is local &amp; offline. The chart and size are accurate; the <strong>machine files (DST &amp; EXP) are experimental</strong> — test on your machine with stabilizer before a final piece. “Cross-stitch” style makes a real X per cell; “Tatami” is one tack per cell. PES (Brother) and true satin/fill digitizing are future work.</p>
+      <p className="mt-4 text-[11px] text-muted">Everything is local &amp; offline. The chart and size are accurate; the <strong>machine files (DST · EXP · JEF) are experimental</strong> — test on your machine with stabilizer before a final piece. Styles: cross (X per cell), tatami (single tack), running (outline). Optional underlay + pull compensation. PES (Brother) needs a real-machine check and true vector satin/fill digitizing are future work.</p>
     </main>
   );
 }
