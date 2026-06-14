@@ -97,10 +97,13 @@ TEMPLATE with zero amounts (a test enforces this).
 - **Next-year updater button** — wires `updater.ts`: shows official IRS steps/
   links + scaffolds & downloads an EMPTY, cited rule pack for next year.
 
-**Next for tax (Phase 5–6, not built):**
-- State module (Phase 5, same rule-pack format, per-state files).
-- Export helpers for Free File Fillable Forms / print-and-mail (Phase 6) —
-  never an unauthorized e-file path.
+**Tax Phase 5–6 (DONE):**
+- State module: `scaffoldStatePack(code, year)` + `stateGuidanceFor` build an
+  empty, source-cited per-state template (`us-ca` etc.) — no figure is ever
+  guessed/carried over (same contract as federal). Wired into the Tax UI.
+- Filing helpers: `freeFileGuidance` + `printAndMailGuidance` — official IRS
+  links + steps only; the app NEVER e-files or auto-fills. In the UI's new
+  "State taxes & filing" section. (See `tax-state.test.ts`.)
 
 ## Offline Media Studio (§26) — Phase 1 + live preview BUILT
 

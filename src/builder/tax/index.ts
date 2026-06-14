@@ -5,4 +5,4 @@ export { rollupConfidence, sumCents, compareDeductions, standardDeductionCents, 
 export { validateProject, type TaxWarning } from "./validate.ts";
 export { buildPacket } from "./packet.ts";
 export { encryptProject, decryptProject } from "./crypto.ts";
-export { OFFICIAL_SOURCES, REQUIRED_FEDERAL_FIGURES, updateGuidanceFor, scaffoldRulePack, isPackReady, packReadiness, type UpdateGuidance } from "./updater.ts";
+export { OFFICIAL_SOURCES, REQUIRED_FEDERAL_FIGURES, updateGuidanceFor, scaffoldRulePack, isPackReady, packReadiness, STATE_DIRECTORY_URL, COMMON_STATE_FIGURES, scaffoldStatePack, stateGuidanceFor, freeFileGuidance, printAndMailGuidance, type UpdateGuidance } from "./updater.ts";

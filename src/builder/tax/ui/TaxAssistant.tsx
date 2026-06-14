@@ -15,7 +15,7 @@ import { useMemo, useRef, useState } from "react";
 import { INTERVIEW, neededDocuments, likelyForms } from "../checklist.ts";
 import { compareDeductions } from "../engine.ts";
 import { taxProject, rulePack } from "../schemas.ts";
-import { updateGuidanceFor, scaffoldRulePack } from "../updater.ts";
+import { updateGuidanceFor, scaffoldRulePack, scaffoldStatePack, stateGuidanceFor, freeFileGuidance, printAndMailGuidance } from "../updater.ts";
 import { encryptSession, decryptSession } from "./sessionCrypto.ts";
 import { runOcr, type OcrResult } from "./ocr.ts";
 
@@ -99,15 +99,16 @@ export function TaxAssistant() {
     }
   }
 
-  function scaffoldNextYear() {
-    const pack = scaffoldRulePack(year + 1);
-    const file = new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `rule-pack-${year + 1}-template.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  function downloadJson(obj: unknown, name: string) {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
+  }
+  function scaffoldNextYear() { downloadJson(scaffoldRulePack(year + 1), `rule-pack-${year + 1}-template.json`); }
+  function scaffoldState() {
+    const code = prompt("Your 2-letter state code (e.g. CA, NY, TX):", "");
+    if (!code || !code.trim()) return;
+    try { downloadJson(scaffoldStatePack(code.trim(), year), `state-${code.trim().toLowerCase()}-${year}-template.json`); }
+    catch (e) { alert((e as Error).message); }
   }
 
   const comparison = useMemo(() => {
@@ -288,6 +289,25 @@ export function TaxAssistant() {
         <div className="mt-2 flex flex-wrap gap-2">
           <button type="button" onClick={scaffoldNextYear} className="rounded-full border border-ink/30 px-4 py-1.5 text-sm">Scaffold a {year + 1} rule pack</button>
           <a href={guidance.sources[0].url} target="_blank" rel="noreferrer" className="rounded-full border border-ink/20 px-4 py-1.5 text-sm">Open official IRS pages ↗</a>
+        </div>
+      </section>
+
+      {/* state pack + filing helpers — all official links, never e-files */}
+      <section className="mt-6 rounded-2xl border border-ink/10 bg-white/60 p-4">
+        <h2 className="font-display text-lg">🏛️ State taxes & filing</h2>
+        <p className="mt-1 text-xs text-muted">
+          State rules vary a lot (some states have no income tax). Like the federal pack, this builds an
+          <strong> empty, source-cited</strong> state template you fill from your state's official site — never guessed.
+          And when you're ready to file, these point you to the official IRS options — this app never e-files for you.
+        </p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-muted">
+          {stateGuidanceFor("your-state", year).steps.map((s) => <li key={s}>{s}</li>)}
+        </ol>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" onClick={scaffoldState} className="rounded-full border border-ink/30 px-4 py-1.5 text-sm">Scaffold a state rule pack</button>
+          <a href={stateGuidanceFor("x", year).sources[0].url} target="_blank" rel="noreferrer" className="rounded-full border border-ink/20 px-4 py-1.5 text-sm">Find your state's tax site ↗</a>
+          <a href={freeFileGuidance(year).sources[1].url} target="_blank" rel="noreferrer" className="rounded-full border border-ink/20 px-4 py-1.5 text-sm">IRS Free File Fillable Forms ↗</a>
+          <a href={printAndMailGuidance(year).sources[0].url} target="_blank" rel="noreferrer" className="rounded-full border border-ink/20 px-4 py-1.5 text-sm">Print &amp; mail (Form 1040) ↗</a>
         </div>
       </section>
 

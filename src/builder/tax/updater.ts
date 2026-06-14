@@ -106,3 +106,88 @@ export function packReadiness(pack: RulePack): { ready: boolean; verified: numbe
       : `Tax year ${pack.taxYear} needs review: ${verified}/${total} figures verified. Fill in the rest from the official IRS pages before relying on any totals.`,
   };
 }
+
+// ============================================================
+// State module (plan §25 Phase 5) — same safety contract: empty + cited.
+// State rules vary enormously (some states have no income tax), so we NEVER
+// guess a figure. We scaffold an empty, source-cited pack pointing at the
+// official state directory and let the user fill verified numbers themselves.
+// ============================================================
+
+/** Official IRS directory that links to every state's government / tax site. */
+export const STATE_DIRECTORY_URL =
+  "https://www.irs.gov/businesses/small-businesses-self-employed/state-government-websites";
+
+export const COMMON_STATE_FIGURES = ["state-standard-deduction", "state-personal-exemption", "state-income-tax"] as const;
+
+/** Build an empty, cited STATE rule pack (e.g. "us-ca"). No figure is ever
+ *  guessed or carried over — every value is null + unverified. */
+export function scaffoldStatePack(stateCode: string, taxYear: number, figureKeys?: string[]): RulePack {
+  const code = stateCode.toLowerCase().replace(/[^a-z]/g, "");
+  if (!code) throw new Error("Provide a 2-letter state code, e.g. 'ca'.");
+  const keys = figureKeys && figureKeys.length ? figureKeys : [...COMMON_STATE_FIGURES];
+  return rulePack.parse({
+    schemaVersion: 1,
+    taxYear,
+    jurisdiction: `us-${code}`,
+    status: "template",
+    officialSource: STATE_DIRECTORY_URL,
+    figures: keys.map((key) => ({
+      key,
+      value: null,
+      unit: key.includes("tax") || key.includes("rate") ? ("percent" as const) : ("usd" as const),
+      verified: false,
+      source: STATE_DIRECTORY_URL,
+      note: `Find the ${taxYear} ${key.replace(/-/g, " ")} on YOUR state's official Department of Revenue site (via the source link), then mark it verified.`,
+    })),
+    updatedAt: Date.now(),
+  });
+}
+
+export function stateGuidanceFor(stateCode: string, taxYear: number): UpdateGuidance {
+  return {
+    taxYear,
+    steps: [
+      `Open your state's official Department of Revenue site for ${taxYear} (find it in the official directory below — only .gov sites).`,
+      `Read your state's standard deduction, exemptions, and tax rate/brackets from the official instructions.`,
+      `Scaffold the state pack, fill each figure from those pages, then mark it verified. Figures are never guessed or carried over.`,
+      `State rules vary widely — some states have no income tax at all. Verify everything locally.`,
+    ],
+    sources: [{ label: "Official state government / tax sites", url: STATE_DIRECTORY_URL }],
+  };
+}
+
+// ============================================================
+// Filing helpers (plan §25 Phase 6) — guidance + official links ONLY.
+// This organizer NEVER e-files, auto-fills a form, or submits anything.
+// ============================================================
+
+export function freeFileGuidance(taxYear: number): UpdateGuidance {
+  return {
+    taxYear,
+    steps: [
+      `This organizer never files for you. To e-file yourself, use the official IRS Free File or Free File Fillable Forms.`,
+      `Open Free File Fillable Forms (below), make your account, and type in the figures from this organizer.`,
+      `Double-check every number against your documents before you submit on the official site.`,
+    ],
+    sources: [
+      { label: "IRS Free File", url: OFFICIAL_SOURCES.freeFile },
+      { label: "Free File Fillable Forms", url: OFFICIAL_SOURCES.freeFileFillable },
+    ],
+  };
+}
+
+export function printAndMailGuidance(taxYear: number): UpdateGuidance {
+  return {
+    taxYear,
+    steps: [
+      `Prefer paper? Download the official ${taxYear} Form 1040 (and the schedules you need) from the IRS, print them, and copy your figures from this organizer by hand.`,
+      `The mailing address depends on your state and whether you enclose a payment — use the official IRS "Where to File" page.`,
+      `Keep a copy for your records. This app does not mail or submit anything for you.`,
+    ],
+    sources: [
+      { label: "About Form 1040 (download / print)", url: OFFICIAL_SOURCES.form1040 },
+      { label: "Forms & instructions", url: OFFICIAL_SOURCES.formsAndInstructions },
+    ],
+  };
+}
