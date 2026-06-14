@@ -25,6 +25,9 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   use: {
     baseURL: BASE_URL,
+    // Environments with a system Chromium but no Playwright download
+    // (sandboxes, NixOS, …) can point PW_CHROME at it; unset = default.
+    ...(process.env.PW_CHROME ? { launchOptions: { executablePath: process.env.PW_CHROME } } : {}),
     trace: "retain-on-failure",
     viewport: { width: 1280, height: 800 },
     actionTimeout: 15_000,
@@ -41,5 +44,12 @@ export default defineConfig({
     stdout: "ignore",
     stderr: "pipe",
     timeout: 300_000,
+    env: {
+      ...process.env,
+      // The builder e2e spec signs in with this local token (>=16 chars).
+      // Test-only value; the real token is whatever the operator sets.
+      BUILDER_LOCAL_TOKEN: "e2e-builder-token-1234",
+      BUILDER_BACKEND: "fs",
+    },
   },
 });

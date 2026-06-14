@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "stack": "small-business-shop",
+  "selection": [
+    "netlify",
+    "neon",
+    "stripe-checkout",
+    "stripe-webhooks",
+    "resend",
+    "builtin-git-cms"
+  ]
+}

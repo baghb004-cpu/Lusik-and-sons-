@@ -24,7 +24,7 @@
 // ============================================================
 
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 // The server's price contract — pure data, safe to import at build time.
 // Used ONLY to validate live products; nothing from here is emitted.
@@ -43,7 +43,7 @@ function fail(file, msg) {
   throw new Error(`[gen-products] ${file}: ${msg}`);
 }
 
-function validate(file, p) {
+export function validateProduct(file, p) {
   const str = (k) => {
     if (typeof p[k] !== "string" || p[k].trim() === "") fail(file, `"${k}" is required and must be a non-empty string`);
   };
@@ -184,7 +184,7 @@ function main() {
     } catch (e) {
       fail(file, `invalid JSON — ${e.message}`);
     }
-    validate(file, data);
+    validateProduct(file, data);
 
     // Drafts never reach the storefront build.
     if (data.status === "draft") continue;
@@ -222,4 +222,9 @@ function main() {
   console.log(`gen-products: wrote ${count} published product(s) across ${Object.keys(byCategory).length} category(ies) → src/data/cmsProductsData.generated.js`);
 }
 
-main();
+
+// Run only when invoked directly (`node scripts/gen-X.mjs`) — the exported
+// validator above is also imported by the builder's save gate
+// (src/builder/server/validateDoc.ts), and importing must never regenerate.
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) main();

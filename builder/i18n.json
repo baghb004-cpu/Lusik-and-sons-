@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "locales": ["en", "hy", "ar", "ru", "es"],
+  "defaultLocale": "en",
+  "remember": true,
+  "gate": {
+    "enabled": false,
+    "heading": "Choose your language",
+    "mode": "blocking",
+    "skipIfRemembered": true
+  }
+}

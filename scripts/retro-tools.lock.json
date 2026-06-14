@@ -1,0 +1,52 @@
+{
+  "_comment": "Pinned official releases for install-retro-tools.mjs. The installer is FAIL-CLOSED: it refuses to stage (or run) any download whose bytes don't match the checksum pinned here. A null checksum means 'not pinned yet' and the installer will refuse that tool until you paste a hand-verified hash — never silently trust a download. dosbox-x/86box were sha256-verified on 2026-06-12 against their official assets; godot is verified against the publisher's SHA512-SUMS.txt (4.3-stable); qemu must be pinned by hand (its host blocks automated mirrors). To re-pin: run `node scripts/install-retro-tools.mjs --pin <tool>`, cross-check the printed hash against the project's OWN published checksums, then paste it here in a deliberate commit.",
+  "resolvedAt": "2026-06-13",
+  "tools": {
+    "dosbox-x": {
+      "version": "dosbox-x-v2026.06.02-osfree",
+      "source": "https://github.com/joncampbell123/dosbox-x",
+      "license": "GPL-2.0",
+      "asset": "dosbox-x-mingw64-dosbox-x-v2026.06.02-osfree-portable.zip",
+      "url": "https://github.com/joncampbell123/dosbox-x/releases/download/dosbox-x-v2026.06.02-osfree/dosbox-x-mingw64-dosbox-x-v2026.06.02-osfree-portable.zip",
+      "sha256": "1c71c6e580a9b675029d0f40f3646bf86f59a4d47dff964974e8f2f6048b51f6",
+      "sizeMB": 38,
+      "zipSubdir": "mingw-build/mingw-sdl2/",
+      "binary": "dosbox-x.exe",
+      "officialPortable": true
+    },
+    "86box": {
+      "version": "v6.0 (build 9001)",
+      "source": "https://github.com/86Box/86Box",
+      "license": "GPL-2.0",
+      "asset": "86Box-Windows-64-b9001.zip",
+      "url": "https://github.com/86Box/86Box/releases/download/v6.0/86Box-Windows-64-b9001.zip",
+      "sha256": "b86722ed547089f095e8875805411f83c76aafd7d318f67286a5a69aecdd7644",
+      "sizeMB": 58,
+      "zipSubdir": "",
+      "binary": "86Box.exe",
+      "officialPortable": true,
+      "userMustProvide": "The official 86Box machine ROM set (github.com/86Box/roms) — the installer stages the PROGRAM only and never fetches ROM files."
+    },
+    "qemu": {
+      "version": "PIN REQUIRED",
+      "source": "https://www.qemu.org",
+      "license": "GPL-2.0",
+      "url": "https://qemu.weilnetz.de/w64/",
+      "installer": null,
+      "sha512": null,
+      "officialPortable": false,
+      "thirdPartyNote": "QEMU publishes no official Windows binary; qemu.org links to maintainer Stefan Weil's builds at qemu.weilnetz.de. There is NO trustworthy automated pin path here (the host blocks mirrors, and a sibling .sha512 from the same origin proves nothing if that origin is compromised). To enable QEMU: download a specific qemu-w64-setup-<ver>.exe from the URL above in a browser, verify it against Stefan Weil's published checksum, then set BOTH `installer` (exact filename) and `sha512` (the verified hash) here. Until then the installer refuses QEMU. Use --no-qemu to skip."
+    },
+    "godot": {
+      "version": "4.3-stable",
+      "source": "https://github.com/godotengine/godot",
+      "license": "MIT",
+      "asset": "Godot_v4.3-stable_win64.exe.zip",
+      "url": "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_win64.exe.zip",
+      "sha512": "ad09b7e19949327700dfbe64e35880a2a08091c0751277f5cc21b915e5df9b4fe93fb43c50d6bdfb9d16b46168592491aa698e0d2dbe9f92132e163dd77b97e1",
+      "templatesUrl": "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz",
+      "templatesSha512": "476366caf0fd45a8f24136cf9cf1dc0bc2b96f7c82d53e5f82200b55aefd07b286d283fd6f1ce29e0de70648c5a51d3b12f96c6d4fafd4e8c4878ecda6406d6a",
+      "note": "Optional (--with-godot): the editor (~55 MB) + export templates (~900 MB!). Verified against the publisher's SHA512-SUMS.txt for 4.3-stable."
+    }
+  }
+}

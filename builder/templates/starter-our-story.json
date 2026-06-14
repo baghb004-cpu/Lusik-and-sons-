@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "id": "b_2932ba2852d5",
+  "name": "Our story",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_aab4d3437451",
+    "slug": "our-story",
+    "kind": "standard",
+    "title": "Our story",
+    "order": 50,
+    "seo": {
+      "title": "Our story"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_6a76e7d6def4",
+        "type": "section",
+        "props": {
+          "heading": "How it all began",
+          "container": true,
+          "eyebrow": "The maker"
+        },
+        "children": [
+          {
+            "id": "b_6022b24a0a26",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Start at the beginning: who you are, where you learned the craft, and what keeps you at the table late at night."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "b_a5bd8d2ee4fc",
+            "type": "image",
+            "props": {
+              "src": "/img/armenian-flag.jpg",
+              "alt": "Replace with a photo of your workshop"
+            }
+          },
+          {
+            "id": "b_3dc65ee336ac",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Close with where things are headed — the next piece, the next milestone, the dream."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "b_1ae5f80f1849",
+        "type": "section",
+        "props": {
+          "heading": "Say hello",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_93317f6049a0",
+            "type": "card",
+            "props": {
+              "title": "We'd love to hear from you",
+              "body": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Questions, commissions, or just a kind word."
+                      }
+                    ]
+                  }
+                ]
+              },
+              "href": "/contact",
+              "ctaLabel": "Get in touch"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -14,7 +14,7 @@
 // ============================================================
 
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,7 +27,7 @@ function fail(file, msg) {
   throw new Error(`[gen-categories] ${file}: ${msg}`);
 }
 
-function validate(file, c) {
+export function validateCategory(file, c) {
   for (const k of ["slug", "label", "description"]) {
     if (typeof c[k] !== "string" || c[k].trim() === "") fail(file, `"${k}" is required and must be a non-empty string`);
   }
@@ -57,7 +57,7 @@ function main() {
     } catch (e) {
       fail(file, `invalid JSON — ${e.message}`);
     }
-    validate(file, data);
+    validateCategory(file, data);
     if (seen.has(data.slug)) fail(file, `duplicate category slug "${data.slug}"`);
     seen.add(data.slug);
     raw.push(data);
@@ -82,4 +82,9 @@ function main() {
   console.log(`gen-categories: wrote ${out.length} category(ies) → src/data/cmsCategoriesData.generated.js`);
 }
 
-main();
+
+// Run only when invoked directly (`node scripts/gen-X.mjs`) — the exported
+// validator above is also imported by the builder's save gate
+// (src/builder/server/validateDoc.ts), and importing must never regenerate.
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) main();

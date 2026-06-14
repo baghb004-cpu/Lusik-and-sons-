@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "id": "b_42d33ad68cc0",
+  "name": "FAQ page",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_9ffcfc0de28c",
+    "slug": "faq",
+    "kind": "standard",
+    "title": "Frequently asked questions",
+    "order": 50,
+    "seo": {
+      "title": "Frequently asked questions"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_a7bc37a34334",
+        "type": "section",
+        "props": {
+          "heading": "Frequently asked questions",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_8c3fb743ddd9",
+            "type": "accordion",
+            "props": {
+              "items": [
+                {
+                  "id": "b_e5d9dad5e0ef",
+                  "title": "How long does an order take?",
+                  "body": {
+                    "type": "doc",
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Each piece is made to order — tell visitors your honest turnaround time here."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "b_3014e3e72984",
+                  "title": "Do you ship internationally?",
+                  "body": {
+                    "type": "doc",
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Say where you ship, what it costs, and how long it takes."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "b_0c4fb419b807",
+                  "title": "Can I request a custom design?",
+                  "body": {
+                    "type": "doc",
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Explain your commission process and how to start one."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "b_cbb07d7e8431",
+        "type": "section",
+        "props": {
+          "heading": "Still curious?",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_36da67a56532",
+            "type": "contactForm",
+            "props": {
+              "provider": "mailto",
+              "endpoint": "hello@example.com",
+              "heading": "Ask us anything",
+              "submitLabel": "Email us"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

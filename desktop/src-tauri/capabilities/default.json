@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Baghdo's Workshop shell. Scoped to the SPLASH window ONLY — it's the sole surface that uses the IPC bridge (the app-ready/app-error events + the three Game Mode commands, all in splash.html). The main builder window loads remote loopback content and is deliberately granted NO capability, so even though withGlobalTauri injects the API object, that window can invoke nothing: no core APIs, no fs/shell/http, no Game Mode commands. The builder reaches disk only through the token-gated loopback server, never through Tauri IPC.",
+  "windows": ["splash"],
+  "permissions": ["core:default"]
+}

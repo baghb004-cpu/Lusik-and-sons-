@@ -1,0 +1,21 @@
+# Baghdo's Workshop desktop shell (Phase 16). MIT-stack throughout:
+# Tauri 2 (MIT/Apache-2.0), no other runtime dependencies — the token
+# and port-poll use std only, keeping the shell tiny and auditable.
+
+[package]
+name = "baghdos-workshop"
+version = "0.1.0"
+description = "Baghdo's Workshop — portable desktop shell"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+getrandom = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

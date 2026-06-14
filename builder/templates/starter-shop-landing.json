@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "id": "b_2540f873c7e7",
+  "name": "Shop landing",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_57d8ddf697c3",
+    "slug": "shop-landing",
+    "kind": "landing",
+    "title": "Shop landing",
+    "order": 50,
+    "seo": {
+      "title": "Shop landing"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_aa16efabb153",
+        "type": "section",
+        "props": {
+          "heading": "Welcome to the shop",
+          "container": true,
+          "eyebrow": "Handmade with love"
+        },
+        "children": [
+          {
+            "id": "b_4976e52f2cd0",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "A warm introduction to what you make and why it matters. Two or three sentences is plenty — let the products speak."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "b_de8dcab117da",
+            "type": "button",
+            "props": {
+              "label": "Browse everything",
+              "href": "/shop",
+              "variant": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "b_4cd799495067",
+        "type": "section",
+        "props": {
+          "heading": "This week's favorite",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_d0fad428e154",
+            "type": "featuredProduct",
+            "props": {
+              "binding": "cms:featured"
+            }
+          }
+        ]
+      },
+      {
+        "id": "b_57c9fe05f185",
+        "type": "section",
+        "props": {
+          "heading": "Follow along",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_8e5228f89157",
+            "type": "socialRow",
+            "props": {
+              "links": [
+                {
+                  "platform": "instagram",
+                  "href": "https://instagram.com/yourshop"
+                },
+                {
+                  "platform": "facebook",
+                  "href": "https://facebook.com/yourshop"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

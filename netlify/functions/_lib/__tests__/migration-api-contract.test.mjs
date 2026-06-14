@@ -49,9 +49,21 @@ test("functions directory is configured + the webhook handler exists", () => {
 });
 
 test("no app/api route shadows the function paths under Next", () => {
-  // If an app/api/** route existed, Next would claim /api/* and could
-  // intercept the webhook before Netlify's redirect runs. Keep it empty.
-  assert.ok(!existsSync(join(ROOT, "app/api")), "app/api exists — it would shadow the Netlify function routes");
+  // Next claims any /api/* path that has an app/api/** route, which could
+  // intercept a netlify.toml /api/* redirect before it runs. The webhook
+  // redirect (/api/stripe-webhook) is the load-bearing one. app/api routes
+  // for NEW, non-colliding paths are fine (the builder lives at
+  // app/api/builder) — what must never exist is a Next route on a path a
+  // netlify.toml redirect owns.
+  const toml = read("netlify.toml");
+  const redirected = [...toml.matchAll(/from\s*=\s*"\/api\/([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(redirected.includes("stripe-webhook"), "the stripe-webhook redirect must exist");
+  for (const seg of redirected) {
+    assert.ok(
+      !existsSync(join(ROOT, "app/api", seg)),
+      `app/api/${seg} exists — it would shadow the netlify.toml /api/${seg} redirect`
+    );
+  }
 });
 
 test("the db layer targets functions by a relative, framework-agnostic base", () => {

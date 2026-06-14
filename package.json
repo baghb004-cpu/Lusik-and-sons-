@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Root package.json. Hosts the Next.js (App Router) build + Tailwind PostCSS pipeline and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external \u2014 DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
+  "description": "Root package.json. Hosts the Next.js (App Router) build + Tailwind PostCSS pipeline and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external — DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
   "engines": {
     "node": ">=20"
   },
@@ -20,9 +20,10 @@
     "next:start": "next start",
     "pretypecheck": "npm run gen:data",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:unit && npm run test:e2e",
+    "test": "npm run test:unit && npm run test:builder && npm run test:e2e",
     "pretest:unit": "npm run gen:data",
     "test:unit": "node --test --test-reporter=spec netlify/functions/_lib/__tests__/*.test.mjs",
+    "test:builder": "node --test --test-reporter=spec \"src/builder/__tests__/*.test.ts\"",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:install": "playwright install --with-deps chromium",
@@ -36,10 +37,12 @@
     "@netlify/neon": "^0.1.0",
     "@sentry/react": "^10.56.0",
     "framer-motion": "^12.40.0",
+    "jszip": "^3.10.1",
     "next": "^15.5.19",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "stripe": "^22.2.0"
+    "stripe": "^22.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@axe-core/react": "^4.11.3",

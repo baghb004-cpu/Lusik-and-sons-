@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "id": "b_2333599b09c0",
+  "name": "Printable invoice / order sheet",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_6cec7cc8b6f3",
+    "slug": "invoice",
+    "kind": "standard",
+    "title": "Invoice",
+    "order": 60,
+    "seo": {
+      "title": "Invoice"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_a4d544a11005",
+        "type": "section",
+        "props": {
+          "heading": "Invoice",
+          "container": true,
+          "eyebrow": "Business document"
+        },
+        "children": [
+          {
+            "id": "b_192b9a619993",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "From: your business — replace with the Brand kit details. To: customer name and address. Number and date go here."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "b_7326d2434df6",
+            "type": "csvTable",
+            "props": {
+              "caption": "Line items — edit the CSV in the form",
+              "csv": "Item,Qty,Price,Total\nCrib blanket,1,$165,$165\nCustom bib,2,$28,$56"
+            }
+          },
+          {
+            "id": "b_bffabfee2c6f",
+            "type": "specTable",
+            "props": {
+              "rows": [
+                {
+                  "label": "Subtotal",
+                  "value": "$221"
+                },
+                {
+                  "label": "Shipping",
+                  "value": "$8"
+                },
+                {
+                  "label": "Total",
+                  "value": "$229",
+                  "detail": "due on delivery"
+                }
+              ],
+              "striped": false,
+              "note": "Thank you — every piece is made by hand."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

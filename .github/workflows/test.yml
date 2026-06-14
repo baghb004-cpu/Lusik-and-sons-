@@ -31,10 +31,13 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          # 22 = Netlify's functions runtime (nodejs22.x) AND the floor for
+          # running the builder's TypeScript tests natively (type stripping).
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run test:unit
+      - run: npm run test:builder
 
   e2e:
     name: E2E smoke tests

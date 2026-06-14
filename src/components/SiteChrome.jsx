@@ -155,7 +155,9 @@ export function SiteChrome({ children }) {
 
   const navView = searchOpen ? "search" : view;
   const showHeader = !searchOpen && view !== "cart" && !isSection && view !== "checkout" && view !== "admin";
-  const showBottomNav = !["checkout", "admin"].includes(view);
+  // The store's bottom nav never belongs on the builder (it floats over
+  // the editor's own pane bar on phones) — same exclusion as checkout/admin.
+  const showBottomNav = !["checkout", "admin"].includes(view) && !pathname.startsWith("/builder");
 
   const onAvatarTap = () => (site.user ? nav.goAccount() : setAuthOpen(true));
 

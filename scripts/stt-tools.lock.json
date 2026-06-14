@@ -1,0 +1,22 @@
+{
+  "_comment": "Pins for install-stt-tools.mjs (the offline speech-to-text sidecar for Communication Coach's Microphone Assist). Engine: whisper.cpp (MIT). FAIL-CLOSED: a model is only staged if its bytes match the sha256 pinned here; a null sha256 means 'not pinned yet' and the installer refuses it. The GGML models live on Hugging Face, which isn't always reachable from CI — pin a HAND-VERIFIED hash. To pin: run `node scripts/install-stt-tools.mjs --pin tiny.en` on a machine with Hugging Face access; it downloads the model and prints its sha256. Cross-check it against the model card, then paste it below in a deliberate commit. The whisper BINARY is not downloaded here (no clean cross-platform pinned release): on Windows use the prebuilt whisper-cli from the whisper.cpp releases; on Linux/Raspberry Pi build it (`make`) or install via your package manager; then drop whisper-cli (or main) in portable/stt/bin/ or on PATH.",
+  "engine": "whisper.cpp",
+  "engineSource": "https://github.com/ggerganov/whisper.cpp",
+  "license": "MIT",
+  "models": {
+    "tiny.en": {
+      "file": "ggml-tiny.en.bin",
+      "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin",
+      "sha256": null,
+      "approxMB": 75,
+      "note": "Smallest + fastest. Best for short phrases on modest hardware like a Raspberry Pi 5."
+    },
+    "base.en": {
+      "file": "ggml-base.en.bin",
+      "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin",
+      "sha256": null,
+      "approxMB": 142,
+      "note": "More accurate, a bit more CPU. Good on a laptop/desktop."
+    }
+  }
+}

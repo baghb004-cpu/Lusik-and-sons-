@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "id": "b_17a3e5129699",
+  "name": "Coming soon",
+  "kind": "page",
+  "root": {
+    "schemaVersion": 1,
+    "id": "b_49cee4d24377",
+    "slug": "coming-soon",
+    "kind": "landing",
+    "title": "Coming soon",
+    "order": 50,
+    "seo": {
+      "title": "Coming soon"
+    },
+    "status": "draft",
+    "sections": [
+      {
+        "id": "b_885f53330a5b",
+        "type": "section",
+        "props": {
+          "heading": "Something lovely is on the way",
+          "container": true,
+          "eyebrow": "Opening soon"
+        },
+        "children": [
+          {
+            "id": "b_5d31cad04242",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "One sentence about what's coming and when. Collect a way to reach people below so launch day has an audience."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "b_17ddb1e0fd71",
+            "type": "contactForm",
+            "props": {
+              "provider": "mailto",
+              "endpoint": "hello@example.com",
+              "heading": "Write me when it's ready",
+              "submitLabel": "Keep me posted"
+            }
+          },
+          {
+            "id": "b_1e24d9579e19",
+            "type": "socialRow",
+            "props": {
+              "label": "Meanwhile",
+              "links": [
+                {
+                  "platform": "instagram",
+                  "href": "https://instagram.com/yourshop"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "b_9ff7aaccb096",
+        "type": "section",
+        "props": {
+          "heading": "A little patience",
+          "container": true
+        },
+        "children": [
+          {
+            "id": "b_e334128815ed",
+            "type": "richText",
+            "props": {
+              "doc": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Good things are hand-stitched. Thank you for waiting."
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

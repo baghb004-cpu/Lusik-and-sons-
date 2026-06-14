@@ -1,0 +1,17 @@
+{
+  "_comment": "Pins for install-media-tools.mjs (the FFmpeg sidecar). FAIL-CLOSED: the installer refuses to stage any download whose bytes don't match the sha256 pinned here, and refuses outright when the pin is null. Keyed by platform-arch (win-x64, linux-x64, linux-arm64 for a Raspberry Pi 5). BtbN publishes rolling builds at the stable `latest` tag, so the URL is fixed but the bytes change over time — pin the CURRENT build's hash deliberately. To pin: `node scripts/install-media-tools.mjs --pin` (run it on the target arch) downloads that platform's asset and prints its sha256; cross-check it against BtbN's release, then paste it below in a commit. If BtbN later rolls the build, the next run fails closed (mismatch) until you re-pin — by design.",
+  "source": "https://github.com/BtbN/FFmpeg-Builds",
+  "tag": "latest",
+  "variants": {
+    "lgpl": {
+      "win-x64": { "asset": "ffmpeg-master-latest-win64-lgpl-shared.zip", "sha256": null },
+      "linux-x64": { "asset": "ffmpeg-master-latest-linux64-lgpl.tar.xz", "sha256": null },
+      "linux-arm64": { "asset": "ffmpeg-master-latest-linuxarm64-lgpl.tar.xz", "sha256": null }
+    },
+    "gpl": {
+      "win-x64": { "asset": "ffmpeg-master-latest-win64-gpl-shared.zip", "sha256": null },
+      "linux-x64": { "asset": "ffmpeg-master-latest-linux64-gpl.tar.xz", "sha256": null },
+      "linux-arm64": { "asset": "ffmpeg-master-latest-linuxarm64-gpl.tar.xz", "sha256": null }
+    }
+  }
+}

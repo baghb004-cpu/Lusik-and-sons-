@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "originZip": "90620",
+  "freeShippingOverCents": 15000,
+  "localDelivery": null,
+  "blockedZips": [],
+  "zones": [
+    {
+      "id": "west",
+      "label": "West",
+      "prefixes": ["8", "9"],
+      "rateCents": 600
+    },
+    {
+      "id": "central",
+      "label": "Central",
+      "prefixes": ["4", "5", "6", "7"],
+      "rateCents": 800
+    },
+    {
+      "id": "east",
+      "label": "East",
+      "prefixes": ["0", "1", "2", "3"],
+      "rateCents": 1000
+    }
+  ],
+  "defaultRateCents": null,
+  "leadTimeNote": "Each piece is made to order — plan on 5–10 business days before it ships from Buena Park, CA."
+}
