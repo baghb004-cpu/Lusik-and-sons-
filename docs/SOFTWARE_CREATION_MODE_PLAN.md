@@ -232,12 +232,14 @@ hub), backed by a pure, fully-tested engine under
   estimate** and a printable **production worksheet** (cost + thread list);
   a local **design library** (save/load named designs); and a **third machine
   format JEF** (Janome) — round-trip-tested like DST + EXP.
+- **Stitch-out simulation + arched lettering (done):** a "Simulate" button
+  animates the stitch path onto the canvas with a speed slider; an "arch" toggle
+  curves any-font text along an arc (circular/arched lettering).
 - **Honesty, by design:** chart + size are exact; DST/EXP/JEF are labelled
-  **EXPERIMENTAL** — "test on your machine with stabilizer first." Still
-  future: **PES (Brother)** — its binary PEC block needs real-hardware
-  validation, so it's not shipped blind; true **vector satin/fill objects** (vs.
-  the grid-based styles); and **stitch-out simulation/playback** + **arched/
-  circular lettering** (planned UI polish).
+  **EXPERIMENTAL** — "test on your machine with stabilizer first." Only two
+  embroidery items are deliberately not built: **PES (Brother)** — its binary
+  PEC block needs real-hardware validation, so it's not shipped blind — and true
+  **vector satin/fill objects** (vs. the grid-based cross/tatami/running styles).
 
 The Software Creation Mode `embroidery` preset still generates its static
 cross-stitch chart for project bundles; the full editor lives at the route above.

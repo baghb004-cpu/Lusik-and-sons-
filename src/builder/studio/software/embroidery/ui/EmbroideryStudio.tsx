@@ -42,6 +42,10 @@ export function EmbroideryStudio() {
   const [text, setText] = useState("");
   const [libName, setLibName] = useState("");
   const [library, setLibrary] = useState<Array<{ name: string; shape: SavedShape }>>([]);
+  const [arch, setArch] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [simSpeed, setSimSpeed] = useState(3);
+  const simRef = useRef<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
@@ -61,8 +65,9 @@ export function EmbroideryStudio() {
   const m = useMemo(() => metrics(grid, count, mmPerCell, style), [grid, count, mmPerCell, style]);
   const checks = useMemo(() => checkDesign(grid, HOOPS[hoopIdx], count, mmPerCell, style), [grid, hoopIdx, count, mmPerCell, style]);
 
-  // draw the canvas whenever the design changes
+  // draw the canvas whenever the design changes (and after a simulation ends)
   useEffect(() => {
+    if (simulating) return; // the simulation owns the canvas while it runs
     const cv = canvasRef.current; if (!cv) return;
     const ctx = cv.getContext("2d"); if (!ctx) return;
     cv.width = grid.w * CELL; cv.height = grid.h * CELL;
@@ -74,7 +79,7 @@ export function EmbroideryStudio() {
     // grid lines, bold every 10
     for (let x = 0; x <= grid.w; x++) { ctx.strokeStyle = x % 10 === 0 ? "#1a1612" : "#d9cfb6"; ctx.lineWidth = x % 10 === 0 ? 1.4 : 0.5; ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, cv.height); ctx.stroke(); }
     for (let y = 0; y <= grid.h; y++) { ctx.strokeStyle = y % 10 === 0 ? "#1a1612" : "#d9cfb6"; ctx.lineWidth = y % 10 === 0 ? 1.4 : 0.5; ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(cv.width, y * CELL); ctx.stroke(); }
-  }, [grid]);
+  }, [grid, simulating]);
 
   const cellAt = (e: React.PointerEvent) => {
     const cv = canvasRef.current!; const r = cv.getBoundingClientRect();
@@ -118,12 +123,30 @@ export function EmbroideryStudio() {
     off.width = grid.w; off.height = grid.h;
     const ctx = off.getContext("2d"); if (!ctx) return;
     ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, grid.w, grid.h);
-    // grow the font until the text fills ~80% of the grid width
-    let px = grid.h;
     ctx.fillStyle = "#000";
-    for (; px > 4; px--) { ctx.font = `bold ${px}px serif`; if (ctx.measureText(text).width <= grid.w * 0.9) break; }
-    ctx.textBaseline = "middle"; ctx.textAlign = "center";
-    ctx.fillText(text, grid.w / 2, grid.h / 2);
+    if (arch) {
+      // place each character along a circular arc (arched / circular lettering)
+      const chars = [...text];
+      const fs = Math.max(5, Math.floor(grid.h * 0.28));
+      ctx.font = `bold ${fs}px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const radius = grid.h * 0.62;
+      const cxp = grid.w / 2, cyp = grid.h * 0.92;
+      const total = Math.min(Math.PI * 0.95, chars.length * 0.28);
+      chars.forEach((ch, i) => {
+        const a = chars.length > 1 ? -total / 2 + (total * i) / (chars.length - 1) : 0;
+        ctx.save();
+        ctx.translate(cxp + Math.sin(a) * radius, cyp - Math.cos(a) * radius);
+        ctx.rotate(a);
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+      });
+    } else {
+      // grow the font until the text fills ~90% of the grid width
+      let px = grid.h;
+      for (; px > 4; px--) { ctx.font = `bold ${px}px serif`; if (ctx.measureText(text).width <= grid.w * 0.9) break; }
+      ctx.textBaseline = "middle"; ctx.textAlign = "center";
+      ctx.fillText(text, grid.w / 2, grid.h / 2);
+    }
     const data = ctx.getImageData(0, 0, grid.w, grid.h).data;
     // map non-white pixels to the chosen thread color (single-color text)
     setGrid((g) => {
@@ -178,6 +201,40 @@ export function EmbroideryStudio() {
   const saveLibrary = (next: typeof library) => { setLibrary(next); try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(next)); } catch { /* */ } };
   const addToLibrary = () => { const name = (libName || title).trim(); if (!name) return; const next = [...library.filter((e) => e.name !== name), { name, shape: currentShape() }]; saveLibrary(next); setLibName(""); };
 
+  // slow stitch-out simulation/playback (animate the path onto the canvas)
+  const stopSim = () => { if (simRef.current != null) cancelAnimationFrame(simRef.current); simRef.current = null; setSimulating(false); };
+  const simulate = () => {
+    if (simulating) { stopSim(); return; }
+    const cv = canvasRef.current; if (!cv) return;
+    const ctx = cv.getContext("2d"); if (!ctx) return;
+    const plan = buildStitchPlan(grid, mmPerCell, style, planOpts);
+    const pts = plan.stitches.filter((s) => s.flag !== "end");
+    if (!pts.length) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const s of pts) { minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x); minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y); }
+    const W = cv.width, H = cv.height, pad = 12;
+    const sc = Math.min((W - 2 * pad) / Math.max(1, maxX - minX), (H - 2 * pad) / Math.max(1, maxY - minY));
+    const TX = (x: number) => pad + (x - minX) * sc, TY = (y: number) => H - pad - (y - minY) * sc;
+    setSimulating(true);
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+    let i = 0, colorIdx = 0;
+    const stepFn = () => {
+      const batch = Math.max(1, Math.round((pts.length / 160) * simSpeed));
+      for (let k = 0; k < batch && i < pts.length; k++, i++) {
+        const s = pts[i];
+        if (s.flag === "stop") { colorIdx++; continue; }
+        if (i > 0 && s.flag === "stitch") {
+          const p = pts[i - 1];
+          ctx.strokeStyle = thread(plan.colors[Math.min(colorIdx, plan.colors.length - 1)]).hex;
+          ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(TX(p.x), TY(p.y)); ctx.lineTo(TX(s.x), TY(s.y)); ctx.stroke();
+        }
+      }
+      if (i < pts.length) simRef.current = requestAnimationFrame(stepFn);
+      else { simRef.current = null; setSimulating(false); }
+    };
+    stepFn();
+  };
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 font-body text-ink">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -197,6 +254,8 @@ export function EmbroideryStudio() {
               <button type="button" onClick={() => setTool("erase")} className={`px-3 py-1 ${tool === "erase" ? "bg-ink text-cream" : ""}`}>🧽 Erase</button>
             </div>
             <button type="button" onClick={() => { if (confirm("Clear the whole design?")) setGrid((g) => clearGrid(g)); }} className="rounded-full border border-ink/20 px-3 py-1 text-xs">Clear</button>
+            <button type="button" onClick={simulate} className={`rounded-full px-3 py-1 text-xs ${simulating ? "bg-red-700 text-white" : "border border-ink/20"}`} title="Watch the stitch-out path animate">{simulating ? "■ Stop" : "▶ Simulate"}</button>
+            <label className="flex items-center gap-1 text-xs">speed<input type="range" min={1} max={8} value={simSpeed} onChange={(e) => setSimSpeed(Number(e.target.value))} /></label>
             <span className="ml-auto text-xs text-muted">Grid {grid.w}×{grid.h}</span>
           </div>
           <div className="max-h-[60vh] overflow-auto rounded-xl border border-ink/10 bg-cream/40 p-2">
@@ -215,7 +274,8 @@ export function EmbroideryStudio() {
             <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a name…" className={inp} aria-label="Text to stitch" maxLength={20} />
             <button type="button" onClick={stamp} className="rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-cream">Stamp (pixel font)</button>
             <button type="button" onClick={stampFont} className="rounded-full border border-ink/20 px-4 py-1.5 text-sm" title="Uses your computer's fonts — works for Armenian and any script">Stamp (any font)</button>
-            <span className="text-xs text-muted">“Any font” uses your computer's fonts — Armenian, monograms, any script.</span>
+            <label className="flex items-center gap-1 text-xs"><input type="checkbox" className="h-3.5 w-3.5 accent-ink" checked={arch} onChange={(e) => setArch(e.target.checked)} />arch</label>
+            <span className="text-xs text-muted">“Any font” = Armenian, monograms, any script. “Arch” curves it.</span>
           </div>
           {/* auto-digitize image with photo options */}
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
