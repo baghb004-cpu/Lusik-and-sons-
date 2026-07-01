@@ -50,7 +50,7 @@ jobs:
       # Cache Playwright's browser binary so the workflow doesn't
       # download ~150MB on every run.
       - name: Cache Playwright browsers
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
