@@ -17,11 +17,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 >    **pill-sheet mobile PDP** (Find My-style detents, photo lightbox, "breathe"
 >    teaching hint — `CONFIG.SHEET`), plus pure-CSS scroll-driven "theater"
 >    effects, a 15-bucket responsive pass, and bag rows that tap back to their
->    product page.
+>    product page. A **July 2026 "DEPTH" 3D pass** sits on top: pointer-tracked
+>    card tilt + glare on both viewports, a preserve-3d hero stage, and 3D
+>    fold-in entrances (see "The DEPTH 3D layer" below).
 > 3. **Content is CMS-managed now (June 2026).** All eleven products (live ones
 >    included), the four categories, and five page surfaces (announcement bar,
 >    FAQ, home featured pick, Story, testimonials) live in `content/**/*.json`,
->    edited in the Studio (`/studio`, with editorial workflow + deploy previews)
+>    edited in the Studio (`/studio`, a stock Netlify CMS setup — direct publish)
 >    and compiled into `src/data/*.generated.js` by `npm run gen:data` (a `pre*`
 >    hook on dev/build/typecheck/test). A build-time gate reconciles live
 >    products against `_lib/trusted-products.mjs`, so a Studio edit can never
@@ -182,12 +184,27 @@ often trip up code/tests written against the old UI:
   double-gated behind `@supports` + `prefers-reduced-motion`) sit on top.
 - **Bag rows link back.** A bag item's photo + title tap back to its product
   page, on both the cart page and the desktop drawer.
+- **The DEPTH 3D layer (July 2026).** Interactive 3D across both viewports,
+  zero new dependencies: cards on home / shop / journal tilt under the pointer
+  (desktop: hover-tracking; phones: while pressed — scroll fires pointercancel
+  and the card springs back) with a pointer-following specular glare; the home
+  hero is a preserve-3d stage whose callout chip floats at real z-depth; the
+  `vt-rise` entrance folds cards in with true perspective; the alphabet marquee
+  lies back like a ribbon (`alpha-marquee-curve`). Implementation:
+  `src/lib/useTilt3D.ts` + the DEPTH block at the bottom of
+  `src/styles/index.css`. **The hook writes the individual `rotate` property +
+  `--t3d-*` custom properties — never `transform`** — so it composes with the
+  theater `transform` animations (vt-rise, stagger-reveal) instead of being
+  overridden by them; keep it that way. Tilting cards need a `.t3d-scene`
+  (perspective) parent; `lg-shine` surfaces skip `.t3d-glare` (both use
+  `::after`). Honors `prefers-reduced-motion`, checked live.
 
 ## Content layer — CMS-managed JSON (`content/`)
 
 Since June 2026 the catalog and several page surfaces are **data, not code**,
-editable by Lusik in the Content Studio (`/studio`, Decap CMS with editorial
-workflow: drafts → review → publish, with Netlify deploy previews):
+editable by Lusik in the Content Studio (`/studio` — a stock, out-of-the-box
+Netlify CMS/Decap setup since July 2026: saving publishes directly to `main`;
+the earlier editorial workflow was rolled back at the owner's request):
 
 - `content/products/*.json` — **all eleven products, live ones included.** The
   migration was deep-diff-verified against the old in-code catalog.
@@ -337,7 +354,7 @@ Edit the policy in `policies.js` only — never in a view.
 There are **two separate private surfaces**, on **distinct paths** so they don't collide:
 
 - **`/admin` = the order dashboard.** A Next.js route (`app/admin/page.tsx` → `AdminRoute` → `AdminView`). Where Lusik manages orders/fulfillment. Client-gated by `isAdmin`; its data comes from `admin-*` Functions that enforce `requireAdmin`.
-- **`/studio` = the Content Studio (Decap CMS).** A static SPA in `public/studio/` (`index.html` + `config.yml`), Git-Gateway backed, for editing content: the journal, **all eleven products, the categories, the announcement bar, the home featured pick, Story, and testimonials** (see "Content layer" above), with editorial workflow (drafts/review/publish + deploy previews). It gets a **looser, scoped CSP** in `netlify.toml` (`for = "/studio/*"`) because Decap loads from unpkg (pinned with SRI) + commits via GitHub.
+- **`/studio` = the content editor (stock Netlify CMS / Decap).** A static SPA in `public/studio/` (`index.html` + `config.yml`), Git-Gateway backed, for editing content: the journal, **all eleven products, the categories, the announcement bar, the home featured pick, Story, and testimonials** (see "Content layer" above). **Out-of-the-box setup (July 2026 rollback): direct publishing** — saving commits straight to `main` and triggers a deploy; the editorial workflow (drafts/review/publish board + per-draft deploy previews) was removed at the owner's request. It gets a **looser, scoped CSP** in `netlify.toml` (`for = "/studio/*"`) because Decap loads from unpkg (pinned with SRI) + commits via GitHub.
 
 > History: the Decap CMS used to live at `public/admin/`, which **collided** with the Next `/admin` route (the route shadowed the static CMS). PR #1 of the CMS handoff moved it to `/studio/`. **Keep them separate.**
 
