@@ -4,40 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Lusik &amp; Sons — Content Studio</title>
-    <!-- Lives at /studio/ (NOT /admin/ — that path is the Next.js order
-         dashboard). Decap auto-loads ./config.yml from this same folder. -->
-
-    <!-- Netlify Identity widget — required by Decap CMS to authenticate
-         the editor via the same Identity account that has the role.
-         Loaded BEFORE the Decap CMS script so Decap can find it on
-         window.netlifyIdentity. -->
+    <title>Content Manager</title>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
   <body>
-    <!-- Decap CMS itself. Pinned to an exact version with a Subresource
-         Integrity (SRI) hash + crossorigin so the browser refuses to
-         execute it if the bytes on unpkg ever change — defends against
-         a compromised CDN or a malicious package re-publish.
-
-         To upgrade Decap:
-           1. Pick the new version: https://www.npmjs.com/package/decap-cms
-           2. Recompute the SRI hash:
-              curl -sL https://unpkg.com/decap-cms@<VERSION>/dist/decap-cms.js | \
-                openssl dgst -sha384 -binary | openssl base64 -A
-           3. Update both the version in src= and the integrity= below.
-           4. Test the editor end-to-end before deploying. -->
+    <!-- Pinned + SRI so a compromised CDN can't swap the editor's code.
+         To upgrade: bump the version and recompute the hash:
+         curl -sL https://unpkg.com/decap-cms@<V>/dist/decap-cms.js | openssl dgst -sha384 -binary | openssl base64 -A -->
     <script
       src="https://unpkg.com/decap-cms@3.8.4/dist/decap-cms.js"
       integrity="sha384-JNjmpWfdPuQ3I7ac38W0teoHcVxx7YdfDVpcgehfGqcu6ZBt26m/nmmBM2FzuO41"
       crossorigin="anonymous"
     ></script>
-
     <script>
-      // Redirect after Identity login. Without this, after clicking
-      // the confirm link in their email, the user lands on the home
-      // page instead of the CMS — which is confusing for a content
-      // editor flow.
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on("init", (user) => {
           if (!user) {

@@ -1,50 +1,13 @@
-# ============================================================
-# Decap CMS configuration
-# ============================================================
-# This file is read by /studio/index.html on every page load.
-# (The CMS lives at /studio/ — /admin is the Next.js order dashboard.)
-# Decap renders a browser editor UI based on the collections
-# defined below and commits changes to GitHub via Git Gateway.
-#
-# Setup requirements (one-time, in the Netlify dashboard):
-#   1. Site → Identity → Enable
-#   2. Site → Identity → Services → Git Gateway → Enable
-#      (Git Gateway is what lets the browser commit to GitHub
-#      without the user having a GitHub account themselves.)
-#   3. Site → Identity → Settings → Registration → Invite-only
-#      (so random visitors can't sign up for editor access)
-#   4. Site → Identity → Users → Invite User → Lusik's email
-#   5. Lusik clicks the confirm link in her email, sets a
-#      password, and lands at /studio/. She can now edit posts.
-#
-# When Lusik saves a post, Decap commits the markdown file
-# back to this repo on the `main` branch (or whatever
-# `branch` says below), which triggers a Netlify deploy.
-# Within ~2 minutes the new post is live.
-# ============================================================
+# Netlify CMS (Decap) configuration — standard setup.
+# The editor lives at /studio/ (/admin is the order dashboard).
+# Saving publishes directly: the CMS commits to `main` and Netlify redeploys.
 
 backend:
   name: git-gateway
   branch: main
 
-# Editorial workflow: edits save as DRAFTS (a branch + pull request under
-# the hood) and move Draft → In review → Ready before publishing. Because
-# each draft is a real PR, Netlify builds a DEPLOY PREVIEW of it — open the
-# PR's preview link to see unpublished changes on the actual site before
-# anyone else does. Publishing merges; the production build follows.
-publish_mode: editorial_workflow
-
-# Where Decap-uploaded media (images for journal posts) goes.
-# Next serves /public/* as-is at build time, so the URL
-# `/journal-media/foo.jpg` resolves correctly in production.
 media_folder: "public/journal-media"
 public_folder: "/journal-media"
-
-# Friendly URL inside the editor for previewing a post in
-# context. Decap opens this URL in a side panel.
-site_url: "https://lusikandsons.com"
-display_url: "https://lusikandsons.com"
-logo_url: "https://lusikandsons.com/apple-touch-icon.png"
 
 collections:
   - name: "journal"
@@ -52,27 +15,18 @@ collections:
     label_singular: "Post"
     folder: "src/data/journal-posts"
     create: true
-    delete: true
     slug: "{{slug}}"
     extension: "md"
     format: "frontmatter"
     summary: "{{title}} — {{publishedAt}}"
-    # The fields below match exactly what src/data/journalPosts.js
-    # expects to parse out of the frontmatter. Don't rename any of
-    # these without updating the parser.
     fields:
-      - { label: "Slug",         name: "slug",        widget: "string", hint: "URL path: /journal/<slug>. NEVER change for an existing post — old links will 404." }
-      - { label: "Title",        name: "title",       widget: "string" }
-      - { label: "Excerpt",      name: "excerpt",     widget: "text",   hint: "One or two sentences shown on the index page." }
-      - { label: "Published",    name: "publishedAt", widget: "date",   format: "YYYY-MM-DD" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL path: /journal/<slug>. Never change on a published post." }
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Excerpt", name: "excerpt", widget: "text" }
+      - { label: "Published", name: "publishedAt", widget: "date", format: "YYYY-MM-DD" }
       - { label: "Read minutes", name: "readMinutes", widget: "number", default: 3, min: 1, max: 30, valueType: "int" }
-      - { label: "Body",         name: "body",        widget: "markdown", hint: "Use ## for section headings. Plain paragraphs become regular text." }
+      - { label: "Body", name: "body", widget: "markdown" }
 
-  # Categories — the shop's four shelves, compiled by scripts/gen-categories.mjs
-  # into the CATALOG skeleton. Slugs are LOAD-BEARING (URLs + every product
-  # file names one) — edit labels/copy freely, never the slug of a category
-  # that has products. The build fails loudly if a product references a
-  # category that doesn't exist.
   - name: "categories"
     label: "Categories"
     label_singular: "Category"
@@ -85,47 +39,31 @@ collections:
     format: "json"
     summary: "{{label}} ({{slug}})"
     fields:
-      - { label: "Slug", name: "slug", widget: "string", hint: "URL: /shop/<slug>. NEVER change on a category with products." }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL: /shop/<slug>. Never change on a category with products." }
       - { label: "Label", name: "label", widget: "string" }
       - { label: "Label (Armenian)", name: "label_hy", widget: "string", required: false }
-      - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false, hint: "Small line above the category title." }
+      - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
       - { label: "Eyebrow (Armenian)", name: "eyebrow_hy", widget: "string", required: false }
       - { label: "Description", name: "description", widget: "text" }
       - { label: "Description (Armenian)", name: "description_hy", widget: "text", required: false }
-      - { label: "Display order", name: "displayOrder", widget: "number", required: false, valueType: "int", hint: "Shop order (lower = first)." }
+      - { label: "Display order", name: "displayOrder", widget: "number", required: false, valueType: "int" }
 
-  # Products — compiled at build time by scripts/gen-products.mjs into the
-  # storefront catalog (content/products/*.json → CATALOG). The fields below
-  # MUST match the schema the generator validates (content/products/README.md);
-  # the build FAILS on bad data, so it can't silently ship broken products.
-  #
-  # ALL products are managed here now — the live ones included. Live status
-  # is protected by the generator's trusted-products reconciliation: a live
-  # product must name the server-side price entry that vouches for it
-  # ("Trusted key"), and its displayed price must match that entry to the
-  # cent, or the build refuses. A CMS edit can never change what a customer
-  # is charged — checkout prices live ONLY in trusted-products.mjs.
   - name: "products"
     label: "Products"
     label_singular: "Product"
     folder: "content/products"
     create: true
-    delete: true
     identifier_field: "name"
     slug: "{{slug}}"
     extension: "json"
     format: "json"
     summary: "{{name}} ({{category}}) — {{status}}"
     fields:
-      - label: "Category"
-        name: "category"
-        widget: "select"
-        options: ["blankets", "bibs", "towels", "baby"]
-        hint: "Which shop category this product belongs to."
-      - { label: "Internal key", name: "key",  widget: "string", hint: "Stable internal id, e.g. baby-bathrobe. NEVER change on a live product — carts and Stripe key off it." }
-      - { label: "Slug",         name: "slug", widget: "string", hint: "URL: /shop/<category>/<slug>. Lowercase kebab-case. NEVER change once shared." }
-      - { label: "Name",         name: "name", widget: "string" }
-      - { label: "Name (Armenian)", name: "name_hy", widget: "string", required: false, hint: "Optional Armenian display name." }
+      - { label: "Category", name: "category", widget: "select", options: ["blankets", "bibs", "towels", "baby"] }
+      - { label: "Internal key", name: "key", widget: "string", hint: "Stable id. Never change on a live product." }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL: /shop/<category>/<slug>. Never change once shared." }
+      - { label: "Name", name: "name", widget: "string" }
+      - { label: "Name (Armenian)", name: "name_hy", widget: "string", required: false }
       - label: "Status"
         name: "status"
         widget: "select"
@@ -134,28 +72,26 @@ collections:
           - { label: "Draft (hidden from the site)", value: "draft" }
           - { label: "Coming soon (placeholder page)", value: "placeholder" }
           - { label: "Live (buyable)", value: "live" }
-        hint: "Live requires a Trusted key (below) whose server-side price matches Price from exactly — the build refuses otherwise. New products stay Coming soon until they're priced server-side."
-      - { label: "Trusted key", name: "trustedKey", widget: "string", required: false, hint: "LIVE PRODUCTS ONLY: the netlify/functions/_lib/trusted-products.mjs key that vouches for the price (ask a developer — e.g. 'bib' for the name bib). Not needed for Coming soon products." }
-      - { label: "Price from ($)", name: "priceFrom", widget: "number", required: false, default: null, valueType: "int", min: 1, hint: "DISPLAY ONLY — never the checkout price. For live products it MUST equal the trusted server-side price. Leave blank for 'price coming soon'." }
-      - { label: "Tagline",     name: "tagline",     widget: "string" }
+        hint: "Live requires a Trusted key whose server-side price matches Price from — the build refuses otherwise."
+      - { label: "Trusted key", name: "trustedKey", widget: "string", required: false, hint: "Live products only: the server-side price entry that vouches for this product (ask a developer)." }
+      - { label: "Price from ($)", name: "priceFrom", widget: "number", required: false, default: null, valueType: "int", min: 1, hint: "Display only — checkout prices live server-side. Blank = 'price coming soon'." }
+      - { label: "Tagline", name: "tagline", widget: "string" }
       - { label: "Tagline (Armenian)", name: "tagline_hy", widget: "string", required: false }
-      - { label: "Description", name: "description", widget: "text", required: false, hint: "Required for Coming soon products (the placeholder page shows it). Optional for live products with their own page." }
+      - { label: "Description", name: "description", widget: "text", required: false }
       - { label: "Description (Armenian)", name: "description_hy", widget: "text", required: false }
-      - { label: "Cover image", name: "coverImage",  widget: "image", required: false, hint: "Optional category-card thumbnail." }
-      - { label: "Gallery",     name: "images",      widget: "list", required: false, field: { label: "Image", name: "image", widget: "image" }, hint: "Gallery photos, in display order — colorways reference these by position (first photo = 0)." }
+      - { label: "Cover image", name: "coverImage", widget: "image", required: false }
+      - { label: "Gallery", name: "images", widget: "list", required: false, field: { label: "Image", name: "image", widget: "image" } }
       - label: "Colorways"
         name: "colorways"
         widget: "list"
         required: false
         summary: "{{fields.label}}"
-        hint: "The color filter under the gallery. Indices are positions in the Gallery list, counting from 0."
         fields:
           - { label: "Label", name: "label", widget: "string" }
           - { label: "Photo indices", name: "indices", widget: "list", field: { label: "Index", name: "index", widget: "number", valueType: "int", min: 0 } }
           - label: "Swatch"
             name: "swatch"
             widget: "object"
-            hint: "Fill exactly ONE of these: a solid color, a two-color split, or a gradient."
             fields:
               - { label: "Solid color (hex)", name: "color", widget: "string", required: false }
               - { label: "Two-color split (2 hexes)", name: "dual", widget: "list", required: false, field: { label: "Hex", name: "hex", widget: "string" } }
@@ -165,18 +101,12 @@ collections:
         widget: "list"
         required: false
         summary: "{{fields.label}}"
-        hint: "The Materials / Size / Care / Made rows on the product page."
         fields:
           - { label: "Label", name: "label", widget: "string" }
           - { label: "Value", name: "value", widget: "text" }
-      - { label: "Display order", name: "displayOrder", widget: "number", required: false, valueType: "int", hint: "Sort within the category (lower = first)." }
-      # Reserved for a future Stripe linkage — NOT used for checkout.
-      - { label: "Stripe Price ID (reserved)", name: "stripePriceId", widget: "string", required: false, hint: "Reserved. Not connected to checkout." }
+      - { label: "Display order", name: "displayOrder", widget: "number", required: false, valueType: "int" }
+      - { label: "Stripe Price ID (reserved)", name: "stripePriceId", widget: "string", required: false }
 
-  # Site content — editable copy for specific pages, compiled by
-  # scripts/gen-pages.mjs (content/pages/*.json → what the storefront renders).
-  # A FILES collection (a fixed set of pages; you edit, not create/delete).
-  # The build FAILS on bad data, so a broken edit can't silently ship.
   - name: "site-content"
     label: "Site Content"
     files:
@@ -184,20 +114,20 @@ collections:
         label: "Announcement bar"
         file: "content/pages/announcement.json"
         fields:
-          - { label: "Show the announcement", name: "enabled", widget: "boolean", default: false, hint: "Off = no bar anywhere. On = the strip shows at the very top of every page, phones and desktop." }
-          - { label: "Message", name: "message", widget: "string", required: false, hint: "Required when enabled. Keep it one line — e.g. 'Order by Dec 10 to arrive before Christmas.'" }
-          - { label: "Link", name: "link", widget: "string", required: false, hint: "Optional: a site path (/shop/blankets) or https:// URL." }
-          - { label: "Link label", name: "linkLabel", widget: "string", required: false, hint: "The tappable words — required if Link is set." }
+          - { label: "Show the announcement", name: "enabled", widget: "boolean", default: false }
+          - { label: "Message", name: "message", widget: "string", required: false }
+          - { label: "Link", name: "link", widget: "string", required: false }
+          - { label: "Link label", name: "linkLabel", widget: "string", required: false }
       - name: "home"
         label: "Home page"
         file: "content/pages/home.json"
         fields:
-          - label: "Featured product (the “We think you'll love” card)"
+          - label: "Featured product"
             name: "featured"
             widget: "object"
             fields:
               - { label: "Category slug", name: "category", widget: "select", options: ["blankets", "bibs", "towels", "baby"] }
-              - { label: "Product slug", name: "slug", widget: "string", hint: "Must be a LIVE product's slug (e.g. armenian-alphabet-blanket) — the build checks and refuses typos or coming-soon products." }
+              - { label: "Product slug", name: "slug", widget: "string", hint: "Must be a live product's slug — the build checks." }
       - name: "story"
         label: "Our Story page"
         file: "content/pages/story.json"
@@ -208,7 +138,6 @@ collections:
             name: "paragraphs"
             widget: "list"
             field: { label: "Paragraph", name: "paragraph", widget: "text" }
-            hint: "Plain text. The alphabet triads 'Ա, Բ, Գ' and 'A, B, C' render in gold automatically wherever they appear."
           - { label: "Signature", name: "signature", widget: "string" }
           - { label: "Signature subline", name: "signatureSub", widget: "string" }
       - name: "testimonials"
@@ -222,7 +151,7 @@ collections:
             name: "quotes"
             widget: "list"
             summary: "{{fields.name}} — {{fields.quote}}"
-            hint: "THE SITE SHOWS THE FIRST THREE — drag to reorder. Seed quotes are placeholders: replace them with real customers who said yes to being quoted (TODO_LUSIK)."
+            hint: "The site shows the first three — drag to reorder."
             fields:
               - { label: "Quote", name: "quote", widget: "text" }
               - { label: "Name", name: "name", widget: "string" }
@@ -231,12 +160,12 @@ collections:
         label: "FAQ page"
         file: "content/pages/faq.json"
         fields:
-          - { label: "Eyebrow", name: "eyebrow", widget: "string", hint: "Small label above the heading." }
-          - { label: "Heading", name: "title",   widget: "string" }
+          - { label: "Eyebrow", name: "eyebrow", widget: "string" }
+          - { label: "Heading", name: "title", widget: "string" }
           - label: "Questions"
             name: "items"
             widget: "list"
             summary: "{{fields.q}}"
             fields:
               - { label: "Question", name: "q", widget: "string" }
-              - { label: "Answer",   name: "a", widget: "text" }
+              - { label: "Answer", name: "a", widget: "text" }

@@ -11,7 +11,7 @@ Written during the CMS handoff (Phases 1–2 shipped). Pairs with the
 | Surface | URL | What it is | Auth |
 |---|---|---|---|
 | **Order dashboard** | `/admin` | Next.js route (`app/admin/page.tsx` → `AdminRoute` → `AdminView`). Orders, fulfillment, tracking, finished-photo upload, waitlist notify. | Identity login **+ admin role**; client renders nothing for non-admins; data comes only from `admin-*` Functions that enforce `requireAdmin`. |
-| **Content Studio** | `/studio` | Static Decap CMS SPA (`public/studio/`), Git-Gateway backed. Edits **journal** + **products**. | Identity login **+ Git Gateway** + invited editor. Scoped looser CSP (`netlify.toml` `for = "/studio/*"`). |
+| **Content Studio** | `/studio` | Static Decap CMS SPA (`public/studio/`), Git-Gateway backed. Edits **journal** + **products** (+ categories & site content). Stock, out-of-the-box setup since July 2026: **direct publish** — saving commits to `main`; no editorial workflow. | Identity login **+ Git Gateway** + invited editor. Scoped looser CSP (`netlify.toml` `for = "/studio/*"`). |
 
 They used to collide at `/admin` (the Next route shadowed the static CMS); the CMS
 was moved to `/studio` so both work.
