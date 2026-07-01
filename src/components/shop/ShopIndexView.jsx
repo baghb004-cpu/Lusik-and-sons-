@@ -33,6 +33,7 @@ import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 import { promoForCatalogProduct, foundingPriceForKey } from "../../lib/launchPromo.js";
 import { FoundingFromPrice, FoundingPriceBadge } from "../FoundingPriceBadge.jsx";
+import { useTilt3D } from "../../lib/useTilt3D";
 
 // ------------------------------------------------------------
 // FEATURED_PIECES — the curated mobile "Featured pieces" set.
@@ -102,17 +103,19 @@ const CATEGORY_COVER_IMAGE = {
 function CategoryCard({ category, onTap, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
+  const tiltRef = useTilt3D();
   const label = loc(category, "label", lang);
   const image = CATEGORY_COVER_IMAGE[category.slug] || null;
 
   return (
     <button
+      ref={tiltRef}
       type="button"
       onClick={onTap}
       onPointerEnter={onPrefetch}
       onFocus={onPrefetch}
       aria-label={t("shop.browseAria", { label })}
-      className="flex flex-col items-stretch text-center"
+      className="t3d t3d-glare flex flex-col items-stretch text-center"
       style={{
         flexShrink: 0,
         width: 140,
@@ -178,14 +181,16 @@ function CategoryCard({ category, onTap, onPrefetch }) {
 // ------------------------------------------------------------
 function FeaturedPieceCard({ piece, onTap, onPrefetch }) {
   const t = useT();
+  const tiltRef = useTilt3D();
   return (
     <button
+      ref={tiltRef}
       type="button"
       onClick={onTap}
       onPointerEnter={onPrefetch}
       onFocus={onPrefetch}
       aria-label={t("shop.viewAria", { name: piece.name })}
-      className="vt-rise block w-full text-left"
+      className="vt-rise t3d t3d-glare block w-full text-left"
       style={{
         background: "var(--bg-surface, #FFFFFF)",
         border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
@@ -267,12 +272,14 @@ function FeaturedPieceCard({ piece, onTap, onPrefetch }) {
 // ------------------------------------------------------------
 function JournalCard({ post, onTap }) {
   const t = useT();
+  const tiltRef = useTilt3D();
   return (
     <button
+      ref={tiltRef}
       type="button"
       onClick={onTap}
       aria-label={t("shop.readAria", { title: post.title })}
-      className="flex flex-col text-left"
+      className="t3d t3d-glare flex flex-col text-left"
       style={{
         flexShrink: 0,
         width: 300,
@@ -496,6 +503,7 @@ function swatchBackground(s) {
 function ProductGridCard({ item, onTap, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
+  const tiltRef = useTilt3D();
   const name = loc(item, "name", lang);
   const promo = item.status === "live" ? promoForCatalogProduct(item) : null;
   let priceLabel;
@@ -504,14 +512,20 @@ function ProductGridCard({ item, onTap, onPrefetch }) {
   else priceLabel = t("shop.madeToOrder");
   return (
     <button
+      ref={tiltRef}
       type="button"
       onClick={onTap}
       onPointerEnter={onPrefetch}
       onFocus={onPrefetch}
       aria-label={t("shop.viewAria", { name })}
-      className="flex flex-col text-left"
+      className="t3d flex flex-col text-left"
     >
+      {/* Glare rides the photo tile, not the whole button — the text
+          below sits on the page background, where a highlight would
+          read as a smudge. The --t3d-* vars inherit down from the
+          button, so the tile's ::after still tracks the pointer. */}
       <div
+        className="t3d-glare"
         style={{
           background: "var(--bg-surface, #FFFFFF)",
           border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
@@ -569,9 +583,85 @@ function ProductGridCard({ item, onTap, onPrefetch }) {
   );
 }
 
+// ------------------------------------------------------------
+// DesktopCategoryCard — one large lg-glass category card in the
+// desktop 2-column grid. Extracted from the map body so each card
+// can own a useTilt3D ref (DEPTH tilt; lg-shine keeps the hover
+// sweep, so no t3d-glare here).
+// ------------------------------------------------------------
+function DesktopCategoryCard({ category, index, onTap, onPrefetch }) {
+  const t = useT();
+  const { lang } = useLang();
+  const tiltRef = useTilt3D();
+  const total = category.products.length;
+  const liveCount = category.products.filter((p) => p.status === "live").length;
+  const subtitleParts = [];
+  if (liveCount > 0) subtitleParts.push(t("shop.availableNow", { n: liveCount }));
+  if (total - liveCount > 0) subtitleParts.push(t("shop.comingSoonCount", { n: total - liveCount }));
+  const catLabel = loc(category, "label", lang);
+  const cover = CATEGORY_COVER_IMAGE[category.slug] || null;
+
+  return (
+    <button
+      ref={tiltRef}
+      onClick={onTap}
+      onPointerEnter={onPrefetch}
+      onFocus={onPrefetch}
+      className="lg-button lg-shine t3d text-left p-6 lg:p-8 transition stagger-reveal"
+      style={{ "--i": index }}
+      aria-label={t("shop.browseAria", { label: catLabel })}
+    >
+      {/* Photo band — the categories sell with Lusik's real
+          photography, so lead the card with it. Decorative for
+          AT (alt="") since the button's aria-label carries the
+          destination. */}
+      <div
+        className="mb-5 overflow-hidden"
+        style={{ borderRadius: 12, height: 170, position: "relative", background: "var(--accent-soft)" }}
+      >
+        {cover ? (
+          <Image
+            src={cover}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 560px, 100vw"
+            style={{ objectFit: "cover" }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70">
+              {t("shop.cardPhotoSoon")}
+            </span>
+          </div>
+        )}
+      </div>
+      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>
+        {loc(category, "eyebrow", lang)}
+      </p>
+      <h2 className="font-display text-2xl lg:text-3xl mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+        {catLabel}
+      </h2>
+      <p className="text-sm opacity-75 leading-relaxed mb-5">
+        {loc(category, "description", lang)}
+      </p>
+      <div className="flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid var(--border-default)" }}>
+        <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-65">
+          {subtitleParts.join(" · ")}
+        </p>
+        <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
+          {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
+        </span>
+      </div>
+    </button>
+  );
+}
+
 export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
+  // DEPTH tilt for the one-off "Discover what's new" hero card (the
+  // mapped cards each own a ref inside their card components).
+  const newestTilt = useTilt3D();
   // Merge the routing/image meta (FEATURED_PIECES) with the translated
   // editorial copy (shop.featured) by index, so each featured card keeps its
   // deep link + photo but reads in the active language.
@@ -604,7 +694,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             {t("shop.browseBy")}
           </p>
           <div
-            className="flex"
+            className="flex t3d-scene"
             style={{
               gap: 12,
               overflowX: "auto",
@@ -636,7 +726,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             full-width card, full-bleed cover photo on top, name +
             one supporting line below. Tapping deep-links straight
             to the product page. */}
-        <section className="px-6 mt-9 mb-10">
+        <section className="t3d-scene px-6 mt-9 mb-10">
           <h2
             className="font-display mb-4"
             style={{ fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text-primary, #1A1612)" }}
@@ -644,12 +734,13 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             {t("shop.discoverNew")}
           </h2>
           <button
+            ref={newestTilt}
             type="button"
             onClick={() => onNavigateProduct?.("bibs", "bari-akhorzhak-bib-burp-cloth-set")}
             onPointerEnter={() => onPrefetch?.("/shop/bibs/bari-akhorzhak-bib-burp-cloth-set")}
             onFocus={() => onPrefetch?.("/shop/bibs/bari-akhorzhak-bib-burp-cloth-set")}
             aria-label={t("shop.viewAria", { name: t("shop.newestName") })}
-            className="block w-full text-left"
+            className="t3d t3d-glare block w-full text-left"
             style={{
               background: "var(--bg-surface, #FFFFFF)",
               border: "1px solid var(--border-soft, rgba(26,22,18,0.08))",
@@ -701,7 +792,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           {/* Stacked on phones; paired up on the open-book canvas (iPhone
               Fold inner display / 768–1023px) so the big feature cards
               share the 4:3 width instead of each stretching across it. */}
-          <div className="book:grid book:grid-cols-2 book:gap-5 book:items-start">
+          <div className="t3d-scene book:grid book:grid-cols-2 book:gap-5 book:items-start">
             {featuredPieces.map((piece) => (
               <FeaturedPieceCard
                 key={`${piece.categorySlug}/${piece.slug}`}
@@ -729,7 +820,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           >
             {t("shop.shopCollection")}
           </h2>
-          <div className="grid grid-cols-2" style={{ rowGap: 22, columnGap: 16 }}>
+          <div className="t3d-scene grid grid-cols-2" style={{ rowGap: 22, columnGap: 16 }}>
             {GRID_ITEMS.map((item) => (
               <ProductGridCard
                 key={`${item.categorySlug}/${item.slug}`}
@@ -753,7 +844,7 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             {t("shop.fromJournal")}
           </h2>
           <div
-            className="flex"
+            className="flex t3d-scene"
             style={{
               gap: 14,
               overflowX: "auto",
@@ -804,71 +895,16 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           {t("shop.intro")}
         </p>
 
-        <div className="grid sm:grid-cols-2 gap-5 lg:gap-6">
-          {Object.entries(CATALOG).map(([_, category], i) => {
-            const total       = category.products.length;
-            const liveCount   = category.products.filter((p) => p.status === "live").length;
-            const subtitleParts = [];
-            if (liveCount > 0)   subtitleParts.push(t("shop.availableNow", { n: liveCount }));
-            if (total - liveCount > 0) subtitleParts.push(t("shop.comingSoonCount", { n: total - liveCount }));
-            const catLabel = loc(category, "label", lang);
-
-            const cover = CATEGORY_COVER_IMAGE[category.slug] || null;
-
-            return (
-              <button
-                key={category.slug}
-                onClick={() => onNavigateCategory(category.slug)}
-                onPointerEnter={() => onPrefetch?.(`/shop/${category.slug}`)}
-                onFocus={() => onPrefetch?.(`/shop/${category.slug}`)}
-                className="lg-button lg-shine text-left p-6 lg:p-8 transition stagger-reveal"
-                style={{ "--i": i }}
-                aria-label={t("shop.browseAria", { label: catLabel })}
-              >
-                {/* Photo band — the categories sell with Lusik's real
-                    photography, so lead the card with it. Decorative for
-                    AT (alt="") since the button's aria-label carries the
-                    destination. */}
-                <div
-                  className="mb-5 overflow-hidden"
-                  style={{ borderRadius: 12, height: 170, position: "relative", background: "var(--accent-soft)" }}
-                >
-                  {cover ? (
-                    <Image
-                      src={cover}
-                      alt=""
-                      fill
-                      sizes="(min-width: 1024px) 560px, 100vw"
-                      style={{ objectFit: "cover" }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70">
-                        {t("shop.cardPhotoSoon")}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>
-                  {loc(category, "eyebrow", lang)}
-                </p>
-                <h2 className="font-display text-2xl lg:text-3xl mb-2" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-                  {catLabel}
-                </h2>
-                <p className="text-sm opacity-75 leading-relaxed mb-5">
-                  {loc(category, "description", lang)}
-                </p>
-                <div className="flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid var(--border-default)" }}>
-                  <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-65">
-                    {subtitleParts.join(" · ")}
-                  </p>
-                  <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
-                    {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+        <div className="t3d-scene grid sm:grid-cols-2 gap-5 lg:gap-6">
+          {Object.entries(CATALOG).map(([_, category], i) => (
+            <DesktopCategoryCard
+              key={category.slug}
+              category={category}
+              index={i}
+              onTap={() => onNavigateCategory(category.slug)}
+              onPrefetch={() => onPrefetch?.(`/shop/${category.slug}`)}
+            />
+          ))}
         </div>
       </div>
     </div>

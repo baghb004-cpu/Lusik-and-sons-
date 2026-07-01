@@ -20,6 +20,7 @@ import React, { useEffect } from "react";
 import { JOURNAL_POSTS } from "../data/journalPosts.js";
 import { BookOpen } from "./icons.jsx";
 import { StitchDivider } from "./Theater.jsx";
+import { useTilt3D } from "../lib/useTilt3D";
 
 function formatPublishedDate(iso) {
   if (!iso) return "";
@@ -28,6 +29,54 @@ function formatPublishedDate(iso) {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+// One mobile editorial card. A component (not a map body) so each card
+// can own a useTilt3D ref — the DEPTH tilt + glare layer.
+function MobilePostCard({ post, onSelect }) {
+  const tiltRef = useTilt3D();
+  return (
+    <article
+      ref={tiltRef}
+      onClick={onSelect}
+      className="vt-rise t3d t3d-glare w-full text-left overflow-hidden block cursor-pointer"
+      style={{ borderRadius: 22, background: "var(--bg-surface, #FFFFFF)", border: "1px solid var(--border-soft, rgba(26,22,18,0.08))" }}
+    >
+      {/* "Cover" band — the title set large, like the media art
+          on an Apple card (we have no per-post photos, so a soft
+          brand-gold wash + the title carries it). */}
+      <div
+        className="relative flex flex-col justify-end"
+        style={{
+          minHeight: 172,
+          padding: "20px",
+          background: "linear-gradient(150deg, rgba(176,136,66,0.22) 0%, rgba(176,136,66,0.07) 55%, rgba(26,22,18,0.04) 100%)",
+        }}
+      >
+        <span
+          className="text-[0.6rem] tracking-[0.3em] uppercase"
+          style={{ color: "var(--accent-text)", fontWeight: 600, position: "absolute", top: 18, left: 20 }}
+        >
+          Journal
+        </span>
+        <h2 className="font-display leading-tight" style={{ fontSize: "1.6rem", fontWeight: 400, letterSpacing: "-0.01em", color: "var(--text-primary)" }}>
+          {post.title}
+        </h2>
+      </div>
+      {/* Body — excerpt + a read-time meta pill. */}
+      <div style={{ padding: "16px 20px 20px" }}>
+        <p className="text-sm leading-relaxed mb-4 line-clamp-3" style={{ color: "var(--text-secondary, rgba(26,22,18,0.7))" }}>
+          {post.excerpt}
+        </p>
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+          <BookOpen size={14} strokeWidth={1.6} style={{ color: "var(--accent-text)" }} />
+          <span>{post.readMinutes} min read</span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
+        </div>
+      </div>
+    </article>
+  );
 }
 
 export function JournalListView({ posts, onSelectPost, onBack }) {
@@ -45,48 +94,9 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
         {/* Single column on phones; the editorial cards pair up
             magazine-style on the open-book tier (book: ≥700px — Fold
             inner display, iPad mini portrait). Desktop is below. */}
-        <div className="space-y-5 book:space-y-0 book:grid book:grid-cols-2 book:gap-5">
+        <div className="t3d-scene space-y-5 book:space-y-0 book:grid book:grid-cols-2 book:gap-5">
           {posts.map((post) => (
-            <article
-              key={post.slug}
-              onClick={() => onSelectPost(post.slug)}
-              className="vt-rise w-full text-left overflow-hidden block cursor-pointer"
-              style={{ borderRadius: 22, background: "var(--bg-surface, #FFFFFF)", border: "1px solid var(--border-soft, rgba(26,22,18,0.08))" }}
-            >
-              {/* "Cover" band — the title set large, like the media art
-                  on an Apple card (we have no per-post photos, so a soft
-                  brand-gold wash + the title carries it). */}
-              <div
-                className="relative flex flex-col justify-end"
-                style={{
-                  minHeight: 172,
-                  padding: "20px",
-                  background: "linear-gradient(150deg, rgba(176,136,66,0.22) 0%, rgba(176,136,66,0.07) 55%, rgba(26,22,18,0.04) 100%)",
-                }}
-              >
-                <span
-                  className="text-[0.6rem] tracking-[0.3em] uppercase"
-                  style={{ color: "var(--accent-text)", fontWeight: 600, position: "absolute", top: 18, left: 20 }}
-                >
-                  Journal
-                </span>
-                <h2 className="font-display leading-tight" style={{ fontSize: "1.6rem", fontWeight: 400, letterSpacing: "-0.01em", color: "var(--text-primary)" }}>
-                  {post.title}
-                </h2>
-              </div>
-              {/* Body — excerpt + a read-time meta pill. */}
-              <div style={{ padding: "16px 20px 20px" }}>
-                <p className="text-sm leading-relaxed mb-4 line-clamp-3" style={{ color: "var(--text-secondary, rgba(26,22,18,0.7))" }}>
-                  {post.excerpt}
-                </p>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-                  <BookOpen size={14} strokeWidth={1.6} style={{ color: "var(--accent-text)" }} />
-                  <span>{post.readMinutes} min read</span>
-                  <span style={{ opacity: 0.4 }}>·</span>
-                  <time dateTime={post.publishedAt}>{formatPublishedDate(post.publishedAt)}</time>
-                </div>
-              </div>
-            </article>
+            <MobilePostCard key={post.slug} post={post} onSelect={() => onSelectPost(post.slug)} />
           ))}
         </div>
       </div>
