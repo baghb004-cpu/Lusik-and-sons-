@@ -45,6 +45,7 @@ import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import { getRecentlyViewed } from "../lib/recentActivity.js";
 import { AlphabetMarquee } from "./Theater.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
+import { useTilt3D } from "../lib/useTilt3D";
 // FAQ copy is CMS-managed (Content Studio /studio → "Site Content"), compiled
 // from content/pages/faq.json by scripts/gen-pages.mjs. Static at build time.
 import { CMS_PAGES } from "../data/pagesData.generated.js";
@@ -101,6 +102,57 @@ function SectionBackHeader({ onBack }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// One Explore card in either skin (mobile carousel / desktop grid). A
+// component rather than a map body so each card can own a useTilt3D ref —
+// the DEPTH tilt layer. Desktop cards keep lg-shine's own hover sweep
+// (its ::after), so only the mobile skin adds the t3d-glare highlight.
+function ExploreCard({ variant, title, blurb, Icon, go, onPrefetch }) {
+  const tiltRef = useTilt3D();
+  if (variant === "desktop") {
+    return (
+      <button
+        ref={tiltRef}
+        type="button"
+        onClick={go}
+        onPointerEnter={onPrefetch}
+        onFocus={onPrefetch}
+        className="vt-rise t3d lg-button lg-shine text-left rounded-2xl p-6 flex flex-col gap-4 transition"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
+        aria-label={`${title} — ${blurb}`}
+      >
+        <Icon size={26} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+        <div>
+          <p className="font-display text-xl leading-tight mb-1" style={{ fontWeight: 400, color: "var(--text-primary)" }}>{title}</p>
+          <p className="text-sm opacity-70 leading-relaxed">{blurb}</p>
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5 mt-3" style={{ color: "var(--accent)", fontWeight: 500 }}>
+            Open <ArrowRight size={12} strokeWidth={1.75} />
+          </p>
+        </div>
+      </button>
+    );
+  }
+  return (
+    <button
+      ref={tiltRef}
+      type="button"
+      onClick={go}
+      onPointerEnter={onPrefetch}
+      onFocus={onPrefetch}
+      className="vt-rise t3d t3d-glare snap-start flex-shrink-0 w-[156px] h-[156px] book:w-auto text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
+      aria-label={`${title} — ${blurb}`}
+    >
+      <Icon size={24} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+      {/* Title reserves two lines so 1- and 2-line titles align the
+          same across the whole row (no more random heights). */}
+      <div>
+        <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)", minHeight: "2.4em" }}>{title}</p>
+        <p className="text-xs mt-1 opacity-65 leading-snug">{blurb}</p>
+      </div>
+    </button>
   );
 }
 
@@ -164,6 +216,10 @@ export function HomeView({
   // the left-column text block stays in sync with the photo on
   // the right. Updated via the onIndexChange callback.
   const [heroIndex, setHeroIndex] = useState(0);
+  // DEPTH tilt refs for the singleton cards (the mapped cards own theirs
+  // inside ExploreCard). The hero tracks gently — it's a big surface.
+  const featuredTilt = useTilt3D();
+  const heroTilt = useTilt3D({ max: 2.5, touchMax: 1.5 });
   // Device-local "recently viewed" memory (localStorage). Read once on
   // mount — feeds the mobile-only "Your recent activity" strip below the
   // hero. Empty for first-time visitors, who just see hero + curated card.
@@ -241,12 +297,15 @@ export function HomeView({
               <button onClick={() => onNavigatePage?.("story")} className="text-sm tracking-wide underline underline-offset-4 hover:opacity-60">{t("hero.storyCta")}</button>
             </div>
           </div>
-          <div className="book:col-span-7 slide-up stagger-2">
-            <div className="relative">
+          <div className="book:col-span-7 slide-up stagger-2 t3d-scene">
+            {/* DEPTH stage: the media frame tilts as one rigid body under the
+                pointer; the callout chip floats 48px above the photo plane
+                (t3d-pop) and parallaxes against it while the stage moves. */}
+            <div ref={heroTilt} className="relative t3d t3d-stage">
               <div className="aspect-[4/3] overflow-hidden">
                 <HeroSlideshow className="w-full h-full" onIndexChange={setHeroIndex} />
               </div>
-              <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
+              <div className="absolute -bottom-6 -left-6 px-6 py-4 hidden lg:block t3d-pop" style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
                 <p className="text-xs tracking-[0.2em] uppercase mb-1" style={{ color: "var(--text-primary)" }}>{t("hero.callout1")}</p>
                 <p className="font-display text-lg" style={{ fontWeight: 400 }}>{t("hero.callout2")}</p>
               </div>
@@ -266,7 +325,7 @@ export function HomeView({
                viewed strip the search page uses; only renders when the
                guest has actually viewed something.
           Sits right after the brand hero so the hero still leads. */}
-      <section className={`lg:hidden px-6 ${simplified ? "pt-3" : "pt-2"} pb-10`}>
+      <section className={`t3d-scene lg:hidden px-6 ${simplified ? "pt-3" : "pt-2"} pb-10`}>
         {/* a) We think you'll love — curated feature card.
             Heading uses the Apple Store "For You" section style: large,
             bold, ink-colored, left-aligned (not the small gold eyebrow). */}
@@ -279,11 +338,12 @@ export function HomeView({
             resolved + live-checked at build by gen-pages) — Lusik can point
             this card at any live product seasonally without a code change. */}
         <button
+          ref={featuredTilt}
           type="button"
           onClick={() => onNavigateProduct?.(featuredPick.category.slug, featuredPick.product.slug)}
           onPointerEnter={() => onPrefetch?.(featuredPath)}
           onFocus={() => onPrefetch?.(featuredPath)}
-          className="w-full flex items-center gap-4 text-left rounded-2xl p-3"
+          className="t3d t3d-glare w-full flex items-center gap-4 text-left rounded-2xl p-3"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 10px 26px -14px rgba(26,22,18,0.24)" }}
           aria-label={`${loc(featuredPick.product, "name", lang)} — ${t("forYou.selectedForYou")}`}
         >
@@ -348,58 +408,40 @@ export function HomeView({
             the strip becomes a 4-up grid — all eight cards visible at once,
             two tidy rows, no horizontal scroll. Card width moves from the
             fixed 156px to the grid track (h stays for the square feel). */}
-        <div className="lg:hidden -mr-6 book:mr-0 flex book:grid book:grid-cols-4 gap-3 book:gap-4 overflow-x-auto book:overflow-visible snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none", scrollPaddingLeft: 0 }}>
+        <div className="t3d-scene lg:hidden -mr-6 book:mr-0 flex book:grid book:grid-cols-4 gap-3 book:gap-4 overflow-x-auto book:overflow-visible snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none", scrollPaddingLeft: 0 }}>
           {exploreCards.map(({ key, title, blurb, Icon, go }) => (
-            <button
+            <ExploreCard
               key={key}
-              type="button"
-              onClick={go}
-              onPointerEnter={() => onPrefetch?.(`/${key}`)}
-              onFocus={() => onPrefetch?.(`/${key}`)}
-              className="vt-rise snap-start flex-shrink-0 w-[156px] h-[156px] book:w-auto text-left rounded-2xl p-4 flex flex-col justify-between active:scale-[0.98] transition-transform"
-              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
-              aria-label={`${title} — ${blurb}`}
-            >
-              <Icon size={24} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
-              {/* Title reserves two lines so 1- and 2-line titles align the
-                  same across the whole row (no more random heights). */}
-              <div>
-                <p className="font-display text-base leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)", minHeight: "2.4em" }}>{title}</p>
-                <p className="text-xs mt-1 opacity-65 leading-snug">{blurb}</p>
-              </div>
-            </button>
+              variant="mobile"
+              title={title}
+              blurb={blurb}
+              Icon={Icon}
+              go={go}
+              onPrefetch={() => onPrefetch?.(`/${key}`)}
+            />
           ))}
         </div>
 
         {/* Desktop: grid of the same cards. */}
-        <div className="hidden lg:grid grid-cols-4 gap-5">
+        <div className="t3d-scene hidden lg:grid grid-cols-4 gap-5">
           {exploreCards.map(({ key, title, blurb, Icon, go }) => (
-            <button
+            <ExploreCard
               key={key}
-              type="button"
-              onClick={go}
-              onPointerEnter={() => onPrefetch?.(`/${key}`)}
-              onFocus={() => onPrefetch?.(`/${key}`)}
-              className="vt-rise lg-button lg-shine text-left rounded-2xl p-6 flex flex-col gap-4 transition"
-              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
-              aria-label={`${title} — ${blurb}`}
-            >
-              <Icon size={26} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
-              <div>
-                <p className="font-display text-xl leading-tight mb-1" style={{ fontWeight: 400, color: "var(--text-primary)" }}>{title}</p>
-                <p className="text-sm opacity-70 leading-relaxed">{blurb}</p>
-                <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5 mt-3" style={{ color: "var(--accent)", fontWeight: 500 }}>
-                  Open <ArrowRight size={12} strokeWidth={1.75} />
-                </p>
-              </div>
-            </button>
+              variant="desktop"
+              title={title}
+              blurb={blurb}
+              Icon={Icon}
+              go={go}
+              onPrefetch={() => onPrefetch?.(`/${key}`)}
+            />
           ))}
         </div>
       </section>
 
       {/* The loom band — all thirty-eight letters drifting by at whisper
-          opacity (Theater.jsx; pure CSS motion, still under reduced motion). */}
-      <AlphabetMarquee className="py-2" />
+          opacity (Theater.jsx; pure CSS motion, still under reduced motion).
+          The curve lays the band back into the page in real perspective. */}
+      <AlphabetMarquee className="py-2 alpha-marquee-curve" />
 
       {/* Trust badges. Hidden on the simplified mobile return-visit
           (hidden lg:block) so the "For You" flow goes straight from
@@ -566,7 +608,7 @@ export function HomeView({
       </section>
 
       {/* The loom band again — the story page earns the letters most. */}
-      <AlphabetMarquee className="py-3" />
+      <AlphabetMarquee className="py-3 alpha-marquee-curve" />
 
       {/* ============================================================
           TESTIMONIALS

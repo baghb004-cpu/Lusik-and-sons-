@@ -2011,7 +2011,11 @@
   }
 }
 @keyframes vtRise {
-  from { opacity: 0; transform: translateY(26px) scale(0.985); }
+  /* The from-state folds the card back 9° in real perspective (part of
+     the DEPTH layer below), so it rises AND unfolds into place. The
+     to-state stays `none` on purpose — no lingering transform, so the
+     card creates no permanent containing block / stacking context. */
+  from { opacity: 0; transform: perspective(900px) rotateX(9deg) translateY(26px) scale(0.985); }
   to   { opacity: 1; transform: none; }
 }
 
@@ -2125,4 +2129,105 @@
 @keyframes loomDrift {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
+}
+
+/* ============================================================
+   DEPTH — the tactile 3D layer (July 2026)
+   ============================================================
+   Interactive 3D across both viewports: cards tilt under the
+   pointer (desktop: hover-tracking; phones: while pressed — a
+   scroll gesture fires pointercancel and the card springs back),
+   a specular glare follows the pointer across the card, the hero
+   media stage keeps true z-depth (the callout chip floats 48px
+   above the slideshow plane and parallaxes under tilt), and the
+   alphabet marquee lies back into the page like a ribbon.
+
+   Driven by useTilt3D (src/lib/useTilt3D.ts), which writes the
+   *individual* `rotate` property + --t3d-* custom properties —
+   never `transform` — so the tilt composes with the THEATER
+   entrance animations above (vt-rise, stagger-reveal animate
+   `transform`) instead of fighting them.
+
+   All of it is decorative: the hook no-ops under
+   prefers-reduced-motion (checked live), the CSS stands down
+   below, and nothing here changes layout or semantics.
+   ============================================================ */
+
+/* A perspective "scene" — put on the PARENT of tilting cards
+   (perspective projects its direct children), so siblings share
+   one vanishing point and off-center cards pick up a believable
+   directional skew, like objects on a real shelf. */
+.t3d-scene { perspective: 1200px; }
+
+/* The tilting element. Fast follow while the pointer is on the
+   card (data-t3d-live, set by the hook), slow spring-back on
+   release. `rotate` is compositor-friendly; will-change only
+   while live so idle cards don't hold GPU layers.
+
+   `transition` is ONE property — a rotate-only shorthand here
+   would win the cascade over lg-button's and Tailwind's lists
+   and make those cards' hover/press effects snap. So both rules
+   re-declare the transitions the tilting cards already rely on
+   (transform for hover-lift/active:scale, background/border/
+   color/shadow/opacity at their existing timings). */
+.t3d,
+.t3d[data-t3d-live] {
+  transition:
+    rotate 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.15s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+.t3d[data-t3d-live] {
+  transition-duration: 0.07s, 0.15s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s;
+  transition-timing-function: linear, ease, ease, ease, ease, ease, ease;
+  will-change: rotate;
+}
+
+/* Specular glare that follows the pointer — an ::after overlay,
+   zero extra DOM. Reads the --t3d-* vars set on the tilting card;
+   they inherit, so this class can also sit on a solid child tile
+   when the card itself has transparent regions (ProductGridCard).
+   NOT for lg-shine surfaces — those already own their ::after. */
+.t3d-glare { position: relative; }
+.t3d-glare::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(
+    260px circle at var(--t3d-gx, 50%) var(--t3d-gy, 50%),
+    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.12) 45%,
+    transparent 70%
+  );
+  mix-blend-mode: soft-light;
+  opacity: var(--t3d-glow, 0);
+  transition: opacity 0.4s ease;
+}
+
+/* The hero stage: the media frame tilts as one rigid body and
+   preserves 3D so children can sit at real depths — the desktop
+   callout chip floats above the photo plane and parallaxes
+   against it under tilt, a cue flat sites can't fake. */
+.t3d-stage { transform-style: preserve-3d; }
+.t3d-pop { transform: translateZ(48px); }
+
+/* The loom band lies back into the page — static geometry rather
+   than motion, so it also holds for reduced-motion guests (their
+   marquee is a still, receding band). */
+.alpha-marquee-curve { transform: perspective(640px) rotateX(14deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The hook already no-ops (rotate never changes), so no transition
+     override is needed — and overriding would wipe the cards' normal
+     hover/press easing, which non-t3d elements keep under reduced
+     motion too. Only the decorative extras stand down. */
+  .t3d-glare::after { display: none; }
+  .t3d-pop { transform: none; }
 }

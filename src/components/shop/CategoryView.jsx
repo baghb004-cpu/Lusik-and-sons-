@@ -31,6 +31,7 @@ import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 import { promoForCatalogProduct } from "../../lib/launchPromo.js";
 import { FoundingFromPrice } from "../FoundingPriceBadge.jsx";
+import { useTilt3D } from "../../lib/useTilt3D";
 
 // Thumbnail image(s) for the category-grid card. Returns either:
 //   - a string (single image, no slideshow), OR
@@ -63,6 +64,114 @@ function productHeroImages(product) {
   return null;
 }
 
+// One product card in the category grid. A component (not a map body) so
+// each card can own a useTilt3D ref — the DEPTH tilt layer. lg-shine keeps
+// its own hover sweep, so no t3d-glare here.
+function CategoryProductCard({ category, product: p, index, soldOut, hero, onTap, onPrefetch }) {
+  const t = useT();
+  const { lang } = useLang();
+  const tiltRef = useTilt3D();
+  const isLive = p.status === "live";
+  return (
+    <button
+      ref={tiltRef}
+      onClick={onTap}
+      onPointerEnter={onPrefetch}
+      onFocus={onPrefetch}
+      className="lg-button lg-shine t3d text-left flex flex-col stagger-reveal"
+      style={{ "--i": index }}
+      aria-label={isLive ? t("shop.viewAria", { name: loc(p, "name", lang) }) : t("shop.comingSoonAria", { name: loc(p, "name", lang) })}
+    >
+      {/* Product photo (live) or "Image goes here" placeholder.
+          CategoryCardImage handles both a single image (static)
+          and an array of images (brisk slideshow on hover /
+          auto-cycle on touch). Returns null for products
+          without a hero, in which case we render the empty
+          "Image goes here" frame below. */}
+      <div className="aspect-[4/5] overflow-hidden" style={{ borderBottom: "1px solid var(--border-default)" }}>
+        {hero ? (
+          <CategoryCardImage images={hero} alt={p.name} />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-center px-4"
+            style={{ background: "var(--accent-soft)" }}
+          >
+            <div>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "var(--accent-text)", fontWeight: 600 }}>
+                {t("shop.almostReady")}
+              </p>
+              <p className="text-xs opacity-55 italic">{t("shop.lusikHands")}</p>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="p-5">
+        <h2 className="font-display text-xl lg:text-2xl mb-1" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
+          {loc(p, "name", lang)}
+        </h2>
+        <p className="text-sm opacity-75 leading-relaxed mb-4 min-h-[2.5em]">
+          {loc(p, "tagline", lang)}
+        </p>
+        <div className="flex items-center justify-between gap-2 pt-3" style={{ borderTop: "1px solid var(--border-soft)" }}>
+          {/* Three-mode footer:
+              * Live -- price + "Step in" CTA
+              * Priced placeholder (commission-only) -- price
+                shown the same way, but CTA reads "By direct
+                order" so the customer knows clicking goes
+                to a product page with a commission path,
+                not to an Add-to-Cart button
+              * Unpriced placeholder -- "Almost ready" badge
+                + "Write me" CTA into the waitlist */}
+          {isLive ? (
+            <>
+              {(() => {
+                const promo = promoForCatalogProduct(p);
+                return promo ? (
+                  <FoundingFromPrice
+                    normalLabel={t("shop.from", { price: promo.normalDollars })}
+                    foundingLabel={t("shop.from", { price: promo.foundingDollars })}
+                  />
+                ) : (
+                  <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent-text)" }}>
+                    {t("shop.from", { price: p.priceFrom })}
+                  </p>
+                );
+              })()}
+              {soldOut ? (
+                <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent-text)", fontWeight: 600 }}>
+                  {t("soldOut.badge")}
+                </span>
+              ) : (
+                <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
+                  {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
+                </span>
+              )}
+            </>
+          ) : typeof p.priceFrom === "number" && p.priceFrom > 0 ? (
+            <>
+              <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent-text)" }}>
+                {t("shop.from", { price: p.priceFrom })}
+              </p>
+              <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
+                {t("shop.byDirectOrder")} <ArrowRight size={12} strokeWidth={1.75} />
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent-text)", fontWeight: 600 }}>
+                {t("shop.almostReady")}
+              </span>
+              <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
+                {t("shop.writeMe")} <ArrowRight size={12} strokeWidth={1.75} />
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
 export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
@@ -86,110 +195,19 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
 
       {/* The book tier (≥700px: iPhone Fold inner canvas, iPad mini
           portrait) gets the full 3-up grid early — 2-up stretches there. */}
-      <div className="grid sm:grid-cols-2 book:grid-cols-3 gap-5 lg:gap-6">
-        {category.products.map((p, i) => {
-          const isLive = p.status === "live";
-          const soldOut = isLive && isSoldOut(inventoryKeyForCatalog(p.key));
-          const hero   = productHeroImages(p);
-          return (
-            <button
-              key={p.slug}
-              onClick={() => onNavigateProduct(category.slug, p.slug)}
-              onPointerEnter={() => onPrefetch?.(`/shop/${category.slug}/${p.slug}`)}
-              onFocus={() => onPrefetch?.(`/shop/${category.slug}/${p.slug}`)}
-              className="lg-button lg-shine text-left flex flex-col stagger-reveal"
-              style={{ "--i": i }}
-              aria-label={isLive ? t("shop.viewAria", { name: loc(p, "name", lang) }) : t("shop.comingSoonAria", { name: loc(p, "name", lang) })}
-            >
-              {/* Product photo (live) or "Image goes here" placeholder.
-                  CategoryCardImage handles both a single image (static)
-                  and an array of images (brisk slideshow on hover /
-                  auto-cycle on touch). Returns null for products
-                  without a hero, in which case we render the empty
-                  "Image goes here" frame below. */}
-              <div className="aspect-[4/5] overflow-hidden" style={{ borderBottom: "1px solid var(--border-default)" }}>
-                {hero ? (
-                  <CategoryCardImage images={hero} alt={p.name} />
-                ) : (
-                  <div
-                    className="w-full h-full flex items-center justify-center text-center px-4"
-                    style={{ background: "var(--accent-soft)" }}
-                  >
-                    <div>
-                      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "var(--accent-text)", fontWeight: 600 }}>
-                        {t("shop.almostReady")}
-                      </p>
-                      <p className="text-xs opacity-55 italic">{t("shop.lusikHands")}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="p-5">
-                <h2 className="font-display text-xl lg:text-2xl mb-1" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-                  {loc(p, "name", lang)}
-                </h2>
-                <p className="text-sm opacity-75 leading-relaxed mb-4 min-h-[2.5em]">
-                  {loc(p, "tagline", lang)}
-                </p>
-                <div className="flex items-center justify-between gap-2 pt-3" style={{ borderTop: "1px solid var(--border-soft)" }}>
-                  {/* Three-mode footer:
-                      * Live -- price + "Step in" CTA
-                      * Priced placeholder (commission-only) -- price
-                        shown the same way, but CTA reads "By direct
-                        order" so the customer knows clicking goes
-                        to a product page with a commission path,
-                        not to an Add-to-Cart button
-                      * Unpriced placeholder -- "Almost ready" badge
-                        + "Write me" CTA into the waitlist */}
-                  {isLive ? (
-                    <>
-                      {(() => {
-                        const promo = promoForCatalogProduct(p);
-                        return promo ? (
-                          <FoundingFromPrice
-                            normalLabel={t("shop.from", { price: promo.normalDollars })}
-                            foundingLabel={t("shop.from", { price: promo.foundingDollars })}
-                          />
-                        ) : (
-                          <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent-text)" }}>
-                            {t("shop.from", { price: p.priceFrom })}
-                          </p>
-                        );
-                      })()}
-                      {soldOut ? (
-                        <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent-text)", fontWeight: 600 }}>
-                          {t("soldOut.badge")}
-                        </span>
-                      ) : (
-                        <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
-                          {t("shop.stepIn")} <ArrowRight size={12} strokeWidth={1.75} />
-                        </span>
-                      )}
-                    </>
-                  ) : typeof p.priceFrom === "number" && p.priceFrom > 0 ? (
-                    <>
-                      <p className="text-sm" style={{ fontWeight: 500, color: "var(--accent-text)" }}>
-                        {t("shop.from", { price: p.priceFrom })}
-                      </p>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
-                        {t("shop.byDirectOrder")} <ArrowRight size={12} strokeWidth={1.75} />
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[0.6rem] tracking-[0.25em] uppercase px-2 py-1" style={{ background: "var(--accent-soft)", color: "var(--accent-text)", fontWeight: 600 }}>
-                        {t("shop.almostReady")}
-                      </span>
-                      <span className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
-                        {t("shop.writeMe")} <ArrowRight size={12} strokeWidth={1.75} />
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+      <div className="t3d-scene grid sm:grid-cols-2 book:grid-cols-3 gap-5 lg:gap-6">
+        {category.products.map((p, i) => (
+          <CategoryProductCard
+            key={p.slug}
+            category={category}
+            product={p}
+            index={i}
+            soldOut={p.status === "live" && isSoldOut(inventoryKeyForCatalog(p.key))}
+            hero={productHeroImages(p)}
+            onTap={() => onNavigateProduct(category.slug, p.slug)}
+            onPrefetch={() => onPrefetch?.(`/shop/${category.slug}/${p.slug}`)}
+          />
+        ))}
       </div>
     </div>
     {/* Category pages get the fuller "Still need help deciding?" block
