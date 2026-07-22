@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lusik &amp; Sons — Custom Embroidery Studio</title>
+<link rel="stylesheet" href="./css/studio.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><span>Lusik &amp; Sons</span><span class="stitch"></span><small>Custom Embroidery</small></div>
+  <button class="step-back" id="backBtn" style="display:none">‹ Back</button>
+  <span class="who" id="who"></span>
+</div></header>
+
+<main><div class="wrap">
+
+  <!-- SIGN IN -->
+  <section class="screen on" data-screen="signin">
+    <div class="hero">
+      <div class="eyebrow">Lusik's Workshop · Armenia → California</div>
+      <h1 style="font-size:34px">Custom Embroidery Studio</h1>
+      <div class="stitch-lg"></div>
+      <p class="sub" style="margin-bottom:26px">Tuxedos, shirts, towels, blankets — pick the item, watch the name stitch itself on in live 3D, send the order. English, Español, Հայերեն.</p>
+      <button class="btn-go wide" data-go="catalog" onclick="signIn('Gohar','company')">Tuxedos Online — Company Account</button>
+      <div style="height:12px"></div>
+      <button class="btn-ghost" style="width:100%" data-go="catalog" onclick="signIn('Guest','public')">I'm new — request a custom quote</button>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:16px">Demo sign-in · in the real app the company button is a private link for Gohar &amp; Vrej (Tuxedos Online); company orders are invoiced per order.</p>
+    </div>
+  </section>
+
+  <!-- CATALOG -->
+  <section class="screen" data-screen="catalog">
+    <div class="eyebrow">Step 1</div>
+    <h1>Choose a product</h1>
+    <p class="sub">Everything from the shop that can be embroidered.</p>
+    <div class="toolbar">
+      <label class="search">🔎 <input id="q" type="search" placeholder="Search products…" autocomplete="off"></label>
+    </div>
+    <div class="chips" id="typeChips"></div>
+    <p class="count-note" id="countNote"></p>
+    <div class="grid" id="grid"><div class="loading">Loading the catalog…</div></div>
+  </section>
+
+  <!-- CUSTOMIZE -->
+  <section class="screen" data-screen="customize">
+    <div class="eyebrow">Step 2</div>
+    <h1 id="cName">Customize</h1>
+    <p class="sub">Spin the fabric, type the name, watch it stitch itself on.</p>
+    <div class="stage2">
+      <div>
+        <div class="viewer-card">
+          <div id="viewer3d" style="position:absolute;inset:0"></div>
+          <span class="viewer-title" id="viewerTitle">LIVE 3D</span>
+          <span class="viewer-hint">Drag to spin · scroll or pinch to zoom</span>
+          <div class="viewer-fallback" id="viewerFallback" style="display:none">3D isn’t available on this device — the photo preview below shows your design.</div>
+        </div>
+        <div class="photo-card" id="photoCard">
+          <div class="photo-emoji" id="photoEmoji" style="display:none"></div>
+          <img class="garment" id="garmentImg" alt="">
+          <div class="photo-note">Tap a numbered dot to choose where the embroidery goes.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <p class="field-label">What are we stitching?</p>
+        <div class="seg mode" id="modeSeg">
+          <button data-mode="name" class="on">Full name</button>
+          <button data-mode="mono">Monogram</button>
+        </div>
+
+        <div id="nameFields">
+          <p class="field-label">Language</p>
+          <div class="seg" id="langSeg">
+            <button data-lang="en" class="on">English</button>
+            <button data-lang="es">Español</button>
+            <button data-lang="hy">Հայերեն</button>
+          </div>
+          <p class="field-label">Style</p>
+          <div class="seg" id="styleSeg">
+            <button data-style="print" class="on">Print<span class="h">Block letters</span></button>
+            <button data-style="cursive">Cursive<span class="h">Joined script</span></button>
+          </div>
+          <p class="field-label">The name</p>
+          <input class="namebox" id="nameInput" placeholder="Type a name…" value="Gohar" autocomplete="off">
+          <div class="translit" id="translit"></div>
+        </div>
+
+        <div id="monoFields" style="display:none">
+          <p class="field-label">Initials (up to 3 letters)</p>
+          <div class="mono-row">
+            <span class="mono-cell"><input id="monoF" maxlength="1" value="G"><span class="cap">First</span></span>
+            <span class="mono-cell"><input id="monoM" maxlength="1" value="A"><span class="cap">Middle</span></span>
+            <span class="mono-cell"><input id="monoL" maxlength="1" value="H"><span class="cap">Last</span></span>
+          </div>
+          <p class="mono-note">Classic style puts the <b>last-name initial big in the middle</b> — we order it for you.</p>
+          <p class="field-label">Monogram style</p>
+          <div class="seg" id="monoStyleSeg">
+            <button data-mstyle="classic" class="on">Classic<span class="h">fLm stacked</span></button>
+            <button data-mstyle="straight">Straight<span class="h">F M L same size</span></button>
+            <button data-mstyle="script">Script<span class="h">Flowing</span></button>
+          </div>
+        </div>
+
+        <p class="field-label" style="margin-top:14px">Thread color</p>
+        <div class="swatches" id="swatches"></div>
+        <p class="field-label">Fabric color</p>
+        <div class="swatches" id="fabricSwatches"></div>
+        <div class="info" id="placeInfo">Tap a dot on the garment photo to place the name.</div>
+        <button class="btn-go wide" data-go="sent">Review &amp; send</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SENT -->
+  <section class="screen" data-screen="sent">
+    <div class="done">
+      <div class="big">🎉</div>
+      <h1 id="sentTitle">Order sent!</h1>
+      <div class="summary" id="orderSummary"></div>
+      <button class="btn-ghost" data-go="catalog" onclick="resetOrder()">Start another order</button>
+      <div class="todo">
+        <b>What happens next (in the real build):</b> pressing Send calls a small render worker that turns the design
+        into a machine-ready <code>.pes</code> file, renders a preview, and emails everything to Lusik &amp; Sons —
+        plus, for company-account orders, an auto-numbered invoice; public requests arrive as quotes to price first.
+        In this demo the file/email/invoice step is stubbed — the engine (<code>engine/</code>) and Netlify function are the next build phase.
+      </div>
+    </div>
+  </section>
+
+</div></main>
+
+<script type="module" src="./js/stage3d.js"></script>
+<script src="./js/app.js" defer></script>
+</body>
+</html>

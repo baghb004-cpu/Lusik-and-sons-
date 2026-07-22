@@ -50,6 +50,22 @@ from = "/studio/"
 to = "/studio/index.html"
 status = 200
 
+# ── Custom Embroidery Studio (static order app) ───────────
+# Same pattern as /studio above: a static SPA in public/embroidery/ (the
+# Lusik & Sons custom-embroidery order portal — big-tile catalog + live 3D
+# preview). EXACT paths only so /embroidery/js/*, /embroidery/presets/*.json,
+# and the vendored three.js keep serving as normal static assets. It complies
+# with the strict global CSP (all assets self-hosted; product photos allowed
+# by img-src https:) — no scoped CSP block needed, unlike Decap.
+[[redirects]]
+from = "/embroidery"
+to = "/embroidery/index.html"
+status = 200
+[[redirects]]
+from = "/embroidery/"
+to = "/embroidery/index.html"
+status = 200
+
 # NOTE: every other redirect from the Vite config is intentionally REMOVED.
 # Next's file-based routing now owns /, /shop/*, /journal/*, /story,
 # /workshop, /faq, /contact, /shipping, /newsletter, /account, /admin, /gallery.
