@@ -62,8 +62,13 @@ export function baseUrl() {
 /**
  * Generic Resend send. Returns true on 2xx, false otherwise.
  * Never throws — callers shouldn't have to wrap in try/catch.
+ *
+ * `attachments` (optional): [{ filename, content }] with base64
+ * content — Resend's native shape, used for the embroidery-order
+ * .pes file. `replyTo` (optional) sets Resend's reply_to so a
+ * plain reply in the mail client reaches the requester.
  */
-export async function sendEmail({ to, subject, html, text }) {
+export async function sendEmail({ to, subject, html, text, attachments, replyTo }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("[email] RESEND_API_KEY not set; skipping send to", to);
@@ -71,13 +76,16 @@ export async function sendEmail({ to, subject, html, text }) {
   }
   const from = process.env.RESEND_FROM_EMAIL || "Lusik & Sons <hello@lusikandsons.com>";
   try {
+    const payload = { from, to, subject, html, text };
+    if (attachments?.length) payload.attachments = attachments;
+    if (replyTo) payload.reply_to = replyTo;
     const res = await fetch(RESEND_API_URL, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to, subject, html, text }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
@@ -1197,4 +1205,109 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
   ].join("\n");
 
   return await sendEmail({ to, subject, html, text });
+}
+
+/**
+ * Send the embroidery-order / quote-request email to Lusik.
+ * Fired by the embroidery-order Function when the /embroidery
+ * order desk submits. The machine-ready .pes file rides along as
+ * an attachment when the browser engine produced one; when it
+ * didn't (old browser, engine error), the email says so and the
+ * design parameters are enough to digitize manually.
+ *
+ * `order` — validated payload from embroidery-order.mjs:
+ *   { ref, account, contact{name,email,phone}, productName,
+ *     panelLabel, areaMm[w,h], modeLine, textStitched, threadName,
+ *     threadHex, fabricName, fabricHex, notes, stats|null }
+ * `pesBase64` — base64 .pes bytes or null.
+ */
+export async function sendEmbroideryOrderEmail({ order, pesBase64 }) {
+  const to = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!to) {
+    console.warn("[email] ADMIN_NOTIFICATION_EMAIL not set; skipping embroidery order email");
+    return false;
+  }
+  const { accent, ink, cream, muted } = PALETTE;
+  const isCompany = order.account === "company";
+  const kind = isCompany ? "Embroidery order" : "Embroidery quote request";
+  const subject = headerSafe(
+    `🧵 ${kind} ${order.ref} — "${order.textStitched}" on ${order.productName}`
+  );
+
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:6px 12px 6px 0;color:${muted};font-size:13px;white-space:nowrap;vertical-align:top;">${esc(label)}</td>
+      <td style="padding:6px 0;color:${ink};font-size:14px;">${value}</td>
+    </tr>`;
+
+  const swatch = (hex, name) =>
+    `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${esc(hex)};border:1px solid rgba(0,0,0,.2);vertical-align:middle;margin-right:6px;"></span>${esc(name)} <span style="color:${muted};font-size:12px;">${esc(hex)}</span>`;
+
+  const statsLine = order.stats
+    ? `${order.stats.stitchCount} stitches · ${order.stats.widthMm} × ${order.stats.heightMm} mm · ${order.stats.jumps} trims`
+    : null;
+
+  const contactBits = [
+    order.contact.name ? esc(order.contact.name) : null,
+    order.contact.email ? `<a href="mailto:${esc(order.contact.email)}" style="color:${accent};">${esc(order.contact.email)}</a>` : null,
+    order.contact.phone ? esc(order.contact.phone) : null,
+  ].filter(Boolean).join(" · ");
+
+  const html = `<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:Georgia,'Times New Roman',serif;">
+  <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
+    <div style="font-size:12px;letter-spacing:2px;color:${accent};text-transform:uppercase;">Lusik &amp; Sons — Embroidery desk</div>
+    <h1 style="font-size:22px;color:${ink};margin:8px 0 4px;">${esc(kind)} ${esc(order.ref)}</h1>
+    <div style="color:${muted};font-size:13px;margin-bottom:20px;">${isCompany
+      ? "Billed to the Tuxedos Online company account."
+      : "Public request — reply with a price before stitching."}</div>
+
+    <div style="background:#fff;border-radius:12px;padding:20px 24px;">
+      <table style="border-collapse:collapse;width:100%;">
+        ${row("Stitch text", `<b style="font-size:16px;">${esc(order.textStitched)}</b>`)}
+        ${row("Design", esc(order.modeLine))}
+        ${row("Product", esc(order.productName))}
+        ${row("Placement", `${esc(order.panelLabel)} · about ${order.areaMm[0]} × ${order.areaMm[1]} mm`)}
+        ${row("Thread", swatch(order.threadHex, order.threadName))}
+        ${row("Fabric", swatch(order.fabricHex, order.fabricName))}
+        ${statsLine ? row("Machine file", `${esc(order.ref)}.pes attached — ${esc(statsLine)}`) : ""}
+        ${order.notes ? row("Notes", esc(order.notes)) : ""}
+        ${contactBits ? row("Contact", contactBits) : ""}
+      </table>
+      ${pesBase64 ? "" : `<div style="margin-top:14px;padding:10px 14px;background:${cream};border-radius:8px;color:${muted};font-size:13px;">No .pes attached — the browser couldn't run the stitch engine. The parameters above are complete; digitize manually.</div>`}
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
+      Sent by the /embroidery order desk on lusikandsons.com.
+    </div>
+  </div>
+</body></html>`;
+
+  const text = [
+    `LUSIK & SONS — EMBROIDERY DESK`,
+    `${kind} ${order.ref}`,
+    "",
+    `Stitch text: ${order.textStitched}`,
+    `Design:      ${order.modeLine}`,
+    `Product:     ${order.productName}`,
+    `Placement:   ${order.panelLabel} · about ${order.areaMm[0]} x ${order.areaMm[1]} mm`,
+    `Thread:      ${order.threadName} ${order.threadHex}`,
+    `Fabric:      ${order.fabricName} ${order.fabricHex}`,
+    statsLine ? `Machine file: ${order.ref}.pes attached — ${statsLine}` : `No .pes attached — digitize manually from the parameters above.`,
+    order.notes ? `Notes:       ${order.notes}` : null,
+    contactBits ? `Contact:     ${[order.contact.name, order.contact.email, order.contact.phone].filter(Boolean).join(" · ")}` : null,
+    "",
+    isCompany ? "Billed to the Tuxedos Online company account." : "Public request — reply with a price before stitching.",
+  ].filter((l) => l !== null).join("\n");
+
+  return await sendEmail({
+    to,
+    subject,
+    html,
+    text,
+    replyTo: order.contact.email || undefined,
+    attachments: pesBase64
+      ? [{ filename: `${order.ref}.pes`, content: pesBase64 }]
+      : undefined,
+  });
 }
