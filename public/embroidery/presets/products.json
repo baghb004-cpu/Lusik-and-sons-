@@ -1,0 +1,1445 @@
+﻿{
+    "meta":  {
+                 "destiny_hoop_max_mm":  [
+                                             240,
+                                             360
+                                         ],
+                 "note":  "Embroidery-area dimensions are industry-standard estimates (estimated=true). Confirm against real garments before production."
+             },
+    "counts":  {
+                   "embroiderable":  136,
+                   "by_type":  {
+                                   "shirt":  44,
+                                   "jacket_suit":  58,
+                                   "vest":  26,
+                                   "cummerbund":  3,
+                                   "pocket_square":  5
+                               }
+               },
+    "garmentTypes":  {
+                         "shirt":  {
+                                       "label":  "Dress / Tuxedo Shirt",
+                                       "panels":  [
+                                                      {
+                                                          "id":  "left_chest",
+                                                          "label":  "Left chest",
+                                                          "default":  true,
+                                                          "area_mm":  [
+                                                                          110,
+                                                                          70
+                                                                      ],
+                                                          "fits_destiny_hoop":  true,
+                                                          "estimated":  true,
+                                                          "note":  "Classic monogram/logo spot, ~180-200mm below shoulder seam, ~90mm from front placket"
+                                                      },
+                                                      {
+                                                          "id":  "left_cuff",
+                                                          "label":  "Left cuff",
+                                                          "default":  false,
+                                                          "area_mm":  [
+                                                                          70,
+                                                                          25
+                                                                      ],
+                                                          "fits_destiny_hoop":  true,
+                                                          "estimated":  true,
+                                                          "note":  "Cuff monogram (French or barrel cuff)"
+                                                      },
+                                                      {
+                                                          "id":  "right_cuff",
+                                                          "label":  "Right cuff",
+                                                          "default":  false,
+                                                          "area_mm":  [
+                                                                          70,
+                                                                          25
+                                                                      ],
+                                                          "fits_destiny_hoop":  true,
+                                                          "estimated":  true,
+                                                          "note":  "Cuff monogram"
+                                                      },
+                                                      {
+                                                          "id":  "collar_band",
+                                                          "label":  "Collar band",
+                                                          "default":  false,
+                                                          "area_mm":  [
+                                                                          45,
+                                                                          18
+                                                                      ],
+                                                          "fits_destiny_hoop":  true,
+                                                          "estimated":  true,
+                                                          "note":  "Hidden monogram under the collar"
+                                                      },
+                                                      {
+                                                          "id":  "back_yoke",
+                                                          "label":  "Center back yoke",
+                                                          "default":  false,
+                                                          "area_mm":  [
+                                                                          130,
+                                                                          60
+                                                                      ],
+                                                          "fits_destiny_hoop":  true,
+                                                          "estimated":  true,
+                                                          "note":  "Below the collar on the back yoke"
+                                                      }
+                                                  ]
+                                   },
+                         "vest":  {
+                                      "label":  "Vest",
+                                      "panels":  [
+                                                     {
+                                                         "id":  "back",
+                                                         "label":  "Center back",
+                                                         "default":  true,
+                                                         "area_mm":  [
+                                                                         180,
+                                                                         140
+                                                                     ],
+                                                         "fits_destiny_hoop":  true,
+                                                         "estimated":  true,
+                                                         "note":  "Large back panel"
+                                                     },
+                                                     {
+                                                         "id":  "front_left",
+                                                         "label":  "Lower left front",
+                                                         "default":  false,
+                                                         "area_mm":  [
+                                                                         80,
+                                                                         55
+                                                                     ],
+                                                         "fits_destiny_hoop":  true,
+                                                         "estimated":  true,
+                                                         "note":  "Discreet front monogram"
+                                                     }
+                                                 ]
+                                  },
+                         "cummerbund":  {
+                                            "label":  "Cummerbund",
+                                            "panels":  [
+                                                           {
+                                                               "id":  "front_center",
+                                                               "label":  "Front center",
+                                                               "default":  true,
+                                                               "area_mm":  [
+                                                                               120,
+                                                                               45
+                                                                           ],
+                                                               "fits_destiny_hoop":  true,
+                                                               "estimated":  true,
+                                                               "note":  "Across the pleated front"
+                                                           }
+                                                       ]
+                                        },
+                         "jacket_suit":  {
+                                             "label":  "Tuxedo / Suit / Jacket",
+                                             "panels":  [
+                                                            {
+                                                                "id":  "interior_lining",
+                                                                "label":  "Inside breast lining",
+                                                                "default":  true,
+                                                                "area_mm":  [
+                                                                                130,
+                                                                                70
+                                                                            ],
+                                                                "fits_destiny_hoop":  true,
+                                                                "estimated":  true,
+                                                                "note":  "Interior left-breast lining monogram (the traditional spot)"
+                                                            },
+                                                            {
+                                                                "id":  "left_chest",
+                                                                "label":  "Exterior left chest",
+                                                                "default":  false,
+                                                                "area_mm":  [
+                                                                                90,
+                                                                                55
+                                                                            ],
+                                                                "fits_destiny_hoop":  true,
+                                                                "estimated":  true,
+                                                                "note":  "Exterior left chest (less common)"
+                                                            },
+                                                            {
+                                                                "id":  "back_showpiece",
+                                                                "label":  "Full back (showpiece)",
+                                                                "default":  false,
+                                                                "area_mm":  [
+                                                                                200,
+                                                                                260
+                                                                            ],
+                                                                "fits_destiny_hoop":  true,
+                                                                "estimated":  true,
+                                                                "note":  "Large arched name across the back - costume/christening showpiece; near the hoop limit"
+                                                            }
+                                                        ]
+                                         },
+                         "pocket_square":  {
+                                               "label":  "Pocket Square / Handkerchief",
+                                               "panels":  [
+                                                              {
+                                                                  "id":  "corner",
+                                                                  "label":  "Corner monogram",
+                                                                  "default":  true,
+                                                                  "area_mm":  [
+                                                                                  45,
+                                                                                  45
+                                                                              ],
+                                                                  "fits_destiny_hoop":  true,
+                                                                  "estimated":  true,
+                                                                  "note":  "Single corner, small initials"
+                                                              }
+                                                          ]
+                                           },
+                         "robe":  {
+                                      "label":  "Robe",
+                                      "panels":  [
+                                                     {
+                                                         "id":  "left_chest",
+                                                         "label":  "Left chest",
+                                                         "default":  true,
+                                                         "area_mm":  [
+                                                                         110,
+                                                                         70
+                                                                     ],
+                                                         "fits_destiny_hoop":  true,
+                                                         "estimated":  true,
+                                                         "note":  "Chest monogram"
+                                                     },
+                                                     {
+                                                         "id":  "back",
+                                                         "label":  "Full back",
+                                                         "default":  false,
+                                                         "area_mm":  [
+                                                                         230,
+                                                                         300
+                                                                     ],
+                                                         "fits_destiny_hoop":  true,
+                                                         "estimated":  true,
+                                                         "note":  "Large back text/monogram"
+                                                     }
+                                                 ]
+                                  }
+                     },
+    "products":  [
+                     {
+                         "name":  "Boys Shirt And Necktie Fuchsia Set",
+                         "url":  "https://www.tuxedosonline.com/boys-shirt-and-necktie-fuchsia-set-23890.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-shirt-and-shiny-necktie-set-all-colors-d73.jpg",
+                         "type":  "shirt",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Slim Fit Notch Lapel Tuxedo",
+                         "url":  "https://www.tuxedosonline.com/slim-fit-notch-lapel-tuxedo.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/black-tuxedo-two-button-notch-mens-wedding-or-prom-tuxedo-d023.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "All Colors Slim Fit Mens Dress Shirt French Convertible Cuff",
+                         "url":  "https://www.tuxedosonline.com/all-colors-slim-fit-mens-dress-shirt-french-convertible-cuff.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/white-slim-fit-dress-shirt-convertible-french-cuff-fb7.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Pocket Square All Colors Eternity Satin Pocket Square",
+                         "url":  "https://www.tuxedosonline.com/pocket-square-all-colors-eternity-satin-pocket-square.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/satin-all-colors-eternity-pocket-square-69b.jpg",
+                         "type":  "pocket_square",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "corner"
+                     },
+                     {
+                         "name":  "Boys Dress Shirt Tie And Hanky Set All Colors",
+                         "url":  "https://www.tuxedosonline.com/boys-dress-shirt-tie-and-hanky-set-all-colors.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/royal-boys-dress-shirt-tie-set-d50.jpg",
+                         "type":  "pocket_square",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "corner"
+                     },
+                     {
+                         "name":  "Mens Blue Suit Vest 201 19 Blue Vest",
+                         "url":  "https://www.tuxedosonline.com/mens-blue-suit-vest-201-19-blue-vest-30396.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/vests.png",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Tux 5Kid Blk",
+                         "url":  "https://www.tuxedosonline.com/tux-5kid-blk.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-matte-black-dress-shoe-with-top-stitch-7a6.jpeg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tux 3Kid",
+                         "url":  "https://www.tuxedosonline.com/tux-3kid.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-black-matte-lace-up-dress-shoes-745.jpeg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tux 3Kid Wht",
+                         "url":  "https://www.tuxedosonline.com/tux-3kid-wht.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-white-matte-lace-up-dress-shoes-cb6.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Boys Tuxedo Shirt White Wing Collar Tuxedo Shirt",
+                         "url":  "https://www.tuxedosonline.com/boys-tuxedo-shirt-white-wing-collar-tuxedo-shirt.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-tuxedo-shirt-white-wing-collar-tuxedo-shirt-b57.jpg",
+                         "type":  "shirt",
+                         "line":  "boys",
+                         "christening":  true,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Boys Tuxedo Silver Framed Peak Lapel With Fancy Trim",
+                         "url":  "https://www.tuxedosonline.com/boys-tuxedo-silver-framed-peak-lapel-with-fancy-trim.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/boys-tuxedo-silver-framed-peak-lapel-with-fancy-trim-396.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Boys Tuxedo Vest Backless Geo Vest Only Gold Sale",
+                         "url":  "https://www.tuxedosonline.com/boys-tuxedo-vest-backless-geo-vest-only-gold-sale.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/geo-gold-boys-vest-f7d-1.jpg",
+                         "type":  "vest",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Infant Boys White Baptism Christening Shorts 5 Piece Set",
+                         "url":  "https://www.tuxedosonline.com/infant-boys-white-baptism-christening-shorts-5-piece-set.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/3734.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  true,
+                         "default_panel":  "back_showpiece"
+                     },
+                     {
+                         "name":  "Tux 2Kid Cog",
+                         "url":  "https://www.tuxedosonline.com/tux-2kid-cog.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-matte-cognac-brown-tan-dress-shoes-ba0.jpeg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Velvet Bowtie With Matching Pocket Square All Colors",
+                         "url":  "https://www.tuxedosonline.com/velvet-bowtie-with-matching-pocket-square-all-colors.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/velvet-bow-tie-with-matching-pocket-square-all-colors-6f1.jpg",
+                         "type":  "pocket_square",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "corner"
+                     },
+                     {
+                         "name":  "White Calvin Klein Steel Slim Fit Non Iron Solid Dress Shirt With French Cuff",
+                         "url":  "https://www.tuxedosonline.com/white-calvin-klein-steel-slim-fit-non-iron-solid-dress-shirt-with-french-cuff.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/french-cuff-white-calvin-klein-steel-slim-fit-non-iron-solid-dress-shirt-with-d33.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Boys Black Shawl Tuxedo Set Infant Child Or Teen",
+                         "url":  "https://www.tuxedosonline.com/boys-black-shawl-tuxedo-set-infant-child-or-teen.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/4002-1.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Marina 16092 Text Tux",
+                         "url":  "https://www.tuxedosonline.com/marina-16092-text-tux.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/static-pattern-shawl-lapel-tuxedo-modern-fit-4cd.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "643 Black Coat Burg",
+                         "url":  "https://www.tuxedosonline.com/643-black-coat-burg.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/boys-black-velvet-shawl-sports-coat-only-blazer-jacket-415.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Checker Suit Boys",
+                         "url":  "https://www.tuxedosonline.com/checker-suit-boys.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/boys-suit-slight-checkered-pattern-notch-suit-boys-c3e.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Wingshirtcolor",
+                         "url":  "https://www.tuxedosonline.com/wingshirtcolor.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/purple-wing-blend-shirt-1a4.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Mens Slim Fit Suit",
+                         "url":  "https://www.tuxedosonline.com/mens-slim-fit-suit.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/c870x524.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Suitvest",
+                         "url":  "https://www.tuxedosonline.com/suitvest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/mens-vinci-vest-for-suit-luxurious-wool-feel-microfiber-men-s-vest-ef4.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Kente 2 Vest",
+                         "url":  "https://www.tuxedosonline.com/kente-2-vest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/kente-cloth-african-print-vest-and-bowtie-2-piece-set-539.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "3Pc Slim Fit Boys Suit",
+                         "url":  "https://www.tuxedosonline.com/3pc-slim-fit-boys-suit-640.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/640.png",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "643 Velvet Coat Burg",
+                         "url":  "https://www.tuxedosonline.com/643-velvet-coat-burg.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/boys-burgundy-coat-with-black-lapel-velvet-shawl-lapel-sports-coat-only-blazer-jacket-kids-3df.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "643 Blue Coat Rb",
+                         "url":  "https://www.tuxedosonline.com/643-blue-coat-rb.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/boys-blue-coat-with-black-lapel-velvet-shawl-lapel-sports-coat-only-blazer-jacket-kids-a91.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Bntvest",
+                         "url":  "https://www.tuxedosonline.com/bntvest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/satin-aqua-vest-b-t-fb7.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Laydown Collar Tuxedo Shirt Cotton Blend",
+                         "url":  "https://www.tuxedosonline.com/laydown-collar-tuxedo-shirt-cotton-blend.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/tuxedo-shirt-laydown-collar-cotton-blend-pleated-front-255.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Laydown Collar Microfiber Tuxedo Shirt",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-laydown-collar-microfiber-tuxedo-shirt.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/black-fitted-microfiber-shirt-13f.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Shortsleeveshirts",
+                         "url":  "https://www.tuxedosonline.com/shortsleeveshirts.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/white-dress-shirt-no-sleeve-6ac.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Boys Dress Shirt Laydown Collar With French Cuffs",
+                         "url":  "https://www.tuxedosonline.com/boys-dress-shirt-laydown-collar-with-french-cuffs.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/image4_dc6d70c9-05f2-4dd1-abdb-90f4323afb82.png",
+                         "type":  "shirt",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Geo Royal Vest Os Georoyalvest Os",
+                         "url":  "https://www.tuxedosonline.com/geo-royal-vest-os-georoyalvest-os.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/geo-royal-vest-sale-item-196.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Satin Big Mens Black Cummerbund Only",
+                         "url":  "https://www.tuxedosonline.com/satin-big-mens-black-cummerbund-only.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/200C-01.png",
+                         "type":  "cummerbund",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "front_center"
+                     },
+                     {
+                         "name":  "Paisleyvestmens",
+                         "url":  "https://www.tuxedosonline.com/paisleyvestmens.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/paisley-black-vest-db4.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "All Colors Neck Tie Pocket Square And Cuff Links Package",
+                         "url":  "https://www.tuxedosonline.com/all-colors-neck-tie-pocket-square-and-cuff-links-package.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/neck-tie-pocket-square-and-cuff-links-package-all-colors-c6d.jpg",
+                         "type":  "pocket_square",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "corner"
+                     },
+                     {
+                         "name":  "Tryluxcharvest",
+                         "url":  "https://www.tuxedosonline.com/tryluxcharvest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/tuxedo-vest-trylux-charcoal-vests-only-7ec.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Satinvestboys",
+                         "url":  "https://www.tuxedosonline.com/satinvestboys.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-tuxedo-vest-all-colors-satin-backless-vest-with-tie-options-f76.jpg",
+                         "type":  "vest",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Pocket Square Paisley Satin",
+                         "url":  "https://www.tuxedosonline.com/pocket-square-paisley-satin.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/satin-pocket-sqaure-all-colors-paisley-pattern-a7c.jpg",
+                         "type":  "pocket_square",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "corner"
+                     },
+                     {
+                         "name":  "Suit Package Set",
+                         "url":  "https://www.tuxedosonline.com/suit-package-set.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/416b2117-c432-45b8-9466-2cde7039a55b.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Used Shawl Tuxedo Coat 38",
+                         "url":  "https://www.tuxedosonline.com/used-shawl-tuxedo-coat-38.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/tuxedo-one-button-shawl-lapel-all-wool-michael-gable-14d.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Closeout White Dress Shirt Sale",
+                         "url":  "https://www.tuxedosonline.com/closeout-white-dress-shirt-sale.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2022/10/m_wp_62e68ac781a36c3ca66e185a.png",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Tux Sh",
+                         "url":  "https://www.tuxedosonline.com/tux-sh.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2025/01/TUX-SH-1.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "703 Basic Suit",
+                         "url":  "https://www.tuxedosonline.com/703-basic-suit.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2026/01/703-basic-slim-new.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "French Cuff Tuxedo Dress Shirt Wrinkle Free Cotton Fitted",
+                         "url":  "https://www.tuxedosonline.com/french-cuff-tuxedo-dress-shirt-wrinkle-free-cotton-fitted.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2026/02/Christopher-Lena.png",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Big Tall Classic Fit Suit Extra Long",
+                         "url":  "https://www.tuxedosonline.com/big-tall-classic-fit-suit-extra-long.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2026/03/tall.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Sequinvest",
+                         "url":  "https://www.tuxedosonline.com/sequinvest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/red-sequin-vest-bowtie-200.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Geovestboys",
+                         "url":  "https://www.tuxedosonline.com/geovestboys.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-tuxedo-vest-backless-geo-vest-with-tie-options-a59.jpg",
+                         "type":  "vest",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Tallvest",
+                         "url":  "https://www.tuxedosonline.com/tallvest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/satin-black-vest-ddf1.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Black Satin Cummerbund Only",
+                         "url":  "https://www.tuxedosonline.com/black-satin-cummerbund-only.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/0bfc6be4-578a-430f-9738-c9891bacce84.png",
+                         "type":  "cummerbund",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "front_center"
+                     },
+                     {
+                         "name":  "Geovestboys Aqua",
+                         "url":  "https://www.tuxedosonline.com/geovestboys-aqua.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-tuxedo-vest-aqua-backless-geo-vest-only-a5a.jpg",
+                         "type":  "vest",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Cummerbund Bowtie Zebra",
+                         "url":  "https://www.tuxedosonline.com/cummerbund-bowtie-zebra.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/mens-zebra-print-cummerbund-set-09a.jpg",
+                         "type":  "cummerbund",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "front_center"
+                     },
+                     {
+                         "name":  "Basic Lightweight Suit Vest All Colors",
+                         "url":  "https://www.tuxedosonline.com/basic-lightweight-suit-vest-all-colors.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/basic-vest.png",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Shawl Package",
+                         "url":  "https://www.tuxedosonline.com/shawl-package.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2025/03/cardi-white-bradford-jacket-2_850x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Modavest",
+                         "url":  "https://www.tuxedosonline.com/modavest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/satin-burgundy-poly-vest-d33-1.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Tux 1 Ivory",
+                         "url":  "https://www.tuxedosonline.com/tux-1-ivory.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/classic-ivory-patent-leather-lace-up-tuxedo-shoes-716.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tux3 Blk",
+                         "url":  "https://www.tuxedosonline.com/tux3-blk.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/black-tuxedo-shoes-patent-leather-slighty-square-toe-636.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tux5 Kid Brn",
+                         "url":  "https://www.tuxedosonline.com/tux5-kid-brn.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-dress-shoe-chocolate-brown-matte-210.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tux 1Kid Ivy",
+                         "url":  "https://www.tuxedosonline.com/tux-1kid-ivy.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-ivory-patent-leather-tuxedo-shoe-afb.jpeg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tux 3 Wht Matte",
+                         "url":  "https://www.tuxedosonline.com/tux-3-wht-matte.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/mens-white-square-toe-matte-dress-shoe-with-front-stitching-e76.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tails 5P Package",
+                         "url":  "https://www.tuxedosonline.com/tails-5p-package.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/7017GC_TAILCOAT_BLACK-jpg-2.webp",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tryluxvesttie",
+                         "url":  "https://www.tuxedosonline.com/tryluxvesttie.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/tuxedo-vest-mens-trylux-pattern-vest-and-necktie-set-601.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Suitacshirt",
+                         "url":  "https://www.tuxedosonline.com/suitacshirt.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-suit-black-with-any-color-shirt-set-caf.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Bdlpkgboyssuitpkg S 23",
+                         "url":  "https://www.tuxedosonline.com/bdlpkgboyssuitpkg-s-23.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-suit-black-baby-toddler-children-teen-suit-any-color-tie-831.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Bdlpkgboyssuitpkg S 26",
+                         "url":  "https://www.tuxedosonline.com/bdlpkgboyssuitpkg-s-26.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/boys-black-suit-color-vest-necktie-baby-toddler-youth-teen-suit-277-e1670017367149.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tryluxvestslfbow",
+                         "url":  "https://www.tuxedosonline.com/tryluxvestslfbow.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/tuxedo-vest-trylux-charcoal-with-selftie-bowtie-poly-satin-255.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Paisleyvestbow",
+                         "url":  "https://www.tuxedosonline.com/paisleyvestbow.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/mens-paisley-vest-and-bow-tie-set-wedding-colors-4c6.png",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Satinvestwpaisleytie",
+                         "url":  "https://www.tuxedosonline.com/satinvestwpaisleytie.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/satin-vest-with-paisley-necktie-42f.png",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Tryluxvestbow",
+                         "url":  "https://www.tuxedosonline.com/tryluxvestbow.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/trylux-charcoal-vest-and-bowtie-set-4ec.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Camovestset",
+                         "url":  "https://www.tuxedosonline.com/camovestset.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/camouflage-tuxedo-vest-and-matching-bowtie-683.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Charcoal Twilight Tuxedo By Jean Yves",
+                         "url":  "https://www.tuxedosonline.com/charcoal-twilight-tuxedo-by-jean-yves.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2021/07/twilight_tuxedo1.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tails 5P Micro Package",
+                         "url":  "https://www.tuxedosonline.com/tails-5p-micro-package.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/06/2_d405bb53-9108-43a4-a8d3-267ce805d40b_1296x.webp",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "508 Package",
+                         "url":  "https://www.tuxedosonline.com/508-package.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/08/MT400-01_BL__69487.1546543770.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Black Suit Vest Polyester High Quality Waiter Uniform Vest",
+                         "url":  "https://www.tuxedosonline.com/black-suit-vest-polyester-high-quality-waiter-uniform-vest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/2400-black.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Eternityvestmens",
+                         "url":  "https://www.tuxedosonline.com/eternityvestmens.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/eternity-gray-vest-73b.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Tuxpkgset",
+                         "url":  "https://www.tuxedosonline.com/tuxpkgset.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/mens-tuxedo-package-with-any-color-cummerbund-and-bow-tie-bc6.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Blush",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-blush.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2022/03/blush.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff New Pink",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-new-pink.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2022/03/berlioni.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff New Aqua",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-new-aqua.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2022/03/newaqua.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Hunter",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-hunter.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/www.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Orange",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-orange.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/orange-dress-shirt-fren-cuff-62d.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Lt Blue",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-lt-blue.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2020/08/French_-_Light_Blue_1024x1024.png",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Skyblue",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-skyblue.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/sky-blue-dress-shirt-fren-cuff-d97.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Rose",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-rose.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/rose-dress-shirt-fren-cuff-0e3.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Silver",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-silver.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/silver-dress-shirt-fren-cuff-1e8.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Pink",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-pink.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/pink-dress-shirt-fren-cuff-93e.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Gold",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-gold.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/gold-dress-shirt-fren-cuff-4a7.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Turq",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-turq.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/turq-dress-shirt-fren-cuff-1b9.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Peach",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-peach.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/peach-dress-shirt-fren-cuff-64d.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Mustard",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-mustard.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/mustard-dress-shirt-fren-cuff-97f.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Lemon",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-lemon.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/lemon-dress-shirt-fren-cuff-acd.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Aqua",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-aqua.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/aqua-dress-shirt-fren-cuff-13b.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Purple",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-purple.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/purple-dress-shirt-fren-cuff-f7a.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Lilac",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-lilac.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/lilac-dress-shirt-fren-cuff-33c.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Burgandy",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-burgandy.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/burg-dress-shirt-fren-cuff-eac.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Brown",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-brown.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/brown-dress-shirt-fren-cuff-350.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Khaki",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-khaki.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/khaki-dress-shirt-fren-cuff-cc7.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Lime",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-lime.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/mint-dress-shirt-fren-cuff-296.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Red",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-red.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/red-dress-shirt-fren-cuff-24d.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Royal",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-royal.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/roy-blue-dress-shirt-fren-cuff-951.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Navy",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-navy.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/navy-dress-shirt-fren-cuff-174.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Fuchsia",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-fuchsia.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/fuchsia-dress-shirt-fren-cuff-d6b.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Coral",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-coral.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/coral-dress-shirt-fren-cuff-2d0.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Lt Gray",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-lt-gray.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/l-grey-dress-shirt-fren-cuff-f8c.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Char",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-char.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/charcoal-dress-shirt-fren-cuff-c7e.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Off Wht",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-off-wht.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/off-wht-dress-shirt-fren-cuff-756.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff Black",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-black.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/black-dress-shirt-fren-cuff-b31.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Tan",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-tan.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/2_827582c6-b5f3-4d01-8f91-6d425f852eb1_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit White",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-white.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2020/12/1_04db21b9-1141-4eb6-86f5-a4a37821ab86_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Beige",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-beige.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_e163c9d5-fb63-48e1-a94f-d92a9096edc8_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Light Navy Blue",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-light-navy-blue.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_eef2034f-ea8a-4f8f-9d7d-44f6b9896e25_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Heather Gray",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-heather-gray.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_9cf35dc0-8e07-4f3b-ba28-dbfad236af9d_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Hunter Green",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-hunter-green.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_36cb3812-d01e-4d21-9764-658c41a162eb_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Cement",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-cement.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/09/cement.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Royal Blue",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-royal-blue.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/1_77aab1f0-131a-4ddb-ae37-26e76680a951_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Blue",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-blue.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_76b22d29-12ff-4037-a144-cb84d192972f_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Burgundy",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-burgundy.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_1709f99a-9de9-44a7-b547-7aa3f42898cc_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Indigo",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-indigo.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/09/indigo.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Charcoal",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-charcoal.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/1_cb733692-d9b5-41ba-bbad-b17675ce1a51_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Light Grey",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-light-grey.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_d3ec5f61-7412-4016-a90d-184ef4b7be11_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Dark Navy Blue",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-dark-navy-blue.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/01/3_49b4a4ac-a73d-4d97-b192-5d772615e40f_1296x.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Ultra Slim Fit Narrow Shawl Lapel Tuxedo For Prom And Weddings Ivory",
+                         "url":  "https://www.tuxedosonline.com/ultra-slim-fit-narrow-shawl-lapel-tuxedo-for-prom-and-weddings-ivory.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2020/12/T-SS-IVORY-JPG_WEB.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Ultra Slim Fit Narrow Shawl Lapel Tuxedo For Prom And Weddings Red",
+                         "url":  "https://www.tuxedosonline.com/ultra-slim-fit-narrow-shawl-lapel-tuxedo-for-prom-and-weddings-red.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/red-narrow-shawl-tux-c73.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Ultra Slim Fit Narrow Shawl Lapel Tuxedo For Prom And Weddings Burgundy",
+                         "url":  "https://www.tuxedosonline.com/ultra-slim-fit-narrow-shawl-lapel-tuxedo-for-prom-and-weddings-burgundy.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2023/06/T-SS-BURGUNDY-JPG_WEB.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Ultra Slim Fit Narrow Shawl Lapel Tuxedo For Prom And Weddings White",
+                         "url":  "https://www.tuxedosonline.com/ultra-slim-fit-narrow-shawl-lapel-tuxedo-for-prom-and-weddings-white.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/white-and-black-slim-fit-narrow-shawl-slim-fit-tuxedo-prom-wedding-8d9.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Ultra Slim Fit Narrow Shawl Lapel Tuxedo For Prom And Weddings Heather Gray",
+                         "url":  "https://www.tuxedosonline.com/ultra-slim-fit-narrow-shawl-lapel-tuxedo-for-prom-and-weddings-heather-gray.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/gray-slim-fit-with-black-narrow-shawl-lapel-tuxedo-prom-wedding-1df.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Ultra Slim Fit Narrow Shawl Lapel Tuxedo For Prom And Weddings Blue",
+                         "url":  "https://www.tuxedosonline.com/ultra-slim-fit-narrow-shawl-lapel-tuxedo-for-prom-and-weddings-blue.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/navy-narrow-shawl-tux-59a.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Mens Suit Two Button Notch Classic Fit 2 Piece Suit Black",
+                         "url":  "https://www.tuxedosonline.com/mens-suit-two-button-notch-classic-fit-2-piece-suit-black.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/c870x524-1.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Ultra Slim Fit Narrow Shawl Lapel Tuxedo For Prom And Weddings Black",
+                         "url":  "https://www.tuxedosonline.com/ultra-slim-fit-narrow-shawl-lapel-tuxedo-for-prom-and-weddings-black.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/T-SS-1-1-scaled.png",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Geovestmens",
+                         "url":  "https://www.tuxedosonline.com/geovestmens.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/tuxedo-vest-mens-geo-full-back-vest-with-tie-options-413.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Black Tuxedo Two Button Notch Mens Wedding Or Prom Tuxedo",
+                         "url":  "https://www.tuxedosonline.com/black-tuxedo-two-button-notch-mens-wedding-or-prom-tuxedo.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/black-tuxedo-two-button-notch-mens-wedding-or-prom-tuxedo-d02.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Satinvestmens",
+                         "url":  "https://www.tuxedosonline.com/satinvestmens.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/satin-hunter-poly-vest-2091.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Boys Tuxedo Black Ring Bearer Infant Toddler Children Teen Tuxedos",
+                         "url":  "https://www.tuxedosonline.com/boys-tuxedo-black-ring-bearer-infant-toddler-children-teen-tuxedos.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/4029.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Boys Burg Velvet Notch Coat 642 Velvet Coat Burg",
+                         "url":  "https://www.tuxedosonline.com/boys-burg-velvet-notch-coat-642-velvet-coat-burg-32978.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/07/boys-velvet-notch-lapel-sports-coat-only-blazer-jacket-available-in-burgundy-navy-or-black-90b.jpg",
+                         "type":  "jacket_suit",
+                         "line":  "boys",
+                         "christening":  false,
+                         "default_panel":  "interior_lining"
+                     },
+                     {
+                         "name":  "Tuxedo Vest",
+                         "url":  "https://www.tuxedosonline.com/tuxedo-vest.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2021/02/paisley-black-vest-1.jpg",
+                         "type":  "vest",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "back"
+                     },
+                     {
+                         "name":  "Dress Shirt Mens French Convertible Cuff White",
+                         "url":  "https://www.tuxedosonline.com/dress-shirt-mens-french-convertible-cuff-white.html/",
+                         "img":  "https://www.tuxedosonline.com/wp-content/uploads/2019/08/71gdA5klxBL.jpg",
+                         "type":  "shirt",
+                         "line":  "mens",
+                         "christening":  false,
+                         "default_panel":  "left_chest"
+                     }
+                 ]
+}

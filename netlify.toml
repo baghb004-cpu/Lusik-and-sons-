@@ -50,6 +50,24 @@ from = "/studio/"
 to = "/studio/index.html"
 status = 200
 
+# ── Custom Embroidery Studio (static order app) ───────────
+# A static SPA in public/embroidery/ (the Lusik & Sons custom-embroidery
+# order desk — big-tile catalog + live 3D preview + .pes stitch engine).
+# The bare path 301s to the slash form FIRST: the app's assets are all
+# document-relative (./js/app.js, the ./vendor importmap, ./presets/*.json),
+# so serving index.html AT /embroidery would resolve them against the site
+# root and 404 every one. Only /embroidery/ may 200-rewrite. It complies
+# with the strict global CSP (scripts self-hosted; product photos allowed
+# by img-src https:) — no scoped CSP block needed, unlike Decap.
+[[redirects]]
+from = "/embroidery"
+to = "/embroidery/"
+status = 301
+[[redirects]]
+from = "/embroidery/"
+to = "/embroidery/index.html"
+status = 200
+
 # NOTE: every other redirect from the Vite config is intentionally REMOVED.
 # Next's file-based routing now owns /, /shop/*, /journal/*, /story,
 # /workshop, /faq, /contact, /shipping, /newsletter, /account, /admin, /gallery.

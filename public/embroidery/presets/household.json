@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "source": "curated — Lusik & Sons household line (linens & towels)",
+    "captured": "2026-07-22",
+    "note": "Common household items people request custom embroidery on. Panel areas are industry-standard estimates (estimated=true); all fit the Baby Lock Destiny 240x360mm field. Icons are used instead of photos."
+  },
+  "garmentTypes": {
+    "towel_bath": { "label": "Bath Towel", "panels": [
+      { "id": "hem_band", "label": "Border band", "default": true, "area_mm": [200, 80], "fits_destiny_hoop": true, "estimated": true, "note": "Across the dobby border above the hem" },
+      { "id": "corner", "label": "Corner", "default": false, "area_mm": [100, 60], "fits_destiny_hoop": true, "estimated": true, "note": "Angled corner monogram" }
+    ] },
+    "towel_hand": { "label": "Hand Towel", "panels": [
+      { "id": "hem_band", "label": "Border band", "default": true, "area_mm": [150, 60], "fits_destiny_hoop": true, "estimated": true, "note": "Across the border above the hem" }
+    ] },
+    "towel_kitchen": { "label": "Kitchen Towel", "panels": [
+      { "id": "center", "label": "Center front", "default": true, "area_mm": [180, 70], "fits_destiny_hoop": true, "estimated": true, "note": "Centered when folded on the oven rail" },
+      { "id": "corner", "label": "Corner", "default": false, "area_mm": [80, 50], "fits_destiny_hoop": true, "estimated": true, "note": "Corner accent" }
+    ] },
+    "blanket": { "label": "Blanket / Throw", "panels": [
+      { "id": "corner", "label": "Corner", "default": true, "area_mm": [140, 90], "fits_destiny_hoop": true, "estimated": true, "note": "Classic keepsake corner" },
+      { "id": "center", "label": "Center", "default": false, "area_mm": [230, 160], "fits_destiny_hoop": true, "estimated": true, "note": "Large centered name or alphabet block" }
+    ] },
+    "pillowcase": { "label": "Pillowcase", "panels": [
+      { "id": "hem_band", "label": "Hem band", "default": true, "area_mm": [200, 60], "fits_destiny_hoop": true, "estimated": true, "note": "Along the open-end hem" }
+    ] },
+    "napkin": { "label": "Cloth Napkin", "panels": [
+      { "id": "corner", "label": "Corner", "default": true, "area_mm": [60, 60], "fits_destiny_hoop": true, "estimated": true, "note": "Single corner, shows when folded" }
+    ] },
+    "table_runner": { "label": "Table Runner", "panels": [
+      { "id": "end_panel", "label": "End panel", "default": true, "area_mm": [180, 100], "fits_destiny_hoop": true, "estimated": true, "note": "Each draped end" }
+    ] },
+    "apron": { "label": "Apron", "panels": [
+      { "id": "chest", "label": "Chest", "default": true, "area_mm": [140, 90], "fits_destiny_hoop": true, "estimated": true, "note": "Upper bib, centered" }
+    ] }
+  },
+  "products": [
+    { "name": "The Armenian Alphabet Blanket — Lusik's Signature", "icon": "🔤", "type": "blanket", "line": "household", "tag": "Signature", "default_panel": "center", "note": "The Lusik & Sons original — the full Armenian alphabet, hand-finished." },
+    { "name": "Bath Towel", "icon": "🛁", "type": "towel_bath", "line": "household", "default_panel": "hem_band" },
+    { "name": "Hand Towel", "icon": "🧼", "type": "towel_hand", "line": "household", "default_panel": "hem_band" },
+    { "name": "Kitchen / Tea Towel", "icon": "🫖", "type": "towel_kitchen", "line": "household", "default_panel": "center" },
+    { "name": "Bathrobe", "icon": "🧖", "type": "robe", "line": "household", "default_panel": "left_chest" },
+    { "name": "Blanket / Throw", "icon": "🛋️", "type": "blanket", "line": "household", "default_panel": "corner" },
+    { "name": "Pillowcase (pair)", "icon": "🛏️", "type": "pillowcase", "line": "household", "default_panel": "hem_band" },
+    { "name": "Cloth Napkins (set)", "icon": "🍽️", "type": "napkin", "line": "household", "default_panel": "corner" },
+    { "name": "Table Runner", "icon": "🕯️", "type": "table_runner", "line": "household", "default_panel": "end_panel" },
+    { "name": "Apron", "icon": "👩‍🍳", "type": "apron", "line": "household", "default_panel": "chest" }
+  ]
+}
