@@ -347,6 +347,19 @@ async function handle(req, context) {
   const shipZip = typeof body?.ship_zip === "string" && /^\d{5}$/.test(body.ship_zip.trim())
     ? body.ship_zip.trim()
     : null;
+  // The browser hides the ZIP field when ITS subtotal clears the free-shipping
+  // threshold — but its subtotal comes from persisted display prices that can
+  // predate a price change. If OUR trusted subtotal is below the threshold and
+  // no ZIP arrived, refuse instead of silently rating the null ZIP as the
+  // most-expensive zone: a customer who was told "Free" must never discover a
+  // surprise $15.49 on the Stripe page. The browser reveals the ZIP field on
+  // this code and the customer retries with a real rate shown.
+  if (subtotalCents < FREE_SHIPPING_THRESHOLD_CENTS && !shipZip) {
+    return json(400, {
+      error: "This order doesn't qualify for free shipping at current prices — we need your ZIP code to show the shipping rate.",
+      code: "zip_required",
+    });
+  }
   const shippingOptions = buildShippingOptionsForZip(shipZip, subtotalCents, FREE_SHIPPING_THRESHOLD_CENTS);
   const freeShippingApplied = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
 

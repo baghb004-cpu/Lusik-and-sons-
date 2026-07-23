@@ -59,13 +59,23 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!META_PIXEL_ID) return;
     if (adsOptedOut()) return;
+    let timer: ReturnType<typeof setInterval> | undefined;
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("order") === "success") {
-        const sid = params.get("session_id") || undefined;
-        // Recover the order value stashed by CheckoutView before the Stripe
-        // redirect so the conversion reports a real value (not $0). One-shot:
-        // remove it so a refresh / back-button doesn't re-read a stale amount.
+      if (params.get("order") !== "success") return;
+      const sid = params.get("session_id") || undefined;
+
+      // fbq does NOT exist when this mount effect runs: the pixel <Script>
+      // is consent-gated behind adsAllowed, which starts false and only
+      // flips (and mounts the script) on a re-render AFTER mount effects.
+      // Firing once here silently dropped every Purchase conversion. So:
+      // attempt now, then poll until the pixel's queuing stub appears
+      // (a few hundred ms typically; give up after 20s). The stashed order
+      // value is only consumed after a send actually happens, so a slow
+      // pixel can't destroy the value before it's reported.
+      const send = () => {
+        const fbq = (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq;
+        if (typeof fbq !== "function") return false;
         let purchase: { value: number; currency: string } = { value: 0, currency: "USD" };
         try {
           const raw = sessionStorage.getItem("lusik_purchase_value_v1");
@@ -75,14 +85,23 @@ export function Providers({ children }: { children: ReactNode }) {
               purchase = { value: parsed.value, currency: parsed.currency || "USD" };
             }
           }
+          // One-shot: consumed only now that the event is definitely going
+          // out, so a refresh / back-button doesn't re-read a stale amount
+          // (eventID = the Stripe session id dedupes the event itself).
           sessionStorage.removeItem("lusik_purchase_value_v1");
         } catch { /* storage blocked — fall back to the $0 value */ }
-        (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.(
-          "track", "Purchase", purchase,
-          sid ? { eventID: sid } : undefined,
-        );
-      }
+        fbq("track", "Purchase", purchase, sid ? { eventID: sid } : undefined);
+        return true;
+      };
+
+      if (send()) return;
+      let tries = 0;
+      timer = setInterval(() => {
+        tries += 1;
+        if (send() || tries >= 40) clearInterval(timer);
+      }, 500);
     } catch { /* never block render on analytics */ }
+    return () => { if (timer) clearInterval(timer); };
   }, []);
 
   useEffect(() => {

@@ -14,6 +14,7 @@
 
 import React, { useEffect } from "react";
 import { X } from "./icons.jsx";
+import { useFocusTrap } from "../lib/useFocusTrap";
 import { POLICIES, POLICIES_LAST_UPDATED } from "../data/policies.js";
 import { AdvertisingChoices } from "./AdvertisingChoices.jsx";
 
@@ -49,10 +50,15 @@ export function PolicyModal({ policyKey, onClose }) {
     return () => clearTimeout(t);
   }, [scrollToAdChoices]);
 
+  // Hook stays above the early return (rules of hooks); active tracks
+  // whether the dialog is actually showing so open/close re-runs the trap.
+  const trapRef = useFocusTrap(!!policy);
+
   if (!policy) return null;
 
   return (
     <div
+      ref={trapRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-8 lg-scrim"
       onClick={onClose}
       role="dialog"

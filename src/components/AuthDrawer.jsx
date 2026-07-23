@@ -23,6 +23,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { auth } from "../lib/auth.js";
+import { useFocusTrap } from "../lib/useFocusTrap";
 import { CONFIG } from "../data/config.js";
 import { ArrowRight, Eye, EyeOff, X } from "./icons.jsx";
 import { BottomSheet } from "./BottomSheet.jsx";
@@ -390,6 +391,11 @@ export function AuthDrawer({ onClose, onAuthed }) {
     </>
   );
 
+  // Desktop drawer's focus trap. Above the isMobile return (rules of
+  // hooks); on mobile the ref never attaches and BottomSheet's own trap
+  // owns focus instead.
+  const trapRef = useFocusTrap();
+
   // Mobile → rise from the bottom as a swipe-dismissable sheet (matching
   // the account sheet). Desktop → the original right-edge drawer with its
   // horizontal swipe-to-dismiss + breathing peek.
@@ -402,7 +408,7 @@ export function AuthDrawer({ onClose, onAuthed }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+    <div ref={trapRef} className="fixed inset-0 z-50 flex justify-end" onClick={onClose} role="dialog" aria-modal="true" aria-label="Account sign-in">
       <div className="absolute inset-0 lg-scrim" />
       <div
         className="lg-panel-tall lg-drawer relative w-full max-w-md drawer-in flex flex-col overflow-y-auto"
