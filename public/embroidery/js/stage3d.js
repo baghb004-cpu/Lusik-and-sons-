@@ -291,7 +291,11 @@ function buildStage(cfg) {
     const d = makeDecal(w * .84, h * .62, 0, false);
     d.position.z = Math.min(w, h) * .05 + 1.2; root.add(d);
     root.add(contactShadow(Math.max(w, h) * 2, -h * .62));
-    const dist = Math.max(w, h) * 1.35;
+    // Fit BOTH axes: on narrow stages (phones) the horizontal FOV is the
+    // constraint, and fitting only max(w,h) crops the stitched name.
+    const vHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const hHalf = vHalf * Math.max(.4, camera.aspect || 4 / 3);
+    const dist = Math.max(h / 2 / vHalf, w / 2 / hHalf) * 1.28;
     camera.position.set(0, h * .1, dist); camera.lookAt(0, 0, 0);
   }
   camera.userData.baseZ = camera.position.z;

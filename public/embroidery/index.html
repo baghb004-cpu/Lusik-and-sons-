@@ -24,46 +24,40 @@
       <h1 style="font-size:34px">Custom Embroidery Studio</h1>
       <div class="stitch-lg"></div>
       <p class="sub" style="margin-bottom:26px">Tuxedos, shirts, towels, blankets — pick the item, watch the name stitch itself on in live 3D, send the order. English, Español, Հայերեն.</p>
-      <button class="btn-go wide" data-go="catalog" onclick="signIn('Order desk','company')">Tuxedos Online — Company Account</button>
+      <button class="btn-go wide" data-go="studio" onclick="signIn('Order desk','company')">Tuxedos Online — Company Account</button>
       <div style="height:12px"></div>
-      <button class="btn-ghost" style="width:100%" data-go="catalog" onclick="signIn('Guest','public')">I'm new — request a custom quote</button>
+      <button class="btn-ghost" style="width:100%" data-go="studio" onclick="signIn('Guest','public')">I'm new — request a custom quote</button>
       <p style="color:var(--ink-soft);font-size:13px;margin-top:16px">Company orders are invoiced per order; quote requests get a price by email before any stitching.</p>
     </div>
   </section>
 
-  <!-- CATALOG -->
-  <section class="screen" data-screen="catalog">
-    <div class="eyebrow">Step 1</div>
-    <h1>Choose a product</h1>
-    <p class="sub">Everything from the shop that can be embroidered.</p>
-    <div class="toolbar">
-      <label class="search">🔎 <input id="q" type="search" placeholder="Search products…" autocomplete="off"></label>
-    </div>
-    <div class="chips" id="typeChips"></div>
-    <p class="count-note" id="countNote"></p>
-    <div class="grid" id="grid"><div class="loading">Loading the catalog…</div></div>
-  </section>
+  <!-- STUDIO — one-screen loadout: products | 3D stage | customization -->
+  <section class="screen" data-screen="studio">
+    <div class="loadout">
 
-  <!-- CUSTOMIZE -->
-  <section class="screen" data-screen="customize">
-    <div class="eyebrow">Step 2</div>
-    <h1 id="cName">Customize</h1>
-    <p class="sub">Spin the fabric, type the name, watch it stitch itself on.</p>
-    <div class="stage2">
-      <div>
-        <div class="viewer-card">
-          <div id="viewer3d" style="position:absolute;inset:0"></div>
-          <span class="viewer-title" id="viewerTitle">LIVE 3D</span>
-          <span class="viewer-hint">Drag to spin · scroll or pinch to zoom</span>
-          <div class="viewer-fallback" id="viewerFallback" style="display:none">3D isn’t available on this device — the photo preview below shows your design.</div>
-        </div>
+      <aside class="l-products">
+        <p class="l-title">Choose a piece</p>
+        <label class="search">🔎 <input id="q" type="search" placeholder="Search products…" autocomplete="off"></label>
+        <div class="chips" id="typeChips"></div>
+        <p class="count-note" id="countNote"></p>
+        <div class="grid" id="grid"><div class="loading">Loading the catalog…</div></div>
+      </aside>
+
+      <div class="l-stage">
+        <div id="viewer3d"></div>
+        <span class="viewer-title" id="viewerTitle">LIVE 3D</span>
+        <div class="stage-name" id="cName"></div>
+        <span class="viewer-hint">Drag to spin · scroll or pinch to zoom</span>
+        <div class="viewer-fallback" id="viewerFallback" style="display:none">3D isn’t available on this device — the photo preview shows your design.</div>
         <div class="photo-card" id="photoCard">
           <div class="photo-emoji" id="photoEmoji" style="display:none"></div>
           <img class="garment" id="garmentImg" alt="">
-          <div class="photo-note">Tap a numbered dot to choose where the embroidery goes.</div>
+          <div class="photo-note">Numbered dots = placement</div>
         </div>
+        <div class="stage-cta">Pick a piece · choose a placement · type the name — it stitches on live</div>
       </div>
-      <div class="panel">
+
+      <aside class="l-custom">
         <p class="field-label">What are we stitching?</p>
         <div class="seg mode" id="modeSeg">
           <button data-mode="name" class="on">Full name</button>
@@ -103,11 +97,13 @@
           </div>
         </div>
 
-        <p class="field-label" style="margin-top:14px">Thread color</p>
+        <p class="field-label" style="margin-top:14px">Placement</p>
+        <div class="chips" id="placeChips"></div>
+        <div class="info" id="placeInfo">Pick a placement.</div>
+        <p class="field-label">Thread color</p>
         <div class="swatches" id="swatches"></div>
         <p class="field-label">Fabric color</p>
         <div class="swatches" id="fabricSwatches"></div>
-        <div class="info" id="placeInfo">Tap a dot on the garment photo to place the name.</div>
         <p class="field-label" style="margin-top:14px">Contact</p>
         <input class="namebox" id="contactName" placeholder="Your name" autocomplete="name">
         <input class="namebox" id="contactEmail" type="email" placeholder="Email" autocomplete="email" style="margin-top:8px">
@@ -115,7 +111,8 @@
         <div class="translit" id="contactHint"></div>
         <button class="btn-go wide" id="sendBtn" style="margin-top:12px">Review &amp; send</button>
         <div class="send-status" id="sendStatus" role="status" aria-live="polite"></div>
-      </div>
+      </aside>
+
     </div>
   </section>
 
@@ -125,7 +122,7 @@
       <div class="big">🎉</div>
       <h1 id="sentTitle">Order sent!</h1>
       <div class="summary" id="orderSummary"></div>
-      <button class="btn-ghost" data-go="catalog" onclick="resetOrder()">Start another order</button>
+      <button class="btn-ghost" data-go="studio" onclick="resetOrder()">Start another order</button>
     </div>
   </section>
 
