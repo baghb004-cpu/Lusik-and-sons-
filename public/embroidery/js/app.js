@@ -42,6 +42,9 @@ Promise.all([
   DATA.products = DATA.products.concat(hh.products);
   DATA.counts.household = hh.products.length;
   buildChips(); renderGrid(); renderSwatches();
+  // Loadout screens never sit empty: stage the first piece immediately,
+  // the way a weapon-select opens already holding a weapon.
+  if (!state.product && DATA.products.length) pickProduct(DATA.products[0]);
 }).catch(function () { document.getElementById('grid').innerHTML = '<div class="loading">Could not load the catalog.</div>'; });
 
 function signIn(name, account) {
@@ -62,6 +65,7 @@ var histStack = ['signin'];
 function show(name) {
   document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('on', s.dataset.screen === name); });
   backBtn.style.display = (name === 'signin' || name === 'sent') ? 'none' : 'inline-block';
+  document.body.classList.toggle('loadout', name === 'studio');
   window.scrollTo(0, 0);
 }
 function go(name) { if (histStack[histStack.length - 1] !== name) histStack.push(name); show(name); }
@@ -70,7 +74,11 @@ document.addEventListener('click', function (e) {
   var t = e.target.closest('[data-go]'); if (!t) return;
   go(t.getAttribute('data-go'));
 });
-window.resetOrder = function () { state.product = null; state.panel = null; go('catalog'); };
+window.resetOrder = function () {
+  state.product = null; state.panel = null;
+  if (DATA && DATA.products.length) pickProduct(DATA.products[0]);
+  go('studio');
+};
 
 /* ---------------- catalog ---------------- */
 var typeFilter = 'all';
@@ -107,7 +115,8 @@ function renderGrid() {
     var tag = p.tag ? '<span class="tag xmas">' + esc(p.tag) + '</span>'
       : p.christening ? '<span class="tag xmas">Christening</span>'
         : '<span class="tag">' + (TYPE_LABELS[p.type] || p.type) + '</span>';
-    return '<button class="prod" data-i="' + DATA.products.indexOf(p) + '">' +
+    var sel = state.product === p ? ' sel' : '';
+    return '<button class="prod' + sel + '" data-i="' + DATA.products.indexOf(p) + '">' +
       '<span class="ph">' + visual + '</span>' +
       '<span class="cap"><b>' + esc(p.name) + '</b>' + tag + '</span></button>';
   }).join('');
@@ -149,9 +158,15 @@ function pickProduct(p) {
     img.style.display = 'none'; img.removeAttribute('src');
     pe.style.display = 'flex'; pe.textContent = p.icon || '🧵';
   }
-  markSwatches();
-  go('customize'); updateTranslit(); drawPlacement();
+  markSwatches(); markGridSel();
+  updateTranslit(); drawPlacement();
   mount3D(); update3D('slow');
+}
+function markGridSel() {
+  var g = document.getElementById('grid');
+  g.querySelectorAll('.prod').forEach(function (b) {
+    b.classList.toggle('sel', DATA.products[+b.dataset.i] === state.product);
+  });
 }
 function currentPanel() {
   return DATA.garmentTypes[state.product.type].panels.filter(function (x) { return x.id === state.panel; })[0];
@@ -160,14 +175,30 @@ function drawPlacement() {
   var p = state.product; if (!p) return;
   var card = document.getElementById('photoCard');
   card.querySelectorAll('.dot,.embzone').forEach(function (n) { n.remove(); });
+  var pick = function (pan) {
+    return function () { state.panel = pan.id; drawPlacement(); updatePlaceInfo(); update3D('slow'); };
+  };
   DATA.garmentTypes[p.type].panels.forEach(function (pan, idx) {
     var pos = PANEL_POS[pan.id] || { x: .5, y: .4, w: .2, h: .1 };
     var dot = document.createElement('button'); dot.className = 'dot' + (pan.id === state.panel ? ' sel' : '');
     dot.style.left = (pos.x * 100) + '%'; dot.style.top = (pos.y * 100) + '%';
     dot.innerHTML = (idx + 1) + '<span class="lbl">' + pan.label + '</span>';
-    dot.onclick = function () { state.panel = pan.id; drawPlacement(); updatePlaceInfo(); update3D('slow'); };
+    dot.onclick = pick(pan);
     card.appendChild(dot);
   });
+  // The chips in the customize rail are the primary picker; the photo
+  // dots stay as the "where on the garment" visual.
+  var chips = document.getElementById('placeChips');
+  if (chips) {
+    chips.innerHTML = '';
+    DATA.garmentTypes[p.type].panels.forEach(function (pan) {
+      var b = document.createElement('button');
+      b.className = 'chip' + (pan.id === state.panel ? ' on' : '');
+      b.textContent = pan.label;
+      b.onclick = pick(pan);
+      chips.appendChild(b);
+    });
+  }
   updatePlaceInfo(); renderGhost();
 }
 function updatePlaceInfo() {

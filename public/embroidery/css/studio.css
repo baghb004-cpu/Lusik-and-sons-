@@ -112,3 +112,124 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;text-wr
 .send-status{margin-top:10px;font-size:13px;min-height:18px;color:var(--ink-soft)}
 .send-status.err{color:#8a1f2d;font-weight:600}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
+
+/* ============================================================
+   LOADOUT — the one-screen game-style studio (body.loadout)
+   Three zones like a weapon-select: products rail | 3D stage |
+   customization rail. No page scroll; rails scroll internally.
+   ============================================================ */
+body.loadout{--lo-bg:#0d0f14;--lo-panel:rgba(21,24,32,.94);--lo-line:rgba(255,255,255,.09);
+  --lo-ink:#eceef4;--lo-soft:#9aa1b0;--lo-gold:#d4a94f;
+  background:var(--lo-bg);overflow:hidden}
+body.loadout header.top{background:rgba(13,15,20,.88);border-bottom:1px solid var(--lo-line)}
+body.loadout .brand,body.loadout .top .who{color:var(--lo-ink)}
+body.loadout .brand small{color:var(--lo-soft)}
+body.loadout .step-back{background:transparent;border-color:var(--lo-line);color:var(--lo-gold)}
+body.loadout main{padding:0}
+body.loadout main .wrap{max-width:none;padding:0}
+
+/* div.loadout, NOT bare .loadout — the body carries class "loadout" as the
+   theme switch, and an unscoped selector would turn the body itself into
+   this grid (header becomes column one; everything shatters). */
+div.loadout{display:grid;grid-template-columns:minmax(240px,300px) 1fr minmax(290px,340px);
+  height:calc(100dvh - 67px);overflow:hidden}
+
+/* rails — min-width/height 0: grid items must be allowed to shrink below
+   their content (the 146-tile strip would otherwise widen the whole grid) */
+.l-products,.l-custom{background:var(--lo-panel);overflow-y:auto;padding:16px;min-height:0;min-width:0;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+.l-products{border-right:1px solid var(--lo-line)}
+.l-custom{border-left:1px solid var(--lo-line)}
+.l-title{margin:0 0 10px;font-size:12px;font-weight:800;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--lo-gold)}
+body.loadout .search{background:rgba(255,255,255,.06);border-color:var(--lo-line);height:44px;border-radius:10px}
+body.loadout .search input{color:var(--lo-ink);font-size:15px}
+body.loadout .chips{margin:10px 0}
+body.loadout .chip{background:rgba(255,255,255,.06);border:1px solid var(--lo-line);
+  color:var(--lo-soft);font-size:12.5px;padding:6px 10px}
+body.loadout .chip.on{background:var(--lo-gold);border-color:var(--lo-gold);color:#161207}
+body.loadout .count-note{color:var(--lo-soft);font-size:12px;margin:2px 0 8px}
+body.loadout .loading{color:var(--lo-soft)}
+
+/* product tiles — weapon-grid style */
+body.loadout .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0}
+body.loadout .prod{background:rgba(255,255,255,.05);border:1px solid var(--lo-line);
+  border-radius:10px;padding:6px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+body.loadout .prod:hover{background:rgba(255,255,255,.09)}
+body.loadout .prod.sel{border-color:var(--lo-gold);box-shadow:0 0 0 1px var(--lo-gold),0 0 18px -6px var(--lo-gold);background:rgba(212,169,79,.10)}
+body.loadout .prod .ph{height:64px;border-radius:7px;background:#fff}
+body.loadout .prod .cap{padding:6px 2px 2px}
+body.loadout .prod .cap b{color:var(--lo-ink);font-size:12px;line-height:1.25;font-weight:700;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+body.loadout .prod .tag{display:none}
+
+/* the stage — dark spotlight, model floats on it */
+.l-stage{position:relative;overflow:hidden;min-width:0;min-height:0;
+  background:radial-gradient(ellipse 75% 65% at 50% 42%,#232838 0%,#151823 52%,#0b0d12 100%)}
+.l-stage::after{content:"";position:absolute;inset:auto 0 0 0;height:26%;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.55),transparent)}
+.l-stage #viewer3d{position:absolute;inset:0}
+.l-stage canvas{display:block}
+body.loadout .viewer-title{position:absolute;top:18px;left:22px;right:auto;bottom:auto;z-index:3;
+  background:transparent;border:none;padding:0;color:var(--lo-gold);
+  font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
+.stage-name{position:absolute;top:36px;left:22px;z-index:3;max-width:min(56%,560px);
+  color:var(--lo-ink);font-size:clamp(18px,2.4vw,30px);font-weight:800;letter-spacing:-.01em;
+  line-height:1.15;text-shadow:0 2px 18px rgba(0,0,0,.65);text-wrap:balance}
+body.loadout .viewer-hint{position:absolute;top:20px;right:22px;left:auto;bottom:auto;z-index:3;
+  background:rgba(10,12,17,.6);color:var(--lo-soft);font-size:12px}
+body.loadout .viewer-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--lo-soft);font-size:15px;padding:30px;text-align:center;z-index:2}
+.stage-cta{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:3;
+  background:rgba(10,12,17,.72);border:1px solid var(--lo-line);border-radius:999px;
+  padding:8px 18px;color:var(--lo-soft);font-size:12.5px;white-space:nowrap;backdrop-filter:blur(6px)}
+
+/* garment photo inset — the "minimap" */
+body.loadout .photo-card{position:absolute;right:18px;bottom:52px;z-index:3;width:200px;
+  background:rgba(16,18,25,.85);border:1px solid var(--lo-line);border-radius:12px;
+  box-shadow:0 12px 40px -12px rgba(0,0,0,.8);backdrop-filter:blur(6px);padding:6px;margin:0}
+body.loadout .photo-card .garment{border-radius:8px;background:#fff}
+body.loadout .photo-note{font-size:10.5px;color:var(--lo-soft);padding:5px 4px 2px;text-align:center}
+
+/* customization rail controls, dark */
+body.loadout .field-label{color:var(--lo-gold);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+body.loadout .seg{background:rgba(255,255,255,.06);border:1px solid var(--lo-line)}
+body.loadout .seg button{color:var(--lo-soft)}
+body.loadout .seg button .h{color:var(--lo-soft);opacity:.7}
+body.loadout .seg button.on{background:var(--lo-gold);color:#161207}
+body.loadout .seg button.on .h{color:#161207;opacity:.75}
+body.loadout .namebox{background:rgba(255,255,255,.07);border:1px solid var(--lo-line);color:var(--lo-ink)}
+body.loadout .namebox::placeholder{color:var(--lo-soft)}
+body.loadout .translit{color:var(--lo-soft)}
+body.loadout .translit b{color:var(--lo-ink)}
+body.loadout .mono-cell input{background:rgba(255,255,255,.07);border-color:var(--lo-line);color:var(--lo-ink)}
+body.loadout .mono-cell .cap,body.loadout .mono-note{color:var(--lo-soft)}
+body.loadout .mono-note b{color:var(--lo-gold)}
+body.loadout .info{background:rgba(212,169,79,.10);border-color:rgba(212,169,79,.35);color:#e8c377}
+body.loadout .sw{border-color:rgba(255,255,255,.14);box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+body.loadout .sw.on{box-shadow:0 0 0 3px var(--lo-gold)}
+body.loadout .send-status{color:var(--lo-soft)}
+body.loadout .send-status.err{color:#ff8f9d}
+
+/* narrow screens: stage on top, product strip, customize below — still one viewport */
+@media (max-width:920px){
+  .top .wrap{gap:8px}
+  .brand{font-size:16px;white-space:nowrap}
+  .brand small{display:none}
+  .top .who{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+  .step-back{padding:6px 10px;font-size:13px}
+  div.loadout{grid-template-columns:1fr;grid-template-rows:42dvh auto 1fr}
+  .l-stage{order:0;min-height:0}
+  .l-products{order:1;border-right:none;border-bottom:1px solid var(--lo-line);
+    padding:10px 12px;overflow:visible}
+  .l-products .l-title,.l-products .count-note{display:none}
+  body.loadout .search{height:38px}
+  body.loadout .chips{margin:8px 0;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  body.loadout .grid{display:flex;overflow-x:auto;gap:8px;padding-bottom:4px;scrollbar-width:thin}
+  body.loadout .prod{flex:0 0 108px}
+  body.loadout .prod .ph{height:52px}
+  .l-custom{order:2;border-left:none}
+  body.loadout .photo-card{width:132px;bottom:14px}
+  .stage-cta{display:none}
+  .stage-name{font-size:17px;top:34px;max-width:70%}
+}
