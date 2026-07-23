@@ -3,6 +3,7 @@ Allow: /
 Disallow: /admin
 Disallow: /studio
 Disallow: /account
+Disallow: /embroidery
 Disallow: /.netlify/
 
 Sitemap: https://lusikandsons.com/sitemap.xml
