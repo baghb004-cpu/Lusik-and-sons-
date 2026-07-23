@@ -253,8 +253,12 @@ export function ImmersiveBuySheet({
       const cur = dragHeight ?? detentPx(detent, h);
       const px = { collapsed: COLLAPSED_PX, medium: h * 0.46, expanded: h * 0.86 };
       let target: Detent;
-      if (d.vel > flickVel) target = cur > px.medium ? "medium" : "expanded"; // flick up
-      else if (d.vel < -flickVel) target = cur < px.medium ? "medium" : "collapsed"; // flick down
+      // A flick jumps one detent in the flick's direction: up from at-or-above
+      // medium reaches expanded; down from at-or-below medium reaches collapsed.
+      // (These arms were inverted once — a flick from medium snapped back to
+      // medium — so mind the orientation: cur is a HEIGHT, bigger = taller.)
+      if (d.vel > flickVel) target = cur > px.medium ? "expanded" : "medium"; // flick up
+      else if (d.vel < -flickVel) target = cur < px.medium ? "collapsed" : "medium"; // flick down
       else {
         target = ORDER.reduce((best, name) =>
           Math.abs(px[name] - cur) < Math.abs(px[best] - cur) ? name : best,

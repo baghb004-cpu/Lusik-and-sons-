@@ -60,7 +60,16 @@ function MobilePostCard({ post, onSelect }) {
           Journal
         </span>
         <h2 className="font-display leading-tight" style={{ fontSize: "1.6rem", fontWeight: 400, letterSpacing: "-0.01em", color: "var(--text-primary)" }}>
-          {post.title}
+          {/* Real link inside the article: keyboard/SR users get a focusable,
+              Enter-activatable (and middle-clickable) way in — the card-wide
+              onClick alone made every post unreachable without a mouse. */}
+          <a
+            href={`/journal/${post.slug}`}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSelect(); }}
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            {post.title}
+          </a>
         </h2>
       </div>
       {/* Body — excerpt + a read-time meta pill. */}
@@ -133,7 +142,14 @@ export function JournalListView({ posts, onSelectPost, onBack }) {
                 <span className="text-[0.65rem] tracking-[0.25em] uppercase opacity-70">{post.readMinutes} min read</span>
               </div>
               <h2 className="font-display text-2xl lg:text-3xl mb-3 transition group-hover:opacity-80" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
-                {post.title}
+                {/* Same keyboard/SR entry point as the mobile card. */}
+                <a
+                  href={`/journal/${post.slug}`}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSelectPost(post.slug); }}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
+                  {post.title}
+                </a>
               </h2>
               <p className="text-sm lg:text-base opacity-80 leading-relaxed mb-4 max-w-2xl">
                 {post.excerpt}

@@ -126,8 +126,15 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
   // (src/data/shippingZones.js); the server recomputes from its own
   // copy (drift-tested) so a tampered ZIP can't change the charge.
   const [shipZip, setShipZip] = useState("");
+  // Set when the server rejects with code "zip_required": OUR subtotal
+  // (persisted display prices) cleared the threshold but the server's
+  // trusted subtotal didn't — e.g. a bag saved before a price drop. The
+  // server refuses to silently rate a missing ZIP, and we un-hide the
+  // ZIP field so the customer sees the real rate and retries.
+  const [serverNeedsZip, setServerNeedsZip] = useState(false);
   const shipZipValid = /^\d{5}$/.test(shipZip);
-  const freeShipping = Math.round(subtotal * 100) >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
+  const freeShipping = !serverNeedsZip
+    && Math.round(subtotal * 100) >= CONFIG.FREE_SHIPPING_THRESHOLD_CENTS;
   const shipEstimate = !freeShipping && shipZipValid ? estimateShippingForZip(shipZip) : null;
   const zipNeeded = !freeShipping && !shipZipValid;
 
@@ -304,6 +311,11 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
+        if (errBody?.code === "zip_required") {
+          // Trusted subtotal fell below the free-shipping threshold (stale
+          // persisted prices) — reveal the ZIP field and ask for it plainly.
+          setServerNeedsZip(true);
+        }
         // In prod the server returns just { error }; on branch deploys /
         // netlify dev it also returns { code, param, message } for
         // hands-free debugging. Render whatever came back.

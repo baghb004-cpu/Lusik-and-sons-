@@ -19,6 +19,7 @@ import { CONFIG } from "../data/config.js";
 import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { X, Send, Sparkles } from "./icons.jsx";
+import { useFocusTrap } from "../lib/useFocusTrap";
 
 export function ChatAssistant() {
   const cfg = CONFIG.PAID_FEATURES?.CHAT_ASSISTANT;
@@ -27,6 +28,7 @@ export function ChatAssistant() {
   if (!cfg?.ENABLED) return null;
 
   const [open, setOpen] = useState(false);
+  const trapRef = useFocusTrap(open);
   // Conversation history is held in memory only — refresh clears
   // it. If we wanted persistence we'd stash it in localStorage,
   // but ephemeral feels right for a chat-with-the-shop pattern.
@@ -122,7 +124,9 @@ export function ChatAssistant() {
         boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
       }}
       role="dialog"
+      aria-modal="true"
       aria-label="Chat assistant"
+      ref={trapRef}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--border-default)" }}>

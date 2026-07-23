@@ -21,6 +21,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "./icons.jsx";
+import { useFocusTrap } from "../lib/useFocusTrap";
 import { CONFIG } from "../data/config.js";
 
 // Tracks which sheets have already shown their breathing hint this
@@ -134,6 +135,8 @@ export function BottomSheet({ open, onClose, children, ariaLabel = "Dialog", pee
     dragIntentRef.current = null;
   }, [dragY, onClose]);
 
+  const trapRef = useFocusTrap(open);
+
   if (!open) return null;
 
   const translateY = dragY + peekOffset;
@@ -143,6 +146,7 @@ export function BottomSheet({ open, onClose, children, ariaLabel = "Dialog", pee
 
   return (
     <div
+      ref={trapRef}
       className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end"
       onClick={onClose}
       role="dialog"

@@ -37,7 +37,13 @@ export function ProductRoute() {
       user={site.user}
       onRequireSignIn={() => {}}
       onStickyCtaShown={() => {}}
-      onOpenWaitlist={() => {}}
+      // Same CustomEvent path SoldOutPanel uses — SiteChrome owns the
+      // WaitlistModal and listens for this. (Was a no-op stub: every
+      // coming-soon "Write me when it's ready" tap went nowhere.)
+      onOpenWaitlist={(p) => {
+        const key = p?.key ?? p?.slug;
+        if (key) window.dispatchEvent(new CustomEvent("openWaitlist", { detail: { key, name: p?.name } }));
+      }}
       onNavigateHome={nav.goForYou}
       onNavigateShop={nav.goShopIndex}
       onNavigateCategory={nav.goShopCategory}
