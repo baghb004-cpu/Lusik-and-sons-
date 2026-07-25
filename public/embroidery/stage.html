@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Stitch stage</title>
+<!-- The embeddable 3D stitch stage: the SAME engine the Embroidery Studio
+     uses, with no UI chrome, driven entirely over postMessage. Product pages
+     iframe this page so Three.js never enters the Next.js bundle (the 210KB
+     first-load budget) — it loads here, off the route, on demand.
+
+     Parent -> stage:  { type:'stitch', text, thread, fabric, panelMM,
+                         stage?, weave?, script?, restitch? }
+     Stage  -> parent: { type:'stitch-ready' }  (sent once Stage3D can mount;
+                        the parent replies with its current config)          -->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body[data-bg="light"] {
+    background: radial-gradient(120% 90% at 50% 20%, #efece3 0%, #ddd7c8 55%, #c2bba9 100%);
+  }
+  body[data-bg="dark"] {
+    background: radial-gradient(ellipse 75% 65% at 50% 42%, #232838 0%, #151823 52%, #0b0d12 100%);
+  }
+  #viewer3d { position: absolute; inset: 0; }
+  #viewer3d canvas { display: block; touch-action: none; cursor: grab; }
+  #viewer3d canvas:active { cursor: grabbing; }
+</style>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body data-bg="light">
+<div id="viewer3d"></div>
+<script type="module">
+  import "./js/stage3d.js";   // defines window.Stage3D
+
+  const params = new URLSearchParams(location.search);
+  if (params.get("bg") === "dark") document.body.dataset.bg = "dark";
+
+  const el = document.getElementById("viewer3d");
+  let pending = null;
+
+  function apply(d) {
+    if (!window.Stage3D) return false;
+    if (!window.Stage3D.ok() && !window.Stage3D.mount(el)) return false;
+    window.Stage3D.update({
+      stage: d.stage || "panel",
+      panelMM: Array.isArray(d.panelMM) ? d.panelMM : [220, 110],
+      fabric: d.fabric || "#f4f2ec",
+      thread: d.thread || "#1f2f6b",
+      text: String(d.text || ""),
+      mode: "name",
+      style: d.script ? "cursive" : "print",
+      mono: {}, monoStyle: "classic",
+      satin: false,
+      weave: d.weave,
+      restitch: d.restitch || "slow",
+    });
+    return true;
+  }
+
+  addEventListener("message", (e) => {
+    const d = e.data;
+    if (!d || d.type !== "stitch") return;
+    if (!apply(d)) pending = d;      // module still loading — replay below
+  });
+
+  // Flush a config that arrived before the 3D module finished loading.
+  const iv = setInterval(() => {
+    if (pending && apply(pending)) pending = null;
+    if (window.Stage3D) clearInterval(iv);
+  }, 150);
+
+  parent.postMessage({ type: "stitch-ready" }, "*");
+</script>
+</body>
+</html>

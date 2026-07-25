@@ -32,8 +32,8 @@ const CSP = [
   "font-src 'self' data:",
   "img-src 'self' data: blob: https:",
   "connect-src 'self' https://identity.netlify.com https://*.netlify.app https://cloud.umami.is https://*.sentry.io https://connect.facebook.net https://www.facebook.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google.com https://googleads.g.doubleclick.net https://www.googleadservices.com",
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://*.doubleclick.net",
-  "child-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://*.doubleclick.net",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://*.doubleclick.net",
+  "child-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://*.doubleclick.net",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self' https://checkout.stripe.com",
@@ -64,7 +64,20 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
   },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      // The embeddable 3D stitch stage: product pages iframe this ONE static
+      // page (Stitch3DPanel), so it alone may be framed — by our own origin
+      // only. Later entries override same-key headers from the catch-all.
+      // netlify.toml carries the matching production override.
+      {
+        source: "/embroidery/stage.html",
+        headers: [
+          { key: "Content-Security-Policy", value: CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'") },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
+    ];
   },
 };
 

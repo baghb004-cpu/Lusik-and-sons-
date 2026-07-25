@@ -656,6 +656,46 @@ function DesktopCategoryCard({ category, index, onTap, onPrefetch }) {
   );
 }
 
+/* The Embroidery Studio banner — the doorway from the shop into the
+   live-3D studio (/embroidery/, the static loadout app). Deliberately
+   styled in the studio's own dark-stage language so the transition
+   reads as "stepping backstage." A real <a> — the studio is a static
+   page outside the Next router. */
+function StudioBanner() {
+  const t = useT();
+  return (
+    <section className="max-w-6xl mx-auto px-6 lg:px-12 pb-16 lg:pb-24">
+      <a
+        href="/embroidery/"
+        className="block overflow-hidden"
+        style={{
+          borderRadius: 24,
+          background: "radial-gradient(ellipse 90% 130% at 50% 0%, #232838 0%, #14161c 62%)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <div className="px-8 py-10 lg:px-14 lg:py-14 text-center">
+          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#d4a94f" }}>
+            {t("shop.studioEyebrow")}
+          </p>
+          <h2 className="font-display text-2xl lg:text-4xl mb-3 leading-tight" style={{ color: "#eceef4", fontWeight: 400, letterSpacing: "-0.01em" }}>
+            {t("shop.studioTitle")}
+          </h2>
+          <p className="text-sm lg:text-base mx-auto max-w-xl leading-relaxed mb-7" style={{ color: "#9aa1b0" }}>
+            {t("shop.studioBody")}
+          </p>
+          <span
+            className="inline-block px-7 py-3 text-sm tracking-wide"
+            style={{ background: "#d4a94f", color: "#161207", borderRadius: 999, fontWeight: 600 }}
+          >
+            {t("shop.studioCta")} →
+          </span>
+        </div>
+      </a>
+    </section>
+  );
+}
+
 export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
@@ -907,6 +947,8 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           ))}
         </div>
       </div>
+
+      <StudioBanner />
     </div>
   );
 }

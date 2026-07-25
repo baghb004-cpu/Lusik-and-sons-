@@ -107,6 +107,15 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
 
+  // Feed the PDP's Live 3D stitch panel (Stitch3DPanel): as the customer
+  // types the name or picks a thread, the stage restitches in real time.
+  // Fire-and-forget CustomEvent — nothing listens on pages without the panel.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("stitch3d:live", {
+      detail: { text: customName, thread: letterColor?.hex },
+    }));
+  }, [customName, letterColor]);
+
   // Validate the bib config, setting an inline error and returning false on
   // failure. Shared by Add-to-Bag and express Buy-it-now.
   const validateBib = () => {

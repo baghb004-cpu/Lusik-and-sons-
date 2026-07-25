@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
 <title>Lusik &amp; Sons — Custom Embroidery Studio</title>
 <link rel="stylesheet" href="./css/studio.css">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
@@ -17,22 +16,9 @@
 
 <main><div class="wrap">
 
-  <!-- SIGN IN -->
-  <section class="screen on" data-screen="signin">
-    <div class="hero">
-      <div class="eyebrow">Lusik's Workshop · Armenia → California</div>
-      <h1 style="font-size:34px">Custom Embroidery Studio</h1>
-      <div class="stitch-lg"></div>
-      <p class="sub" style="margin-bottom:26px">Tuxedos, shirts, towels, blankets — pick the item, watch the name stitch itself on in live 3D, send the order. English, Español, Հայերեն.</p>
-      <button class="btn-go wide" data-go="studio" onclick="signIn('Order desk','company')">Tuxedos Online — Company Account</button>
-      <div style="height:12px"></div>
-      <button class="btn-ghost" style="width:100%" data-go="studio" onclick="signIn('Guest','public')">I'm new — request a custom quote</button>
-      <p style="color:var(--ink-soft);font-size:13px;margin-top:16px">Company orders are invoiced per order; quote requests get a price by email before any stitching.</p>
-    </div>
-  </section>
-
-  <!-- STUDIO — one-screen loadout: products | 3D stage | customization -->
-  <section class="screen" data-screen="studio">
+  <!-- STUDIO — one-screen loadout: pieces | 3D stage | customization.
+       No gate: the customer lands here directly. -->
+  <section class="screen on" data-screen="studio">
     <div class="loadout">
 
       <aside class="l-products">

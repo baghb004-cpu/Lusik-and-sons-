@@ -34,6 +34,7 @@ import { CribBlanketCard } from "./CribBlanketCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ImmersiveBuySheet } from "./ImmersiveBuySheet";
+import { Stitch3DPanel } from "./Stitch3DPanel.jsx";
 import { getProductPhotos, BIB_CUSTOMER_EXAMPLES } from "../../lib/productPhotos";
 import { CONFIG } from "../../data/config.js";
 import { useIsMobile } from "../../lib/useIsMobile";
@@ -142,6 +143,9 @@ export function ProductView({
           notifyKey={inventoryKey}
           immersive={immersive}
         />
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 pb-4">
+          <Stitch3DPanel productKey="blanket-alphabet" />
+        </div>
       </div>
     );
   }
@@ -156,15 +160,18 @@ export function ProductView({
     // sheet body is just the customizer (its live SVG preview stays).
     if (immersive) {
       return (
-        <CustomProductCard
-          config={customProductData}
-          onAddCustom={onAddCustom}
-          onBuyNow={onBuyNowCustom}
-          onCartFeedback={onCartFeedback}
-          soldOut={soldOut}
-          notifyKey={inventoryKey}
-          immersive
-        />
+        <>
+          <CustomProductCard
+            config={customProductData}
+            onAddCustom={onAddCustom}
+            onBuyNow={onBuyNowCustom}
+            onCartFeedback={onCartFeedback}
+            soldOut={soldOut}
+            notifyKey={inventoryKey}
+            immersive
+          />
+          <Stitch3DPanel productKey="bib-single" />
+        </>
       );
     }
 
@@ -179,6 +186,8 @@ export function ProductView({
           soldOut={soldOut}
           notifyKey={inventoryKey}
         />
+
+        <Stitch3DPanel productKey="bib-single" />
 
         {/* Past customer orders gallery -- same shape as the full-
             alphabet blanket / days-bib placeholder galleries (tap-to-zoom,
@@ -215,32 +224,42 @@ export function ProductView({
   const spec = customProducts?.[product.key];
   if (spec?.buy?.kind === "cribBlanket") {
     return (
-      <CribBlanketCard
-        product={product}
-        spec={spec}
-        trail={trail}
-        onAddCustom={onAddCustom}
-        onBuyNow={onBuyNowCustom}
-        onCartFeedback={onCartFeedback}
-        soldOut={soldOut}
-        notifyKey={inventoryKey}
-        immersive={immersive}
-      />
+      <>
+        <CribBlanketCard
+          product={product}
+          spec={spec}
+          trail={trail}
+          onAddCustom={onAddCustom}
+          onBuyNow={onBuyNowCustom}
+          onCartFeedback={onCartFeedback}
+          soldOut={soldOut}
+          notifyKey={inventoryKey}
+          immersive={immersive}
+        />
+        <div className="max-w-5xl mx-auto px-6 lg:px-12 pb-8">
+          <Stitch3DPanel productKey={product.key} />
+        </div>
+      </>
     );
   }
   if (spec?.buy?.kind === "bibSet") {
     return (
-      <BibSetCard
-        product={product}
-        spec={spec}
-        trail={trail}
-        onAddCustom={onAddCustom}
-        onBuyNow={onBuyNowCustom}
-        onCartFeedback={onCartFeedback}
-        soldOut={soldOut}
-        notifyKey={inventoryKey}
-        immersive={immersive}
-      />
+      <>
+        <BibSetCard
+          product={product}
+          spec={spec}
+          trail={trail}
+          onAddCustom={onAddCustom}
+          onBuyNow={onBuyNowCustom}
+          onCartFeedback={onCartFeedback}
+          soldOut={soldOut}
+          notifyKey={inventoryKey}
+          immersive={immersive}
+        />
+        <div className="max-w-5xl mx-auto px-6 lg:px-12 pb-8">
+          <Stitch3DPanel productKey={product.key} />
+        </div>
+      </>
     );
   }
 
