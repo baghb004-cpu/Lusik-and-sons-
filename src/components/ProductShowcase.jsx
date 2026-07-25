@@ -207,6 +207,15 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       : null
   );
   const [colorMode, setColorMode] = useState("preset");  // "preset" | "custom"
+
+  // Feed the PDP's Live 3D stitch panel — typed personalization lines and
+  // the chosen letter thread restitch on the stage as they change.
+  useEffect(() => {
+    const text = [customLine1, customLine2].map((s) => (s || "").trim()).filter(Boolean).join(" · ");
+    window.dispatchEvent(new CustomEvent("stitch3d:live", {
+      detail: { text, thread: letterColor?.hex },
+    }));
+  }, [customLine1, customLine2, letterColor]);
   // The currently-selected preset, if customer chose one. Helps the UI
   // show which preset card is highlighted; null when in custom mode.
   const [activePresetKey, setActivePresetKey] = useState(defaultPreset.key);

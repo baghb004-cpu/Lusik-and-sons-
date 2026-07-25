@@ -446,6 +446,29 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
 
 A condensed list of things wired up that aren't obvious from the architecture overview.
 
+### The Embroidery Studio (`/embroidery`) + the Live 3D stitch layer (July 2026)
+
+- **`/embroidery` is a static one-screen "loadout" studio** (`public/embroidery/`,
+  vanilla JS + vendored Three.js r160, outside the Next bundle): no sign-in, the
+  visitor lands directly on a dark three-zone screen (pieces rail | 3D stage |
+  customization rail) and types a name that stitches onto a fabric swatch in live
+  3D. The catalog is **intentionally empty for now** (`presets/*.json` hold the
+  schema + a `playground` garment type; `PLAYGROUND_PIECE` in `app.js` is the
+  stand-in). Submitting sends a **quote request** through the `embroidery-order`
+  Function — rate-limited, origin-checked — which emails Lusik the design spec
+  plus a **machine-ready `.pes`** generated in-browser by `js/engine/`
+  (pes-writer byte-identical to pyembroidery; planner does per-letter slab
+  tatami fill). The bare path 301s to `/embroidery/` (relative assets — never
+  200-rewrite the bare path).
+- **Every live PDP gets the same 3D treatment** via `Stitch3DPanel`
+  (`src/components/shop/Stitch3DPanel.jsx`): it iframes
+  `public/embroidery/stage.html` (the chrome-less stage driven over
+  postMessage), so **Three.js never enters the Next bundle** — the 210 KB
+  budget is untouched. Per-product signature stitches live in
+  `src/data/stitchPreviews.js`; the custom bib + alphabet blanket configurators
+  dispatch `stitch3d:live` CustomEvents so typing restitches the stage in real
+  time. The shop index's dark `StudioBanner` links into the studio.
+
 ### Gift-occasion reminder (opt-in, one-year-later email)
 - Checkbox at checkout (default off) → `orders.gift_reminder_opt_in`.
 - `netlify/functions/gift-reminder.mjs` — scheduled function (daily 09:00 UTC). Finds ~11-month-old opted-in orders, claims each atomically (`UPDATE … SET sent_at = now() WHERE … AND sent_at IS NULL RETURNING id`), sends via Resend.

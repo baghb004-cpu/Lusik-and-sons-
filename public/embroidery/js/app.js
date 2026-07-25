@@ -6,7 +6,7 @@
 var DATA = null;
 var state = {
   product: null, panel: null,
-  account: 'company',                 // 'company' (Tuxedos Online, invoiced) | 'public' (quote request)
+  account: 'public',                  // quote request — the studio has no company gate
   mode: 'name',                       // 'name' | 'mono'
   lang: 'en', style: 'print', text: 'Gohar', translit: 'Gohar',
   mono: { f: 'G', m: 'A', l: 'H' }, monoStyle: 'classic',
@@ -15,9 +15,9 @@ var state = {
 var THREADS = [['Navy', '#1f2f6b'], ['Black', '#141414'], ['White', '#f4f2ea'], ['Gold', '#b8912e'], ['Burgundy', '#6d1b2e'], ['Silver', '#9aa1ac']];
 var FABRICS = [['White', '#f4f2ec'], ['Ivory', '#efe6cf'], ['Black', '#1b1b1e'], ['Navy', '#232c44'], ['Burgundy', '#58222c'], ['Silver', '#c9ccd2']];
 var TYPE_LABELS = {
-  all: 'All', shirt: 'Shirts', jacket_suit: 'Suits & Tuxedos', vest: 'Vests', cummerbund: 'Cummerbunds', pocket_square: 'Pocket squares', robe: 'Robes',
-  household: 'Household', towel_bath: 'Bath towel', towel_hand: 'Hand towel', towel_kitchen: 'Kitchen towel',
-  blanket: 'Blanket', pillowcase: 'Pillowcase', napkin: 'Napkin', table_runner: 'Table runner', apron: 'Apron'
+  all: 'All', household: 'Household', towel_bath: 'Bath towel', towel_hand: 'Hand towel', towel_kitchen: 'Kitchen towel',
+  blanket: 'Blanket', pillowcase: 'Pillowcase', napkin: 'Napkin', table_runner: 'Table runner', apron: 'Apron',
+  playground: 'Fabric swatch'
 };
 var PANEL_POS = {
   left_chest: { x: .34, y: .36, w: .22, h: .11 }, left_cuff: { x: .19, y: .74, w: .14, h: .06 }, right_cuff: { x: .81, y: .74, w: .14, h: .06 },
@@ -43,28 +43,33 @@ Promise.all([
   DATA.counts.household = hh.products.length;
   buildChips(); renderGrid(); renderSwatches();
   // Loadout screens never sit empty: stage the first piece immediately,
-  // the way a weapon-select opens already holding a weapon.
-  if (!state.product && DATA.products.length) pickProduct(DATA.products[0]);
-}).catch(function () { document.getElementById('grid').innerHTML = '<div class="loading">Could not load the catalog.</div>'; });
+  // the way a weapon-select opens already holding a weapon. With the
+  // shelves empty (catalog intentionally blank for now), the stage holds
+  // the PLAYGROUND — a fabric swatch the visitor stitches their own name
+  // onto while Lusik stocks the studio.
+  if (!state.product) pickProduct(DATA.products[0] || PLAYGROUND_PIECE);
+}).catch(function () { document.getElementById('grid').innerHTML = '<div class="loading">Could not load the studio.</div>'; });
 
-function signIn(name, account) {
-  state.account = account || 'company';
-  document.getElementById('who').textContent = (state.account === 'company' ? 'Tuxedos Online · ' : 'Quote · ') + name;
-  var hint = document.getElementById('contactHint');
-  if (hint) {
-    hint.textContent = state.account === 'public'
-      ? 'Email required — your quote arrives there before any stitching.'
-      : 'Optional — the order is emailed to Lusik & Sons either way.';
-  }
-}
-window.signIn = signIn;
+// The stand-in piece while no catalog items exist. Not in DATA.products
+// (it isn't buyable inventory) — it exists so the 3D stage, placement
+// chips, thread/fabric pickers, and the quote path all work on day one.
+var PLAYGROUND_PIECE = {
+  name: 'Your name, in thread',
+  type: 'playground', line: 'playground', icon: '🧵', default_panel: 'center'
+};
+
+document.getElementById('who').textContent = 'Every piece hand-finished by Lusik';
+document.getElementById('contactHint').textContent = 'Email required — your quote arrives there before any stitching.';
+// The studio is the landing screen now — no navigation ever fires show(),
+// so the loadout body theme must be applied at boot.
+document.body.classList.add('loadout');
 
 /* ---------------- navigation ---------------- */
 var backBtn = document.getElementById('backBtn');
-var histStack = ['signin'];
+var histStack = ['studio'];
 function show(name) {
   document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('on', s.dataset.screen === name); });
-  backBtn.style.display = (name === 'signin' || name === 'sent') ? 'none' : 'inline-block';
+  backBtn.style.display = 'none';   // single-screen studio — nothing to go back to
   document.body.classList.toggle('loadout', name === 'studio');
   window.scrollTo(0, 0);
 }
@@ -83,7 +88,8 @@ window.resetOrder = function () {
 /* ---------------- catalog ---------------- */
 var typeFilter = 'all';
 function buildChips() {
-  var el = document.getElementById('typeChips'); var order = ['all', 'shirt', 'jacket_suit', 'vest', 'cummerbund', 'pocket_square', 'household'];
+  var el = document.getElementById('typeChips'); var order = ['all', 'household'];
+  if (!DATA.products.length) { el.innerHTML = ''; return; }   // empty shelves: no filter chips
   el.innerHTML = order.filter(function (k) { return k === 'all' || k === 'household' || DATA.counts.by_type[k]; }).map(function (k) {
     var n = k === 'all' ? (DATA.counts.embroiderable + DATA.counts.household)
       : k === 'household' ? DATA.counts.household : DATA.counts.by_type[k];
@@ -106,9 +112,14 @@ function renderGrid() {
     if (q && p.name.toLowerCase().indexOf(q) < 0) return false;
     return true;
   });
-  document.getElementById('countNote').textContent = list.length + ' product' + (list.length === 1 ? '' : 's');
+  document.getElementById('countNote').textContent = list.length + ' piece' + (list.length === 1 ? '' : 's');
   var g = document.getElementById('grid');
-  if (!list.length) { g.innerHTML = '<div class="loading">No products match. Try another search.</div>'; return; }
+  if (!DATA.products.length) {
+    document.getElementById('countNote').textContent = '';
+    g.innerHTML = '<div class="loading" style="padding:24px 8px;font-size:14px;line-height:1.6">The shelves are being stocked — Lusik is choosing the first pieces.<br><br>Meanwhile: type a name, pick a thread, and watch it stitch on the swatch. Send it over and Lusik writes back with what it would cost on a bib, towel, or blanket.</div>';
+    return;
+  }
+  if (!list.length) { g.innerHTML = '<div class="loading">No pieces match. Try another search.</div>'; return; }
   g.innerHTML = list.slice(0, 300).map(function (p) {
     var visual = p.img ? '<img loading="lazy" referrerpolicy="no-referrer" src="' + p.img + '" alt="" onerror="this.style.display=\'none\'">'
       : '<span class="icon-tile">' + (p.icon || '🧵') + '</span>';
@@ -427,16 +438,9 @@ document.getElementById('sendBtn').addEventListener('click', submitOrder);
 
 function renderSentSummary(ref, pes) {
   var p = state.product, pan = currentPanel();
-  var billing, footer;
-  if (state.account === 'company') {
-    billing = 'Order <b>' + esc(ref) + '</b> · billed to the Tuxedos Online company account';
-    footer = 'Design' + (pes ? ' + machine file (.pes)' : '') + ' emailed to Lusik &amp; Sons.';
-    document.getElementById('sentTitle').textContent = 'Order sent!';
-  } else {
-    billing = '<b>Quote request ' + esc(ref) + '</b> — Lusik &amp; Sons will email a price before any stitching';
-    footer = 'Request' + (pes ? ' + machine file (.pes)' : '') + ' emailed to Lusik &amp; Sons — the price comes back to your inbox.';
-    document.getElementById('sentTitle').textContent = 'Quote request sent!';
-  }
+  var billing = '<b>Quote request ' + esc(ref) + '</b> — Lusik &amp; Sons will email a price before any stitching';
+  var footer = 'Request' + (pes ? ' + machine file (.pes)' : '') + ' emailed to Lusik &amp; Sons — the price comes back to your inbox.';
+  document.getElementById('sentTitle').textContent = 'Quote request sent!';
   var stitchLine = pes ? 'Stitch file: ' + pes.stitchCount + ' stitches · ' + pes.widthMm + '×' + pes.heightMm + ' mm<br>' : '';
   document.getElementById('orderSummary').innerHTML =
     '<b>' + esc(displayString()) + '</b> on <b>' + esc(p.name) + '</b><br>' +
