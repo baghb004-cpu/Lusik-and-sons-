@@ -216,6 +216,17 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       detail: { text, thread: letterColor?.hex },
     }));
   }, [customLine1, customLine2, letterColor]);
+
+  // StageHero's on-stage field → personalization line 1, so the hero and
+  // the configurator never disagree about what's being stitched.
+  useEffect(() => {
+    const onHero = (e) => {
+      const d = e?.detail || {};
+      if (typeof d.text === "string") setCustomLine1(d.text);
+    };
+    window.addEventListener("stitch3d:hero", onHero);
+    return () => window.removeEventListener("stitch3d:hero", onHero);
+  }, []);
   // The currently-selected preset, if customer chose one. Helps the UI
   // show which preset card is highlighted; null when in custom mode.
   const [activePresetKey, setActivePresetKey] = useState(defaultPreset.key);

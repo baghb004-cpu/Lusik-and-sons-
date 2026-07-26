@@ -32,6 +32,9 @@ export const TRANSLATIONS = {
       hint: "Drag to spin · scroll to zoom",
       threadLabel: "Thread color",
       studioLink: "Open the full Embroidery Studio",
+      typePlaceholder: "Type the name — it stitches live",
+      interact: "Tap to spin it",
+      interacting: "Spinning — tap ✕ to scroll again",
     },
     // Navigation (desktop + mobile)
     nav: {
@@ -768,6 +771,9 @@ export const TRANSLATIONS = {
       hint: "Քաշեք՝ պտտելու համար",
       threadLabel: "Թելի գույն",
       studioLink: "Բացել Ասեղնագործության ստուդիան",
+      typePlaceholder: "Գրեք անունը — այն անմիջապես ասեղնագործվում է",
+      interact: "Հպեք՝ պտտելու համար",
+      interacting: "Պտտվում է — հպեք ✕՝ շարունակելու համար",
     },
     nav: {
       blanket: "Ծածկոցը",
