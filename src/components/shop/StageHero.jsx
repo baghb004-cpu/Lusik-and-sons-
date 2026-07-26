@@ -33,7 +33,9 @@ export function StageHero({ productKey, title, price, inline = false }) {
   const [interactive, setInteractive] = useState(false);
   const [typed, setTyped] = useState("");
   const iframeRef = useRef(null);
-  const cfgRef = useRef(base ? { ...base } : null);
+  // Deep-copy the blanket block — typing mutates it, and the module-level
+  // default must stay pristine across mounts.
+  const cfgRef = useRef(base ? { ...base, ...(base.blanket ? { blanket: { ...base.blanket } } : {}) } : null);
 
   const post = (restitch = "slow") => {
     const win = iframeRef.current?.contentWindow;
@@ -60,6 +62,12 @@ export function StageHero({ productKey, title, price, inline = false }) {
       if (!cfgRef.current) return;
       if (typeof d.text === "string") cfgRef.current.text = d.text.trim() || base.text;
       if (typeof d.thread === "string" && d.thread) { cfgRef.current.thread = d.thread; setThread(d.thread); }
+      // Blanket configurator sends its full design (alphabet, layout, name,
+      // year, preset colors) — adopt it wholesale so the stage renders the
+      // real blanket, exactly as the 2D preview below draws it.
+      if (d.blanket && typeof d.blanket === "object") {
+        cfgRef.current.blanket = { ...cfgRef.current.blanket, ...d.blanket };
+      }
       post("fast");
     };
     window.addEventListener("stitch3d:live", onLive);
@@ -71,7 +79,13 @@ export function StageHero({ productKey, title, price, inline = false }) {
 
   const onType = (value) => {
     setTyped(value);
-    cfgRef.current.text = value.trim() || base.text;
+    if (cfgRef.current.blanket) {
+      // On the blanket the name lands in its real diagonal cells, not as
+      // free text on a swatch.
+      cfgRef.current.blanket = { ...cfgRef.current.blanket, name: value.trim() };
+    } else {
+      cfgRef.current.text = value.trim() || base.text;
+    }
     post("fast");
     window.dispatchEvent(new CustomEvent("stitch3d:hero", { detail: { text: value } }));
   };
@@ -149,7 +163,10 @@ export function StageHero({ productKey, title, price, inline = false }) {
         className="absolute left-0 right-0 bottom-0 z-10 px-5 lg:px-10 py-4 flex items-center gap-4 flex-wrap"
         style={{ background: "linear-gradient(to top, rgba(8,10,14,0.82), rgba(8,10,14,0))" }}
       >
-        <div className="flex items-center gap-2">
+        {/* The blanket's colors come from Lusik's presets in the configurator
+            below (block + letter + the flag tricolor) — the studio's generic
+            thread board doesn't apply, so it hides there. */}
+        {!base.blanket && <div className="flex items-center gap-2">
           {STITCH_THREADS.map(([name, hex]) => (
             <button
               key={hex}
@@ -166,7 +183,7 @@ export function StageHero({ productKey, title, price, inline = false }) {
               }}
             />
           ))}
-        </div>
+        </div>}
 
         {base.live && (
           <input
@@ -174,7 +191,7 @@ export function StageHero({ productKey, title, price, inline = false }) {
             value={typed}
             onChange={(e) => onType(e.target.value)}
             placeholder={t("stitch3d.typePlaceholder")}
-            maxLength={24}
+            maxLength={base.blanket ? 6 : 24}
             autoComplete="off"
             autoCapitalize="words"
             spellCheck={false}

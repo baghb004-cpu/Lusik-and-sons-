@@ -53,6 +53,7 @@
       mono: {}, monoStyle: "classic",
       satin: false,
       weave: d.weave,
+      blanket: d.blanket || null,
       restitch: d.restitch || "slow",
     });
     return true;
@@ -61,6 +62,7 @@
   addEventListener("message", (e) => {
     const d = e.data;
     if (!d || d.type !== "stitch") return;
+    clearInterval(announce);         // parent heard us — stop announcing
     if (!apply(d)) pending = d;      // module still loading — replay below
   });
 
@@ -70,6 +72,11 @@
     if (window.Stage3D) clearInterval(iv);
   }, 150);
 
+  // Announce readiness until the parent responds with a config. A single
+  // post can fire before the parent (a hydrating React page) has attached
+  // its message listener — then the handshake never completes and the
+  // stage sits empty behind the parent's loading placeholder.
+  const announce = setInterval(() => parent.postMessage({ type: "stitch-ready" }, "*"), 400);
   parent.postMessage({ type: "stitch-ready" }, "*");
 </script>
 </body>
