@@ -88,6 +88,7 @@ function fontFor(cfg, px) {
 }
 /* draw the finished embroidery once to artCanvas */
 function drawArt(cfg) {
+  if (cfg.blanket) { drawBlanketArt(cfg); return; }
   const W = 1024, H = 400;
   artCanvas = artCanvas || document.createElement('canvas');
   artCanvas.width = W; artCanvas.height = H;
@@ -134,6 +135,92 @@ function drawArt(cfg) {
     if (text) stitched(text, fit(text, 240, 930), W / 2, H / 2);
   }
 }
+/* The Armenian Alphabet Blanket, as it will actually be stitched — the
+   same canonical 7x7 layout as BlanketLayoutPreview (src/components):
+   alphabet cubes on the layout's twin diagonals, the customer's name and
+   year on their own parallel diagonals (name [21,29,37,45], year
+   [3,11,19,27]), pomegranate line-art in the woven cloth. Typing in the
+   configurator (or the PDP StageHero) repaints this in real time. */
+function drawBlanketArt(cfg) {
+  const b = cfg.blanket;
+  const S = 900, GRID = 7, cell = S / GRID;
+  artCanvas = artCanvas || document.createElement('canvas');
+  artCanvas.width = S; artCanvas.height = S;
+  const x = artCanvas.getContext('2d');
+  x.clearRect(0, 0, S, S);
+
+  const letters = Array.isArray(b.letters) && b.letters.length ? b.letters : ['Ա', 'Բ', 'Գ'];
+  const preview = Array.isArray(b.preview) && b.preview.length ? b.preview : [4, 12, 20, 28, 36, 44];
+  const blockHex = b.blockHex || '#b8912e';
+  const letterHexes = Array.isArray(b.letterHexes) && b.letterHexes.length
+    ? b.letterHexes : [b.letterHex || '#1f2f6b'];
+  const cx = (pos) => (pos % GRID) * cell + cell / 2;
+  const cy = (pos) => Math.floor(pos / GRID) * cell + cell / 2;
+
+  function stitchGlyph(text, px, X, Y, hex, italic) {
+    x.font = (italic ? 'italic 500 ' : '600 ') + px + "px Georgia,'Times New Roman',serif";
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    const pat = threadPattern(x, hex);
+    const dark = new THREE.Color(hex).lerp(new THREE.Color('#000'), .55).getStyle();
+    x.save();
+    x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 3; x.shadowOffsetY = 2;
+    x.fillStyle = dark; x.fillText(text, X, Y + 1.5);
+    x.restore();
+    x.fillStyle = pat; x.fillText(text, X, Y);
+    x.fillStyle = 'rgba(255,255,255,.2)'; x.fillText(text, X - .7, Y - 1);
+  }
+
+  // Alphabet cubes: stitched square frame + letter, per-letter color cycle
+  preview.forEach((pos, i) => {
+    const X = cx(pos), Y = cy(pos), half = cell * .38;
+    const hex = letterHexes[(i % letters.length) % letterHexes.length];
+    x.save();
+    x.strokeStyle = new THREE.Color(blockHex).getStyle();
+    x.lineWidth = 5; x.setLineDash([9, 5]);          // running-stitch frame
+    x.shadowColor = 'rgba(0,0,0,.3)'; x.shadowBlur = 2; x.shadowOffsetY = 2;
+    x.strokeRect(X - half, Y - half, half * 2, half * 2);
+    x.setLineDash([]);
+    x.strokeStyle = 'rgba(255,255,255,.25)'; x.lineWidth = 1.5;
+    x.strokeRect(X - half + 3, Y - half + 3, half * 2 - 6, half * 2 - 6);
+    x.restore();
+    stitchGlyph(letters[i % letters.length], cell * .46, X, Y + 2, hex, false);
+  });
+
+  // Name + year diagonals — the customer's text, letter(s) per cell
+  const split = (text, n) => {
+    if (!text) return Array(n).fill('');
+    if (text.length <= n) return Array.from({ length: n }, (_, i) => text[i] || '');
+    const per = Math.ceil(text.length / n);
+    return Array.from({ length: n }, (_, i) => text.slice(i * per, (i + 1) * per));
+  };
+  const NAME_CELLS = [21, 29, 37, 45], YEAR_CELLS = [3, 11, 19, 27];
+  const textHex = letterHexes[0];
+  split(String(b.name || '').trim(), NAME_CELLS.length).forEach((piece, i) => {
+    if (piece) stitchGlyph(piece, cell * .4, cx(NAME_CELLS[i]), cy(NAME_CELLS[i]), textHex, true);
+  });
+  split(String(b.year || '').trim(), YEAR_CELLS.length).forEach((piece, i) => {
+    if (piece) stitchGlyph(piece, cell * .36, cx(YEAR_CELLS[i]), cy(YEAR_CELLS[i]), textHex, true);
+  });
+
+  // Pomegranate motifs woven into the cloth — quiet line art
+  const POMS = [0, 2, 6, 8, 10, 14, 16, 18, 22, 24, 26, 30, 32, 34, 38, 40, 42, 46, 48];
+  const taken = new Set(preview.concat(NAME_CELLS, YEAR_CELLS));
+  x.save();
+  x.strokeStyle = 'rgba(120,100,70,.28)'; x.lineWidth = 2;
+  POMS.forEach((pos) => {
+    if (taken.has(pos)) return;
+    const X = cx(pos), Y = cy(pos), r = cell * .13;
+    x.beginPath(); x.arc(X, Y + r * .2, r, 0, Math.PI * 2); x.stroke();
+    x.beginPath();                                    // crown
+    x.moveTo(X - r * .45, Y - r * .55);
+    x.lineTo(X - r * .2, Y - r * 1.05);
+    x.lineTo(X, Y - r * .6);
+    x.lineTo(X + r * .2, Y - r * 1.05);
+    x.lineTo(X + r * .45, Y - r * .55);
+    x.stroke();
+  });
+  x.restore();
+}
 function startReveal(ms) {
   reveal.dur = REDUCE ? 1 : ms;
   reveal.start = performance.now();
@@ -165,9 +252,10 @@ function fabricMat(color, kind) {
     roughness: kind === 'satin' ? .35 : kind === 'terry' ? .96 : .82, side: THREE.DoubleSide
   });
 }
-function makeDecal(radius, height, theta, curved) {
+function makeDecal(radius, height, theta, curved, square) {
   texCanvas = document.createElement('canvas');
-  texCanvas.width = 1024; texCanvas.height = 400;
+  if (square) { texCanvas.width = 900; texCanvas.height = 900; }
+  else { texCanvas.width = 1024; texCanvas.height = 400; }
   texCtx = texCanvas.getContext('2d');
   decalTex = new THREE.CanvasTexture(texCanvas);
   decalTex.anisotropy = 4;
@@ -288,7 +376,9 @@ function buildStage(cfg) {
     const kind = cfg.weave || (cfg.satin ? 'satin' : 'twill');
     const panel = new THREE.Mesh(billow(new THREE.PlaneGeometry(w, h, 48, 32), Math.min(w, h) * .05), fabricMat(fab, kind));
     root.add(panel);
-    const d = makeDecal(w * .84, h * .62, 0, false);
+    const d = cfg.blanket
+      ? makeDecal(w * .92, h * .92, 0, false, true)
+      : makeDecal(w * .84, h * .62, 0, false);
     d.position.z = Math.min(w, h) * .05 + 1.2; root.add(d);
     root.add(contactShadow(Math.max(w, h) * 2, -h * .62));
     // Fit BOTH axes: on narrow stages (phones) the horizontal FOV is the
@@ -400,6 +490,7 @@ window.Stage3D = {
     const stageChanged = !currentCfg || currentCfg.stage !== cfg.stage ||
       currentCfg.fabric !== cfg.fabric || currentCfg.satin !== cfg.satin ||
       currentCfg.weave !== cfg.weave ||
+      !!currentCfg.blanket !== !!cfg.blanket ||
       JSON.stringify(currentCfg.panelMM) !== JSON.stringify(cfg.panelMM);
     if (stageChanged) buildStage(cfg);
     drawArt(cfg);

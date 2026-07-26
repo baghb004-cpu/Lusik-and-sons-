@@ -13,11 +13,31 @@
 // surface. Colors are display-only — nothing here touches pricing.
 // ============================================================
 
+import { PRODUCT } from "./product.js";
+
+// The blanket hero renders the REAL design — the canonical 7x7 layout the
+// 2D BlanketLayoutPreview draws — not a name on a plain swatch. Defaults
+// mirror the configurator's own initial state (first enabled layout, first
+// alphabet, the "Boys" preset colors) so hero and configurator agree
+// before the customer touches anything.
+const BLANKET_LAYOUT = PRODUCT.layouts.find((l) => l.enabled) ?? PRODUCT.layouts[0];
+const BLANKET_PRESET = PRODUCT.colorPresets[0];
+const hexOf = (dmc) => PRODUCT.threadColors.find((c) => c.dmc === dmc)?.hex;
+const BLANKET_DEFAULT = {
+  letters: PRODUCT.alphabets[0].letters,
+  preview: BLANKET_LAYOUT.preview,
+  name: "", year: "",
+  blockHex: hexOf(BLANKET_PRESET.block) ?? "#B5CEDE",
+  letterHex: hexOf(BLANKET_PRESET.letter) ?? "#2B4C73",
+  letterHexes: null,
+};
+
 export const STITCH_PREVIEWS = {
   // Configurator-led (live-wired to the inputs on the page)
   "blanket-alphabet": {
-    text: "Ա Բ Գ", thread: "#6d1b2e", fabric: "#efe6cf",
-    panelMM: [240, 130], live: true,
+    text: "", thread: "#1f2f6b", fabric: "#efe6cf",
+    panelMM: [250, 250], live: true,
+    blanket: BLANKET_DEFAULT,
   },
   "bib-single": {
     text: "Օլէն", thread: "#1f2f6b", fabric: "#f4f2ec",

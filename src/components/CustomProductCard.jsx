@@ -116,6 +116,17 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
     }));
   }, [customName, letterColor]);
 
+  // The StageHero's on-stage name field feeds the configurator, so the
+  // name a shopper types on the 3D stage is the name that goes in the bag.
+  useEffect(() => {
+    const onHero = (e) => {
+      const d = e?.detail || {};
+      if (typeof d.text === "string") setCustomName(d.text);
+    };
+    window.addEventListener("stitch3d:hero", onHero);
+    return () => window.removeEventListener("stitch3d:hero", onHero);
+  }, []);
+
   // Validate the bib config, setting an inline error and returning false on
   // failure. Shared by Add-to-Bag and express Buy-it-now.
   const validateBib = () => {

@@ -34,7 +34,7 @@ import { CribBlanketCard } from "./CribBlanketCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ImmersiveBuySheet } from "./ImmersiveBuySheet";
-import { Stitch3DPanel } from "./Stitch3DPanel.jsx";
+import { StageHero } from "./StageHero.jsx";
 import { getProductPhotos, BIB_CUSTOMER_EXAMPLES } from "../../lib/productPhotos";
 import { CONFIG } from "../../data/config.js";
 import { useIsMobile } from "../../lib/useIsMobile";
@@ -126,6 +126,12 @@ export function ProductView({
   if (product.key === "blanket-alphabet") {
     return (
       <div className="fade-in">
+        <StageHero
+          productKey="blanket-alphabet"
+          title={loc(product, "name", lang)}
+          price={productData?.price != null ? `$${productData.price}` : null}
+          inline={immersive}
+        />
         {!immersive && (
           <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-8 lg:pt-10">
             <Breadcrumbs trail={trail} />
@@ -143,9 +149,6 @@ export function ProductView({
           notifyKey={inventoryKey}
           immersive={immersive}
         />
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 pb-4">
-          <Stitch3DPanel productKey="blanket-alphabet" />
-        </div>
       </div>
     );
   }
@@ -161,6 +164,12 @@ export function ProductView({
     if (immersive) {
       return (
         <>
+          <StageHero
+            productKey="bib-single"
+            title={loc(product, "name", lang)}
+            price={customProductData?.price != null ? `$${customProductData.price}` : null}
+            inline
+          />
           <CustomProductCard
             config={customProductData}
             onAddCustom={onAddCustom}
@@ -170,13 +179,18 @@ export function ProductView({
             notifyKey={inventoryKey}
             immersive
           />
-          <Stitch3DPanel productKey="bib-single" />
         </>
       );
     }
 
     return (
-      <div className="fade-in max-w-5xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
+      <div className="fade-in">
+        <StageHero
+          productKey="bib-single"
+          title={loc(product, "name", lang)}
+          price={customProductData?.price != null ? `$${customProductData.price}` : null}
+        />
+        <div className="max-w-5xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
         <Breadcrumbs trail={trail} />
         <CustomProductCard
           config={customProductData}
@@ -186,8 +200,6 @@ export function ProductView({
           soldOut={soldOut}
           notifyKey={inventoryKey}
         />
-
-        <Stitch3DPanel productKey="bib-single" />
 
         {/* Past customer orders gallery -- same shape as the full-
             alphabet blanket / days-bib placeholder galleries (tap-to-zoom,
@@ -213,6 +225,7 @@ export function ProductView({
             />
           </div>
         </section>
+        </div>
       </div>
     );
   }
@@ -225,6 +238,12 @@ export function ProductView({
   if (spec?.buy?.kind === "cribBlanket") {
     return (
       <>
+        <StageHero
+          productKey={product.key}
+          title={loc(product, "name", lang)}
+          price={(spec?.price ?? product.priceFrom) != null ? `$${spec?.price ?? product.priceFrom}` : null}
+          inline={immersive}
+        />
         <CribBlanketCard
           product={product}
           spec={spec}
@@ -236,15 +255,18 @@ export function ProductView({
           notifyKey={inventoryKey}
           immersive={immersive}
         />
-        <div className="max-w-5xl mx-auto px-6 lg:px-12 pb-8">
-          <Stitch3DPanel productKey={product.key} />
-        </div>
       </>
     );
   }
   if (spec?.buy?.kind === "bibSet") {
     return (
       <>
+        <StageHero
+          productKey={product.key}
+          title={loc(product, "name", lang)}
+          price={(spec?.price ?? product.priceFrom) != null ? `$${spec?.price ?? product.priceFrom}` : null}
+          inline={immersive}
+        />
         <BibSetCard
           product={product}
           spec={spec}
@@ -256,9 +278,6 @@ export function ProductView({
           notifyKey={inventoryKey}
           immersive={immersive}
         />
-        <div className="max-w-5xl mx-auto px-6 lg:px-12 pb-8">
-          <Stitch3DPanel productKey={product.key} />
-        </div>
       </>
     );
   }

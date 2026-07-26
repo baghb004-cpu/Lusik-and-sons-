@@ -208,14 +208,39 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
   );
   const [colorMode, setColorMode] = useState("preset");  // "preset" | "custom"
 
-  // Feed the PDP's Live 3D stitch panel — typed personalization lines and
-  // the chosen letter thread restitch on the stage as they change.
+  // Feed the PDP's 3D stage hero — the FULL blanket design (alphabet,
+  // layout, name/year, preset colors), so the stage renders the real
+  // blanket exactly as the 2D preview below draws it, restitching live
+  // as any of it changes.
   useEffect(() => {
     const text = [customLine1, customLine2].map((s) => (s || "").trim()).filter(Boolean).join(" · ");
     window.dispatchEvent(new CustomEvent("stitch3d:live", {
-      detail: { text, thread: letterColor?.hex },
+      detail: {
+        text,
+        thread: letterColor?.hex,
+        blanket: {
+          letters: alphabet.letters,
+          preview: layout.preview,
+          name: (customLine1 || "").trim(),
+          year: (customLine2 || "").trim(),
+          blockHex: blockColor?.hex,
+          letterHex: letterColor?.hex,
+          letterHexes: letterColorList ? letterColorList.map((c) => c.hex) : null,
+        },
+      },
     }));
-  }, [customLine1, customLine2, letterColor]);
+  }, [customLine1, customLine2, letterColor, alphabet, layout, blockColor, letterColorList]);
+
+  // StageHero's on-stage field → personalization line 1, so the hero and
+  // the configurator never disagree about what's being stitched.
+  useEffect(() => {
+    const onHero = (e) => {
+      const d = e?.detail || {};
+      if (typeof d.text === "string") setCustomLine1(d.text);
+    };
+    window.addEventListener("stitch3d:hero", onHero);
+    return () => window.removeEventListener("stitch3d:hero", onHero);
+  }, []);
   // The currently-selected preset, if customer chose one. Helps the UI
   // show which preset card is highlighted; null when in custom mode.
   const [activePresetKey, setActivePresetKey] = useState(defaultPreset.key);
