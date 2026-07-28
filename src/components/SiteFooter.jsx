@@ -51,6 +51,9 @@ export function SiteFooter({ onOpenPolicy }) {
             <div className="flex flex-col gap-2 text-sm">
               <button onClick={() => nav.goPage("shipping")} className="text-left hover:opacity-60">{t("footer.shippingTracking")}</button>
               <button onClick={() => openPolicy("finalSale")} className="text-left hover:opacity-60">{t("footer.finalSalePolicy")}</button>
+              {/* A real link, not a modal — /returns is the public URL
+                  external listings (Google Merchant Center) verify. */}
+              <a href="/returns" className="text-left hover:opacity-60">{t("footer.returnsPolicy")}</a>
               <button onClick={() => openPolicy("privacy")} className="text-left hover:opacity-60">{t("footer.privacyPolicy")}</button>
               {/* CPRA-required opt-out link — opens the privacy policy scrolled
                   to the live do-not-share switch (see PolicyModal). */}
