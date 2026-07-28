@@ -186,6 +186,7 @@ export const TRANSLATIONS = {
       findUs: "Find Us",
       shippingTracking: "Shipping & Tracking",
       finalSalePolicy: "Final Sale Policy",
+      returnsPolicy: "Returns & Exchanges",
       privacyPolicy: "Privacy Policy",
       privacyChoices: "Your privacy choices",
       termsOfService: "Terms of Service",
@@ -718,6 +719,7 @@ export const TRANSLATIONS = {
       findUs: "Մեզ գտնել",
       shippingTracking: "Առաքում եւ հետեւում",
       finalSalePolicy: "Վերջնական վաճառքի կանոն",
+      returnsPolicy: "Վերադարձներ եւ փոխանակումներ",  // ⚠️ TODO_LUSIK_REVIEW
       privacyPolicy: "Գաղտնիութեան կանոն",
       privacyChoices: "Ձեր գաղտնիութեան ընտրանքները",  // ⚠️ TODO_LUSIK_REVIEW
       termsOfService: "Ծառայութեան պայմաններ",
@@ -898,6 +900,7 @@ export const TRANSLATIONS = {
       findUs: "Մեզ գտնել",
       shippingTracking: "Առաքում և հետևում",
       finalSalePolicy: "Վերջնական վաճառքի կանոն",
+      returnsPolicy: "Վերադարձներ և փոխանակումներ",  // ⚠️ TODO_LUSIK_REVIEW
       privacyPolicy: "Գաղտնիության կանոն",
       privacyChoices: "Ձեր գաղտնիության ընտրությունները",  // ⚠️ TODO_LUSIK_REVIEW
       termsOfService: "Ծառայության պայմաններ",

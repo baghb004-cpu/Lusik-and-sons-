@@ -21,7 +21,7 @@
 // ============================================================
 
 // Last-updated date — bump this manually whenever you revise the text.
-export const POLICIES_LAST_UPDATED = "June 2026";
+export const POLICIES_LAST_UPDATED = "July 2026";
 
 export const POLICIES = {
   privacy: {
@@ -130,6 +130,45 @@ export const POLICIES = {
       {
         heading: "Changes",
         body: "We may update these terms occasionally. The version on this page is the one that applies to your order at the time you place it."
+      },
+    ],
+  },
+  // NOTE: `returns` below and `finalSale` describe the SAME rules from two
+  // angles — returns (the public /returns URL external listings like Google
+  // Merchant Center link to) is organized the way a returns policy is read
+  // (window, condition, method, fees, refunds); finalSale is the fuller
+  // in-store explanation. If a rule changes, change BOTH in the same PR.
+  returns: {
+    title: "Returns & Exchanges",
+    eyebrow: "Made to order, and made right",
+    sections: [
+      {
+        heading: "The short version",
+        body: "Every piece is made to order — the alphabet, layout, colors, and any name or year are stitched into the piece for you, so we can't restock it and we don't accept returns or exchanges for change of mind. But if what arrives is defective, damaged in transit, or not what you ordered, tell us within 14 days of delivery and we will make it right — a repair, a remake, or a refund. You never pay a fee for that, and you usually don't have to ship anything back."
+      },
+      {
+        heading: "What qualifies for a return or refund",
+        body: "A manufacturing defect, damage that happened in transit, or an item materially different from what you ordered — wrong alphabet, wrong letters, wrong name, wrong product. Email hello@lusikandsons.com within 14 days of delivery with a photo of what you received. We keep our own documentation on every order — the finished-piece photograph, the packaging, the carrier handoff — so most of the picture is usually already on our side and we can move straight to a resolution."
+      },
+      {
+        heading: "How a return is resolved",
+        body: "For a verified defect, damage, or wrong item, Lusik will repair the piece, remake it, or refund you — whichever actually makes it right, decided with you. Refunds go in full to your original payment method and typically appear within 5–10 business days of being issued. Because each piece is personalized, we generally don't ask you to mail anything back; if we ever do need the piece returned, we pay the shipping."
+      },
+      {
+        heading: "Fees",
+        body: "None. No restocking fees, no return-shipping charges, no processing fees — a defective or incorrect order costs you nothing to resolve. We also cover the shipping on any repair or remake."
+      },
+      {
+        heading: "What isn't a defect",
+        body: "Lusik sources thread from different manufacturers, so two blankets in the same color can vary slightly in shade, and hand-stitching means spacing, tension, and stitch density vary subtly from piece to piece. These are characteristics of handmade goods, not defects, and are not grounds for a return or remake. Please also double-check spelling, year digits, and color choices in the live preview before checking out — what you see is what Lusik stitches."
+      },
+      {
+        heading: "Lost in transit",
+        body: "If tracking shows your package lost or stuck for more than 14 business days past the expected delivery date, contact us. We will file a claim with the carrier and work with you on a replacement at no cost to you."
+      },
+      {
+        heading: "How to reach us",
+        body: "Email hello@lusikandsons.com, call or text (760) 874-2333, or DM @lusikandsons on Instagram. Lusik or one of her sons will respond, usually within a day."
       },
     ],
   },
