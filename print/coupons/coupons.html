@@ -19,17 +19,18 @@
 </style>
 <script>
   const COUPONS = [
-    { who: 'For you',            offer: '10% off',  what: 'your next order',
-      note: 'Because there is always a next baby, a next cousin, a next christening.',
-      code: 'THANKYOU10', img: '../../public/img/abc-blanket/12.jpg', pos: '50% 45%' },
-    { who: 'For a friend',       offer: '10% off',  what: 'a first order',
-      note: 'Tear this one off and hand it to someone who is expecting. The best orders come from a friend.',
+    { who: 'For you',        offer: '10% off', what: 'your next order',
+      note: 'There is always another baby, another cousin, another christening.',
+      code: 'THANKYOU10', img: '../../public/img/abc-blanket/03.jpg', pos: '40% 45%' },
+    { who: 'For a friend',   offer: '10% off', what: 'a first order',
+      note: 'Tear this one off and hand it to someone who is expecting. Most of our orders start with a friend.',
       code: 'FRIEND10',   img: '../../public/img/days-bib/14.jpg',   pos: '50% 50%' },
-    { who: 'For the grandparents', offer: '10% off', what: 'any order',
-      note: 'A grandmother is usually the first to notice the stitching. This one is for her, or for him.',
-      code: 'GRANDMA10',  img: '../../public/img/full-alphabet/33.jpg', pos: '55% 50%' },
+    { who: 'For the family', offer: '10% off', what: 'any order',
+      note: 'For a grandmother, an aunt, a godparent: whoever notices the stitching first.',
+      code: 'FAMILY10',   img: '../../public/img/full-alphabet/33.jpg', pos: '55% 50%' },
   ];
-  const VALID_THROUGH = 'December 31, 2026';
+  // Must match the expiry set on the codes in Stripe. Push it out before reprinting.
+  const VALID_THROUGH = 'December 31, 2027';
 </script>
 <style>
   :root {
@@ -50,20 +51,22 @@
   .head .how { font-size: 7.4pt; color: var(--ink-soft); border-left: 2px solid var(--gold); padding-left: 0.12in; }
   .head .how b { display: block; font-size: 6.4pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); margin-bottom: 0.03in; }
 
-  .coupons { flex: 1; display: flex; flex-direction: column; justify-content: space-between; margin-top: 0.05in; }
-  .coupon { position: relative; border: 1.2px dashed #9d9283; padding: 0.22in 0.28in 0.22in 0.26in; display: grid; grid-template-columns: 1.55in 1fr 1.9in; column-gap: 0.26in; align-items: center; height: 2.68in; }
-  .coupon .scis { position: absolute; left: -0.09in; top: 0.34in; width: 0.16in; height: 0.16in; color: #9d9283; background: #fff; }
+  .coupons { flex: 1; display: flex; flex-direction: column; margin-top: 0.08in; border: 1.2px dashed #9d9283; }
+  .coupon { position: relative; padding: 0.22in 0.28in 0.22in 0.26in; display: grid; grid-template-columns: 1.5in 1fr 2.05in; column-gap: 0.26in; align-items: center; flex: 1 1 0; }
+  .coupon + .coupon { border-top: 1.2px dashed #9d9283; }
+  .coupon .scis { position: absolute; left: -0.09in; top: -0.09in; width: 0.16in; height: 0.16in; color: #9d9283; background: #fff; }
+  .coupon:first-child .scis { top: 0.3in; }
   .coupon .ph { height: 100%; min-height: 2.1in; border: 0.5px solid #b6ab99; overflow: hidden; background: var(--cream); }
   .coupon .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .coupon .who { font-size: 6.6pt; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pom); font-weight: 600; margin-bottom: 0.06in; }
   .coupon .offer { font-family: 'Fraunces', serif; font-weight: 500; font-size: 30pt; line-height: 0.95; letter-spacing: -0.01em; font-variation-settings: 'opsz' 120, 'SOFT' 50; }
   .coupon .what { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 14pt; color: var(--ink-soft); margin: 0.03in 0 0.1in; }
   .coupon .note { font-size: 8.4pt; color: var(--ink-soft); max-width: 2.9in; }
-  .coupon .codebox { border: 1.2px solid var(--ink); padding: 0.14in 0.16in 0.13in; text-align: center; background: #fff; }
+  .coupon .codebox { border: 1.2px solid var(--ink); padding: 0.13in 0.14in 0.14in; text-align: center; background: #fff; }
   .coupon .codebox .lbl { font-size: 6.2pt; letter-spacing: 0.2em; text-transform: uppercase; color: var(--mute); }
-  .coupon .codebox .code { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 17pt; letter-spacing: 0.12em; margin: 0.03in 0 0.05in; }
+  .coupon .codebox .code { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 15pt; letter-spacing: 0.1em; margin: 0.03in 0 0; white-space: nowrap; }
   .coupon .codebox .use { font-size: 6.9pt; line-height: 1.35; color: var(--ink-soft); }
-  .coupon .fine { font-size: 6.1pt; line-height: 1.35; color: var(--mute); margin-top: 0.09in; }
+  .coupon .fine { font-size: 6.8pt; line-height: 1.4; color: var(--ink-soft); margin-top: 0.1in; }
   .coupon .corner { position: absolute; right: 0.14in; top: 0.12in; font-size: 6.2pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute); }
 
   .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.22in; font-size: 6.6pt; color: var(--mute); letter-spacing: 0.02em; }
@@ -76,9 +79,9 @@
   <div class="head">
     <div>
       <h1>A little something for next time.</h1>
-      <p>Three coupons came with your order. One is for you, one is for a friend, and one is for the grandparents. Cut along the dotted lines and keep them somewhere you will find them again.</p>
+      <p>Three coupons came with your order. One is for you, one is for a friend, and one is for the family. Cut along the dashed lines and keep them somewhere you will find them again.</p>
     </div>
-    <div class="how"><b>How to use a code</b>Type it into the promotion code box at checkout on lusikandsons.com, or read it to us when you order by phone or send it in a message on Instagram. One code per order.</div>
+    <div class="how"><b>How to use a code</b>Ordering one piece online? Type the code into the promotion code box at checkout on lusikandsons.com. Ordering two or more pieces, or by phone or Instagram? Tell us the code and we will apply it by hand; online, two or more pieces get the bundle savings instead and the code box does not appear.</div>
   </div>
 
   <div class="coupons" id="coupons"></div>
@@ -106,9 +109,8 @@
         <div class="codebox">
           <div class="lbl">Code</div>
           <div class="code">${c.code}</div>
-          <div class="use">At checkout on lusikandsons.com, or by phone or Instagram.</div>
         </div>
-        <p class="fine">One code per order. Not combinable with any other discount, including the multi-piece discount. No cash value. Valid through ${VALID_THROUGH}.</p>
+        <p class="fine">Online at lusikandsons.com, or by phone or Instagram. One code per order. Not combinable with bundle savings or other discounts. No cash value. Valid through ${VALID_THROUGH}.</p>
       </div>
     </article>`).join('');
 </script>
