@@ -61,6 +61,8 @@
   .fold::before { top: 0.3in; }
   .fold::after { bottom: 0.3in; }
   .fold { border-left-color: transparent; } /* only the ticks print */
+  body.bleed .fold::before { top: calc(-1 * var(--bleed)); height: 0.1in; }
+  body.bleed .fold::after { bottom: calc(-1 * var(--bleed)); height: 0.1in; }
 
   /* crop marks for the print shop file */
   .crop { display: none; position: absolute; width: 0.1in; height: 0.1in; }
@@ -83,15 +85,16 @@
   .eyebrow { font-size: 6.4pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pom); font-weight: 600; margin: 0 0 0.08in; }
   .eyebrow.ink { color: var(--ink-soft); }
   h1, h2, h3 { font-family: 'Fraunces', 'Noto Serif Armenian', Georgia, serif; font-weight: 500; margin: 0; line-height: 1.12; letter-spacing: -0.005em; }
-  h2 { font-size: 15.5pt; margin-bottom: 0.14in; font-variation-settings: 'opsz' 60, 'SOFT' 30; }
+  h1, h2 { font-family: 'Fraunces Display', 'Fraunces', 'Noto Serif Armenian', Georgia, serif; }
+  h2 { font-size: 15.5pt; margin-bottom: 0.14in; }
   h3 { font-size: 10.6pt; margin-bottom: 0.04in; }
   p { margin: 0 0 0.09in; }
   p:last-child { margin-bottom: 0; }
-  .hy { font-family: 'Noto Sans Armenian', sans-serif; }
+  .hy { font-family: 'Noto Sans Armenian', 'DM Sans', sans-serif; font-weight: 500; font-size: 1.03em; }
   .script { font-family: 'Allura', cursive; font-size: 19pt; line-height: 1; color: var(--ink); }
   .small { font-size: 7.3pt; color: var(--ink-soft); }
   .tiny { font-size: 6.8pt; color: var(--ink-soft); letter-spacing: 0.02em; }
-  em { font-family: 'Fraunces', 'Noto Serif Armenian', serif; font-style: italic; font-weight: 450; font-size: 1.04em; }
+  em { font-family: 'Fraunces Display', 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 1.04em; }
   strong { font-weight: 600; }
 
   .xrule { height: 5px; margin: 0.14in 0; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M1 0.8L4 4.2M4 0.8L1 4.2' stroke='%23b8964f' stroke-width='0.9' stroke-linecap='round' fill='none'/></svg>"); background-repeat: repeat-x; background-size: 8px 5px; opacity: 0.9; }
@@ -102,7 +105,7 @@
   .ph { position: relative; overflow: hidden; background: var(--cream); border: 0.5px solid #b6ab99; }
   .ph img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .ph.wide { width: 100%; }
-  .cap { font-size: 6.4pt; color: var(--mute); margin-top: 0.05in; letter-spacing: 0.01em; }
+  .cap { font-size: 6.6pt; color: var(--ink-soft); margin-top: 0.05in; letter-spacing: 0.01em; }
 
   /* ---------- product entries ---------- */
   .item { margin-bottom: 0.15in; }
@@ -119,6 +122,7 @@
   .box { background: var(--cream); padding: 0.14in 0.16in; }
   .box h3 { font-size: 10pt; margin-bottom: 0.05in; }
   .box.warn { border-left: 3px solid var(--pom); }
+  .inside .box.warn { padding: 0.12in 0.16in; }
 
   .spacer { flex: 1 1 auto; }
 
@@ -128,10 +132,10 @@
   .cover .hero { position: relative; margin: 0.28in 0 0.22in; }
   .cover .hero .ph { height: 4.2in; }
   .cover .hero .ph img { transform: scale(1.3); transform-origin: 50% 66%; }
-  .cover .stamp { position: absolute; right: -0.1in; bottom: -0.32in; width: 1.22in; height: 1.22in; color: var(--pom); transform: rotate(-11deg); }
+  .cover .stamp { position: absolute; right: 0.04in; bottom: -0.32in; width: 1.22in; height: 1.22in; color: var(--pom); transform: rotate(-11deg); }
   .cover .stamp svg { width: 100%; height: 100%; overflow: visible; }
-  .cover .abg { font-family: 'Noto Serif Armenian', serif; font-weight: 500; font-size: 58pt; line-height: 0.95; letter-spacing: 0.06em; color: var(--ink); margin: 0.16in 0 0.1in -0.02in; }
-  .cover .sub { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 13.5pt; line-height: 1.2; color: var(--ink-soft); max-width: 2.9in; font-variation-settings: 'opsz' 48; }
+  .cover .abg { font-family: 'Noto Serif Armenian', 'Fraunces', serif; font-weight: 500; font-size: 58pt; line-height: 0.95; letter-spacing: 0.06em; color: var(--ink); margin: 0.16in 0 0.1in -0.02in; }
+  .cover .sub { font-family: 'Fraunces Display', 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 13.5pt; line-height: 1.2; color: var(--ink-soft); max-width: 2.9in; }
   .cover .foot { display: flex; justify-content: space-between; align-items: baseline; }
 
   /* ---------- back cover ---------- */
@@ -255,9 +259,9 @@
       <h2>The first letters a child learns.</h2>
 
       <article class="item">
-        <div class="ph wide" style="height:1.5in"><img src="../../public/img/abc-blanket/03.jpg" alt="A white crib blanket cross-stitched with the Armenian letters and the name Olen and the year 2026" style="object-position: 50% 45%"></div>
+        <div class="ph wide" style="height:1.3in"><img src="../../public/img/abc-blanket/03.jpg" alt="A white crib blanket cross-stitched with the Armenian letters and the name Olen and the year 2026" style="object-position: 50% 45%"></div>
         <h3>The Armenian Alphabet Blanket</h3>
-        <p><span class="hy">Ա Բ Գ</span> in Armenian, or A B C in English. Lusik cross-stitches the three letters twice, along two diagonals that cross the blanket corner to corner, onto soft cloth woven with a small pomegranate pattern. Satin backing, fringed edges, 52 by 52 inches. Add a name or a year if you like.</p>
+        <p><span class="hy" lang="hy">Ա Բ Գ</span> in Armenian, or A B C in English. Lusik cross-stitches the three letters twice, along two diagonals that cross the blanket corner to corner, onto soft cloth woven with a small pomegranate pattern. Satin backing, fringed edges, 52 by 52 inches. Add a name or a year if you like.</p>
         <p class="meta"><span class="lead">Allow 4 to 6 weeks</span><span class="var">Colors vary</span></p>
       </article>
 
@@ -284,7 +288,7 @@
       <article class="item">
         <div class="ph wide tall"><img src="../../public/img/days-bib/02.jpg" alt="Seven baby bibs in pastel colors, each cross-stitched with a day of the week in Armenian" style="object-position: 50% 38%"></div>
         <h3>The Days of the Week Bib Set</h3>
-        <p>Seven bibs, Monday through Sunday in Armenian, one word on each: <span class="hy">Երկուշաբթի, Երեքշաբթի, Չորեքշաբթի, Հինգշաբթի, Ուրբաթ, Շաբաթ, Կիրակի</span>. Hand cross-stitched in the thread color you choose. A baby shower gift that opens like a calendar.</p>
+        <p>Seven bibs, Monday through Sunday in Armenian, one word on each: <span class="hy" lang="hy">Երկուշաբթի, Երեքշաբթի, Չորեքշաբթի, Հինգշաբթի, Ուրբաթ, Շաբաթ, Կիրակի</span>. Hand cross-stitched in the thread color you choose. A baby shower gift that opens like a calendar.</p>
         <p class="meta"><span class="lead">Allow 5 to 6 weeks</span><span class="var">Colors vary</span></p>
       </article>
 
@@ -301,7 +305,7 @@
         <div class="ph"><img src="../../public/img/hye-em-bib/cover.jpg" alt="A white bib and matching cap cross-stitched with Hye em yes in the colors of the Armenian flag" style="object-position: 50% 55%"></div>
         <div>
           <h3>The Hye Em Yes Bib</h3>
-          <p><span class="hy">Հայ եմ ես</span>, I am Armenian, in the three colors of the flag: red, blue, and orange. Always the flag colors; the exact shades vary. Add the matching cap.</p>
+          <p><span class="hy" lang="hy">Հայ եմ ես</span>, I am Armenian, in the three colors of the flag: red, blue, and orange. Always the flag colors; the exact shades vary. Add the matching cap.</p>
           <p class="meta"><span class="lead">Allow 2 to 3 weeks</span><span class="var">Colors vary</span></p>
         </div>
       </article>
@@ -315,14 +319,14 @@
       <article class="item">
         <div class="ph wide" style="height:1.22in"><img src="../../public/img/anushig-bib/01.jpg" alt="Two white bibs cross-stitched in pink, one reading Mama's sweetheart and the other Papa's sweetheart in Armenian" style="object-position: 50% 50%"></div>
         <h3>The Mama and Papa’s Anushig Bib Set</h3>
-        <p>Two bibs that take turns. One reads <span class="hy">Մայրիկիս Անոյշիկը</span>, Mama’s sweetheart. The other reads <span class="hy">Պապայիս Անոյշիկը</span>, Papa’s sweetheart. Anushig is the Armenian word for darling. Both bibs in the thread color you choose.</p>
+        <p>Two bibs that take turns. One reads <span class="hy" lang="hy">Մամայիս Անուշիկը</span>, Mama’s sweetheart. The other reads <span class="hy" lang="hy">Պապայիս Անուշիկը</span>, Papa’s sweetheart. Anushig is the Armenian word for darling. Both bibs in the thread color you choose.</p>
         <p class="meta"><span class="lead">Allow 3 to 4 weeks</span><span class="var">Colors vary</span></p>
       </article>
 
       <article class="item">
         <div class="ph wide" style="height:1.22in"><img src="../../public/img/bari-akhorzhak-set/cover.jpg" alt="A yellow bib, burp cloth, and cap cross-stitched with an Armenian table blessing" style="object-position: 50% 50%"></div>
         <h3>The Bari Akhorzhak Bib and Burp Cloth Set</h3>
-        <p>A bib and a burp cloth carrying the two halves of a grandmother’s table blessing. Before the meal the bib says <span class="hy">Բարի ախորժակ</span>, bon app&eacute;tit. After, the burp cloth answers <span class="hy">Անույշ ըլլայ</span>, may it be sweet. Add the matching cap with a name or an initial.</p>
+        <p>A bib and a burp cloth carrying the two halves of a grandmother’s table blessing. Before the meal the bib says <span class="hy" lang="hy">Բարի ախորժակ</span>, bon app&eacute;tit. After, the burp cloth answers <span class="hy" lang="hy">Անուշ ըլլայ</span>, may it be sweet. Add the matching cap with a name or an initial.</p>
         <p class="meta"><span class="lead">Allow 3 to 4 weeks</span><span class="var">Colors vary</span></p>
       </article>
 

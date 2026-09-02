@@ -1,7 +1,13 @@
-@font-face{font-family:'Fraunces';font-style:normal;font-weight:300 900;src:url(fraunces.woff2) format('woff2');}
-@font-face{font-family:'Fraunces';font-style:italic;font-weight:300 900;src:url(fraunces-italic.woff2) format('woff2');}
-@font-face{font-family:'DM Sans';font-style:normal;font-weight:300 700;src:url(dmsans.woff2) format('woff2');}
-@font-face{font-family:'DM Sans';font-style:italic;font-weight:300 700;src:url(dmsans-italic.woff2) format('woff2');}
+/* Static instances cut from the Google Fonts variable files with fontTools
+   (see print/README.md), so Chromium embeds real TrueType subsets in the PDF
+   instead of Type3 outlines, which print-shop preflight tools reject. */
+@font-face{font-family:'Fraunces';font-style:normal;font-weight:500;src:url(fraunces-text-500.woff2) format('woff2');}
+@font-face{font-family:'Fraunces Display';font-style:normal;font-weight:500;src:url(fraunces-display-500.woff2) format('woff2');}
+@font-face{font-family:'Fraunces Display';font-style:italic;font-weight:400;src:url(fraunces-display-italic-400.woff2) format('woff2');}
+@font-face{font-family:'DM Sans';font-style:normal;font-weight:400;src:url(dmsans-400.woff2) format('woff2');}
+@font-face{font-family:'DM Sans';font-style:normal;font-weight:500;src:url(dmsans-500.woff2) format('woff2');}
+@font-face{font-family:'DM Sans';font-style:normal;font-weight:600;src:url(dmsans-600.woff2) format('woff2');}
+@font-face{font-family:'DM Sans';font-style:normal;font-weight:700;src:url(dmsans-700.woff2) format('woff2');}
 @font-face{font-family:'Allura';font-style:normal;font-weight:400;src:url(allura.woff2) format('woff2');}
-@font-face{font-family:'Noto Sans Armenian';font-style:normal;font-weight:300 700;src:url(noto-sans-armenian.woff2) format('woff2');unicode-range:U+0308, U+0530-058F, U+2010, U+2024, U+25CC, U+FB13-FB17;}
-@font-face{font-family:'Noto Serif Armenian';font-style:normal;font-weight:300 700;src:url(noto-serif-armenian.woff2) format('woff2');unicode-range:U+0308, U+0530-058F, U+2010, U+2024, U+25CC, U+FB13-FB17;}
+@font-face{font-family:'Noto Sans Armenian';font-style:normal;font-weight:500;src:url(noto-sans-armenian-500.woff2) format('woff2');unicode-range:U+0308,U+0530-058F,U+2010,U+2024,U+25CC,U+FB13-FB17;}
+@font-face{font-family:'Noto Serif Armenian';font-style:normal;font-weight:500;src:url(noto-serif-armenian-500.woff2) format('woff2');unicode-range:U+0308,U+0530-058F,U+2010,U+2024,U+25CC,U+FB13-FB17;}

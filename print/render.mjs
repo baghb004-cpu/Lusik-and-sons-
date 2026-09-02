@@ -30,6 +30,15 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => Array.from(document.images).every(i => i.complete && i.naturalWidth > 0));
     await page.emulateMedia({ media: 'print' });
+    // Guard: no panel may overflow its padding box (text would land in the
+    // printer's unprintable edge), and the coupon sheet must not ship with
+    // placeholder codes unless you mean it.
+    const overflow = await page.evaluate(() => Array.from(document.querySelectorAll('.panel, .sheet'))
+      .filter(el => el.scrollHeight > el.clientHeight + 1)
+      .map(el => `${el.className}: content ${el.scrollHeight}px in ${el.clientHeight}px`));
+    if (overflow.length) throw new Error(`Layout overflow in ${job.file}:\n  ${overflow.join('\n  ')}`);
+    const draft = await page.evaluate(() => !!document.querySelector('.draft'));
+    if (draft) console.warn(`  WARNING: ${job.file} still carries placeholder codes (CODES_CONFIRMED = false); the sheet prints a red DRAFT strip.`);
     await page.pdf({ path: path.join(outDir, job.out), width: job.page.width, height: job.page.height, margin: { top: 0, right: 0, bottom: 0, left: 0 }, printBackground: true, preferCSSPageSize: false });
     const bytes = fs.statSync(path.join(outDir, job.out)).size;
     console.log(`wrote out/${job.out} (${(bytes / 1024 / 1024).toFixed(1)} MB)`);
