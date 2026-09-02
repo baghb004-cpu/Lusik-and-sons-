@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lusik &amp; Sons coupon sheet</title>
+<link rel="stylesheet" href="../brochure/fonts/faces.css">
+<style>
+  /* ------------------------------------------------------------
+     Lusik & Sons coupon sheet, US Letter portrait (8.5 x 11 in).
+     Three tear-off coupons. Cut along the dotted lines.
+
+     >>> EDIT THE CODES AND DATES HERE. <<<
+     The three codes below are placeholders. They must exist as
+     promotion codes in the Stripe dashboard before this sheet is
+     printed, or a customer will type one in and be told it is not
+     valid. Stripe > Product catalog > Coupons > New coupon >
+     "Use customer-facing coupon codes". See print/README.md.
+     ------------------------------------------------------------ */
+</style>
+<script>
+  const COUPONS = [
+    { who: 'For you',            offer: '10% off',  what: 'your next order',
+      note: 'Because there is always a next baby, a next cousin, a next christening.',
+      code: 'THANKYOU10', img: '../../public/img/abc-blanket/12.jpg', pos: '50% 45%' },
+    { who: 'For a friend',       offer: '10% off',  what: 'a first order',
+      note: 'Tear this one off and hand it to someone who is expecting. The best orders come from a friend.',
+      code: 'FRIEND10',   img: '../../public/img/days-bib/14.jpg',   pos: '50% 50%' },
+    { who: 'For the grandparents', offer: '10% off', what: 'any order',
+      note: 'A grandmother is usually the first to notice the stitching. This one is for her, or for him.',
+      code: 'GRANDMA10',  img: '../../public/img/full-alphabet/33.jpg', pos: '55% 50%' },
+  ];
+  const VALID_THROUGH = 'December 31, 2026';
+</script>
+<style>
+  :root {
+    --ink: #1a1612; --ink-soft: #4a423a; --mute: #7a6f63;
+    --cream: #f4ecdd; --pom: #8e2a2f; --gold: #b8964f; --rule: #cfc3ad;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #888; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); font-size: 8.4pt; line-height: 1.42; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { size: 8.5in 11in; margin: 0; }
+  .sheet { position: relative; width: 8.5in; height: 11in; background: #fff; margin: 0 auto; padding: 0.45in 0.5in 0.4in; display: flex; flex-direction: column; overflow: hidden; }
+  .mark { display: flex; align-items: center; gap: 0.1in; font-size: 7pt; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 600; }
+  .mark .line { flex: 1; border-top: 0.5px solid var(--ink); }
+  h1, h2, h3 { font-family: 'Fraunces', 'Noto Serif Armenian', Georgia, serif; font-weight: 500; margin: 0; line-height: 1.1; letter-spacing: -0.005em; }
+  .head { display: grid; grid-template-columns: 1fr 2.3in; column-gap: 0.3in; align-items: end; margin: 0.28in 0 0.2in; }
+  .head h1 { font-size: 24pt; font-variation-settings: 'opsz' 96, 'SOFT' 40; }
+  .head p { margin: 0.08in 0 0; font-size: 9pt; color: var(--ink-soft); max-width: 4.6in; }
+  .head .how { font-size: 7.4pt; color: var(--ink-soft); border-left: 2px solid var(--gold); padding-left: 0.12in; }
+  .head .how b { display: block; font-size: 6.4pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); margin-bottom: 0.03in; }
+
+  .coupons { flex: 1; display: flex; flex-direction: column; justify-content: space-between; margin-top: 0.05in; }
+  .coupon { position: relative; border: 1.2px dashed #9d9283; padding: 0.22in 0.28in 0.22in 0.26in; display: grid; grid-template-columns: 1.55in 1fr 1.9in; column-gap: 0.26in; align-items: center; height: 2.68in; }
+  .coupon .scis { position: absolute; left: -0.09in; top: 0.34in; width: 0.16in; height: 0.16in; color: #9d9283; background: #fff; }
+  .coupon .ph { height: 100%; min-height: 2.1in; border: 0.5px solid #b6ab99; overflow: hidden; background: var(--cream); }
+  .coupon .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .coupon .who { font-size: 6.6pt; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pom); font-weight: 600; margin-bottom: 0.06in; }
+  .coupon .offer { font-family: 'Fraunces', serif; font-weight: 500; font-size: 30pt; line-height: 0.95; letter-spacing: -0.01em; font-variation-settings: 'opsz' 120, 'SOFT' 50; }
+  .coupon .what { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 14pt; color: var(--ink-soft); margin: 0.03in 0 0.1in; }
+  .coupon .note { font-size: 8.4pt; color: var(--ink-soft); max-width: 2.9in; }
+  .coupon .codebox { border: 1.2px solid var(--ink); padding: 0.14in 0.16in 0.13in; text-align: center; background: #fff; }
+  .coupon .codebox .lbl { font-size: 6.2pt; letter-spacing: 0.2em; text-transform: uppercase; color: var(--mute); }
+  .coupon .codebox .code { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 17pt; letter-spacing: 0.12em; margin: 0.03in 0 0.05in; }
+  .coupon .codebox .use { font-size: 6.9pt; line-height: 1.35; color: var(--ink-soft); }
+  .coupon .fine { font-size: 6.1pt; line-height: 1.35; color: var(--mute); margin-top: 0.09in; }
+  .coupon .corner { position: absolute; right: 0.14in; top: 0.12in; font-size: 6.2pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute); }
+
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.22in; font-size: 6.6pt; color: var(--mute); letter-spacing: 0.02em; }
+  .foot .ig { display: inline-block; width: 0.11in; height: 0.11in; vertical-align: -0.02in; margin-right: 0.04in; }
+</style>
+</head>
+<body>
+<section class="sheet">
+  <div class="mark"><span>Lusik</span><span class="line"></span><span>&amp; Sons</span></div>
+  <div class="head">
+    <div>
+      <h1>A little something for next time.</h1>
+      <p>Three coupons came with your order. One is for you, one is for a friend, and one is for the grandparents. Cut along the dotted lines and keep them somewhere you will find them again.</p>
+    </div>
+    <div class="how"><b>How to use a code</b>Type it into the promotion code box at checkout on lusikandsons.com, or read it to us when you order by phone or send it in a message on Instagram. One code per order.</div>
+  </div>
+
+  <div class="coupons" id="coupons"></div>
+
+  <div class="foot">
+    <span>Lusik &amp; Sons &middot; Buena Park, California &middot; (760) 874-2333 &middot; hello@lusikandsons.com</span>
+    <span><svg class="ig" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>@lusikandsons &middot; lusikandsons.com</span>
+  </div>
+</section>
+
+<script>
+  const scissors = `<svg class="scis" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.6 15.4M8.6 8.6L20 20"/></svg>`;
+  document.getElementById('coupons').innerHTML = COUPONS.map((c, i) => `
+    <article class="coupon">
+      ${scissors}
+      <span class="corner">No. ${i + 1} of ${COUPONS.length}</span>
+      <div class="ph"><img src="${c.img}" alt="" style="object-position:${c.pos}"></div>
+      <div>
+        <div class="who">${c.who}</div>
+        <div class="offer">${c.offer}</div>
+        <div class="what">${c.what}</div>
+        <p class="note">${c.note}</p>
+      </div>
+      <div>
+        <div class="codebox">
+          <div class="lbl">Code</div>
+          <div class="code">${c.code}</div>
+          <div class="use">At checkout on lusikandsons.com, or by phone or Instagram.</div>
+        </div>
+        <p class="fine">One code per order. Not combinable with any other discount, including the multi-piece discount. No cash value. Valid through ${VALID_THROUGH}.</p>
+      </div>
+    </article>`).join('');
+</script>
+</body>
+</html>

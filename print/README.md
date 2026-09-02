@@ -1,0 +1,65 @@
+# Print pieces
+
+Two things that go in every delivery box: a tri-fold brochure and a coupon sheet.
+Both are plain HTML + CSS (no build step) rendered to PDF with headless Chromium.
+
+```
+print/
+├── brochure/brochure.html   the tri-fold (US Letter landscape, two sides)
+├── brochure/fonts/          Fraunces, DM Sans, Allura, Noto Serif Armenian (woff2, self-hosted)
+├── brochure/art/            QR code SVGs (site + Instagram)
+├── coupons/coupons.html     the coupon sheet (US Letter portrait); the codes live at the top of this file
+├── render.mjs               renders everything in out/
+└── out/                     the PDFs to print
+```
+
+## Printing the brochure at home
+
+1. Open `out/lusik-and-sons-brochure.pdf`.
+2. Print on US Letter, **landscape**, **2-sided, flip on the short edge**, scale **100%** (not "fit to page").
+   If side two comes out upside down, print again with "flip on the long edge" instead.
+   Cardstock (65 to 80 lb) folds and feels best; plain paper works.
+3. Fold: the small tick marks in the top and bottom margins show the two folds.
+   With the **outside** facing up (the side with the front cover on the right), fold the
+   **left** panel in first, then fold the right panel over it. The stack of blankets
+   photo is the front cover; the story panel ends up as the flap you see when you open it.
+
+Page 1 (outside), left to right: inside flap (story) | back cover (how to order) | front cover.
+Page 2 (inside), left to right: blankets | bibs | more bibs, by request, care.
+
+`out/lusik-and-sons-brochure-print-shop.pdf` is the same design on an 11.25 x 8.75 in
+page with crop marks and a 1/8 in bleed margin. Give that one to a print shop; they
+trim to 11 x 8.5 in.
+
+## The coupon sheet
+
+`out/lusik-and-sons-coupon-sheet.pdf` prints 1-sided, portrait, 100%.
+
+**The three codes on it are placeholders.** Nothing in this repo or the inbox records
+any promotion codes; codes are created and managed only in the Stripe dashboard, and
+Stripe is the only place to see whether a code is still active. Before printing:
+
+1. Stripe dashboard > Product catalog > Coupons > New coupon > tick
+   "Use customer-facing coupon codes", create the code exactly as printed (or change
+   the printed one), set the redemption limit and expiry.
+2. Edit the `COUPONS` array and `VALID_THROUGH` at the top of `coupons/coupons.html`
+   to match, then re-render.
+
+One Stripe limit to know about: a bag with two or more pieces gets the automatic
+multi-piece discount, and Stripe then hides the promotion-code box on the checkout
+page. That is why the coupon terms say the code cannot be combined with the
+multi-piece discount. Phone and Instagram orders are honored by hand, so those work
+regardless.
+
+## Re-rendering after an edit
+
+```
+npx playwright install chromium   # once, if Chromium is not already installed
+node print/render.mjs             # writes print/out/*.pdf
+node print/render.mjs --preview-dir /some/folder   # also writes PNG previews
+```
+
+Photos are referenced straight from `public/img/`, so re-rendering picks up any
+photo you replace there. Keep the copy rules when editing: no em dashes, no
+prices, colors-vary note on every product, lead time on every product, and no
+explanation of why the lead times are what they are.
