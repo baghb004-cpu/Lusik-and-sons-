@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@netlify/blobs": "^10.7.7",
+    "@netlify/blobs": "^11.0.3",
     "@netlify/functions": "^5.2.1",
     "@netlify/neon": "^0.1.0",
     "stripe": "^17.0.0"
