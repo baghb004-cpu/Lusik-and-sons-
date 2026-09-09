@@ -24,7 +24,7 @@ import { useIsMobile } from "../lib/useIsMobile";
 import { useSwipe } from "../lib/useSwipe.js";
 import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 import { PHOTO_DATE_DETAIL } from "../images/photos.js";
-import { getDeliveryEstimate } from "../lib/deliveryEstimate";
+import { useLeadTime } from "../lib/useLeadTime";
 import { publishDesign } from "../lib/designBus";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
@@ -166,6 +166,10 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       document.body.style.overflow = prevOverflow;
     };
   }, [zoomOpen]);
+
+  // Lead-time engine: this product's own build time plus the live queue
+  // ahead of it, as concrete dates (SITE_OVERHAUL_HANDOFF.md, PR 9).
+  const lead = useLeadTime("blanket-alphabet");
 
   const [color, setColor] = useState(product.colors[0]);
   const [alphabet, setAlphabet] = useState(product.alphabets[0]);
@@ -1262,22 +1266,14 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           />
           )}
           </>)}
-          {/* Estimated delivery — concrete ship-by / arrives-by range
-              instead of a vague "5–10 days" line. Computed on every
-              render from today's date so it stays current; ranges
-              are wide enough that a one-day shift around a federal
-              holiday doesn't make it lie. */}
+          {/* Estimated delivery — this product's own build time plus the
+              live queue ahead of it (src/lib/leadTime.js + the /lead-time
+              Function), turned into concrete dates. Recomputed on every
+              render from today's date so it never goes stale. */}
           <p className="text-xs opacity-70 leading-relaxed mb-4">
-            {(() => {
-              const est = getDeliveryEstimate();
-              return (
-                <>
-                  <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: est.shipBy })}</span>
-                  <span>{t("pdp.arrives", { date: est.arrives })}</span>
-                  <span className="block mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
-                </>
-              );
-            })()}
+            <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: lead.shipBy })}</span>
+            <span>{t("pdp.arrives", { date: lead.arrives })}</span>
+            <span className="block mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>

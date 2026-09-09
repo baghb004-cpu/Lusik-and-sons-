@@ -217,6 +217,17 @@ function _initDb() {
   // can tell "we don't recognize that ZIP" (404) apart from "lookup
   // unavailable" (network/5xx — show nothing, never a scary warning).
   const _zipCache = new Map();
+  // Public queue snapshot for the lead-time engine (src/lib/leadTime.js).
+  // Unauthenticated; fail-soft — a zero buffer just means the page quotes
+  // the product's own build time.
+  const getLeadTime = async () => {
+    try {
+      return await call("/lead-time", { auth: false });
+    } catch {
+      return { openOrders: 0, queueDays: 0 };
+    }
+  };
+
   const lookupZip = async (zip) => {
     if (!/^\d{5}$/.test(zip)) return { place: null, notFound: false };
     if (_zipCache.has(zip)) return _zipCache.get(zip);
@@ -268,6 +279,7 @@ function _initDb() {
 
   return {
     getInventory,
+    getLeadTime,
     lookupZip,
     joinWaitlist, sendChat,
     getProfile, updateProfile, uploadAvatar,

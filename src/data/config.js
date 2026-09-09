@@ -147,7 +147,42 @@ export const CONFIG = {
   // DELIVERY_NOTE is always shown; the pickup row only renders when
   // LOCAL_PICKUP.ENABLED is true. Flip ENABLED to false to drop the
   // pickup line (and the word "pickup" disappears from the label).
-  DELIVERY_NOTE: "Made to order — hand-stitched in ~2 weeks, then 3–5 business days in transit.",
+  DELIVERY_NOTE: "Made to order, one piece at a time. Each product page shows its own timing, then 3–5 business days in transit.",
+
+  // ============================================================
+  // LEAD TIMES — how long each piece really takes
+  // ============================================================
+  // The owner's real, per-product build times, in WEEKS. These are the
+  // same numbers printed in the delivery brochure under print/ — the
+  // site and the box must never disagree. See src/lib/leadTime.js.
+  //
+  // The queue dials model the fact that Lusik works one piece at a
+  // time: the /lead-time Function counts orders still on her table and
+  // the browser adds QUEUE_DAYS_PER_OPEN_ORDER per open order, capped
+  // at QUEUE_BUFFER_CAP_DAYS. Mirrored in netlify/functions/lead-time.mjs
+  // and kept in lockstep by lead-time-drift.test.mjs.
+  //
+  // Never print WHY the times are what they are. State the time, and
+  // offer a phone call when a customer needs a specific date.
+  LEAD_TIMES: {
+    ENGINE: true,
+    QUEUE_ENABLED: true,
+    QUEUE_DAYS_PER_OPEN_ORDER: 2,
+    QUEUE_BUFFER_CAP_DAYS: 21,
+    DEFAULT_WEEKS: [3, 5],
+    WEEKS: {
+      "blanket-alphabet":            [4, 6],
+      "blanket-full-alphabet":       [10, 12],
+      "bib-days-of-week":            [5, 6],
+      "bib-single":                  [2, 3],
+      "bib":                         [2, 3],   // trusted-products key for the name bib
+      "bib-hy-em":                   [2, 3],
+      "bib-hy-em-with-cap":          [2, 3],
+      "bib-anushig-pair":            [3, 4],
+      "bib-bari-akhorzhak-set":      [3, 4],
+      "bib-bari-akhorzhak-set-with-cap": [3, 4],
+    },
+  },
   LOCAL_PICKUP: {
     ENABLED: true,
     AREA: "the Orange County & Los Angeles area only",

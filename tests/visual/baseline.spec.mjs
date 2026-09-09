@@ -31,6 +31,11 @@ test.beforeEach(async ({ context, page }) => {
   // runner's core count, network or battery (the tier projects in the e2e
   // config exercise the other tiers on purpose).
   await context.addInitScript(() => { try { sessionStorage.setItem("lusik_tier_session_v1", "full"); } catch {} });
+  // Freeze the wall clock. Product pages print concrete ship-by and
+  // arrives-by dates from the lead-time engine, so a baseline captured
+  // today would fail tomorrow. Time still flows from this instant, so
+  // timers and transitions behave normally.
+  await page.clock.setSystemTime(new Date("2026-06-15T12:00:00Z"));
   await page.emulateMedia({ reducedMotion: "reduce" });
   // No Netlify Functions in the test server: answer the public reads
   // with quiet, in-stock defaults so every page renders its normal state.

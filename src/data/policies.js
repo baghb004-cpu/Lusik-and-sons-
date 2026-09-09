@@ -89,7 +89,7 @@ export const POLICIES = {
       },
       {
         heading: "Shipping",
-        body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Most orders ship within 5–10 business days of order confirmation; the Full Alphabet Crib Blanket — every letter, by hand — needs 3–4 weeks. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
+        body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Every piece is made to order and each one has its own build time, shown with real dates on its product page: about 2 to 3 weeks for a single bib, 3 to 4 for a matched set, 5 to 6 for the seven-bib Days of the Week set, 4 to 6 for the Armenian Alphabet Blanket, and 10 to 12 for the Full Alphabet Crib Blanket. Transit adds 3 to 5 business days. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
       },
       {
         heading: "Documentation and disputes",
