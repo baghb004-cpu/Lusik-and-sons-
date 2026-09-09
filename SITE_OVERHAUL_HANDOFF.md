@@ -103,9 +103,12 @@ Paste this as the first message of the new Claude Code session:
 | 2026-09-09 | PR 13, coupons that always work | **Done**, same branch. | The multi-piece savings no longer ride as a Stripe session coupon, so `allow_promotion_codes` is on for every checkout and a printed code stacks on top. `allocateBundleDiscount()` turns the savings into integer per-unit price reductions, hands any remainder to the first single-unit line, and never takes a unit below Stripe's floor; the browser mirror allocates identically and the bag shows the allocated amount. The drift test covers seven cart shapes, proves the reductions add up, and fails if anyone re-adds a session coupon. Printed terms and `print/README.md` updated; PDFs re-rendered. |
 | 2026-09-09 | Review pass over PR 9 + PR 13 | **Done**, same branch. | Fifteen confirmed findings fixed, including two silent ones: the visual suite's mask was passed a Locator instead of an array so it threw and never compared pixels, and `db.getLeadTime` never unwrapped the `{ error, data }` envelope so the queue buffer was always zero. Also fixed: prerender staleness, the engine running on only one product, four surfaces still quoting the retired flat lead time, a self-contradicting coupon sheet, and two drift tests that a mutation could pass. |
 
+| 2026-09-09 | PR 10, order milestones | **Done**, same branch. | Six milestones (`received`, `cloth_cut`, `stitching`, `backing`, `finished`, `shipped`) recorded per order, stamped by Lusik from the dashboard and read back by the customer. Two ways in: a signed-in owner reads their own order, and a guest opens a capability URL, `/order/<token>?id=<order-id>`, whose HMAC token is signed with `ORDER_LINK_SECRET` (falling back to `REMINDER_SECRET`) under an `order-view:` purpose prefix so it can never be confused with an unsubscribe token. With no secret set the feature stays dark rather than opening. The link ships in the order confirmation email. `OrderTimeline` renders the same data on the account page and in the guest view. Gates: typecheck clean; 168 unit tests pass; build 184 KB of 210 on the heaviest route; e2e 33 passed, 11 skipped; 18 of 18 visual baselines unchanged. |
+| 2026-09-09 | Review pass over PR 10 | **Done**, same branch. | Sixteen confirmed findings fixed. The worst was silent: the follow-along link block had been written into `sendCartAbandonmentRecovery`, which has no `order` in scope, so every abandoned-cart email threw a `ReferenceError` that the webhook's `.catch()` swallowed while the pending-order blob was deleted anyway. Recovery mail was being lost with nothing in the logs. Also fixed: the ad pixels loaded on `/order/` URLs and would have handed Meta and Google a working capability token in `document.location`; Lusik could not open a customer's timeline from the dashboard; the endpoint distinguished "not yours" from "does not exist" and so could be used to probe real order IDs; milestone responses were cacheable; the account page made one round trip per order card; and the admin write accepted unvalidated milestone keys. |
+
 Next up: PR 2 (Loom core) is the centerpiece and the largest single piece of
-work. PR 10 (order milestones) and PR 17 (design tokens) are the next
-self-contained pieces that need nothing from the 3D engine.
+work. PR 17 (design tokens) is the next self-contained piece that needs
+nothing from the 3D engine.
 
 ---
 
@@ -722,11 +725,11 @@ effects and the DEPTH tilt layer kept:
 | 6 | Home v3 | 2 | 2 | L | Medium | `CONFIG.HOME_V3` |
 | 7 | Shop and category cards with posters and turntables | 2 | 2 | M | Low | `CONFIG.LOOM.CARDS` |
 | 8 | Fitting room PDP, cart thumbnails, `/welcome`, 404 | 2 | 2 | M | Medium | `CONFIG.LOOM.FITTING_ROOM` |
-| 9 | Lead-time engine + copy alignment | 3 | none | M | Low | `CONFIG.LEAD_TIMES.ENGINE` |
-| 10 | Order milestones + guest order link | 3 | none | L | Medium | `CONFIG.ORDER_TRACKER` |
+| 9 | Lead-time engine + copy alignment | 3 | none | M | Low | `CONFIG.LEAD_TIMES.ENGINE`. **Done 2026-09-09**, see 0.5 |
+| 10 | Order milestones + guest order link | 3 | none | L | Medium | `CONFIG.ORDER_TRACKER`. **Done 2026-09-09**, see 0.5 |
 | 11 | Gifts, saved design pages, share | 3 | 2 | M | Low | `CONFIG.GIFTS_V2` |
 | 12 | Reviews + Made-for wall | 3 | 10 | M | Low | `CONFIG.REVIEWS` |
-| 13 | Coupons always work (bundle as line-item pricing) | 3 | none | S | Medium | Revert (drift tests guard) |
+| 13 | Coupons always work (bundle as line-item pricing) | 3 | none | S | Medium | Revert (drift tests guard). **Done 2026-09-09**, see 0.5 |
 | 14 | Performance pass + Lighthouse gates | 4 | 6, 7, 8 | M | Low | Per-item |
 | 15 | Studio content fields, Armenian keyboard, CLAUDE.md refresh | 5 | all | M | Low | Per-item |
 
