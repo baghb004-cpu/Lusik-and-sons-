@@ -36,7 +36,7 @@ export default async (req) => {
       SELECT COUNT(*)::int AS open_orders
       FROM orders
       WHERE status NOT IN ('refunded', 'cancelled')
-        AND fulfillment_status NOT IN ('shipped', 'delivered', 'cancelled')
+        AND fulfillment_status NOT IN ('shipped', 'delivered', 'refunded')
     `;
     const openOrders = Number(rows?.[0]?.open_orders) || 0;
     const queueDays = queueDaysFor(openOrders);

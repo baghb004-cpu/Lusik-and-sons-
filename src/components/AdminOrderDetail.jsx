@@ -23,6 +23,8 @@
 // ============================================================
 
 import React, { useEffect, useRef, useState } from "react";
+import { MILESTONE_STEPS } from "../lib/milestones.js";
+import { OrderTimeline } from "./OrderTimeline.jsx";
 import { db } from "../lib/db.js";
 import { useToast } from "./ToastProvider.jsx";
 import { Skeleton } from "./Skeleton.jsx";
@@ -76,6 +78,44 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
+
+  // ---- Customer-facing timeline ("while she stitches") ----
+  // Separate from fulfillment_status on purpose: the pipeline status is
+  // Lusik's internal workflow, while a milestone is a note to the
+  // customer that something happened. Marking one is append-only, so a
+  // second tap adds a second row rather than editing history.
+  const [milestones, setMilestones] = useState([]);
+  const [milestoneNote, setMilestoneNote] = useState("");
+  const [savingMilestone, setSavingMilestone] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!orderId) return undefined;
+    db.getOrderMilestones(orderId)
+      .then((d) => { if (alive && d?.milestones) setMilestones(d.milestones); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [orderId]);
+
+  const markMilestone = async (key) => {
+    setSavingMilestone(key);
+    try {
+      const res = await db.adminAddOrderMilestone({ orderId, milestone: key, note: milestoneNote });
+      if (res?.milestone) {
+        setMilestones((prev) => [...prev, {
+          milestone: res.milestone.milestone,
+          note: res.milestone.note ?? null,
+          photoKey: res.milestone.photo_key ?? null,
+          at: res.milestone.created_at,
+        }]);
+        setMilestoneNote("");
+      }
+    } catch {
+      /* the panel just does not advance; nothing is lost */
+    } finally {
+      setSavingMilestone(null);
+    }
+  };
 
   // One-click pipeline advance. Used by the step buttons. The
   // backend handles confirmed_at + shipped_at stamping + the
@@ -261,6 +301,38 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
               ))}
             </select>
           </label>
+        </div>
+
+        {/* Customer timeline. One tap per step; the note is optional and
+            rides along with whichever step you tap next. Marking
+            "Stitching" also sends the customer a one-time note. */}
+        <div className="mt-6 pt-5" style={{ borderTop: "1px solid var(--border-soft)" }}>
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-70 mb-3">What the customer sees</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {MILESTONE_STEPS.map((step) => (
+              <button
+                key={step.key}
+                type="button"
+                onClick={() => markMilestone(step.key)}
+                disabled={savingMilestone !== null}
+                className="lg-pill px-3 py-1.5 text-[0.6rem] tracking-[0.15em] uppercase"
+                style={{ fontWeight: 500 }}
+                data-testid={`admin-milestone-${step.key}`}
+              >
+                {savingMilestone === step.key ? "Saving…" : step.label}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={milestoneNote}
+            onChange={(e) => setMilestoneNote(e.target.value)}
+            placeholder="Optional note for the customer (goes with the next step you tap)"
+            maxLength={500}
+            className="w-full px-3 py-2 text-sm mb-4"
+            style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}
+          />
+          {milestones.length > 0 && <OrderTimeline rows={milestones} />}
         </div>
 
         {order.confirmed_at && (

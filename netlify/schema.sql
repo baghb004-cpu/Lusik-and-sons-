@@ -268,3 +268,45 @@ ALTER TABLE orders ADD CONSTRAINT orders_fulfillment_status_check
     'delivered',
     'refunded'
   ));
+
+-- ============================================================
+-- order_milestones — "while she stitches"
+-- ============================================================
+-- One row per step Lusik marks on an order, with an optional note and
+-- an optional photo from her phone. The customer reads them as a
+-- timeline on their order card, and a guest (no account) reads the same
+-- timeline through the signed link in their confirmation email.
+--
+-- Append-only by intent: a milestone records that something happened at
+-- a moment, so corrections are a new row rather than an edit. The
+-- customer-facing UI shows the latest row per milestone.
+--
+-- 'received' is inserted by the Stripe webhook when the order lands and
+-- 'shipped' by the admin endpoint when fulfillment first flips; the rest
+-- are one tap each in the admin view.
+CREATE TABLE IF NOT EXISTS order_milestones (
+  id          BIGSERIAL PRIMARY KEY,
+  order_id    UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  milestone   TEXT NOT NULL,
+  note        TEXT,
+  photo_key   TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE order_milestones DROP CONSTRAINT IF EXISTS order_milestones_milestone_check;
+ALTER TABLE order_milestones ADD CONSTRAINT order_milestones_milestone_check
+  CHECK (milestone IN (
+    'received',
+    'cloth_cut',
+    'stitching',
+    'backing',
+    'finished',
+    'shipped'
+  ));
+
+CREATE INDEX IF NOT EXISTS order_milestones_order_idx
+  ON order_milestones (order_id, created_at);
+
+-- Dedupe gate for the one-time "Lusik started on your piece" email, the
+-- same shape as finished_photo_emailed_at and shipped_at above.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stitching_emailed_at TIMESTAMPTZ;

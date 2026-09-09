@@ -234,6 +234,23 @@ function _initDb() {
     }
   };
 
+  // Order timeline. Signed-in customers pass no token (the Function
+  // checks ownership); a guest passes the signed token from their email.
+  const getOrderMilestones = async (orderId, token = null) => {
+    const q = new URLSearchParams({ order_id: String(orderId || "") });
+    if (token) q.set("token", String(token));
+    const { data } = await call(`/order-milestones?${q}`, { method: "GET", auth: !token });
+    return data ?? null;
+  };
+
+  const adminAddOrderMilestone = async ({ orderId, milestone, note }) => {
+    const { data } = await call("/admin-order-milestone", {
+      method: "POST",
+      body: { order_id: orderId, milestone, note: note || undefined },
+    });
+    return data ?? null;
+  };
+
   const lookupZip = async (zip) => {
     if (!/^\d{5}$/.test(zip)) return { place: null, notFound: false };
     if (_zipCache.has(zip)) return _zipCache.get(zip);
@@ -286,6 +303,8 @@ function _initDb() {
   return {
     getInventory,
     getLeadTime,
+    getOrderMilestones,
+    adminAddOrderMilestone,
     lookupZip,
     joinWaitlist, sendChat,
     getProfile, updateProfile, uploadAvatar,

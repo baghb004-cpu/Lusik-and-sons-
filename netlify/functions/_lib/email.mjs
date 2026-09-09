@@ -510,6 +510,60 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
  * `order` — the orders row (post-upload; finished_photo_key is
  *           set; shipping_address.name is the recipient when present)
  */
+/**
+ * "Lusik has started on your piece" — sent once, the first time the
+ * stitching milestone is marked (admin-order-milestone claims
+ * orders.stitching_emailed_at atomically, so a double tap cannot send
+ * twice).
+ *
+ * Short on purpose. It carries the signed follow-along link so a guest
+ * with no account can watch the rest of the piece come together.
+ */
+export async function sendStitchingStartedEmail({ to, orderNumber, orderId, note }) {
+  if (!to) {
+    console.warn("[email] customer email missing on stitching notification; skipping");
+    return false;
+  }
+  const { accent, ink, cream } = PALETTE;
+  const url = baseUrl();
+  const token = signOrderToken(orderId);
+  const followUrl = token ? `${url}/order/${encodeURIComponent(token)}?id=${encodeURIComponent(orderId)}` : `${url}/`;
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 14px 0;letter-spacing:-0.01em;line-height:1.2;">Lusik has started on your piece.</h1>
+    <p style="font-size:16px;margin:0 0 22px 0;">Your order ${esc(orderNumber || "")} is on her table now. The thread is going in.</p>
+    ${note ? `<p style="font-size:15px;margin:0 0 22px 0;padding:16px;background:#FFFFFF;border:1px solid #E8E1D2;">${esc(note)}</p>` : ""}
+    <p style="margin:0 0 26px 0;">
+      <a href="${followUrl}" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">Follow along &rarr;</a>
+    </p>
+    <p style="font-size:13px;color:${PALETTE.muted};margin:0;">
+      Lusik &amp; Sons &middot; <a href="${url}" style="color:${PALETTE.muted};text-decoration:underline;">lusikandsons.com</a>
+    </p>
+  </div>
+</body></html>`;
+
+  const text = [
+    "Lusik has started on your piece.",
+    "",
+    `Your order ${orderNumber || ""} is on her table now. The thread is going in.`,
+    note ? `\n${note}` : "",
+    "",
+    `Follow along: ${followUrl}`,
+    "",
+    `Lusik & Sons · ${url}`,
+  ].filter(Boolean).join("\n");
+
+  return await sendEmail({
+    to,
+    subject: `Lusik has started on your piece${orderNumber ? ` (${orderNumber})` : ""}`,
+    html,
+    text,
+  });
+}
+
 export async function sendFinishedPhotoNotification({ order }) {
   const to = order.customer_email;
   if (!to) {
@@ -972,6 +1026,7 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
 // mode is "set the env var" once, not "you broke a year of links."
 // ============================================================
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { signOrderToken } from "./order-tokens.mjs";
 
 function reminderSecret() {
   return process.env.REMINDER_SECRET ?? "";
@@ -1173,6 +1228,18 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
       Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
     </p>
 
+    ${(() => {
+      const token = signOrderToken(order.id);
+      if (!token) return "";
+      const followUrl = `${url}/order/${encodeURIComponent(token)}?id=${encodeURIComponent(order.id)}`;
+      return `<p style="margin:0 0 22px 0;">
+      <a href="${followUrl}" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">Follow your order &rarr;</a>
+    </p>
+    <p style="font-size:13px;color:${muted};margin:0 0 22px 0;">
+      That link shows each step as Lusik works, and it needs no account. Keep this email to come back to it.
+    </p>`;
+    })()}
+
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
@@ -1198,6 +1265,9 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
     `Pick up where you left off: ${url}/`,
     "",
     `Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
+    ...(signOrderToken(order.id)
+      ? ["", `Follow your order: ${url}/order/${encodeURIComponent(signOrderToken(order.id))}?id=${encodeURIComponent(order.id)}`]
+      : []),
     "",
     `Lusik & Sons · ${url}`,
     "",

@@ -14,7 +14,9 @@
 //
 // ============================================================
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { OrderTimeline } from "./OrderTimeline.jsx";
+import { db } from "../lib/db.js";
 import { getTrackingUrl } from "../lib/tracking";
 import { ArrowRight, Check } from "./icons.jsx";
 import { STAGES as ORDER_STAGES, statusToStageIndex } from "./adminStatusLabels.js";
@@ -78,6 +80,18 @@ export function OrderProgressTimeline({ status }) {
   );
 }
 export function OrderCard({ order, onReorder }) {
+  // The customer's copy of the timeline. Fail-soft: if the read fails
+  // the card renders exactly as it did before this feature existed.
+  const [timeline, setTimeline] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    if (!order?.id) return undefined;
+    db.getOrderMilestones(order.id)
+      .then((d) => { if (alive && Array.isArray(d?.milestones)) setTimeline(d.milestones); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [order?.id]);
+
   const statusLabel = (() => {
     // Money-status takes precedence over fulfillment-status for
     // the headline badge — a refunded order is "Refunded"
@@ -195,6 +209,16 @@ export function OrderCard({ order, onReorder }) {
           the customer's still getting most of the order. */}
       {order.fulfillment_status !== "refunded" && (
         <OrderProgressTimeline status={order.fulfillment_status} />
+      )}
+
+      {/* While she stitches — the steps Lusik has marked on this order.
+          Loaded per card and only rendered once something exists, so a
+          brand-new order does not show an empty rail. */}
+      {timeline.length > 0 && (
+        <div className="mb-5 pt-4" style={{ borderTop: "1px solid var(--border-soft)" }}>
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-60 mb-3">Progress</p>
+          <OrderTimeline rows={timeline} />
+        </div>
       )}
 
       {/* Finished-piece photo — uploaded by Lusik from the admin

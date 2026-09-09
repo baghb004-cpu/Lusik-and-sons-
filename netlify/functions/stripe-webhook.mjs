@@ -389,6 +389,17 @@ export default async (req) => {
                     ?? session.customer_details?.name
                     ?? null;
 
+  // First step on the customer's timeline. Isolated: a milestone is a
+  // nice-to-have and must never make Stripe retry a recorded order.
+  try {
+    await sql`
+      INSERT INTO order_milestones (order_id, milestone)
+      VALUES (${orderId}, 'received')
+    `;
+  } catch (err) {
+    console.error("received milestone skipped:", err?.message || err);
+  }
+
   // Fire both notification emails in parallel. Each one has its
   // own error isolation: failure to send EITHER email never
   // blocks the order from being recorded, and Stripe shouldn't
