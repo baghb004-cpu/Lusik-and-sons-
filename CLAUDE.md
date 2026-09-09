@@ -45,10 +45,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Overhaul (Sept 2026):** `SITE_OVERHAUL_HANDOFF.md` is the phase-by-phase plan
 > for the site overhaul (real-time 3D product engine, storyboarded pages, lead-time
-> engine, order milestones, the premium layer). Done so far: **PR 1** (the Embroidery
-> Studio is gone; product pages open on a photo hero; `designBus`; the visual-regression
-> suite) and **PR 16** (the capability ladder, see "Capability ladder" below). The
-> document's progress log says what is next.
+> engine, order milestones, the premium layer). Done so far: **PR 1** (Embroidery
+> Studio gone, photo hero, `designBus`, visual-regression suite), **PR 16** (the
+> capability ladder), **PR 9** (lead-time engine), **PR 13** (coupons that always
+> work), **PR 10** (order milestones), **PR 17's contrast half** (see the colour
+> token rule under Conventions), and **PR 2 — the Loom**, the real-time 3D product
+> engine (see "The Loom" below). The document's progress log says what is next and
+> records what each piece cost in bugs.
 
 ## What this is
 
@@ -541,6 +544,58 @@ The Playwright projects `lean-3g` (CDP Slow-3G + 4x CPU) and `core-2g` (JavaScri
 disabled) run `tests/e2e/tiers.spec.mjs` only; the smoke suite stays on the two
 rendering projects. Later PRs (photos, video, 3D, fonts, storage) read
 `getTier()` / `useTier()` instead of inventing their own checks.
+
+### The Loom — the real-time 3D product engine (Sept 2026)
+
+`src/loom/` renders a product as real cross-stitch geometry and restitches
+as the customer types. It is the centrepiece of `SITE_OVERHAUL_HANDOFF.md`
+Phase 1. Live on the Armenian Alphabet Blanket's configurator; dials in
+`CONFIG.LOOM` (`ENABLED` is a kill switch, `PRODUCTS` lists which product
+keys mount a stage).
+
+**Reaching it.** Only ever through `next/dynamic` — `src/loom/index.ts` is
+the single entry point. A static import folds three.js into that route's
+first-load JS, and `scripts/check-bundle-budget.mjs` fails the build if it
+does. That gate finds the engine's chunks by a set of signatures (the
+build tag in `src/loom/buildTag.ts`, plus `__THREE_DEVTOOLS__` for three's
+vendor chunks — matching only the tag missed 123 KB, nearly the whole
+cost). Budget: 230 KB gzip; currently 127 KB.
+
+**Language.** Rendering code is `.ts`. Pure logic that a Node 20 unit test
+must import is plain `.js` with JSDoc — `tier.js`, `stitch/chart.js`,
+`stitch/planner.js`, `stitch/rasterize.js` — the same convention as
+`capabilityTier.js` and `leadTime.js`. A test has to import the real
+module, not a transcription of it.
+
+**Tiers.** `src/loom/tier.js` resolves high / mid / low and does NOT sniff
+the device: the capability ladder already decided once, and PR 16 left
+`getGpuSignal()` for this caller. `low` never loads the engine. `?loom=`
+pins a tier for the tab (sessionStorage), which is how the visual suite
+keeps its baselines free of GPU-dependent pixels.
+
+**Never a blank box.** Every failure path — `low`, no WebGL, two lost
+contexts, the flag off, any exception — lands on the fallback. In the
+configurator that fallback is the **live 2D preview**, not a still image,
+so a visitor who cannot run the engine still watches their name appear.
+
+**Placement is shared.** Which cell holds which letter, the name, the year
+and the woven motifs comes from `src/data/blanketLayout.js`, used by both
+`BlanketLayoutPreview` and the Loom. Two renderers each deciding would
+drift, and the customer would configure against one arrangement and be
+shown another. Change placement there, never in a renderer.
+
+**Colour is pinned.** sRGB out, tone mapping off. The DMC hexes appear in
+the 2D preview, the cart thumbnail and the printed brochure; a filmic
+curve would make the 3D quietly disagree with all of them.
+
+**Posters.** `npm run gen:loom-posters` boots the real rig headlessly and
+writes `public/img/loom/*.webp`, so a poster cannot drift from the engine.
+Not a build step (it needs a browser); run it when a rig or the default
+pose changes and commit the output.
+
+**Rendering is on demand** and pauses off screen. If you add anything
+driven by the frame loop, remember it stops when the stage is not visible
+— that is what once froze the stitch-in animation half-worked.
 
 ### Gift-occasion reminder (opt-in, one-year-later email)
 - Checkbox at checkout (default off) → `orders.gift_reminder_opt_in`.
