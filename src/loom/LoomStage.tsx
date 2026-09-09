@@ -1,0 +1,244 @@
+"use client";
+
+// ============================================================
+// LOOM STAGE — the engine on a page, or gracefully not
+// ============================================================
+// Poster first, always. The <img> is the LCP element and the canvas
+// fades over it once the first frame exists, in the same sized box so
+// nothing shifts. If the engine never loads — a `low` device, no WebGL,
+// a lost context, the flag off — the poster simply stays, and the 2D
+// BlanketLayoutPreview beside it is still the live preview. There is no
+// state in which this shows a blank rectangle.
+//
+// It never loads eagerly. The engine waits for idle after the page's
+// load event, or for the first real interaction with the stage or the
+// configurator, whichever comes first. Someone who scrolls past a
+// product without touching it pays nothing.
+// ============================================================
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { CONFIG } from "../data/config.js";
+import { getGpuSignal, getTier } from "../lib/capability";
+import { LOOM_BUILD_TAG } from "./buildTag";
+import { readLoomOverride, resolveLoomTier, LOOM_SETTINGS } from "./tier.js";
+import type { PlannedStitch } from "./stitch/mesh";
+
+export interface LoomStageProps {
+  /** Which rig to build. Must be listed in CONFIG.LOOM.PRODUCTS. */
+  productKey: string;
+  /** Poster shown until (and instead of) the first frame. */
+  poster: string;
+  /** Text alternative — describes the DESIGN, not the widget. */
+  label: string;
+  /** The design, already planned. Changing it restitches. */
+  stitches: PlannedStitch[];
+  /** Body colour of the cloth. */
+  clothColor?: string;
+  className?: string;
+}
+
+type Phase = "poster" | "loading" | "live" | "failed";
+
+export function LoomStage({
+  productKey, poster, label, stitches, clothColor, className,
+}: LoomStageProps) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const engineRef = useRef<{ dispose: () => void; setStitches: (s: PlannedStitch[]) => void } | null>(null);
+  const [phase, setPhase] = useState<Phase>("poster");
+  const [armed, setArmed] = useState(false);
+
+  const enabled =
+    CONFIG.LOOM?.ENABLED !== false &&
+    (CONFIG.LOOM?.PRODUCTS ?? []).includes(productKey);
+
+  // ---- arm: idle after load, or first interaction, whichever is first ----
+  useEffect(() => {
+    if (!enabled || armed) return;
+    let cancelled = false;
+    const arm = () => { if (!cancelled) setArmed(true); };
+
+    const host = hostRef.current;
+    const opts = { once: true, passive: true } as AddEventListenerOptions;
+    host?.addEventListener("pointerdown", arm, opts);
+    host?.addEventListener("pointermove", arm, opts);
+    host?.addEventListener("focusin", arm, opts);
+    // The configurator publishes design changes; typing a name should
+    // bring the stage up even if the customer never touched it.
+    window.addEventListener("design:change", arm, opts);
+
+    const idle = (window as unknown as {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+    }).requestIdleCallback;
+    const schedule = () => (idle ? idle(arm, { timeout: 4000 }) : window.setTimeout(arm, 1200));
+    let handle: number | undefined;
+    if (document.readyState === "complete") handle = schedule();
+    else window.addEventListener("load", () => { handle = schedule(); }, { once: true });
+
+    return () => {
+      cancelled = true;
+      host?.removeEventListener("pointerdown", arm);
+      host?.removeEventListener("pointermove", arm);
+      host?.removeEventListener("focusin", arm);
+      window.removeEventListener("design:change", arm);
+      if (handle !== undefined) window.clearTimeout(handle);
+    };
+  }, [enabled, armed]);
+
+  // ---- mount the engine ----
+  useEffect(() => {
+    if (!enabled || !armed || engineRef.current) return;
+    let disposed = false;
+
+    const tier = resolveLoomTier({
+      capabilityTier: getTier(),
+      gpu: getGpuSignal(),
+      override: readLoomOverride(),
+    }).tier;
+
+    // `low` is not a failure. The poster is the product photo and the 2D
+    // preview is still live; loading three.js here would be the failure.
+    if (tier === "low") return;
+
+    setPhase("loading");
+    let contextLosses = 0;
+
+    (async () => {
+      try {
+        const [{ createRenderer, createCamera }, { createScene }, { createBlanketRig }, { createOrbit, POSES }] =
+          await Promise.all([
+            import("./core/renderer"),
+            import("./core/scene"),
+            import("./rigs/alphabetBlanket"),
+            import("./core/camera"),
+          ]);
+        if (disposed) return;
+        const canvas = canvasRef.current;
+        const host = hostRef.current;
+        if (!canvas || !host) return;
+
+        const settings = LOOM_SETTINGS[tier];
+        const renderer = createRenderer({
+          canvas,
+          tier,
+          onContextLost: () => {
+            contextLosses += 1;
+            // Twice is a driver saying no. Fall back rather than thrash.
+            if (contextLosses >= 2) { setPhase("failed"); engineRef.current?.dispose(); }
+          },
+        });
+        const { scene } = createScene(settings.shadows);
+        const rect = host.getBoundingClientRect();
+        const camera = createCamera(Math.max(0.5, rect.width / Math.max(1, rect.height)));
+        const rig = createBlanketRig({ textureSize: settings.textureSize, clothColor });
+        scene.add(rig.group);
+
+        const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+        const orbit = createOrbit(camera, POSES.flat, { reducedMotion: reduced });
+
+        rig.setStitches(stitches);
+
+        let last = performance.now();
+        const frame = () => {
+          const now = performance.now();
+          const moving = orbit.update(Math.min(0.05, (now - last) / 1000));
+          last = now;
+          renderer.renderer.render(scene, camera);
+          if (moving) renderer.invalidate();
+        };
+        renderer.start(frame);
+
+        const ro = new ResizeObserver(() => {
+          const r = host.getBoundingClientRect();
+          camera.aspect = Math.max(0.5, r.width / Math.max(1, r.height));
+          camera.updateProjectionMatrix();
+          renderer.resize(r.width, r.height);
+        });
+        ro.observe(host);
+
+        // Only render while on screen. A canvas scrolled away is a canvas
+        // that should cost nothing.
+        const io = new IntersectionObserver(
+          ([entry]) => renderer.setVisible(entry.isIntersecting),
+          { rootMargin: "128px" },
+        );
+        io.observe(host);
+
+        renderer.resize(rect.width, rect.height);
+        renderer.invalidate();
+        requestAnimationFrame(() => { if (!disposed) setPhase("live"); });
+
+        engineRef.current = {
+          setStitches: rig.setStitches,
+          dispose: () => {
+            ro.disconnect();
+            io.disconnect();
+            orbit.dispose();
+            rig.dispose();
+            renderer.dispose();
+          },
+        };
+      } catch {
+        // Any failure at all lands on the poster, never a blank box.
+        if (!disposed) setPhase("failed");
+      }
+    })();
+
+    return () => {
+      disposed = true;
+      engineRef.current?.dispose();
+      engineRef.current = null;
+    };
+    // `stitches` deliberately omitted: a design change restitches through
+    // the effect below rather than tearing the whole engine down.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, armed, productKey, clothColor]);
+
+  // ---- restitch on a design change ----
+  useEffect(() => {
+    engineRef.current?.setStitches(stitches);
+  }, [stitches]);
+
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") setArmed(true);
+  }, []);
+
+  const crossfade = phase === "live";
+
+  return (
+    <div
+      ref={hostRef}
+      className={className}
+      data-loom={LOOM_BUILD_TAG}
+      data-loom-phase={phase}
+      // The stage is a picture of the product. Screen readers get the
+      // design described in words; the canvas itself says nothing useful.
+      role="img"
+      aria-label={label}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      style={{ position: "relative", width: "100%", aspectRatio: "4 / 3", overflow: "hidden" }}
+    >
+      <img
+        src={poster}
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "cover",
+          opacity: crossfade ? 0 : 1,
+          transition: `opacity ${CONFIG.LOOM?.CROSSFADE_MS ?? 250}ms ease`,
+        }}
+      />
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          opacity: crossfade ? 1 : 0,
+          transition: `opacity ${CONFIG.LOOM?.CROSSFADE_MS ?? 250}ms ease`,
+        }}
+      />
+    </div>
+  );
+}

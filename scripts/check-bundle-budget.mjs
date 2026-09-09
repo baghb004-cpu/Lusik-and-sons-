@@ -41,14 +41,33 @@ const PER_ROUTE_BUDGET_KB = 210;
 //      but only after it has already blown past 210 KB, and the error would
 //      name the route rather than the real cause. This names the cause.
 //
-// Identifying the chunk: Next hashes async chunk filenames, so "loom" never
-// appears in them, and no build artifact maps a chunk back to its source
-// modules. Instead the engine stamps a build tag into the DOM
-// (LOOM_BUILD_TAG in src/loom/index.ts), so the string is a real runtime
-// value that survives minification and cannot be tree-shaken away. Any
-// chunk containing it is an engine chunk.
+// Identifying the chunks: Next hashes async chunk filenames, so "loom"
+// never appears in them, and no build artifact maps a chunk back to its
+// source modules. The engine stamps a build tag into the DOM
+// (src/loom/buildTag.ts), so that string survives minification and cannot
+// be tree-shaken away.
+//
+// One tag is NOT enough, and this is worth spelling out because the first
+// version of this gate got it wrong and reported a 3 KB engine. webpack
+// splits three.js into its own vendor chunks, which contain none of our
+// code and therefore none of our tag. Measuring only the tagged chunk
+// missed 123 KB — almost the entire cost — and would have let the engine
+// grow unbounded while reporting green.
+//
+// So a budget matches a SET of signatures and sums the unique chunks that
+// carry any of them. `__THREE_DEVTOOLS__` appears once in every three
+// vendor chunk (three calls it at module scope) and nowhere else.
+//
+// This assumes three is used only by the Loom. That is enforced below:
+// any chunk carrying a signature that turns up in a route's first-load
+// list fails the build, which is exactly what would happen if three were
+// imported from ordinary page code.
 const ASYNC_CHUNK_BUDGETS = [
-  { name: "loom", tag: "lusik-loom-v1", budgetKb: 230 },
+  {
+    name: "loom",
+    signatures: ["lusik-loom-v1", "__THREE_DEVTOOLS__"],
+    budgetKb: 230,
+  },
 ];
 
 const manifest = JSON.parse(readFileSync(join(NEXT_DIR, "app-build-manifest.json"), "utf8"));
@@ -110,7 +129,7 @@ for (const budget of ASYNC_CHUNK_BUDGETS) {
   for (const file of allChunks) {
     let body;
     try { body = readFileSync(file, "utf8"); } catch { continue; }
-    if (!body.includes(budget.tag)) continue;
+    if (!budget.signatures.some((sig) => body.includes(sig))) continue;
     hits.push(file);
   }
   if (hits.length === 0) {

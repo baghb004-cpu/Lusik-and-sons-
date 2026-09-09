@@ -11,8 +11,8 @@
 import {
   BoxGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry,
 } from "three";
-import { clothMaps } from "../materials/cloth.js";
-import { createStitchMesh, type PlannedStitch, type StitchMeshHandle } from "../stitch/mesh.js";
+import { clothMaps } from "../materials/cloth";
+import { createStitchMesh, type PlannedStitch, type StitchMeshHandle } from "../stitch/mesh";
 
 export interface BlanketRigOptions {
   /** Grid the design is worked on. The real blanket is 7 by 7 cubes. */
