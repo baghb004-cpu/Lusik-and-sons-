@@ -3,7 +3,8 @@
 // ============================================================
 // The bundle promo lives twice on purpose:
 //   - Server: _lib/bundle-discount.mjs — what Stripe checkout charges
-//     (a coupon attached to the session).
+//     (integer reductions on the line-item prices, so the hosted page
+//     keeps its promotion-code field for the shop's printed coupons).
 //   - Browser: CONFIG.BUNDLE_DISCOUNT (src/data/config.js), consumed
 //     through src/lib/bundleDiscount.js — the savings row in the bag
 //     + checkout summary.
@@ -14,10 +15,13 @@
 // ============================================================
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   BUNDLE_DISCOUNT,
+  MIN_UNIT_CENTS,
   cartUnitCount,
   bundleDiscountCents,
+  allocateBundleDiscount,
 } from "../bundle-discount.mjs";
 
 const { CONFIG } = await import("../../../../src/data/config.js");
@@ -96,4 +100,91 @@ test("disabled flag zeroes everything (dormant safety)", () => {
   } else {
     assert.ok(bundleDiscountCents(2, 10000) > 0, "enabled promo must discount a 2-unit cart");
   }
+});
+
+// ============================================================
+// Allocation — the savings become real line-item prices
+// ============================================================
+
+const CARTS = [
+  { name: "blanket + bib, one each",   lines: [{ unitCents: 6500, qty: 1 }, { unitCents: 2200, qty: 1 }] },
+  { name: "three bibs on one line",    lines: [{ unitCents: 2200, qty: 3 }] },
+  { name: "two bibs + a blanket",      lines: [{ unitCents: 2200, qty: 2 }, { unitCents: 6500, qty: 1 }] },
+  { name: "single item",               lines: [{ unitCents: 2000, qty: 1 }] },
+  { name: "empty bag",                 lines: [] },
+  { name: "malformed rows",            lines: [{ unitCents: 0, qty: 0 }, {}] },
+  { name: "big bag hits the cap",      lines: [{ unitCents: 6500, qty: 99 }] },
+];
+
+test("allocation never charges more than the ideal discount, nor takes a unit below the floor", () => {
+  for (const { name, lines } of CARTS) {
+    const a = allocateBundleDiscount(lines);
+    assert.ok(a.totalCents <= a.targetCents, `${name}: allocated more than the target`);
+    assert.ok(a.totalCents >= 0, `${name}: negative allocation`);
+    assert.ok(Number.isInteger(a.perUnitCents), `${name}: fractional per-unit reduction`);
+    // Recompute the charged subtotal the way checkout does.
+    let charged = 0;
+    lines.forEach((l, i) => {
+      const qty = Number.isInteger(l?.qty) && l.qty > 0 ? Math.min(99, l.qty) : 1;
+      const unit = Number.isInteger(l?.unitCents) && l.unitCents > 0 ? l.unitCents : 0;
+      const cut = a.perUnitCents + (i === a.extraLineIndex ? a.extraCents : 0);
+      const reduced = unit - cut;
+      charged += (unit > 0 && reduced >= MIN_UNIT_CENTS ? reduced : unit) * qty;
+    });
+    if (a.subtotalCents > 0) {
+      assert.equal(a.subtotalCents - charged, a.totalCents,
+        `${name}: line reductions do not add up to the reported savings`);
+    }
+  }
+});
+
+test("allocation is exact whenever the savings divide evenly, and the remainder rides a single-unit line", () => {
+  // 2 units, $1.00 off -> 50c from each unit, exactly.
+  const pair = allocateBundleDiscount([{ unitCents: 6500, qty: 1 }, { unitCents: 2200, qty: 1 }]);
+  assert.equal(pair.targetCents, 100);
+  assert.equal(pair.perUnitCents, 50);
+  assert.equal(pair.totalCents, 100);
+
+  // 3 units on ONE line: 200 / 3 leaves 2c that no single-unit line can take.
+  const three = allocateBundleDiscount([{ unitCents: 2200, qty: 3 }]);
+  assert.equal(three.targetCents, 200);
+  assert.equal(three.perUnitCents, 66);
+  assert.equal(three.extraLineIndex, -1);
+  assert.equal(three.totalCents, 198, "customer keeps the 2c rather than the shop over-discounting");
+
+  // Same 3 units, but one line holds a single piece: that line absorbs the 2c.
+  const mixed = allocateBundleDiscount([{ unitCents: 2200, qty: 2 }, { unitCents: 6500, qty: 1 }]);
+  assert.equal(mixed.extraLineIndex, 1);
+  assert.equal(mixed.extraCents, 2);
+  assert.equal(mixed.totalCents, 200, "the exact target when a single-unit line exists");
+});
+
+test("browser and server allocate identically", () => {
+  for (const { name, lines } of CARTS) {
+    assert.deepEqual(
+      browserLib.allocateBundleDiscount(lines),
+      allocateBundleDiscount(lines),
+      `allocation drift for ${name}`,
+    );
+  }
+});
+
+test("the bag's savings row shows what Stripe will actually charge", () => {
+  const cart = [{ price: 22, qty: 3 }];
+  const lines = browserLib.cartLines(cart);
+  const alloc = allocateBundleDiscount(lines);
+  const shown = browserLib.bundleSavingsForCart(cart, 66);
+  assert.equal(shown.cents, alloc.totalCents, "the row must not promise more than checkout charges");
+  assert.equal(shown.units, 3);
+});
+
+test("checkout keeps the promotion-code field on every session", () => {
+  // The shop mails printed coupon codes with every order, so a session
+  // must never set `discounts` (Stripe forbids pairing it with
+  // allow_promotion_codes). Guarded here because the failure is silent:
+  // the field just disappears for multi-item carts.
+  const src = readFileSync(new URL("../../create-checkout-session.mjs", import.meta.url), "utf8");
+  assert.match(src, /allow_promotion_codes:\s*true/, "promotion codes must be enabled");
+  assert.equal(/^\s*discounts:/m.test(src), false, "a session must not attach a discounts array");
+  assert.equal(/stripe\.coupons\./.test(src), false, "the bundle savings no longer use a Stripe coupon");
 });

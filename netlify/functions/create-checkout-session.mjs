@@ -16,7 +16,7 @@ import { getStore }    from "@netlify/blobs";
 import { TRUSTED_PRODUCTS } from "./_lib/trusted-products.mjs";
 import { FREE_SHIPPING_THRESHOLD_CENTS, GIFT_WRAP_PRICE_CENTS } from "./_lib/pricing.mjs";
 import { buildShippingOptionsForZip, rateForZip } from "./_lib/shipping-zones.mjs";
-import { bundleDiscountCents } from "./_lib/bundle-discount.mjs";
+import { allocateBundleDiscount, MIN_UNIT_CENTS } from "./_lib/bundle-discount.mjs";
 import { effectiveCents } from "./_lib/launch-promo.mjs";
 import { ipFromRequest, checkRateLimit } from "./_lib/rate-limit.mjs";
 import { findInventoryViolation } from "./_lib/inventory.mjs";
@@ -62,35 +62,6 @@ function getStripe() {
 // ZIP Stripe actually collected against the quoted zone and flags
 // mismatches in admin_notes.
 // ============================================================
-
-// Get-or-create the reusable Stripe coupon for a given bundle-discount
-// amount. Deterministic id (`bundle-<cents>`) so the same amount reuses
-// one coupon object instead of minting clutter per checkout; `duration:
-// "once"` applies it to the single payment. Coupons are mode-scoped
-// (test vs live), so each mode lazily creates its own on first use.
-async function getOrCreateBundleCoupon(stripe, cents) {
-  const id = `bundle-${cents}`;
-  try {
-    await stripe.coupons.retrieve(id);
-    return id;
-  } catch {
-    /* not found — create below */
-  }
-  try {
-    const c = await stripe.coupons.create({
-      id,
-      amount_off: cents,
-      currency: "usd",
-      duration: "once",
-      name: "Bundle savings",
-    });
-    return c.id;
-  } catch (err) {
-    // Raced another checkout creating the same coupon — it exists now.
-    if (err?.code === "resource_already_exists") return id;
-    throw err;
-  }
-}
 
 // Where Stripe sends the customer after pay/cancel. We append the
 // ?order=success|cancelled flag that the app's post-checkout
@@ -364,22 +335,35 @@ async function handle(req, context) {
   const freeShippingApplied = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
 
   // Bundle discount: $1 off per unit beyond the first, storewide.
+  // Applied by REDUCING THE LINE-ITEM PRICES, not as a session coupon,
+  // because a Checkout Session cannot set both `discounts` and
+  // `allow_promotion_codes` — and the shop mails printed coupon codes
+  // with every order, so the promotion-code field has to be on the
+  // hosted page every time. See _lib/bundle-discount.mjs.
+  //
   // Counted from the line items built off TRUSTED prices (so before
   // gift wrap is appended — wrap is an add-on, not a product). The
-  // discount rides as a Stripe coupon attached to the session; the
   // free-shipping threshold above deliberately uses the PRE-discount
   // subtotal so bundling never costs a customer their free shipping.
-  const totalUnits = lineItems.reduce((sum, li) => sum + li.quantity, 0);
-  const bundleCents = bundleDiscountCents(totalUnits, subtotalCents);
-  let bundleCouponId = null;
+  const bundleAlloc = allocateBundleDiscount(
+    lineItems.map((li) => ({ unitCents: li.price_data.unit_amount, qty: li.quantity })),
+  );
+  const bundleCents = bundleAlloc.totalCents;
   if (bundleCents > 0) {
-    try {
-      bundleCouponId = await getOrCreateBundleCoupon(stripe, bundleCents);
-    } catch (err) {
-      // Coupon plumbing must never block a paying customer — worst
-      // case they pay the undiscounted (normal) price.
-      console.error("Bundle coupon unavailable (continuing without):", err?.message || err);
-    }
+    lineItems.forEach((li, i) => {
+      const cut = bundleAlloc.perUnitCents + (i === bundleAlloc.extraLineIndex ? bundleAlloc.extraCents : 0);
+      if (cut <= 0) return;
+      const reduced = li.price_data.unit_amount - cut;
+      // Belt and braces: the allocator already guarantees this, but a
+      // non-positive unit amount would have Stripe reject the session.
+      if (reduced < MIN_UNIT_CENTS) return;
+      li.price_data.unit_amount = reduced;
+      li.price_data.product_data.description =
+        [li.price_data.product_data.description, "Multi-piece savings applied"]
+          .filter(Boolean).join(" · ").slice(0, 500);
+      // The webhook records what Stripe actually charged per unit.
+      if (cart[i]) cart[i].unitPriceCents = reduced;
+    });
   }
   // What we quoted, for the webhook's zone-mismatch audit (compares
   // against the address Stripe actually collected).
@@ -443,16 +427,14 @@ async function handle(req, context) {
       // biggest conversion lever for our mostly-mobile (Instagram)
       // traffic vs. the old card-only flow.
       line_items: lineItems,
-      // Bundle discount vs promotion codes: Stripe rejects a session
-      // that sets BOTH `discounts` and `allow_promotion_codes`, so a
-      // multi-item cart gets the automatic bundle coupon (shown as
-      // "Bundle savings" on the hosted page) and single-item carts
-      // keep the "Add promotion code" field. Codes themselves are
-      // managed in the Stripe Dashboard; the webhook records
-      // session.amount_total as the true paid amount either way.
-      ...(bundleCouponId
-        ? { discounts: [{ coupon: bundleCouponId }] }
-        : { allow_promotion_codes: true }),
+      // Promotion codes are available on EVERY checkout. The multi-piece
+      // savings are already baked into the line prices above, so this
+      // session never sets `discounts` and never has to choose between
+      // the automatic discount and a code the customer types in (Stripe
+      // rejects a session that sets both). Codes themselves are managed
+      // in the Stripe Dashboard; the webhook records session.amount_total
+      // as the true paid amount either way.
+      allow_promotion_codes: true,
       customer_email: customerEmail || undefined,
       success_url: returnUrls.success_url,
       cancel_url:  returnUrls.cancel_url,
@@ -470,8 +452,8 @@ async function handle(req, context) {
         freeShippingApplied: String(freeShippingApplied),
         shipZipQuoted: shippingQuote.zip ?? "",
         shipZoneQuoted: shippingQuote.zone ?? "",
-        bundleDiscountCents: String(bundleCouponId ? bundleCents : 0),
-        bundleUnits: String(totalUnits),
+        bundleDiscountCents: String(bundleCents),
+        bundleUnits: String(bundleAlloc.units),
         automaticTaxEnabled: String(automaticTaxEnabled),
       },
     }, stripeOpts);
@@ -520,8 +502,8 @@ async function handle(req, context) {
         gift_reminder_opt_in: gift_reminder_opt_in === true,
         customer_notes: customer_notes ?? null,
         shipping_quote: shippingQuote,
-        bundle_discount_cents: bundleCouponId ? bundleCents : 0,
-        bundle_units: totalUnits,
+        bundle_discount_cents: bundleCents,
+        bundle_units: bundleAlloc.units,
         createdAt: new Date().toISOString(),
       });
     })();

@@ -53,11 +53,12 @@ Stripe is the only place to see whether a code is still active. Before printing:
    the gift-wrap line unless its "applies to" is restricted; honor the same rule by
    hand on phone and Instagram orders.
 
-One Stripe limit to know about: a bag with two or more pieces gets the automatic
-multi-piece discount, and Stripe then hides the promotion-code box on the checkout
-page. That is why the coupon terms say the code cannot be combined with the
-multi-piece discount. Phone and Instagram orders are honored by hand, so those work
-regardless.
+These codes work on every order, including bags of two or more pieces. That used
+to be untrue: the automatic multi-piece savings were attached to the checkout as a
+Stripe coupon, and Stripe hides the promotion-code box whenever a session already
+carries one. The savings are now subtracted from the item prices instead, so the
+promotion-code box is always there and a printed code stacks on top. Phone and
+Instagram orders are honored by hand, as before.
 
 ## Re-rendering after an edit
 
