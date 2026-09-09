@@ -23,15 +23,41 @@ import { LOOM_BUILD_TAG } from "./buildTag";
 import { readLoomOverride, resolveLoomTier, LOOM_SETTINGS } from "./tier.js";
 import type { PlannedStitch } from "./stitch/mesh";
 
+/** The design, as the configurator already holds it. */
+export interface LoomDesign {
+  /** Letters worked into the cube grid, in order. */
+  letters: string[];
+  /** The chosen layout — its `preview` array places the cubes. */
+  layout: { preview: number[] };
+  /** Outline colour of the cubes. */
+  blockColor: string;
+  /** Thread colour for the letters, or one per letter cycling. */
+  letterColor: string;
+  letterColors?: string[] | null;
+  /** The customer's two personalisation lines. */
+  line1?: string;
+  line2?: string;
+}
+
 export interface LoomStageProps {
   /** Which rig to build. Must be listed in CONFIG.LOOM.PRODUCTS. */
   productKey: string;
-  /** Poster shown until (and instead of) the first frame. */
-  poster: string;
+  /**
+   * Poster shown until (and instead of) the first frame. Ignored when
+   * `fallback` is given.
+   */
+  poster?: string;
+  /**
+   * Rendered instead of a poster image. In the configurator this is the
+   * 2D BlanketLayoutPreview, which is a far better fallback than a still:
+   * it is already live, so a customer on a device that cannot run the
+   * engine still watches their child's name appear as they type.
+   */
+  fallback?: React.ReactNode;
   /** Text alternative — describes the DESIGN, not the widget. */
   label: string;
-  /** The design, already planned. Changing it restitches. */
-  stitches: PlannedStitch[];
+  /** The design. Changing it restitches; planning happens in the engine chunk. */
+  design: LoomDesign;
   /** Body colour of the cloth. */
   clothColor?: string;
   className?: string;
@@ -40,11 +66,12 @@ export interface LoomStageProps {
 type Phase = "poster" | "loading" | "live" | "failed";
 
 export function LoomStage({
-  productKey, poster, label, stitches, clothColor, className,
+  productKey, poster, fallback, label, design, clothColor, className,
 }: LoomStageProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<{ dispose: () => void; setStitches: (s: PlannedStitch[]) => void } | null>(null);
+  const planRef = useRef<((d: LoomDesign) => PlannedStitch[]) | null>(null);
   const [phase, setPhase] = useState<Phase>("poster");
   const [armed, setArmed] = useState(false);
 
@@ -105,13 +132,19 @@ export function LoomStage({
 
     (async () => {
       try {
-        const [{ createRenderer, createCamera }, { createScene }, { createBlanketRig }, { createOrbit, POSES }] =
-          await Promise.all([
-            import("./core/renderer"),
-            import("./core/scene"),
-            import("./rigs/alphabetBlanket"),
-            import("./core/camera"),
-          ]);
+        // Planning lives in the engine chunk too: importing the planner and
+        // the glyph rasteriser from page code would put them in the route's
+        // first-load JS for a feature most visitors never trigger.
+        const [
+          { createRenderer, createCamera }, { createScene }, { createBlanketRig },
+          { createOrbit, POSES }, { planDesignFor },
+        ] = await Promise.all([
+          import("./core/renderer"),
+          import("./core/scene"),
+          import("./rigs/alphabetBlanket"),
+          import("./core/camera"),
+          import("./design"),
+        ]);
         if (disposed) return;
         const canvas = canvasRef.current;
         const host = hostRef.current;
@@ -136,7 +169,9 @@ export function LoomStage({
         const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
         const orbit = createOrbit(camera, POSES.flat, { reducedMotion: reduced });
 
-        rig.setStitches(stitches);
+        const planFor = (d: LoomDesign) => planDesignFor(d).stitches;
+        rig.setStitches(planFor(design));
+        planRef.current = planFor;
 
         let last = performance.now();
         const frame = () => {
@@ -196,8 +231,10 @@ export function LoomStage({
 
   // ---- restitch on a design change ----
   useEffect(() => {
-    engineRef.current?.setStitches(stitches);
-  }, [stitches]);
+    const plan = planRef.current;
+    if (!plan) return;
+    engineRef.current?.setStitches(plan(design));
+  }, [design]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") setArmed(true);
@@ -217,19 +254,38 @@ export function LoomStage({
       aria-label={label}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      style={{ position: "relative", width: "100%", aspectRatio: "4 / 3", overflow: "hidden" }}
+      style={{
+        position: "relative",
+        width: "100%",
+        // With a fallback the FALLBACK defines the box and the canvas
+        // overlays exactly it. Imposing an aspect ratio here instead
+        // clipped the square 2D preview into a 4:3 window and cut the top
+        // and bottom rows off the blanket — for every visitor whose device
+        // cannot run the engine, which is the audience the fallback exists
+        // for. Only the poster-image path needs a shape of its own.
+        aspectRatio: fallback ? undefined : "4 / 3",
+        overflow: "hidden",
+      }}
     >
-      <img
-        src={poster}
-        alt=""
+      <div
         aria-hidden="true"
         style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover",
+          // In flow when it is a fallback (so it sizes the host), absolute
+          // when it is a poster image (so the canvas can sit on top).
+          position: fallback ? "relative" : "absolute",
+          inset: fallback ? undefined : 0,
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           opacity: crossfade ? 0 : 1,
           transition: `opacity ${CONFIG.LOOM?.CROSSFADE_MS ?? 250}ms ease`,
         }}
-      />
+      >
+        {fallback ?? (poster
+          ? <img src={poster} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : null)}
+      </div>
       <canvas
         ref={canvasRef}
         aria-hidden="true"

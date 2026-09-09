@@ -534,6 +534,8 @@ export const TRANSLATIONS = {
       saveHintGuest: "Sign in to save your design and pick up where you left off later.",
       alphabetLabel: "{label} alphabet — {translit}",
       cubeOutline: "{name} cube outline",
+      // Text alternative for the live preview (2D and 3D share it).
+      previewAlt: "Preview of the {alphabet} blanket, reading {line1} {line2}",
       letterInside: "{name} letter inside",
       finalSale: "FINAL SALE —",
       finalSaleBody: "This blanket is stitched specifically for you, so all sales are final. No returns, exchanges, or refunds. Please review your alphabet, colors, and any name or year before checking out.",
@@ -1225,6 +1227,8 @@ export const TRANSLATIONS = {
       saveHintGuest: "Մուտք գործեք՝ ձևավորումը պահպանելու և ավելի ուշ շարունակելու համար։",
       alphabetLabel: "{label} այբուբեն — {translit}",
       cubeOutline: "{name} խորանարդի եզրագիծ",
+      // ⚠️ TODO_LUSIK_REVIEW — auto-translated, needs a native speaker.
+      previewAlt: "{alphabet} վերմակի նախադիտում՝ {line1} {line2}",
       letterInside: "{name} տառ՝ ներսում",
       finalSale: "ՎԵՐՋՆԱԿԱՆ ՎԱՃԱՌՔ —",
       finalSaleBody: "Այս ծածկոցը կարկատվում է հատկապես ձեզ համար, ուստի բոլոր վաճառքները վերջնական են։ Ոչ վերադարձ, ոչ փոխանակում, ոչ գումարի վերադարձ։ Խնդրում ենք ստուգել ձեր այբուբենը, գույները և ցանկացած անուն կամ տարի նախքան վճարելը։",

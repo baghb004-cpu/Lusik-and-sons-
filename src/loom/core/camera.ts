@@ -30,7 +30,7 @@ export interface Pose {
 export const POSES: Record<string, Pose> = {
   // Three-quarter top view on the table — the default, and what the
   // product photos look like.
-  flat: { target: [0, 0, 0], distance: 4.4, azimuth: 0, polar: 0.62, fov: 35 },
+  flat: { target: [0, 0, 0], distance: 3.2, azimuth: 0, polar: 0.62, fov: 35 },
   // Lower and closer, so the weave and the fringe read.
   detail: { target: [0, 0, 0], distance: 2.4, azimuth: 0.25, polar: 1.15, fov: 32 },
   // Straight down: the whole layout at once, like a chart.

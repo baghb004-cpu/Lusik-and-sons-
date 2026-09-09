@@ -28,6 +28,8 @@ export interface BlanketRigOptions {
 
 export interface BlanketRig {
   group: Group;
+  /** World size of the piece, for framing. */
+  extent: { width: number; height: number };
   setStitches: (stitches: PlannedStitch[]) => void;
   setRevealed: (count: number) => void;
   dispose: () => void;
@@ -83,6 +85,14 @@ export function createBlanketRig(opts: BlanketRigOptions = {}): BlanketRig {
     group.add(mesh);
   }
 
+  // Centre the whole piece on the origin. Stitches are placed from the
+  // grid's top-left corner outward (x 0..width, z 0..height), so without
+  // this the piece hangs off one corner of the world and every pose has to
+  // know its size to aim at it — which is exactly the bug that put the
+  // blanket in the corner of the stage while the poster script, which DID
+  // pass a custom target, looked fine.
+  group.position.set(-(width / 2 - cell / 2), 0, -(height / 2 - cell / 2));
+
   const dispose = () => {
     stitches.dispose();
     body.geometry.dispose();
@@ -94,6 +104,7 @@ export function createBlanketRig(opts: BlanketRigOptions = {}): BlanketRig {
 
   return {
     group,
+    extent: { width, height },
     setStitches: stitches.setStitches,
     setRevealed: stitches.setRevealed,
     dispose,

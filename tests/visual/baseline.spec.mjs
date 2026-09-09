@@ -62,6 +62,12 @@ test.beforeEach(async ({ context, page }) => {
   // runner's core count, network or battery (the tier projects in the e2e
   // config exercise the other tiers on purpose).
   await context.addInitScript(() => { try { sessionStorage.setItem("lusik_tier_session_v1", "full"); } catch {} });
+  // Pin the 3D stage OFF so it renders its fallback. A live canvas is the
+  // one thing on these pages whose pixels depend on the runner's GPU
+  // driver rather than on the page, and these baselines are already
+  // sensitive enough to the browser build (see the note above). The Loom
+  // has its own coverage; this suite is here to catch layout breaking.
+  await context.addInitScript(() => { try { sessionStorage.setItem("lusik_loom_session_v1", "low"); } catch {} });
   // NOTE: the lead-time dates are computed during the SERVER render, so a
   // browser-side clock pin cannot freeze them. They are masked at capture
   // time instead (see LIVE_DATES below).

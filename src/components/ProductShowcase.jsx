@@ -13,7 +13,7 @@
 // in src/components/ shows up somewhere on the page.
 // ============================================================
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { CONFIG } from "../data/config.js";
 import { db } from "../lib/db.js";
@@ -26,7 +26,14 @@ import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 import { PHOTO_DATE_DETAIL } from "../images/photos.js";
 import { useLeadTime } from "../lib/useLeadTime";
 import { publishDesign } from "../lib/designBus";
+import dynamic from "next/dynamic";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
+
+// The 3D engine, loaded only if a visitor's device and the flag allow it.
+// next/dynamic with ssr:false keeps three.js out of this route's
+// first-load JS entirely — scripts/check-bundle-budget.mjs fails the
+// build if it ever leaks in.
+const LoomStage = dynamic(() => import("../loom/index").then((m) => m.LoomStage), { ssr: false });
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
@@ -212,6 +219,19 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       : null
   );
   const [colorMode, setColorMode] = useState("preset");  // "preset" | "custom"
+
+  // What the 3D stage stitches. Memoised because LoomStage restitches on
+  // every identity change of this object, and a new object each render
+  // would rebuild tens of thousands of instance matrices per keystroke.
+  const loomDesign = useMemo(() => ({
+    letters: alphabet.letters,
+    layout,
+    blockColor: blockColor.hex,
+    letterColor: letterColor.hex,
+    letterColors: letterColorList ? letterColorList.map((c) => c.hex) : null,
+    line1: customLine1,
+    line2: customLine2,
+  }), [alphabet.letters, layout, blockColor.hex, letterColor.hex, letterColorList, customLine1, customLine2]);
 
   // Publish the full blanket design (alphabet, layout, name/year, colors)
   // on the design bus. Nothing subscribes today; the 3D product engine
@@ -494,17 +514,32 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   aspect-ratio so the layout doesn't jump when toggling modes. */}
               <div className="aspect-[4/5] gallery-frame overflow-hidden mb-4 flex items-center justify-center p-6 lg:p-8" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="w-full max-w-[420px]">
-                  <BlanketLayoutPreview
-                    letters={alphabet.letters}
-                    layout={layout}
-                    darkMode={false}
-                    size={420}
-                    blockColor={blockColor.hex}
-                    letterColor={letterColor.hex}
-                    letterColors={letterColorList ? letterColorList.map(c => c.hex) : null}
-                    customLine1={customLine1}
-                    customLine2={customLine2}
-                    showCustomTextHints
+                  <LoomStage
+                    productKey="blanket-classic"
+                    label={t("pdp.previewAlt", {
+                      alphabet: alphabet.label,
+                      line1: customLine1 || "",
+                      line2: customLine2 || "",
+                    })}
+                    design={loomDesign}
+                    /* The 2D preview IS the fallback, and a better one than a
+                       still image would be: it is already live, so a visitor
+                       whose device cannot run the engine still watches their
+                       child's name appear as they type. */
+                    fallback={(
+                      <BlanketLayoutPreview
+                        letters={alphabet.letters}
+                        layout={layout}
+                        darkMode={false}
+                        size={420}
+                        blockColor={blockColor.hex}
+                        letterColor={letterColor.hex}
+                        letterColors={letterColorList ? letterColorList.map(c => c.hex) : null}
+                        customLine1={customLine1}
+                        customLine2={customLine2}
+                        showCustomTextHints
+                      />
+                    )}
                   />
                 </div>
               </div>

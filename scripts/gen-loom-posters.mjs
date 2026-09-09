@@ -116,11 +116,10 @@ window.__done = (async () => {
   scene.add(rig.group);
   rig.setStitches(planned.stitches);
 
-  // Frame the stitched area: the blanket spans x 0..2.2 and z 0..~2.5, so
-  // its centre is about (1.1, 0, 1.27). POSES.flat's own distance is set
-  // for a stage with UI around it; a poster wants the cloth to fill the
-  // frame.
-  const pose = { ...POSES.flat, target: [1.1, 0, 1.25], distance: 3.1 };
+  // The rig centres itself on the origin, so POSES.flat aims correctly.
+  // A poster wants the cloth a little larger in frame than the stage does,
+  // since it has no surrounding UI.
+  const pose = { ...POSES.flat, distance: 2.9 };
   const orbit = createOrbit(camera, pose, { reducedMotion: () => true });
   orbit.goTo(pose, true);
 
