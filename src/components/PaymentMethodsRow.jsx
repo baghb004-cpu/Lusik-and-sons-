@@ -20,8 +20,10 @@ export function PaymentMethodsRow({ className = "", align = "center" }) {
           key={m}
           className="text-[0.55rem] tracking-[0.18em] uppercase px-2 py-1"
           style={{
-            color: "rgba(26,22,18,0.6)",
-            border: "1px solid rgba(26,22,18,0.15)",
+            // Tokens, not literals: the hardcoded ink read 1.03:1 against the
+            // dark page — the whole row vanished in dark mode.
+            color: "var(--text-muted)",
+            border: "1px solid var(--border-default)",
             fontWeight: 500,
             whiteSpace: "nowrap",
           }}

@@ -185,7 +185,7 @@ export function TextUsWidget() {
           {/* Header */}
           <div className="flex items-start justify-between p-5 pb-3" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
             <div>
-              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "#3D5A3D" }}>Direct line</p>
+              <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-1.5" style={{ color: "var(--success)" }}>Direct line</p>
               <p className="font-display text-xl leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
                 {cfg.headline}
               </p>
@@ -232,12 +232,12 @@ export function TextUsWidget() {
                   <button
                     onClick={handleCopy}
                     className="px-3 flex items-center justify-center transition"
-                    style={{ border: "1px solid rgba(26,22,18,0.2)", background: copied ? "rgba(61,90,61,0.1)" : "transparent" }}
+                    style={{ border: "1px solid var(--border-strong)", background: copied ? "rgba(61,90,61,0.1)" : "transparent" }}
                     aria-label={copied ? "Copied" : "Copy number"}
                     data-tooltip={copied ? "Copied to clipboard" : "Copy phone number"}
                     data-tooltip-pos="top"
                   >
-                    {copied ? <Check size={16} strokeWidth={1.75} style={{ color: "#3D5A3D" }} /> : <Copy size={16} strokeWidth={1.5} />}
+                    {copied ? <Check size={16} strokeWidth={1.75} style={{ color: "var(--success)" }} /> : <Copy size={16} strokeWidth={1.5} />}
                   </button>
                 </div>
               </div>

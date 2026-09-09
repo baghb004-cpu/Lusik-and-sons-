@@ -30,7 +30,7 @@ export default function NotFound() {
           fontSize: "0.7rem",
           letterSpacing: "0.3em",
           textTransform: "uppercase",
-          color: "var(--accent)",
+          color: "var(--accent-text)",
           marginBottom: "1rem",
         }}
       >

@@ -106,9 +106,22 @@ Paste this as the first message of the new Claude Code session:
 | 2026-09-09 | PR 10, order milestones | **Done**, same branch. | Six milestones (`received`, `cloth_cut`, `stitching`, `backing`, `finished`, `shipped`) recorded per order, stamped by Lusik from the dashboard and read back by the customer. Two ways in: a signed-in owner reads their own order, and a guest opens a capability URL, `/order/<token>?id=<order-id>`, whose HMAC token is signed with `ORDER_LINK_SECRET` (falling back to `REMINDER_SECRET`) under an `order-view:` purpose prefix so it can never be confused with an unsubscribe token. With no secret set the feature stays dark rather than opening. The link ships in the order confirmation email. `OrderTimeline` renders the same data on the account page and in the guest view. Gates: typecheck clean; 168 unit tests pass; build 184 KB of 210 on the heaviest route; e2e 33 passed, 11 skipped; 18 of 18 visual baselines unchanged. |
 | 2026-09-09 | Review pass over PR 10 | **Done**, same branch. | Sixteen confirmed findings fixed. The worst was silent: the follow-along link block had been written into `sendCartAbandonmentRecovery`, which has no `order` in scope, so every abandoned-cart email threw a `ReferenceError` that the webhook's `.catch()` swallowed while the pending-order blob was deleted anyway. Recovery mail was being lost with nothing in the logs. Also fixed: the ad pixels loaded on `/order/` URLs and would have handed Meta and Google a working capability token in `document.location`; Lusik could not open a customer's timeline from the dashboard; the endpoint distinguished "not yours" from "does not exist" and so could be used to probe real order IDs; milestone responses were cacheable; the account page made one round trip per order card; and the admin write accepted unvalidated milestone keys. |
 
+| 2026-09-09 | PR 17, design tokens + contrast gates | **Done in part**, same branch. See "deliberately not done" below. | The token system was already sound; the components were not using it. A rendered-page audit (both atmospheres, both viewports, ten routes) started at **145 failing text styles and ends at 0**. The dark-mode findings were the severe ones, and none of them were visible by reading code: the desktop mega-menu hardcoded a cream background under `var(--text-primary)` items, so every product name in it rendered cream-on-cream at 1:1 — the main desktop path into the catalog was blank in dark mode; every `bg-white` form field (checkout ZIP, account, auth, newsletter, waitlist, admin) showed cream text on white at 1.15:1, so anything a customer typed was invisible; the home hero, story blockquote and journal body copy hardcoded `#3D332A` (exactly the light value of `--text-secondary`, so the token swap is a no-op in light mode); the payment-methods row sat at 1.03:1. In light mode the brand gold was used as text at 2.8:1 across ~80 call sites including the mobile nav labels, the cart badge, the bag's savings row and the mobile PDP price. Three tokens now make the right choice obvious — `--accent-text` (normal surface), `--accent-on-ink` (an ink panel, which inverts with the theme exactly as `--text-on-ink` does), `--text-on-accent` (a gold fill) — plus `--border-on-ink`. `--border-strong` went from 1.5:1 to 3.3:1 because it is the only boundary identifying an input on a cream page. Two gates keep it: `token-contrast.test.mjs` scores every pairing against the plan's gates in both atmospheres from the real stylesheet (verified by mutating two tokens back — it failed with exact ratios and named the pairing), and `tests/e2e/contrast.spec.mjs` walks every visible text node on the rendered pages. Exemptions are principled and documented: `aria-hidden` decoration, `role="img"` product previews (a thread color on a cloth color is a truthful property of the product, and the blanket preview and preset swatches gained real `aria-label`s), and text over a background image, which is counted and annotated rather than dropped. `docs/design-system.md` is the written system. Gates: typecheck clean; 172 unit tests pass; build 184 KB of 210 on the heaviest route; e2e 37 passed, 11 skipped. |
+
 Next up: PR 2 (Loom core) is the centerpiece and the largest single piece of
-work. PR 17 (design tokens) is the next self-contained piece that needs
-nothing from the 3D engine.
+work.
+
+PR 17 landed its contrast half. Still open under that PR, each blocked on
+something code cannot supply on its own, and each explained in
+`docs/design-system.md`: the OKLCH palette re-derived from the real cloth
+(needs the physical materials measured, and converting the existing hexes
+without that measurement is notation change dressed as color science — the
+hexes are also load-bearing for the printed brochure), the thread-truth chips
+(need the poster script that arrives with the Loom in PR 2), color-blind
+simulation in the visual suite (worth doing once the thread picker is rebuilt on
+the Loom rather than baselining a picker about to be replaced), and a
+`prefers-contrast: more` AAA atmosphere, which is now a small follow-up because
+the gates exist to verify it.
 
 ---
 
@@ -1064,7 +1077,7 @@ For the owner's planning, the roles and what each hands to the executing session
 | PR | Title | Depends on | Size | Flag |
 | --- | --- | --- | --- | --- |
 | 16 | Capability ladder: signals, tiers, override, RUM reporting, CI tier projects | 1 | L | `CONFIG.TIERS` |
-| 17 | Design tokens in OKLCH, two atmospheres, contrast tests, thread-truth chips | 1 | L | `CONFIG.THEME_V2` |
+| 17 | Design tokens in OKLCH, two atmospheres, contrast tests, thread-truth chips | 1 | L | `CONFIG.THEME_V2`. **Contrast half done 2026-09-09**, see 0.5 |
 | 18 | Service worker, offline page, queued cart, storage-aware caching | 16 | M | `CONFIG.PWA_V2` |
 | 19 | Hero film pipeline (HLS, poster ladder) with Loom fallback | 6, 16 | M | `CONFIG.HERO_FILM` |
 | 20 | Captured textures path with KTX2 streaming by tier | 2, 16 | L | `CONFIG.LOOM.CAPTURED_TEXTURES` |

@@ -98,14 +98,14 @@ export function CartContents({
         style={
           isPage
             ? {
-                color: "var(--accent)",
+                color: "var(--accent-text)",
                 fontWeight: 500,
                 background: "var(--bg-surface, #FFFFFF)",
                 borderRadius: 999,
                 padding: "8px 20px",
                 boxShadow: "0 1px 4px rgba(26,22,18,0.10)",
               }
-            : { color: "var(--accent)", fontWeight: 500 }
+            : { color: "var(--accent-text)", fontWeight: 500 }
         }
       >
         {t("bag.edit")}
@@ -275,7 +275,7 @@ export function CartContents({
           >
             {cart.some((i) => i.isCustom) && (
               <div className="mb-4 p-3 text-xs leading-relaxed" style={{ background: "var(--accent-soft)", border: "1px solid var(--accent-strong)" }}>
-                <span style={{ color: "var(--accent)", fontWeight: 500 }}>{t("bag.customOrders")}</span> {t("bag.customOrdersBody")}
+                <span style={{ color: "var(--accent-text)", fontWeight: 500 }}>{t("bag.customOrders")}</span> {t("bag.customOrdersBody")}
                 {" "}{t("disclaimer.short")} {t("disclaimer.bibClosure")}
               </div>
             )}
@@ -292,7 +292,7 @@ export function CartContents({
                 return (
                   <div className="flex justify-between mb-3 text-sm">
                     <span className="opacity-70">Bundle savings ({bundle.units} pieces)</span>
-                    <span className="tabular-nums" style={{ color: "var(--accent)", fontWeight: 500 }}>−${bundle.dollars.toFixed(2)}</span>
+                    <span className="tabular-nums" style={{ color: "var(--accent-text)", fontWeight: 500 }}>−${bundle.dollars.toFixed(2)}</span>
                   </div>
                 );
               }
@@ -344,7 +344,7 @@ export function CartContents({
                   <ChevronDown
                     size={18}
                     strokeWidth={1.8}
-                    style={{ color: "var(--accent)", flexShrink: 0, transition: "transform 0.2s ease", transform: policiesOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                    style={{ color: "var(--accent-text)", flexShrink: 0, transition: "transform 0.2s ease", transform: policiesOpen ? "rotate(180deg)" : "rotate(0deg)" }}
                   />
                 </button>
                 {policiesOpen && (

@@ -55,7 +55,7 @@ function BoxIcon() {
 function Row({ icon, title, body }) {
   return (
     <div className="flex gap-3">
-      <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }}>{icon}</span>
+      <span style={{ color: "var(--accent-text)", flexShrink: 0, marginTop: 1 }}>{icon}</span>
       <div>
         <p className="text-sm" style={{ fontWeight: 600, color: "var(--text-primary)" }}>{title}</p>
         <p className="text-[0.8rem] opacity-70 leading-relaxed">{body}</p>

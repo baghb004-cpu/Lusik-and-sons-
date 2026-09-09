@@ -95,10 +95,10 @@ export function OrderCard({ order, onReorder }) {
       // "New" means Lusik has paid but not yet confirmed. Once she
       // clicks "Confirm order" in the admin panel, fulfillment_status
       // moves to awaiting_lusik and the label here flips to "Confirmed".
-      case "in_progress":     return { text: "New",                color: "var(--accent)" };
-      case "awaiting_lusik":  return { text: "Confirmed",          color: "var(--accent)" };
-      case "in_production":   return { text: "Lusik is stitching", color: "var(--accent)" };
-      case "quality_check":   return { text: "Final review",       color: "var(--accent)" };
+      case "in_progress":     return { text: "New",                color: "var(--accent-text)" };
+      case "awaiting_lusik":  return { text: "Confirmed",          color: "var(--accent-text)" };
+      case "in_production":   return { text: "Lusik is stitching", color: "var(--accent-text)" };
+      case "quality_check":   return { text: "Final review",       color: "var(--accent-text)" };
       case "ready_to_ship":   return { text: "Ready to ship",      color: "#3D5A3D" };
       case "shipped":         return { text: "Shipped",            color: "#3D5A3D" };
       case "delivered":       return { text: "Delivered",          color: "#3D5A3D" };
@@ -233,7 +233,7 @@ export function OrderCard({ order, onReorder }) {
             loading="lazy"
           />
           <p className="px-3 py-2 text-[0.65rem] tracking-[0.18em] uppercase opacity-70" style={{ background: "rgba(176,136,66,0.06)" }}>
-            <span style={{ color: "var(--accent)", fontWeight: 500 }}>From Lusik</span> · photo of your finished blanket
+            <span style={{ color: "var(--accent-text)", fontWeight: 500 }}>From Lusik</span> · photo of your finished blanket
           </p>
         </a>
       )}
@@ -271,7 +271,7 @@ export function OrderCard({ order, onReorder }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline hover:opacity-100"
-                      style={{ color: "var(--accent)", fontWeight: 500 }}
+                      style={{ color: "var(--accent-text)", fontWeight: 500 }}
                     >
                       Track {order.tracking_number}
                     </a>

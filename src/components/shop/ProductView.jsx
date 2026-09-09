@@ -235,7 +235,7 @@ export function ProductView({
             the configurator above. */}
         <section className="mt-16 lg:mt-24 pt-12 lg:pt-16" style={{ borderTop: "1px solid var(--border-default)" }}>
           <div className="max-w-3xl mb-8 lg:mb-10">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>
               {t("bib.othersEyebrow")}
             </p>
             <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>

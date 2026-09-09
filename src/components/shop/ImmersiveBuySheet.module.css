@@ -208,7 +208,9 @@
   color: inherit;
 }
 .pillName { font-weight: 500; font-size: 0.95rem; }
-.pillPrice { margin-left: auto; font-weight: 700; color: var(--accent, #b54a62); }
+/* --accent-text, not --accent: 16px bold is not "large" under WCAG, so the
+   price needs the full 4.5:1 the deep gold gives. */
+.pillPrice { margin-left: auto; font-weight: 700; color: var(--accent-text, #826027); }
 .chevron { color: var(--accent-strong, #7d5a93); display: inline-flex; }
 
 /* ---- the scrollable buy-controls body ---- */

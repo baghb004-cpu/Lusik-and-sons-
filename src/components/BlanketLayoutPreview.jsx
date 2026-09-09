@@ -143,6 +143,16 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
   // Grid frame border (the blanket's own outline)
   const borderColor = darkMode ? "rgba(245,239,227,0.18)" : "rgba(26,22,18,0.12)";
 
+  // Text alternative for the whole preview (see role="img" below).
+  const previewLabel = [
+    "Preview of the blanket",
+    layout?.shortLabel ? `laid out ${layout.shortLabel}` : null,
+    customLine1 ? `reading ${customLine1}` : null,
+    customLine2 ? `and ${customLine2}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   // Block outline color — what the customer picked, or a gold default for the
   // "no colors selected" / catalog-card preview case.
   const outlineColor = blockColor ?? "var(--accent)";
@@ -256,6 +266,17 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
   const canvas = (
     <div
       className="aspect-square w-full"
+      // A picture of the finished blanket, not a text layout: the letters
+      // inside are rendered in the customer's chosen THREAD color on the
+      // chosen CLOTH, so their contrast is a truthful property of the
+      // product (cream thread on cream waffle really does read softly) and
+      // must not be "corrected". role="img" says so — assistive tech reads
+      // the label instead of spelling out the grid, and the contrast audit
+      // skips the subtree for the same reason. The color names and DMC
+      // numbers are carried as text in the summary beside the preview, so
+      // color is never the only signal.
+      role="img"
+      aria-label={previewLabel}
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))`,
@@ -326,7 +347,11 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
           ? colorForLetter(cell.letterIdx)
           : isTextCell
             ? (isPlaceholderText
-                ? (darkMode ? "rgba(245,239,227,0.4)" : "rgba(26,22,18,0.35)")  // faded hint
+                // Faded hint — still a "ghost of the text to come", but the
+                // old 0.35/0.4 alphas read 2.1:1 on the white waffle tile,
+                // under the 3:1 large-text gate. These clear it and still
+                // sit well behind the real embroidered text below.
+                ? (darkMode ? "rgba(245,239,227,0.55)" : "rgba(26,22,18,0.5)")
                 : (darkMode ? "#F5EFE3" : "#1A1612"))                            // real embroidered text
             : "transparent";
 

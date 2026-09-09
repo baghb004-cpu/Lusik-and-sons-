@@ -41,7 +41,7 @@ export function OrderFollowRoute() {
 
   return (
     <main className="max-w-2xl mx-auto px-6 lg:px-12 py-16 lg:py-24 fade-in">
-      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>
+      <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>
         Lusik &amp; Sons
       </p>
 

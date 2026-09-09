@@ -29,7 +29,7 @@ export function ShippingEstimator({ subtotalCents }) {
   if (earnsFreeShipping) {
     return (
       <p className="text-xs leading-relaxed mb-3">
-        <span style={{ color: "var(--accent)", fontWeight: 500 }}>Shipping:</span>{" "}
+        <span style={{ color: "var(--accent-text)", fontWeight: 500 }}>Shipping:</span>{" "}
         <span className="opacity-80">Free U.S. shipping. Lusik picks the carrier at checkout.</span>
       </p>
     );
@@ -95,7 +95,7 @@ export function ShippingEstimator({ subtotalCents }) {
           value={zip}
           onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
           placeholder="90620"
-          className="flex-1 px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
+          className="flex-1 px-3 py-2 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
           style={{ border: "1px solid rgba(26,22,18,0.15)" }}
           aria-label="ZIP code for shipping estimate"
           autoFocus

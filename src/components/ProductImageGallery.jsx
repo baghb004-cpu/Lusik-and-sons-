@@ -382,7 +382,7 @@ export function ProductImageGallery({
       {!photosHidden && !appleColorRow && colorways && colorways.length > 0 && (
         <div className="mt-6">
           <div className="flex items-baseline justify-between mb-3">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)", fontWeight: 600 }}>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent-text)", fontWeight: 600 }}>
               Available colorways
             </p>
             {activeColorway != null && (
@@ -390,7 +390,7 @@ export function ProductImageGallery({
                 type="button"
                 onClick={() => { setActiveColorway(null); setActiveIdx(0); }}
                 className="text-[0.65rem] tracking-[0.05em] underline underline-offset-2 hover:opacity-70"
-                style={{ color: "#3D332A" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Show all photos
               </button>
@@ -529,7 +529,7 @@ function ColorSwatch({ label, swatch, active, onClick, count }) {
       <span
         className="text-[0.65rem] tracking-[0.05em] whitespace-nowrap"
         style={{
-          color: active ? "#1A1612" : "#3D332A",
+          color: active ? "var(--text-primary)" : "var(--text-secondary)",
           fontWeight: active ? 600 : 400,
         }}
       >

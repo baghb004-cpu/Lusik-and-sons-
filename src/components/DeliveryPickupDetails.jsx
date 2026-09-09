@@ -79,7 +79,7 @@ export function DeliveryPickupDetails({ className = "", productKey = null }) {
         <div className="mt-3 pt-3 flex flex-col gap-4 fade-in" style={{ borderTop: "1px solid var(--border-soft)" }}>
           {pickupOn && (
             <div className="flex gap-3">
-              <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }}><PinIcon /></span>
+              <span style={{ color: "var(--accent-text)", flexShrink: 0, marginTop: 2 }}><PinIcon /></span>
               <div>
                 <p className="text-sm" style={{ fontWeight: 600, color: "var(--text-primary)" }}>Local pickup</p>
                 <p className="text-sm opacity-70 leading-relaxed">
@@ -89,7 +89,7 @@ export function DeliveryPickupDetails({ className = "", productKey = null }) {
             </div>
           )}
           <div className="flex gap-3">
-            <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }}><BoxIcon /></span>
+            <span style={{ color: "var(--accent-text)", flexShrink: 0, marginTop: 2 }}><BoxIcon /></span>
             <div>
               <p className="text-sm" style={{ fontWeight: 600, color: "var(--text-primary)" }}>Free U.S. shipping</p>
               {productKey ? (

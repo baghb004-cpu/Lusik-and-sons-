@@ -44,7 +44,7 @@ export function TestimonialsSection() {
       <div className="grid md:grid-cols-3 gap-10 lg:gap-12">
         {CMS_PAGES.testimonials.quotes.slice(0, 3).map((t, i) => (
           <figure key={i} className="vt-rise text-center md:text-left">
-            <blockquote className="font-display italic text-lg lg:text-xl leading-relaxed mb-5" style={{ fontWeight: 400, color: "#3D332A" }}>
+            <blockquote className="font-display italic text-lg lg:text-xl leading-relaxed mb-5" style={{ fontWeight: 400, color: "var(--text-secondary)" }}>
               {"“"}{t.quote}{"”"}
             </blockquote>
             <figcaption className="text-[0.65rem] tracking-[0.2em] uppercase opacity-70">

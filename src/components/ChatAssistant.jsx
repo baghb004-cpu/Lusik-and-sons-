@@ -131,7 +131,7 @@ export function ChatAssistant() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--border-default)" }}>
         <div className="flex items-center gap-2">
-          <Sparkles size={16} strokeWidth={1.75} style={{ color: "var(--accent)" }} />
+          <Sparkles size={16} strokeWidth={1.75} style={{ color: "var(--accent-text)" }} />
           <span className="font-display text-sm" style={{ fontWeight: 500 }}>Lusik & Sons</span>
           <span className="text-[0.55rem] tracking-[0.2em] uppercase opacity-55">AI</span>
         </div>

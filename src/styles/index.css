@@ -77,7 +77,12 @@
     --text-on-ink:    #F5EFE3;  /* text on dark ink (Pay button, etc.) */
 
     --border-default: rgba(26,22,18,0.10);
-    --border-strong:  rgba(26,22,18,0.20);
+    /* Interactive boundaries — input fields, unselected swatches, the
+       quantity stepper. WCAG 1.4.11 wants 3:1 for a boundary that is the
+       only thing identifying a control, and a white field on a cream page
+       is 1.1:1 on its own, so the border IS that boundary. Was 0.20 alpha
+       (1.5:1). Decorative rules stay on --border-default. */
+    --border-strong:  rgba(26,22,18,0.50);
     --border-soft:    rgba(26,22,18,0.06);
 
     --ink:            #1A1612;  /* primary dark — buttons, headings */
@@ -89,6 +94,20 @@
        gold (~5:1). Keep --accent for borders, icons, fills, and any gold
        text sitting on ink/dark surfaces (where the brighter gold passes). */
     --accent-text:    #826027;
+    /* Gold for TEXT sitting on an --ink panel. An ink panel INVERTS with the
+       theme (--ink is dark in light mode, cream in dark mode), so the gold on
+       top has to invert too, exactly like --text-on-ink. In light mode the ink
+       panel is dark, so the bright gold passes (5.5:1). Using --accent here
+       instead is the trap: in dark mode it puts the bright gold on cream at
+       2.0:1. Same pairing rule as --text-on-ink — reach for it whenever the
+       background is var(--ink). */
+    --accent-on-ink:  #B08842;
+    /* Text ON a gold fill (the cart badge). The gold is a mid tone in BOTH
+       themes, so the readable text on it is ink in both — cream on gold is
+       2.8:1. Not the same thing as --text-on-ink, which inverts. */
+    --text-on-accent: #1A1612;
+    /* Hairline rule ON an --ink panel. Inverts for the same reason. */
+    --border-on-ink:  rgba(245,239,227,0.15);
 
     --success:        #3D5A3D;
     --error:          #8B2C2C;
@@ -113,7 +132,7 @@
     --text-on-ink:    #1A1612;
 
     --border-default: rgba(245,239,227,0.10);
-    --border-strong:  rgba(245,239,227,0.18);
+    --border-strong:  rgba(245,239,227,0.40);  /* 3.5:1 — same rule as light */
     --border-soft:    rgba(245,239,227,0.05);
 
     --ink:            #F5EFE3;  /* invert: ink in dark = cream */
@@ -121,6 +140,9 @@
     --accent-soft:    rgba(201,166,120,0.14);
     --accent-strong:  rgba(201,166,120,0.36);
     --accent-text:    #C9A678;  /* on dark surfaces the bright gold already passes */
+    --accent-on-ink:  #826027;  /* the ink panel is CREAM here, so the deep gold is the readable one */
+    --text-on-accent: #1A1612;  /* gold stays a mid tone in dark, so ink still wins */
+    --border-on-ink:  rgba(26,22,18,0.15);
 
     --success:        #6FA86F;
     --error:          #D17474;
@@ -308,8 +330,12 @@
     margin-top: 0;
     min-width: 640px;
     max-width: 90vw;
-    background: #F5EFE3;
-    border: 1px solid rgba(26,22,18,0.08);
+    /* Reads from the token, not a literal cream: the items inside use
+       var(--text-primary), which inverts to cream in dark mode. A hardcoded
+       background here made the whole mega-menu cream-on-cream — every
+       product name in it was invisible in dark mode. */
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     box-shadow: 0 16px 40px rgba(26,22,18,0.12), 0 4px 8px rgba(26,22,18,0.06);
     padding: 32px 36px;
     opacity: 0;
@@ -340,7 +366,9 @@
     font-size: 0.7rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(26,22,18,0.5);
+    /* Was rgba(26,22,18,0.5) — 3.3:1 on cream, under AA for 11px text, and
+       stuck at ink in dark mode. --text-muted is 5.3:1 and follows the theme. */
+    color: var(--text-muted);
     margin-bottom: 12px;
   }
   .shop-menu-item {
@@ -352,7 +380,9 @@
     transition: color 120ms ease, padding-left 120ms ease;
   }
   .shop-menu-item:hover {
-    color: var(--accent);
+    /* Hovering must not make the link harder to read: the bright gold is
+       2.8:1 on this panel, the deep gold 5.0:1. */
+    color: var(--accent-text);
     padding-left: 4px;
   }
   .shop-menu-item.placeholder {
@@ -527,8 +557,10 @@
     right: max(20px, env(safe-area-inset-right));
     bottom: calc(58px + 32px + max(20px, env(safe-area-inset-bottom)));
     width: min(340px, calc(100vw - 40px));
-    background: #F5EFE3;
-    border: 1px solid rgba(26,22,18,0.12);
+    /* Token, not a literal: the panel's copy inherits var(--text-primary),
+       which is cream in dark mode. Same trap the mega-menu fell into. */
+    background: var(--bg-page);
+    border: 1px solid var(--border-default);
     box-shadow: 0 16px 48px rgba(26,22,18,0.22), 0 4px 12px rgba(26,22,18,0.08);
     z-index: 41;
     transform-origin: bottom right;
@@ -545,8 +577,8 @@
     right: max(20px, env(safe-area-inset-right));
     bottom: calc(58px + 18px + max(20px, env(safe-area-inset-bottom)));
     width: min(280px, calc(100vw - 40px));
-    background: #F5EFE3;
-    border: 1px solid rgba(26,22,18,0.12);
+    background: var(--bg-page);
+    border: 1px solid var(--border-default);
     box-shadow: 0 12px 36px rgba(26,22,18,0.2), 0 3px 10px rgba(26,22,18,0.08);
     z-index: 41;
     transform-origin: bottom right;
@@ -560,9 +592,9 @@
     right: 22px;
     width: 12px;
     height: 12px;
-    background: #F5EFE3;
-    border-right: 1px solid rgba(26,22,18,0.12);
-    border-bottom: 1px solid rgba(26,22,18,0.12);
+    background: var(--bg-page);
+    border-right: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
     transform: rotate(45deg);
   }
   @keyframes textus-proactive-in {
@@ -1552,7 +1584,7 @@
     padding: 0 4px;
     border-radius: 9px;
     background: var(--accent);
-    color: var(--text-on-ink);
+    color: var(--text-on-accent);
     font-size: 0.6rem;
     font-weight: 600;
     line-height: 16px;

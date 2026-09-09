@@ -39,7 +39,7 @@ export function AnnouncementBar() {
           target={external ? "_blank" : undefined}
           rel={external ? "noopener noreferrer" : undefined}
           className="underline underline-offset-2 ml-2 hover:opacity-80 transition-opacity"
-          style={{ color: "var(--accent)", fontWeight: 600 }}
+          style={{ color: "var(--accent-on-ink)", fontWeight: 600 }}
         >
           {a.linkLabel}
         </a>

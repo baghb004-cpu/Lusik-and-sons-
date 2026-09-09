@@ -659,7 +659,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {bundle.cents > 0 && (
               <div className="flex justify-between">
                 <span className="opacity-70">Bundle savings ({bundle.units} pieces)</span>
-                <span className="tabular-nums" style={{ color: "var(--accent)", fontWeight: 500 }}>−${bundle.dollars.toFixed(2)}</span>
+                <span className="tabular-nums" style={{ color: "var(--accent-text)", fontWeight: 500 }}>−${bundle.dollars.toFixed(2)}</span>
               </div>
             )}
             {bundle.enabled && bundle.cents === 0 && cart.length > 0 && (
@@ -673,7 +673,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             <div className="flex justify-between">
               <span className="opacity-70">Shipping</span>
               {freeShipping ? (
-                <span className="tabular-nums" style={{ color: "var(--accent)", fontWeight: 500 }}>Free</span>
+                <span className="tabular-nums" style={{ color: "var(--accent-text)", fontWeight: 500 }}>Free</span>
               ) : shipEstimate ? (
                 <span className="tabular-nums">${shipEstimate.dollars.toFixed(2)}</span>
               ) : (
@@ -700,7 +700,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                 value={shipZip}
                 onChange={(e) => setShipZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
                 placeholder="90620"
-                className="w-full px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
+                className="w-full px-3 py-2.5 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] tabular-nums"
                 style={{ border: "1px solid rgba(26,22,18,0.15)" }}
                 aria-label="Shipping ZIP code"
               />
@@ -709,7 +709,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                   Unknown ZIP = gentle nudge, never a blocker; failed
                   lookup = silence (the estimate below still works). */}
               {zipPlace && (
-                <p className="text-xs mt-2" style={{ color: "var(--accent)", fontWeight: 500 }} aria-live="polite">
+                <p className="text-xs mt-2" style={{ color: "var(--accent-text)", fontWeight: 500 }} aria-live="polite">
                   ✓ {zipPlace.city}, {zipPlace.state} {shipZip}
                 </p>
               )}

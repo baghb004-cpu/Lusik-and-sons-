@@ -7,7 +7,11 @@
 #      no extra install needed)
 #   3. Installs Playwright's Chromium binary (cached)
 #   4. Runs the E2E smoke tests against a production Next build
-#      (playwright.config.mjs webServer: next build && next start)
+#      (playwright.config.mjs webServer: next build && next start).
+#      This includes tests/e2e/contrast.spec.mjs, which walks every
+#      visible text node on ten routes in both themes and fails on a
+#      WCAG AA miss; the token-level half of that gate rides along in
+#      the unit job. See docs/design-system.md.
 #   5. Runs the visual-regression baselines (tests/visual) the same way
 #      and uploads the diff images when a page changed unexpectedly
 #

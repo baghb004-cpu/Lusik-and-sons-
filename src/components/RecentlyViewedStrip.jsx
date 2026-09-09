@@ -46,7 +46,7 @@ export function RecentlyViewedStrip({ items = [], onTap, onClear, heading = "Rec
             type="button"
             onClick={onClear}
             className="text-xs"
-            style={{ color: "var(--accent)", fontWeight: 500 }}
+            style={{ color: "var(--accent-text)", fontWeight: 500 }}
           >
             Clear
           </button>

@@ -417,7 +417,7 @@ export function MobileBottomNav({
                     transition: anim ?? "transform 0.22s cubic-bezier(0.34,1.56,0.64,1)",
                   }}>
                     <t.Icon size={22} strokeWidth={active ? 2.1 : 1.6}
-                      style={{ color: active ? "var(--accent)" : "var(--text-muted)" }} />
+                      style={{ color: active ? "var(--accent-text)" : "var(--text-muted)" }} />
                     {t.badge > 0 && (
                       <m.span
                         key={t.badge}
@@ -432,7 +432,10 @@ export function MobileBottomNav({
                     )}
                   </span>
                   <span className="lg-tab-label" style={{
-                    color: active ? "var(--accent)" : "var(--text-muted)",
+                    /* --accent-text, not --accent: the bright gold reads 3.0:1
+                       against the near-white nav glass, under AA for a 10px
+                       label. Identical value in dark mode. */
+                    color: active ? "var(--accent-text)" : "var(--text-muted)",
                     fontWeight: active ? 600 : 500,
                   }}>{t.label}</span>
                 </button>

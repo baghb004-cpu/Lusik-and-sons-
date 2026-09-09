@@ -230,7 +230,7 @@ export function AuthDrawer({ onClose, onAuthed }) {
   const t = titles[mode];
 
   // Reusable input class — matches the rest of the site's restrained styling.
-  const inputCls = "w-full px-4 py-3 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]";
+  const inputCls = "w-full px-4 py-3 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]";
   const inputStyle = { border: "1px solid rgba(26,22,18,0.15)" };
 
   // Compute the combined translateX: drag takes priority over peek.
@@ -256,7 +256,7 @@ export function AuthDrawer({ onClose, onAuthed }) {
         {/* Header */}
         <div className="flex items-start justify-between p-6 lg:p-8 border-b" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
           <div>
-            <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>{t.eyebrow}</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>{t.eyebrow}</p>
             <h2 className="font-display text-3xl lg:text-4xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               {t.heading[0]} <em style={{ fontWeight: 400 }}>{t.heading[1]}</em>.
             </h2>

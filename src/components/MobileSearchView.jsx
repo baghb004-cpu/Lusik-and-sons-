@@ -276,7 +276,7 @@ export function MobileSearchView({
                     type="button"
                     onClick={handleClearSearches}
                     className="text-sm"
-                    style={{ color: "var(--accent)", fontWeight: 500 }}
+                    style={{ color: "var(--accent-text)", fontWeight: 500 }}
                   >
                     {t("search.clear")}
                   </button>
@@ -354,7 +354,7 @@ export function MobileSearchView({
                             <FoundingPriceBadge />
                           </span>
                         ) : (
-                          <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 500 }}>{t("search.from", { price: r.priceFrom })}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--accent-text)", fontWeight: 500 }}>{t("search.from", { price: r.priceFrom })}</p>
                         );
                       })()}
                       {r.status === "placeholder" && !r.priceFrom && (

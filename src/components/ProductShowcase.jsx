@@ -821,8 +821,16 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                       }}
                       title={preset.description}
                     >
-                      {/* Tiny block-with-letter preview swatch — outline + depth */}
+                      {/* Tiny block-with-letter preview swatch — outline + depth.
+                          A picture of the cube as it will be stitched: the glyph
+                          is drawn in the actual DMC thread color, so its contrast
+                          is a property of the thread, not a styling choice. Same
+                          reasoning as BlanketLayoutPreview's role="img" — the
+                          preset's name sits beside it as real text, so color is
+                          never the only signal. */}
                       <div
+                        role="img"
+                        aria-label={`${preset.label} — ${block.name} outline, ${singleLetter.name} letters`}
                         className="flex items-center justify-center flex-shrink-0"
                         style={{
                           width: "32px", height: "32px",
@@ -1143,13 +1151,13 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   {layout.shortLabel}
                 </p>
                 <p className="text-xs opacity-70 mt-1 leading-snug">
-                  <span style={{ color: blockColor.hex, fontWeight: 600 }}>■</span> {t("pdp.cubeOutline", { name: blockColor.name })}
+                  <span aria-hidden="true" style={{ color: blockColor.hex, fontWeight: 600 }}>■</span> {t("pdp.cubeOutline", { name: blockColor.name })}
                 </p>
                 {letterColorList ? (
                   <p className="text-xs opacity-70 mt-0.5 leading-snug">
                     {letterColorList.map((c, idx) => (
                       <span key={c.dmc}>
-                        <span style={{ color: c.hex, fontWeight: 600 }}>■</span> {c.name}
+                        <span aria-hidden="true" style={{ color: c.hex, fontWeight: 600 }}>■</span> {c.name}
                         {idx < letterColorList.length - 1 ? " · " : ""}
                       </span>
                     ))}
@@ -1157,7 +1165,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   </p>
                 ) : (
                   <p className="text-xs opacity-70 mt-0.5 leading-snug">
-                    <span style={{ color: letterColor.hex, fontWeight: 600 }}>■</span> {t("pdp.letterInside", { name: letterColor.name })}
+                    <span aria-hidden="true" style={{ color: letterColor.hex, fontWeight: 600 }}>■</span> {t("pdp.letterInside", { name: letterColor.name })}
                   </p>
                 )}
                 <p className="text-xs opacity-70 mt-2">
