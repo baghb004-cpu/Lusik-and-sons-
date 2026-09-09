@@ -91,6 +91,16 @@ Paste this as the first message of the new Claude Code session:
   the Bari Akhorzhak set) are the owner's realistic numbers. **The website still says
   5 to 10 business days in several places.** Phase 3 aligns the site to the brochure.
 
+### 0.5 Progress log
+
+| Date | PR | Status | Notes |
+| --- | --- | --- | --- |
+| 2026-09-09 | PR 1, Phase 0: remove the Embroidery Studio | **Done**, on branch `claude/lusik-sons-brochure-gt38ja` (commits `df3d3e1` and the baseline commit after it). Open the pull request from that branch. | Deleted `public/embroidery/`, `StageHero`, `stitchPreviews`, the `embroidery-order` Function and test, and the stage CSP overrides; `/embroidery/*` now 301s to `/shop`. Added `ProductHero` (photo band, same box), `src/lib/designBus.ts` (`design:change`), the visual-regression suite (`tests/visual`, own config, `npm run test:visual`, CI job, 18 committed baselines), and the `PLAYWRIGHT_CHROMIUM_EXECUTABLE` override. Gates: typecheck clean; 135 unit tests pass; build under budget with the product page at 180 KB of 210; e2e 27 passed and 5 expected skips across both projects; visual baselines 18 of 18 stable on a second run. Cart and checkout are not in the visual suite yet (see the note in the spec). |
+
+Next up: PR 16 (capability ladder) or PR 2 (Loom core). PR 16 is the better
+first pick if the premium layer in section 11 is wanted, because every later PR
+reads its tier instead of inventing checks.
+
 ---
 
 ## 1. The storyboard
@@ -117,6 +127,8 @@ rule), and every product carries "colors vary."
 ---
 
 ## 2. Phase 0: remove the Embroidery Studio (PR 1)
+
+**Status: done (2026-09-09). Kept here as the record of what was removed and why.**
 
 The owner wants it gone entirely. The studio is a static SPA in `public/embroidery/`
 plus a Netlify Function, plus an iframe-embedded "stage" used by every live product
@@ -696,7 +708,7 @@ effects and the DEPTH tilt layer kept:
 
 | PR | Title | Phase | Depends on | Size | Risk | Flag / rollback |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Remove the Embroidery Studio, add ProductHero, design bus, visual baseline | 0 | none | M | Low | Revert |
+| 1 | Remove the Embroidery Studio, add ProductHero, design bus, visual baseline | 0 | none | M | Low | Revert. **Done 2026-09-09**, see 0.5 |
 | 2 | Loom core + alphabet blanket rig + PDP stage | 1 | 1 | XL | Medium | `CONFIG.LOOM.ENABLED` |
 | 3 | Bib rigs (name bib, Hye Em Yes) | 1 | 2 | L | Low | `CONFIG.LOOM.PRODUCTS` |
 | 4 | Set rigs (days, Anushig, Bari Akhorzhak) | 1 | 3 | L | Low | `CONFIG.LOOM.PRODUCTS` |
