@@ -72,6 +72,9 @@ export function LoomStage({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<{ dispose: () => void; setStitches: (s: PlannedStitch[]) => void } | null>(null);
   const planRef = useRef<((d: LoomDesign) => PlannedStitch[]) | null>(null);
+  // Stitch-in animation state. `shown` is fractional; the mesh floors it.
+  const revealRef = useRef({ shown: 0, total: 0, animating: false });
+  const applyRef = useRef<((d: LoomDesign) => void) | null>(null);
   const [phase, setPhase] = useState<Phase>("poster");
   const [armed, setArmed] = useState(false);
 
@@ -170,18 +173,83 @@ export function LoomStage({
         const orbit = createOrbit(camera, POSES.flat, { reducedMotion: reduced });
 
         const planFor = (d: LoomDesign) => planDesignFor(d).stitches;
-        rig.setStitches(planFor(design));
+        const applyDesign = (d: LoomDesign) => {
+          const planned = planFor(d);
+          rig.setStitches(planned);
+          // Work the piece in rather than popping it into existence. The
+          // planner already ordered the stitches the way a person works
+          // them — across each row, outlines last — so replaying that
+          // order reads as stitching. Under reduced motion it is just
+          // there.
+          if (reduced()) {
+            revealRef.current = { shown: planned.length, total: planned.length, animating: false };
+            host.dataset.loomStitching = "false";
+          } else {
+            rig.setRevealed(0);
+            revealRef.current = { shown: 0, total: planned.length, animating: true };
+            // A plain dataset write rather than React state: this flips
+            // twice per restitch and a re-render of the whole PDP for it
+            // would be absurd. It exists so a test can assert the piece
+            // is worked in rather than popped in — the animation is over
+            // in well under two seconds, which is too fast to catch
+            // reliably by screenshotting.
+            host.dataset.loomStitching = "true";
+          }
+        };
+        applyDesign(design);
         planRef.current = planFor;
+        applyRef.current = applyDesign;
 
         let last = performance.now();
         const frame = () => {
           const now = performance.now();
-          const moving = orbit.update(Math.min(0.05, (now - last) / 1000));
+          const dt = Math.min(0.05, (now - last) / 1000);
           last = now;
+
+          const reveal = revealRef.current;
+          if (reveal.animating) {
+            // A fixed DURATION rather than a fixed rate: a six-letter
+            // blanket and a full alphabet should both finish in about the
+            // same beat, or the big one would crawl.
+            const perSecond = reveal.total / (CONFIG.LOOM?.STITCH_IN_MS ?? 1400) * 1000;
+            reveal.shown = Math.min(reveal.total, reveal.shown + perSecond * dt);
+            rig.setRevealed(reveal.shown);
+            if (reveal.shown >= reveal.total) {
+              reveal.animating = false;
+              host.dataset.loomStitching = "false";
+            }
+          }
+
+          const moving = orbit.update(dt);
           renderer.renderer.render(scene, camera);
-          if (moving) renderer.invalidate();
+          if (moving || reveal.animating) renderer.invalidate();
         };
         renderer.start(frame);
+
+        // Drag to turn the piece. Pointer events cover mouse, touch and
+        // pen; scrolling a phone fires pointercancel, which ends the drag
+        // rather than dragging the blanket along with the page.
+        let dragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        const onDown = (e: PointerEvent) => {
+          dragging = true; lastX = e.clientX; lastY = e.clientY;
+          host.setPointerCapture?.(e.pointerId);
+        };
+        const onMove = (e: PointerEvent) => {
+          if (!dragging) return;
+          orbit.orbitBy((lastX - e.clientX) * 0.006, (lastY - e.clientY) * 0.005);
+          lastX = e.clientX; lastY = e.clientY;
+          renderer.invalidate();
+        };
+        const endDrag = (e: PointerEvent) => {
+          dragging = false;
+          host.releasePointerCapture?.(e.pointerId);
+        };
+        host.addEventListener("pointerdown", onDown);
+        host.addEventListener("pointermove", onMove);
+        host.addEventListener("pointerup", endDrag);
+        host.addEventListener("pointercancel", endDrag);
 
         const ro = new ResizeObserver(() => {
           const r = host.getBoundingClientRect();
@@ -194,7 +262,20 @@ export function LoomStage({
         // Only render while on screen. A canvas scrolled away is a canvas
         // that should cost nothing.
         const io = new IntersectionObserver(
-          ([entry]) => renderer.setVisible(entry.isIntersecting),
+          ([entry]) => {
+            renderer.setVisible(entry.isIntersecting);
+            // Scrolling away mid-stitch would freeze the piece half-worked:
+            // the loop stops, so the reveal stops, and scrolling back finds
+            // a blanket with half its letters missing. Nobody saw the
+            // animation anyway, so finish it.
+            if (!entry.isIntersecting && revealRef.current.animating) {
+              const reveal = revealRef.current;
+              reveal.shown = reveal.total;
+              reveal.animating = false;
+              rig.setRevealed(reveal.total);
+              host.dataset.loomStitching = "false";
+            }
+          },
           { rootMargin: "128px" },
         );
         io.observe(host);
@@ -206,6 +287,10 @@ export function LoomStage({
         engineRef.current = {
           setStitches: rig.setStitches,
           dispose: () => {
+            host.removeEventListener("pointerdown", onDown);
+            host.removeEventListener("pointermove", onMove);
+            host.removeEventListener("pointerup", endDrag);
+            host.removeEventListener("pointercancel", endDrag);
             ro.disconnect();
             io.disconnect();
             orbit.dispose();
@@ -231,9 +316,7 @@ export function LoomStage({
 
   // ---- restitch on a design change ----
   useEffect(() => {
-    const plan = planRef.current;
-    if (!plan) return;
-    engineRef.current?.setStitches(plan(design));
+    applyRef.current?.(design);
   }, [design]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {

@@ -119,19 +119,34 @@ export function createStitchMesh(capacity: number, opts: StitchMeshOptions): Sti
     }
     armA.count = current.length;
     armB.count = current.length;
+    revealed = current.length; // setStitches shows everything; the caller
+                               // calls setRevealed(0) to animate it in.
     armA.instanceMatrix.needsUpdate = true;
     armB.instanceMatrix.needsUpdate = true;
     if (armA.instanceColor) armA.instanceColor.needsUpdate = true;
     if (armB.instanceColor) armB.instanceColor.needsUpdate = true;
   };
 
+  // How many stitches are currently shown. Tracked so a reveal only
+  // touches the stitches that actually changed state.
+  let revealed = 0;
+
   const setRevealed = (count: number) => {
-    const shown = Math.max(0, Math.min(count, current.length));
-    for (let i = 0; i < current.length; i += 1) {
+    const shown = Math.max(0, Math.min(Math.floor(count), current.length));
+    if (shown === revealed) return;
+
+    // Rewriting every instance matrix each frame is O(n) per frame, and n
+    // is tens of thousands on a full alphabet blanket — that alone would
+    // miss the frame budget the animation exists to look good within.
+    // Only the stitches crossing the threshold need touching.
+    const from = Math.min(revealed, shown);
+    const to = Math.max(revealed, shown);
+    for (let i = from; i < to; i += 1) {
       const visible = i < shown;
       place(armA, i, current[i], DIAG_A, visible);
       place(armB, i, current[i], DIAG_B, visible);
     }
+    revealed = shown;
     armA.instanceMatrix.needsUpdate = true;
     armB.instanceMatrix.needsUpdate = true;
   };

@@ -99,6 +99,10 @@ export const CONFIG = {
     RETURN_TO_POSE_MS: 1200,
     // Poster to canvas crossfade. Cut instantly under reduced motion.
     CROSSFADE_MS: 250,
+    // How long the piece takes to stitch itself in. A duration, not a
+    // rate, so a six-letter blanket and a full alphabet finish in the
+    // same beat instead of the big one crawling.
+    STITCH_IN_MS: 1400,
   },
 
   // ============================================================
