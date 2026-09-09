@@ -80,6 +80,28 @@ export const CONFIG = {
   },
 
   // ============================================================
+  // LOOM — the real-time 3D product engine (src/loom/)
+  // ============================================================
+  // ENABLED is the kill switch for the whole engine: off, every stage
+  // renders its poster and the 2D BlanketLayoutPreview stays the live
+  // preview, which is also exactly what the `low` device tier gets. So
+  // turning this off is a well-trodden path, not an untested one.
+  //
+  // PRODUCTS lists the product keys whose pages mount a stage. It starts
+  // with the alphabet blanket alone and each later PR adds its rigs, so a
+  // rig that is not ready cannot reach a customer.
+  LOOM: {
+    ENABLED: true,
+    PRODUCTS: ["blanket-classic"],
+    QUERY_PARAM: "loom",
+    // Wait this long after the last keystroke before the camera drifts
+    // back from the slot being edited to the resting pose.
+    RETURN_TO_POSE_MS: 1200,
+    // Poster to canvas crossfade. Cut instantly under reduced motion.
+    CROSSFADE_MS: 250,
+  },
+
+  // ============================================================
   // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
   // ============================================================
   // No URLs or anon keys live here anymore. Identity reads its
