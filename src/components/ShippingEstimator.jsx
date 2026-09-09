@@ -66,7 +66,7 @@ export function ShippingEstimator({ subtotalCents }) {
           <span style={{ fontWeight: 500 }}>${est.dollars.toFixed(2)}</span>
         </div>
         <p className="opacity-55 italic mt-1.5">
-          {est.daysMin}–{est.daysMax} business days transit once it ships — add Lusik's production time (5–10 business days) for the full lead. Free over ${(CONFIG.FREE_SHIPPING_THRESHOLD_CENTS / 100).toFixed(0)}.
+          {est.daysMin}–{est.daysMax} business days transit once it ships. Each piece has its own build time before that, shown on its product page. Free over ${(CONFIG.FREE_SHIPPING_THRESHOLD_CENTS / 100).toFixed(0)}.
         </p>
         <button
           type="button"

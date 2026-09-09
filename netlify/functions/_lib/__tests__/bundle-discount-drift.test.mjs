@@ -184,7 +184,11 @@ test("checkout keeps the promotion-code field on every session", () => {
   // allow_promotion_codes). Guarded here because the failure is silent:
   // the field just disappears for multi-item carts.
   const src = readFileSync(new URL("../../create-checkout-session.mjs", import.meta.url), "utf8");
-  assert.match(src, /allow_promotion_codes:\s*true/, "promotion codes must be enabled");
-  assert.equal(/^\s*discounts:/m.test(src), false, "a session must not attach a discounts array");
-  assert.equal(/stripe\.coupons\./.test(src), false, "the bundle savings no longer use a Stripe coupon");
+  // Strip line comments: the prose above deliberately explains why there is
+  // no discounts array, and the old anchored pattern both missed indented
+  // real code and tripped over the comment.
+  const code = src.replace(/^\s*\/\/.*$/gm, "");
+  assert.match(code, /allow_promotion_codes:\s*true/, "promotion codes must be enabled");
+  assert.equal(/\bdiscounts\s*:/.test(code), false, "a session must not attach a discounts array");
+  assert.equal(/stripe\.coupons\./.test(code), false, "the bundle savings no longer use a Stripe coupon");
 });

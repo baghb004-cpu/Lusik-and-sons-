@@ -40,7 +40,7 @@ import {
   Instagram, Mail, Minus, Phone, Plus, Share2, X, ZoomIn,
 } from "./icons.jsx";
 
-export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown, soldOut = false, notifyKey, immersive = false }) {
+export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown, soldOut = false, notifyKey, immersive = false, leadTimeKey = "blanket-alphabet" }) {
   const toast = useToast();
   const t = useT();
   const { lang } = useLang();
@@ -169,7 +169,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
 
   // Lead-time engine: this product's own build time plus the live queue
   // ahead of it, as concrete dates (SITE_OVERHAUL_HANDOFF.md, PR 9).
-  const lead = useLeadTime("blanket-alphabet");
+  const lead = useLeadTime(leadTimeKey);
 
   const [color, setColor] = useState(product.colors[0]);
   const [alphabet, setAlphabet] = useState(product.alphabets[0]);
@@ -1207,7 +1207,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           {soldOut ? (
             <SoldOutPanel name={product.name} productKey={notifyKey ?? "blanket-double_diag_br"} className="mb-4" />
           ) : (<>
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard productKey={leadTimeKey} className={immersive ? "" : "hidden lg:block"}>
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center border" style={{ borderColor: "var(--border-strong)" }}>
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3" aria-label="Decrease quantity"><Minus size={14} /></button>
@@ -1270,12 +1270,19 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               live queue ahead of it (src/lib/leadTime.js + the /lead-time
               Function), turned into concrete dates. Recomputed on every
               render from today's date so it never goes stale. */}
-          {/* data-live-dates: these strings move every day, so the
-              visual-regression suite masks this element instead of
-              re-baselining the page each morning. */}
+          {/* Before mount (and with JavaScript off) this shows the weeks
+              range, which never goes stale in a prerendered page; the exact
+              dates appear once the visitor's own clock is available.
+              data-live-dates lets the visual suite mask the moving text. */}
           <p className="text-xs opacity-70 leading-relaxed mb-4" data-live-dates="">
-            <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: lead.shipBy })}</span>
-            <span>{t("pdp.arrives", { date: lead.arrives })}</span>
+            {lead.ready ? (
+              <>
+                <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: lead.shipBy })}</span>
+                <span>{t("pdp.arrives", { date: lead.arrives })}</span>
+              </>
+            ) : (
+              <span style={{ fontWeight: 500 }}>{t("pdp.shipsWeeks", { weeks: lead.weeksText })}</span>
+            )}
             <span className="block mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
           </p>
           <div className="grid grid-cols-3 gap-2">

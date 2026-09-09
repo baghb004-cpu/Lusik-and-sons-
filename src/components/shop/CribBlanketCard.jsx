@@ -195,7 +195,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             </span>
           </div>
 
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard productKey={product?.key} className={immersive ? "" : "hidden lg:block"}>
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}

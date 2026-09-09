@@ -303,16 +303,20 @@ export default async (req) => {
       return null; // the audit must never break the order write
     }
   })();
-  // Bundle-discount note — the orders row stores the pre-discount
-  // subtotal (trusted prices) while total_cents reflects what Stripe
-  // actually charged, so spell out the delta for Lusik's bookkeeping.
+  // Bundle-discount note — since the multi-piece savings are applied by
+  // REDUCING the line-item prices (see _lib/bundle-discount.mjs), the
+  // subtotal stored on this row is already NET of them. Spell the savings
+  // out so the discount stays visible in Lusik's bookkeeping. A redeemed
+  // promotion code, which the hosted page now offers on every order, can
+  // lower total_cents further on its own, so this note describes the
+  // bundle savings only — not the full gap between subtotal and total.
   const bundleNote = (() => {
     const cents = Number(pending.bundle_discount_cents) || 0;
     if (cents <= 0) return null;
     const units = Number(pending.bundle_units) || 0;
     return `BUNDLE DISCOUNT — $${(cents / 100).toFixed(2)} off applied at checkout`
       + (units > 1 ? ` (${units} pieces; every piece after the first saves $1)` : "")
-      + `. Total reflects the discount; subtotal is pre-discount.`;
+      + `. Already deducted from the item prices, so the subtotal above is net of it.`;
   })();
   const adminNotes = [reconstructedNote, zoneMismatchNote, bundleNote].filter(Boolean).join("\n\n") || null;
   const giftReminderOptIn = pending.gift_reminder_opt_in === true;

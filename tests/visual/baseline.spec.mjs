@@ -89,7 +89,7 @@ for (const [name, path] of PAGES) {
       // Anything printing a live date is painted over: product pages quote
       // concrete ship-by and arrives-by dates that move every single day,
       // and re-baselining nine pages each morning is not a test.
-      mask: page.locator(LIVE_DATES),
+      mask: [page.locator(LIVE_DATES)],
     });
   });
 }

@@ -459,7 +459,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         ) : (<>
         {/* Add to Bag + Buy it now — inside the Apple-style purchase card
             (delivery & pickup details on top, buy buttons at the bottom) */}
-        <PurchaseCard className={immersive ? "mt-2" : "hidden lg:block mt-2"}>
+        <PurchaseCard productKey="bib-single" className={immersive ? "mt-2" : "hidden lg:block mt-2"}>
           <button
             onClick={handleAdd}
             disabled={!canAdd || adding}

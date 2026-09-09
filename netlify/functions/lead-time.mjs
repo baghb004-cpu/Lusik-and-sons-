@@ -16,15 +16,13 @@
 // The number of days per open order and the ceiling are dials in
 // CONFIG.LEAD_TIMES; this endpoint only reports the raw count and the
 // derived buffer so a stale browser bundle can still do its own math.
+// The arithmetic lives in _lib/lead-time-queue.mjs so the drift test can
+// call it directly instead of pattern-matching this file.
 // ============================================================
 
 import { sql }  from "./_lib/db.mjs";
 import { json } from "./_lib/json.mjs";
-
-// Mirrors CONFIG.LEAD_TIMES (src/data/config.js); the lead-time drift
-// unit test keeps the two in lockstep, same pattern as pricing.
-const QUEUE_DAYS_PER_OPEN_ORDER = 2;
-const QUEUE_BUFFER_CAP_DAYS = 21;
+import { queueDaysFor } from "./_lib/lead-time-queue.mjs";
 
 export default async (req) => {
   if (req.method !== "GET") {
@@ -41,10 +39,7 @@ export default async (req) => {
         AND fulfillment_status NOT IN ('shipped', 'delivered', 'cancelled')
     `;
     const openOrders = Number(rows?.[0]?.open_orders) || 0;
-    const queueDays = Math.max(
-      0,
-      Math.min(Math.ceil(openOrders * QUEUE_DAYS_PER_OPEN_ORDER), QUEUE_BUFFER_CAP_DAYS),
-    );
+    const queueDays = queueDaysFor(openOrders);
 
     return new Response(JSON.stringify({ openOrders, queueDays }), {
       status: 200,

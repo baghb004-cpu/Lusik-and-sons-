@@ -16,6 +16,7 @@
 // ============================================================
 
 import React, { useState } from "react";
+import { useLeadTime } from "../lib/useLeadTime";
 import { CONFIG } from "../data/config.js";
 
 function Chevron({ open }) {
@@ -50,7 +51,10 @@ function PinIcon() {
   );
 }
 
-export function DeliveryPickupDetails({ className = "" }) {
+export function DeliveryPickupDetails({ className = "", productKey = null }) {
+  // This piece's own build time. Timeless before mount (these pages are
+  // prerendered), concrete dates once the visitor's clock is available.
+  const lead = useLeadTime(productKey || "");
   const [open, setOpen] = useState(false);
   const pickup = CONFIG.LOCAL_PICKUP || {};
   const pickupOn = pickup.ENABLED !== false;
@@ -88,9 +92,17 @@ export function DeliveryPickupDetails({ className = "" }) {
             <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }}><BoxIcon /></span>
             <div>
               <p className="text-sm" style={{ fontWeight: 600, color: "var(--text-primary)" }}>Free U.S. shipping</p>
-              <p className="text-sm opacity-70 leading-relaxed">
-                {CONFIG.DELIVERY_NOTE || "Made to order — hand-stitched, then shipped to your door."}
-              </p>
+              {productKey ? (
+                <p className="text-sm opacity-70 leading-relaxed" data-live-dates="">
+                  {lead.ready
+                    ? `Ships ${lead.shipBy}, arrives ${lead.arrives}.`
+                    : `Made to order in ${lead.weeksText}, then 3 to 5 business days in transit.`}
+                </p>
+              ) : (
+                <p className="text-sm opacity-70 leading-relaxed">
+                  {CONFIG.DELIVERY_NOTE || "Made to order — hand-stitched, then shipped to your door."}
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -287,7 +287,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
               Desktop-only normally (MobilePurchaseBar is the mobile buy
               surface); UN-hidden in immersive mode so the delivery details +
               buy buttons live inside the immersive sheet on mobile. */}
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard productKey={product?.key} className={immersive ? "" : "hidden lg:block"}>
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}

@@ -21,16 +21,32 @@ import { readFileSync } from "node:fs";
 const { CONFIG } = await import("../../../../src/data/config.js");
 const lead = await import("../../../../src/lib/leadTime.js");
 
-const SERVER_SRC = readFileSync(new URL("../../lead-time.mjs", import.meta.url), "utf8");
+const queue = await import("../lead-time-queue.mjs");
 
 test("the server's queue dials match CONFIG.LEAD_TIMES", () => {
-  const perOrder = /QUEUE_DAYS_PER_OPEN_ORDER\s*=\s*(\d+)/.exec(SERVER_SRC);
-  const cap = /QUEUE_BUFFER_CAP_DAYS\s*=\s*(\d+)/.exec(SERVER_SRC);
-  assert.ok(perOrder && cap, "lead-time.mjs must declare both queue constants");
-  assert.equal(Number(perOrder[1]), CONFIG.LEAD_TIMES.QUEUE_DAYS_PER_OPEN_ORDER,
-    "QUEUE_DAYS_PER_OPEN_ORDER drift between config.js and lead-time.mjs");
-  assert.equal(Number(cap[1]), CONFIG.LEAD_TIMES.QUEUE_BUFFER_CAP_DAYS,
-    "QUEUE_BUFFER_CAP_DAYS drift between config.js and lead-time.mjs");
+  assert.equal(queue.QUEUE_DAYS_PER_OPEN_ORDER, CONFIG.LEAD_TIMES.QUEUE_DAYS_PER_OPEN_ORDER,
+    "QUEUE_DAYS_PER_OPEN_ORDER drift between config.js and _lib/lead-time-queue.mjs");
+  assert.equal(queue.QUEUE_BUFFER_CAP_DAYS, CONFIG.LEAD_TIMES.QUEUE_BUFFER_CAP_DAYS,
+    "QUEUE_BUFFER_CAP_DAYS drift between config.js and _lib/lead-time-queue.mjs");
+  assert.equal(queue.QUEUE_ENABLED, CONFIG.LEAD_TIMES.QUEUE_ENABLED,
+    "QUEUE_ENABLED drift between config.js and _lib/lead-time-queue.mjs");
+});
+
+test("server and browser compute the SAME buffer for real inputs", () => {
+  // Behavioural, not textual: an earlier version matched the Function's
+  // source with a regex and passed happily when the formula was mutated.
+  for (const n of [0, 1, 2, 3, 5, 7, 10, 11, 20, 500, -3, 1.7, NaN]) {
+    assert.equal(queue.queueDaysFor(n), lead.queueBufferDays(n),
+      `queue buffer drift at openOrders=${n}`);
+  }
+});
+
+test("the endpoint actually uses the shared queue math", () => {
+  // Cheap structural guard: the Function must not re-inline the formula.
+  const src = readFileSync(new URL("../../lead-time.mjs", import.meta.url), "utf8");
+  assert.match(src, /queueDaysFor\(/, "lead-time.mjs must call the shared queueDaysFor()");
+  assert.equal(/QUEUE_DAYS_PER_OPEN_ORDER\s*=/.test(src), false,
+    "lead-time.mjs must not redeclare the queue dials — import them");
 });
 
 test("every live product has a lead time, ordered low-to-high and sane", () => {

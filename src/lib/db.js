@@ -222,7 +222,13 @@ function _initDb() {
   // the product's own build time.
   const getLeadTime = async () => {
     try {
-      return await call("/lead-time", { auth: false });
+      // call() wraps every response as { error, data } — unwrap it the way
+      // getInventory does, and normalize so success and failure share a shape.
+      const { data } = await call("/lead-time", { method: "GET", auth: false });
+      return {
+        openOrders: Number(data?.openOrders) || 0,
+        queueDays: Number(data?.queueDays) || 0,
+      };
     } catch {
       return { openOrders: 0, queueDays: 0 };
     }

@@ -1059,7 +1059,7 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     </div>
 
     <p style="font-size:14px;color:${muted};margin:0 0 24px 0;">
-      Made by hand, made-to-order. Each piece takes 5–10 business days before it ships.
+      Made by hand, made to order. Each piece has its own build time, shown on its product page, before it ships.
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -1082,7 +1082,7 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     "",
     `Have a look: ${href}`,
     "",
-    `Made by hand, made-to-order. Each piece takes 5–10 business days before it ships.`,
+    `Made by hand, made to order. Each piece has its own build time, shown on its product page, before it ships.`,
     "",
     `Lusik & Sons · ${url}`,
     "",
@@ -1170,7 +1170,7 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
     </div>
 
     <p style="font-size:14px;color:${muted};margin:0 0 12px 0;">
-      Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
+      Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -1197,7 +1197,7 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
     "",
     `Pick up where you left off: ${url}/`,
     "",
-    `Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
+    `Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
     "",
     `Lusik & Sons · ${url}`,
     "",

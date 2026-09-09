@@ -37,6 +37,7 @@ import { PaymentMethodsRow } from "./PaymentMethodsRow.jsx";
 import { StillHaveQuestionsCard } from "./shop/HelpDecidingSection.jsx";
 import { PRODUCT } from "../data/product.js";
 import { bundleSavingsForCart } from "../lib/bundleDiscount.js";
+import { slowestKey, weeksLabel } from "../lib/leadTime.js";
 import { productPathForCartItem } from "../lib/productUrl.js";
 import { CartItemThumb } from "./CartItemThumb.jsx";
 import { X, ShoppingBag, ArrowRight, Check, ChevronDown } from "./icons.jsx";
@@ -350,7 +351,10 @@ export function CartContents({
                   <div className="text-[0.7rem] leading-relaxed pb-4" style={{ opacity: 0.7 }}>
                     <p className="mb-2">Every piece is made to order and finished by hand by Lusik in Southern California, so work begins as soon as you check out. Because each order is personalized, all sales are final — see our{" "}
                       <button type="button" onClick={() => openPolicy("finalSale")} className="underline">Final Sale Policy</button>.</p>
-                    <p className="mb-2">Most orders ship within 5–10 business days; the Full Alphabet Crib Blanket — every letter, by hand — needs 3–4 weeks. We ship within the United States via USPS, UPS, or FedEx (your choice at checkout). Shipping costs and any duties are the customer's responsibility.</p>
+                    {/* Timing comes from the lead-time engine, keyed off the
+                        slowest piece in this bag — never a hardcoded promise
+                        that can drift from the policy and the brochure. */}
+                    <p className="mb-2">This order ships in {weeksLabel(slowestKey(cart.map((it) => it.productKey || it.id)))}, then 3 to 5 business days in transit. We ship within the United States via USPS, UPS, or FedEx (your choice at checkout). Shipping costs and any duties are the customer's responsibility.</p>
                     <p className="mb-2">Payment is processed securely by Stripe — your card details are never seen or stored by Lusik &amp; Sons.</p>
                     <p>Full details: our{" "}
                       <button type="button" onClick={() => openPolicy("terms")} className="underline">Terms of Service</button>,{" "}

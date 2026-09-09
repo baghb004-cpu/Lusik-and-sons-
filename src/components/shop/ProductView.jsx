@@ -161,6 +161,7 @@ export function ProductView({
           </div>
         )}
         <ProductShowcase
+          leadTimeKey={product.key}
           product={productData}
           onAdd={onAdd}
           onBuyNow={onBuyNow}
