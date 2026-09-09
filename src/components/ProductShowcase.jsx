@@ -1270,7 +1270,10 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               live queue ahead of it (src/lib/leadTime.js + the /lead-time
               Function), turned into concrete dates. Recomputed on every
               render from today's date so it never goes stale. */}
-          <p className="text-xs opacity-70 leading-relaxed mb-4">
+          {/* data-live-dates: these strings move every day, so the
+              visual-regression suite masks this element instead of
+              re-baselining the page each morning. */}
+          <p className="text-xs opacity-70 leading-relaxed mb-4" data-live-dates="">
             <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: lead.shipBy })}</span>
             <span>{t("pdp.arrives", { date: lead.arrives })}</span>
             <span className="block mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>

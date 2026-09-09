@@ -14,6 +14,9 @@
 // ============================================================
 import { test, expect } from "@playwright/test";
 
+// Elements whose text is a live date. Masked in every capture.
+const LIVE_DATES = "[data-live-dates]";
+
 const PAGES = [
   ["home", "/"],
   ["shop", "/shop"],
@@ -31,11 +34,9 @@ test.beforeEach(async ({ context, page }) => {
   // runner's core count, network or battery (the tier projects in the e2e
   // config exercise the other tiers on purpose).
   await context.addInitScript(() => { try { sessionStorage.setItem("lusik_tier_session_v1", "full"); } catch {} });
-  // Freeze the wall clock. Product pages print concrete ship-by and
-  // arrives-by dates from the lead-time engine, so a baseline captured
-  // today would fail tomorrow. Time still flows from this instant, so
-  // timers and transitions behave normally.
-  await page.clock.setSystemTime(new Date("2026-06-15T12:00:00Z"));
+  // NOTE: the lead-time dates are computed during the SERVER render, so a
+  // browser-side clock pin cannot freeze them. They are masked at capture
+  // time instead (see LIVE_DATES below).
   await page.emulateMedia({ reducedMotion: "reduce" });
   // No Netlify Functions in the test server: answer the public reads
   // with quiet, in-stock defaults so every page renders its normal state.
@@ -83,6 +84,12 @@ for (const [name, path] of PAGES) {
   test(`baseline: ${name}`, async ({ page }) => {
     await page.goto(path, { waitUntil: "networkidle" });
     await settle(page);
-    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true });
+    await expect(page).toHaveScreenshot(`${name}.png`, {
+      fullPage: true,
+      // Anything printing a live date is painted over: product pages quote
+      // concrete ship-by and arrives-by dates that move every single day,
+      // and re-baselining nine pages each morning is not a test.
+      mask: page.locator(LIVE_DATES),
+    });
   });
 }
