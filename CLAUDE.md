@@ -43,6 +43,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 >    cover CCPA/GDPR rights; and every build enforces a **210 KB gzip
 >    first-load JS budget** per route (`scripts/check-bundle-budget.mjs`).
 
+> **Overhaul plan (Sept 2026):** `SITE_OVERHAUL_HANDOFF.md` is the phase-by-phase plan
+> for the site overhaul (remove the Embroidery Studio, real-time 3D product engine,
+> storyboarded pages, lead-time engine, order milestones). Plan only; nothing built yet.
+
 ## What this is
 
 A marketing + e-commerce site for **Lusik & Sons**, a Buena Park, CA maker of hand
