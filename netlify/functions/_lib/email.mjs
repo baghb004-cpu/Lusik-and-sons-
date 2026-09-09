@@ -395,6 +395,13 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
   ` : "";
 
   const url = baseUrl();
+  // The guest's only way back to their order: most customers here never
+  // make an account. Empty when no secret is configured, in which case the
+  // email simply omits the link rather than shipping a guessable one.
+  const followToken = signOrderToken(order.id);
+  const followUrl = followToken
+    ? `${url}/order/${encodeURIComponent(followToken)}?id=${encodeURIComponent(order.id)}`
+    : "";
   const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
   <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
@@ -443,6 +450,13 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
       <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
+    ${followUrl ? `<p style="margin:0 0 22px 0;">
+      <a href="${followUrl}" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">Follow your order &rarr;</a>
+    </p>
+    <p style="font-size:13px;color:${muted};margin:0 0 22px 0;">
+      That link shows each step as Lusik works, and it needs no account. Keep this email to come back to it.
+    </p>` : ""}
+
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
@@ -483,6 +497,8 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     `  ${CONTACT.email}`,
     `  ${CONTACT.phoneDisplay}`,
     "",
+    followUrl ? `Follow your order: ${followUrl}` : "",
+    followUrl ? "" : null,
     `Made by hand in Southern California.`,
     `${url}`,
   ].filter(Boolean).join("\n");
@@ -1228,17 +1244,6 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
       Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
     </p>
 
-    ${(() => {
-      const token = signOrderToken(order.id);
-      if (!token) return "";
-      const followUrl = `${url}/order/${encodeURIComponent(token)}?id=${encodeURIComponent(order.id)}`;
-      return `<p style="margin:0 0 22px 0;">
-      <a href="${followUrl}" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">Follow your order &rarr;</a>
-    </p>
-    <p style="font-size:13px;color:${muted};margin:0 0 22px 0;">
-      That link shows each step as Lusik works, and it needs no account. Keep this email to come back to it.
-    </p>`;
-    })()}
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Southern California.</em><br>
@@ -1265,9 +1270,6 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
     `Pick up where you left off: ${url}/`,
     "",
     `Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
-    ...(signOrderToken(order.id)
-      ? ["", `Follow your order: ${url}/order/${encodeURIComponent(signOrderToken(order.id))}?id=${encodeURIComponent(order.id)}`]
-      : []),
     "",
     `Lusik & Sons · ${url}`,
     "",

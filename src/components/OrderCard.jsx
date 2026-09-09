@@ -14,9 +14,8 @@
 //
 // ============================================================
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { OrderTimeline } from "./OrderTimeline.jsx";
-import { db } from "../lib/db.js";
 import { getTrackingUrl } from "../lib/tracking";
 import { ArrowRight, Check } from "./icons.jsx";
 import { STAGES as ORDER_STAGES, statusToStageIndex } from "./adminStatusLabels.js";
@@ -80,17 +79,9 @@ export function OrderProgressTimeline({ status }) {
   );
 }
 export function OrderCard({ order, onReorder }) {
-  // The customer's copy of the timeline. Fail-soft: if the read fails
-  // the card renders exactly as it did before this feature existed.
-  const [timeline, setTimeline] = useState([]);
-  useEffect(() => {
-    let alive = true;
-    if (!order?.id) return undefined;
-    db.getOrderMilestones(order.id)
-      .then((d) => { if (alive && Array.isArray(d?.milestones)) setTimeline(d.milestones); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, [order?.id]);
+  // The timeline rides along on the order row (see netlify/functions/
+  // orders.mjs), so a page of order cards costs no extra requests.
+  const timeline = Array.isArray(order?.milestones) ? order.milestones : [];
 
   const statusLabel = (() => {
     // Money-status takes precedence over fulfillment-status for

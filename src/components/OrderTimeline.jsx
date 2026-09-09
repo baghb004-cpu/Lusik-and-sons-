@@ -25,9 +25,13 @@ export function OrderTimeline({ rows, className = "" }) {
   const lastDone = steps.reduce((acc, s, i) => (s.done ? i : acc), -1);
 
   return (
-    <ol className={`flex flex-col ${className}`} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+    // role="list" restores the semantics Tailwind's preflight strips from a
+    // list-style-none <ol> in Safari/VoiceOver.
+    <ol role="list" aria-label="Progress on your piece" className={`flex flex-col ${className}`} style={{ listStyle: "none", margin: 0, padding: 0 }}>
       {steps.map((step, i) => {
         const isNext = !step.done && i === lastDone + 1;
+        // Done-ness is carried in text, not only in opacity and colour.
+        const state = step.done ? "Done" : isNext ? "In progress" : "Not started yet";
         return (
           <li key={step.key} className="flex gap-3" style={{ opacity: step.done ? 1 : isNext ? 0.75 : 0.45 }}>
             {/* rail: a filled dot for what is done, a hollow one for what is coming */}
@@ -48,6 +52,7 @@ export function OrderTimeline({ rows, className = "" }) {
             <div className="pb-4" style={{ flex: 1 }}>
               <p className="text-sm leading-tight" style={{ fontWeight: step.done ? 600 : 500, color: "var(--text-primary)" }}>
                 {step.label}
+                <span className="sr-only">{` — ${state}`}</span>
                 {step.at && <span className="ml-2 text-xs" style={{ fontWeight: 400, opacity: 0.6 }}>{fmt(step.at)}</span>}
               </p>
               <p className="text-xs leading-relaxed mt-0.5" style={{ opacity: 0.75 }}>

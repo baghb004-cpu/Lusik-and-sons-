@@ -36,6 +36,15 @@ export function Providers({ children }: { children: ReactNode }) {
   // visitor opted out ("Your privacy choices" in the footer / Privacy Policy)
   // or their browser sends a Global Privacy Control signal. Opting out
   // mid-session flips it back off; un-opting re-injects without a reload.
+  // A follow-along link is a capability URL: the signed token IS the path
+  // segment. Both ad tags report document.location on load and on every
+  // SPA navigation, which would hand that token to Meta and Google. Keep
+  // them silent for the whole /order/ route — reading pathname before the
+  // consent state means the <Script> tags are never emitted at all on a
+  // direct click from the customer's email.
+  const pathname = usePathname();
+  const isCapabilityUrl = typeof pathname === "string" && pathname.startsWith("/order/");
+
   const [adsAllowed, setAdsAllowed] = useState(false);
   useEffect(() => {
     setAdsAllowed(!adsOptedOut());
@@ -47,12 +56,14 @@ export function Providers({ children }: { children: ReactNode }) {
   // Fire a Meta Pixel PageView on client-side route changes (the base
   // pixel code below only fires the initial one). Skip the first run so
   // the landing page isn't counted twice.
-  const pathname = usePathname();
   const firstPixelRun = useRef(true);
   useEffect(() => {
     if (!META_PIXEL_ID) return;
     if (firstPixelRun.current) { firstPixelRun.current = false; return; }
     if (adsOptedOut()) return;
+    // Never report a capability URL, even on a navigation away from it:
+    // fbq sends document.location, which still holds the token.
+    if (isCapabilityUrl) return;
     (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.("track", "PageView");
   }, [pathname]);
 
@@ -173,12 +184,12 @@ export function Providers({ children }: { children: ReactNode }) {
       {UMAMI_ID && UMAMI_SRC ? (
         <Script src={UMAMI_SRC} data-website-id={UMAMI_ID} strategy="afterInteractive" />
       ) : null}
-      {META_PIXEL_ID && adsAllowed ? (
+      {META_PIXEL_ID && adsAllowed && !isCapabilityUrl ? (
         <Script id="meta-pixel-base" strategy="afterInteractive">
           {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`}
         </Script>
       ) : null}
-      {GOOGLE_ADS_ID && adsAllowed ? (
+      {GOOGLE_ADS_ID && adsAllowed && !isCapabilityUrl ? (
         <>
           <Script
             id="google-ads-gtag-src"

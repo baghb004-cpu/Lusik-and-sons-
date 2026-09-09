@@ -69,12 +69,20 @@ export default async (req, context) => {
         `;
         const order = claimed?.[0];
         if (order?.customer_email) {
-          await sendStitchingStartedEmail({
+          const sent = await sendStitchingStartedEmail({
             to: order.customer_email,
             orderNumber: order.order_number,
             orderId: order.id,
             note,
-          }).catch(() => {});
+          }).catch(() => false);
+          if (!sent) {
+            // Give the claim back so a retry can still reach the customer.
+            // Without this a momentary Resend outage loses the email
+            // permanently, since the gate would stay stamped.
+            await sql`
+              UPDATE orders SET stitching_emailed_at = NULL WHERE id = ${orderId}
+            `.catch(() => {});
+          }
         }
       } catch (err) {
         console.error("stitching email skipped:", err?.message || err);

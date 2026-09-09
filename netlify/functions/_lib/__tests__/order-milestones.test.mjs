@@ -92,3 +92,82 @@ test("the timeline shows every step, marks what is done, and keeps the newest no
   assert.equal(browser.buildTimeline(null).length, 6);
   assert.equal(browser.currentStep([]), null);
 });
+
+// ============================================================
+// Every email composer must actually render
+// ============================================================
+// The follow-along block was once pasted into the cart-recovery
+// composer, which has no `order` in scope: every recovery send threw a
+// ReferenceError, the webhook swallowed it, and the email was lost for
+// good. Nothing caught it because no test ever rendered a composer.
+//
+// With RESEND_API_KEY unset, sendEmail() returns false AFTER the body is
+// built, so a broken template still surfaces as a rejection here.
+
+const ORDER = {
+  id: A,
+  customer_email: "customer@example.com",
+  order_number: "LS-2026-0001",
+  total_cents: 6500,
+  shipping_address: { city: "Buena Park", state: "CA" },
+};
+
+test("every composer renders without throwing", async () => {
+  const saved = process.env.RESEND_API_KEY;
+  delete process.env.RESEND_API_KEY;
+  try {
+    const email = await import("../email.mjs");
+    await assert.doesNotReject(() => email.sendCartAbandonmentRecovery({
+      to: "customer@example.com",
+      items: [{ productName: "The Custom Name Bib", quantity: 1, unitPriceCents: 2200 }],
+      totalCents: 2200,
+    }), "cart recovery must render");
+    await assert.doesNotReject(() => email.sendCustomerOrderConfirmation({
+      order: ORDER,
+      items: [{ productName: "The Custom Name Bib", quantity: 1 }],
+      pending: null,
+      customerName: "Ann",
+    }), "order confirmation must render");
+    await assert.doesNotReject(() => email.sendStitchingStartedEmail({
+      to: "customer@example.com",
+      orderNumber: ORDER.order_number,
+      orderId: ORDER.id,
+      note: "Starting on the border today.",
+    }), "stitching notice must render");
+  } finally {
+    if (saved !== undefined) process.env.RESEND_API_KEY = saved;
+  }
+});
+
+test("the follow-along link lives in the confirmation email, not the cart recovery", async () => {
+  // Capture what would be sent by stubbing fetch, so the assertion is
+  // about the real body rather than the absence of a throw.
+  const savedKey = process.env.RESEND_API_KEY;
+  const savedFetch = globalThis.fetch;
+  const bodies = [];
+  process.env.RESEND_API_KEY = "test-key";
+  globalThis.fetch = async (_u, init) => {
+    bodies.push(JSON.parse(init.body));
+    return { ok: true, status: 200, text: async () => "" };
+  };
+  try {
+    const email = await import("../email.mjs");
+    bodies.length = 0;
+    await email.sendCustomerOrderConfirmation({
+      order: ORDER, items: [{ productName: "Bib", quantity: 1 }], pending: null, customerName: "Ann",
+    });
+    assert.match(bodies[0]?.html ?? "", /\/order\//, "the confirmation must carry the follow link");
+
+    bodies.length = 0;
+    await email.sendCartAbandonmentRecovery({
+      to: "customer@example.com",
+      items: [{ productName: "Bib", quantity: 1, unitPriceCents: 2200 }],
+      totalCents: 2200,
+    });
+    assert.equal(/\/order\//.test(bodies[0]?.html ?? ""), false,
+      "an abandoned cart has no order yet — it must not carry an order link");
+  } finally {
+    globalThis.fetch = savedFetch;
+    if (savedKey !== undefined) process.env.RESEND_API_KEY = savedKey; else delete process.env.RESEND_API_KEY;
+  }
+});

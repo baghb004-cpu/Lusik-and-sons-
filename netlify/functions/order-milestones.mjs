@@ -18,7 +18,7 @@
 
 import { sql }  from "./_lib/db.mjs";
 import { json } from "./_lib/json.mjs";
-import { requireUser } from "./_lib/auth.mjs";
+import { requireUser, isAdmin } from "./_lib/auth.mjs";
 import { verifyOrderToken } from "./_lib/order-tokens.mjs";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -39,10 +39,16 @@ export default async (req, context) => {
     const auth = await requireUser(req, context);
     if (!auth.response && auth.user?.id) {
       try {
-        const owned = await sql`
-          SELECT 1 FROM orders WHERE id = ${orderId} AND user_id = ${auth.user.id} LIMIT 1
-        `;
-        allowed = (owned?.length ?? 0) > 0;
+        // Lusik reads the same timeline from the admin panel, and she is
+        // not the order's owner — same pattern as order-photo-get.
+        if (isAdmin(auth.user)) {
+          allowed = true;
+        } else {
+          const owned = await sql`
+            SELECT 1 FROM orders WHERE id = ${orderId} AND user_id = ${auth.user.id} LIMIT 1
+          `;
+          allowed = (owned?.length ?? 0) > 0;
+        }
       } catch (err) {
         console.error("order-milestones ownership check failed:", err?.message || err);
         return json(500, { error: "Could not load the timeline" });
