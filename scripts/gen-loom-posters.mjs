@@ -51,7 +51,92 @@ const PRODUCTS = [
       lineColor: "#8B2C2C",
     },
   },
+  {
+    key: "bib-single",
+    file: "name-bib.webp",
+    width: 1000,
+    height: 1000,
+    clothColor: "#FFFFFF",
+    rig: "bib",
+    design: { name: "Anahit", threadColor: "#8B2C2C" },
+  },
 ];
+
+function bibHarness(product) {
+  const { design } = product;
+  return `<!doctype html><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Allura&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<canvas id="c" width="${product.width}" height="${product.height}"></canvas>
+<script type="importmap">{"imports":{"three":"/three/three.module.js"}}</script>
+<script type="module">
+window.__done = (async () => {
+  const { createRenderer, createCamera } = await import("/core/renderer.js");
+  const { createScene } = await import("/core/scene.js");
+  const { createOrbit, POSES } = await import("/core/camera.js");
+  const { createBibRig } = await import("/rigs/bib.js");
+  // The name is machine embroidery in a script face. Without Allura it
+  // falls back to a serif, which reads as print rather than stitching.
+  //
+  // document.fonts.check() CANNOT be trusted here: with the stylesheet
+  // request blocked it still returns true, because a fallback family
+  // satisfies the query. The only honest test is to measure — a real
+  // script face and the generic fallback do not produce the same advance
+  // width for the same string.
+  try { await document.fonts.load('400 48px "Allura"'); await document.fonts.ready; } catch {}
+  ${FONT_GUARD}
+  __requireFont("Allura", "Anahit");
+
+  const canvas = document.getElementById("c");
+  const handle = createRenderer({ canvas, tier: "high" });
+  const { scene } = createScene(false);
+  const camera = createCamera(${product.width} / ${product.height});
+  const rig = createBibRig({ textureSize: 1024, clothColor: ${JSON.stringify(product.clothColor)} });
+  scene.add(rig.group);
+  rig.setDesign(${JSON.stringify(design)});
+
+  const pose = { ...POSES.flat, distance: 3.4, polar: 0.5 };
+  const orbit = createOrbit(camera, pose, { reducedMotion: () => true });
+  orbit.goTo(pose, true);
+
+  handle.resize(${product.width}, ${product.height});
+  handle.start(() => handle.renderer.render(scene, camera));
+  handle.invalidate();
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  handle.renderer.render(scene, camera);
+  const dataUrl = canvas.toDataURL("image/webp", 0.9);
+  return { stitches: 0, dataUrl };
+})();
+</script>`;
+}
+
+/**
+ * A canvas silently falls back when a webfont is missing, and
+ * document.fonts.check() is no help — with the stylesheet request blocked
+ * it still returns true, because a fallback family satisfies the query.
+ * The only honest test is to measure: both stacks below name the SAME
+ * fallback, so identical advance widths mean the real face is absent.
+ *
+ * (Comparing against a DIFFERENT generic family does not work: those
+ * differ whether or not the face loaded, so the guard passes while the
+ * poster bakes the wrong typeface. That is how the first version of this
+ * shipped a serif name onto a bib.)
+ */
+const FONT_GUARD = `
+  const __probe = document.createElement("canvas").getContext("2d");
+  const __fontLoaded = (family, sample) => {
+    __probe.font = '400 48px "' + family + '", monospace';
+    const a = __probe.measureText(sample).width;
+    __probe.font = "400 48px monospace";
+    const b = __probe.measureText(sample).width;
+    return Math.abs(a - b) >= 0.5;
+  };
+  const __requireFont = (family, sample) => {
+    if (!__fontLoaded(family, sample)) {
+      throw new Error(family + " did not load; refusing to bake a poster in the fallback face");
+    }
+  };
+`;
 
 function log(...args) { console.log("[loom-posters]", ...args); }
 
@@ -64,20 +149,27 @@ function compile() {
     compilerOptions: {
       module: "esnext", target: "es2020", moduleResolution: "bundler",
       allowJs: true, checkJs: false, skipLibCheck: true,
-      outDir: join(WORK, "js"), rootDir: join(ROOT, "src", "loom"),
+      // rootDir is src/, not src/loom/: the engine imports shared pure
+      // modules from src/data (blanketLayout.js is the placement both
+      // renderers use). With the narrower rootDir tsc tries to emit those
+      // over their own sources and fails with TS5055.
+      outDir: join(WORK, "js"), rootDir: join(ROOT, "src"),
     },
     // The React shell is not needed and would drag in JSX.
     include: [join(ROOT, "src", "loom", "**/*")],
     exclude: [join(ROOT, "src", "loom", "LoomStage.tsx"), join(ROOT, "src", "loom", "index.ts")],
   }, null, 2));
   execFileSync(process.execPath, [join(ROOT, "node_modules", "typescript", "bin", "tsc"), "-p", tsconfig], { stdio: "inherit" });
-  mkdirSync(join(WORK, "js", "three"), { recursive: true });
+  // Beside the compiled engine, because that is the directory the harness
+  // is served from and the import map points at "/three/three.module.js".
+  mkdirSync(join(WORK, "js", "loom", "three"), { recursive: true });
   for (const f of ["three.module.js", "three.core.js"]) {
-    writeFileSync(join(WORK, "js", "three", f), readFileSync(join(ROOT, "node_modules", "three", "build", f)));
+    writeFileSync(join(WORK, "js", "loom", "three", f), readFileSync(join(ROOT, "node_modules", "three", "build", f)));
   }
 }
 
 function harness(product) {
+  if (product.rig === "bib") return bibHarness(product);
   const { design } = product;
   return `<!doctype html><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
@@ -93,6 +185,11 @@ window.__done = (async () => {
   const { makeChartResolver } = await import("/stitch/rasterize.js");
   const { planDesign } = await import("/stitch/planner.js");
   try { await document.fonts.load('600 40px "Fraunces"'); await document.fonts.ready; } catch {}
+  ${FONT_GUARD}
+  // The letters are rasterised from the display face. A fallback serif
+  // still draws correct Armenian, but it is not the site's typeface, and
+  // a poster baked in the wrong one would not match the live stage.
+  __requireFont("Fraunces", "\u0531\u0532\u0533");
 
   const W = 13, H = 15;
   const chartFor = makeChartResolver({});
@@ -151,7 +248,7 @@ async function main() {
   compile();
   mkdirSync(OUT_DIR, { recursive: true });
 
-  const jsRoot = join(WORK, "js");
+  const jsRoot = join(WORK, "js", "loom");
   const pages = new Map();
   const server = createServer((req, res) => {
     const path = decodeURIComponent(req.url.split("?")[0]);
@@ -166,7 +263,12 @@ async function main() {
     const candidates = extname(path) ? [path] : [path, `${path}.js`, `${path}/index.js`];
     for (const candidate of candidates) {
       try {
-        const body = readFileSync(join(jsRoot, candidate));
+        // Shared modules land beside loom/ under js/, so try both roots.
+      const body = readFileSync(
+        candidate.startsWith("/data/") || candidate.startsWith("/lib/")
+          ? join(WORK, "js", candidate)
+          : join(jsRoot, candidate),
+      );
         res.writeHead(200, {
           "content-type": extname(candidate) === ".html" ? "text/html" : "text/javascript; charset=utf-8",
         });

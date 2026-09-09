@@ -16,7 +16,7 @@ import { buildLayoutCells, GRID } from "../data/blanketLayout.js";
 import { CAPITAL_H, CAPITAL_W, CUBE_OUTLINE } from "./stitch/chart.js";
 import { planDesign } from "./stitch/planner.js";
 import { makeChartResolver } from "./stitch/rasterize.js";
-import type { LoomDesign } from "./LoomStage";
+import type { LoomDesign } from "./types";
 
 /**
  * Turn the configurator's state into every stitch on the cloth.

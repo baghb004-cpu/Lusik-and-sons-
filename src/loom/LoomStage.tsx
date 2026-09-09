@@ -22,22 +22,9 @@ import { getGpuSignal, getTier } from "../lib/capability";
 import { LOOM_BUILD_TAG } from "./buildTag";
 import { readLoomOverride, resolveLoomTier, LOOM_SETTINGS } from "./tier.js";
 import type { PlannedStitch } from "./stitch/mesh";
+import type { LoomDesign } from "./types";
 
-/** The design, as the configurator already holds it. */
-export interface LoomDesign {
-  /** Letters worked into the cube grid, in order. */
-  letters: string[];
-  /** The chosen layout — its `preview` array places the cubes. */
-  layout: { preview: number[] };
-  /** Outline colour of the cubes. */
-  blockColor: string;
-  /** Thread colour for the letters, or one per letter cycling. */
-  letterColor: string;
-  letterColors?: string[] | null;
-  /** The customer's two personalisation lines. */
-  line1?: string;
-  line2?: string;
-}
+export type { LoomDesign } from "./types";
 
 export interface LoomStageProps {
   /** Which rig to build. Must be listed in CONFIG.LOOM.PRODUCTS. */
