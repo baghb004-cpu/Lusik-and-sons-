@@ -21,8 +21,7 @@ import { CONFIG } from "../data/config.js";
 import { getGpuSignal, getTier } from "../lib/capability";
 import { LOOM_BUILD_TAG } from "./buildTag";
 import { readLoomOverride, resolveLoomTier, LOOM_SETTINGS } from "./tier.js";
-import type { PlannedStitch } from "./stitch/mesh";
-import type { LoomDesign } from "./types";
+import type { BibDesign, LoomDesign } from "./types";
 
 export type { LoomDesign } from "./types";
 
@@ -44,7 +43,7 @@ export interface LoomStageProps {
   /** Text alternative — describes the DESIGN, not the widget. */
   label: string;
   /** The design. Changing it restitches; planning happens in the engine chunk. */
-  design: LoomDesign;
+  design: LoomDesign | BibDesign;
   /** Body colour of the cloth. */
   clothColor?: string;
   className?: string;
@@ -57,11 +56,10 @@ export function LoomStage({
 }: LoomStageProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const engineRef = useRef<{ dispose: () => void; setStitches: (s: PlannedStitch[]) => void } | null>(null);
-  const planRef = useRef<((d: LoomDesign) => PlannedStitch[]) | null>(null);
+  const engineRef = useRef<{ dispose: () => void } | null>(null);
   // Stitch-in animation state. `shown` is fractional; the mesh floors it.
   const revealRef = useRef({ shown: 0, total: 0, animating: false });
-  const applyRef = useRef<((d: LoomDesign) => void) | null>(null);
+  const applyRef = useRef<((d: LoomStageProps["design"]) => void) | null>(null);
   const [phase, setPhase] = useState<Phase>("poster");
   const [armed, setArmed] = useState(false);
 
@@ -126,14 +124,13 @@ export function LoomStage({
         // the glyph rasteriser from page code would put them in the route's
         // first-load JS for a feature most visitors never trigger.
         const [
-          { createRenderer, createCamera }, { createScene }, { createBlanketRig },
-          { createOrbit, POSES }, { planDesignFor },
+          { createRenderer, createCamera }, { createScene }, { createRigFor },
+          { createOrbit, POSES },
         ] = await Promise.all([
           import("./core/renderer"),
           import("./core/scene"),
-          import("./rigs/alphabetBlanket"),
+          import("./rigs/index"),
           import("./core/camera"),
-          import("./design"),
         ]);
         if (disposed) return;
         const canvas = canvasRef.current;
@@ -153,27 +150,32 @@ export function LoomStage({
         const { scene } = createScene(settings.shadows);
         const rect = host.getBoundingClientRect();
         const camera = createCamera(Math.max(0.5, rect.width / Math.max(1, rect.height)));
-        const rig = createBlanketRig({ textureSize: settings.textureSize, clothColor });
+        const rig = createRigFor(productKey, { textureSize: settings.textureSize, clothColor });
+        if (!rig) {
+          // No rig for this product yet. The poster (or fallback) is a
+          // correct thing to show, so this is not a failure.
+          renderer.dispose();
+          return;
+        }
         scene.add(rig.group);
 
         const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
         const orbit = createOrbit(camera, POSES.flat, { reducedMotion: reduced });
 
-        const planFor = (d: LoomDesign) => planDesignFor(d).stitches;
-        const applyDesign = (d: LoomDesign) => {
-          const planned = planFor(d);
-          rig.setStitches(planned);
+        const applyDesign = (d: LoomStageProps["design"]) => {
+          const total = rig.apply(d);
           // Work the piece in rather than popping it into existence. The
           // planner already ordered the stitches the way a person works
           // them — across each row, outlines last — so replaying that
           // order reads as stitching. Under reduced motion it is just
-          // there.
-          if (reduced()) {
-            revealRef.current = { shown: planned.length, total: planned.length, animating: false };
+          // there. A rig reporting 0 (the machine-embroidered bib) has
+          // nothing to work in.
+          if (reduced() || total === 0 || !rig.setRevealed) {
+            revealRef.current = { shown: total, total, animating: false };
             host.dataset.loomStitching = "false";
           } else {
             rig.setRevealed(0);
-            revealRef.current = { shown: 0, total: planned.length, animating: true };
+            revealRef.current = { shown: 0, total, animating: true };
             // A plain dataset write rather than React state: this flips
             // twice per restitch and a re-render of the whole PDP for it
             // would be absurd. It exists so a test can assert the piece
@@ -182,9 +184,14 @@ export function LoomStage({
             // reliably by screenshotting.
             host.dataset.loomStitching = "true";
           }
+          // Rendering is on demand, so changing the design changes nothing
+          // on screen until a frame is asked for. Without this the canvas
+          // keeps showing the previous state: the bib stayed bare while the
+          // customer typed their child's name into it, and the blanket only
+          // ever appeared to restitch because MOUNTING requests a frame.
+          renderer.invalidate();
         };
         applyDesign(design);
-        planRef.current = planFor;
         applyRef.current = applyDesign;
 
         let last = performance.now();
@@ -194,7 +201,7 @@ export function LoomStage({
           last = now;
 
           const reveal = revealRef.current;
-          if (reveal.animating) {
+          if (reveal.animating && rig.setRevealed) {
             // A fixed DURATION rather than a fixed rate: a six-letter
             // blanket and a full alphabet should both finish in about the
             // same beat, or the big one would crawl.
@@ -255,7 +262,7 @@ export function LoomStage({
             // the loop stops, so the reveal stops, and scrolling back finds
             // a blanket with half its letters missing. Nobody saw the
             // animation anyway, so finish it.
-            if (!entry.isIntersecting && revealRef.current.animating) {
+            if (!entry.isIntersecting && revealRef.current.animating && rig.setRevealed) {
               const reveal = revealRef.current;
               reveal.shown = reveal.total;
               reveal.animating = false;
@@ -272,7 +279,6 @@ export function LoomStage({
         requestAnimationFrame(() => { if (!disposed) setPhase("live"); });
 
         engineRef.current = {
-          setStitches: rig.setStitches,
           dispose: () => {
             host.removeEventListener("pointerdown", onDown);
             host.removeEventListener("pointermove", onMove);

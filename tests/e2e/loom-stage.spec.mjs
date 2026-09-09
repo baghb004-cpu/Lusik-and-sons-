@@ -92,6 +92,48 @@ test.describe("Loom stage", () => {
       .toBeLessThanOrEqual(stageBox.height + 2);
   });
 
+
+  test("typing a name changes what the engine draws", async ({ page }) => {
+    // The renderer draws ON DEMAND. A design change that does not request
+    // a frame changes nothing on screen — the bib stayed bare while the
+    // customer typed their child's name into it, and the blanket only
+    // seemed to work because MOUNTING happens to request a frame. Mount
+    // and update are different paths and this asserts the second one.
+    //
+    // HONEST LIMITATION: this asserts the OUTCOME, not the mechanism.
+    // Removing the renderer.invalidate() that fixes it does NOT fail this
+    // test, because focusing and filling an input also nudges the resize
+    // and intersection observers, which request frames of their own. So it
+    // guards "typing changes the picture", which is what a customer cares
+    // about, but it will not tell you the explicit invalidate has gone.
+    // Keep that line: on a page where nothing else reflows, it is the only
+    // thing that redraws.
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto("/shop/bibs/baby-bib");
+
+    const stage = page.locator("[data-loom]").first();
+    await expect(stage).toBeAttached();
+    await stage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") {
+      test.info().annotations.push({ type: "loom", description: "engine did not run; update path not exercised" });
+      return;
+    }
+
+    const canvas = stage.locator("canvas");
+    const before = await canvas.screenshot();
+    await page.locator('input[autocomplete="given-name"]').first().fill("Anahit");
+    // Poll rather than sleep: the redraw is a frame, not a transition.
+    await expect.poll(async () => {
+      const after = await canvas.screenshot();
+      return Buffer.compare(before, after) === 0 ? "unchanged" : "changed";
+    }, { timeout: 20_000 }).toBe("changed");
+  });
+
   test("the stage describes the design, not the widget", async ({ page }) => {
     await page.route("**/.netlify/functions/**", (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));

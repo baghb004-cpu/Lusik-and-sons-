@@ -557,6 +557,9 @@ export const TRANSLATIONS = {
 
     // Bib configurator (CustomProductCard).
     bib: {
+      // Text alternative for the bib preview; the 2D template and the 3D
+      // stage share it, so it must describe the DESIGN not the widget.
+      previewAlt: "Preview of the bib embroidered with {name}",
       errSize: "Please choose a size.",
       errName: "Please type a name to embroider.",
       errTooLong: "Name must be {n} letters or fewer — the bib is small.",
@@ -1250,6 +1253,8 @@ export const TRANSLATIONS = {
 
     // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
     bib: {
+      // ⚠️ TODO_LUSIK_REVIEW — auto-translated, needs a native speaker.
+      previewAlt: "{name} ասեղնագործված թքակալի նախադիտում",
       errSize: "Խնդրում ենք ընտրել չափ։",
       errName: "Խնդրում ենք մուտքագրել ասեղնագործելու անուն։",
       errTooLong: "Անունը պետք է լինի {n} տառ կամ պակաս — թքակալը փոքր է։",

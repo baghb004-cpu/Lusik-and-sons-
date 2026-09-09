@@ -9,7 +9,12 @@
 //
 // ============================================================
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import dynamic from "next/dynamic";
+
+// The 3D engine. next/dynamic with ssr:false keeps three.js out of this
+// route's first-load JS; the bundle gate fails the build if it leaks in.
+const LoomStage = dynamic(() => import("../loom/index").then((m) => m.LoomStage), { ssr: false });
 import { publishDesign } from "../lib/designBus";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
@@ -101,6 +106,14 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
 
   const maxNameLength = config.maxNameLength ?? 6;
   const cleanName = customName.trim();
+
+  // What the 3D stage embroiders. Memoised: LoomStage redraws the decal on
+  // every identity change, and a fresh object each render would re-rasterise
+  // the name on every keystroke of any field on the page.
+  const bibDesign = useMemo(() => ({
+    name: cleanName,
+    threadColor: (supportsColor && letterColor?.hex) || "#8B2C2C",
+  }), [cleanName, supportsColor, letterColor?.hex]);
   const canAdd = !!size && cleanName.length > 0 && cleanName.length <= maxNameLength;
 
   // Double-tap guard — same shape as ProductShowcase's add-to-cart.
@@ -204,10 +217,20 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           while the customer scrolls through name / color / size below.
           `lg:top-24` clears the sticky nav (~80px) with breathing room. */}
       <div className="relative aspect-square overflow-hidden lg:sticky lg:top-24 lg:self-start" style={{ background: "linear-gradient(135deg, #FAF6EC 0%, #EFE7D6 100%)" }}>
-        <ProductTemplate
-          customName={customName}
-          nameColor={supportsColor && !letterColorList ? letterColor?.hex : null}
-          nameColors={supportsColor && letterColorList ? letterColorList.map(c => c.hex) : null}
+        <LoomStage
+          productKey={config.key}
+          label={t("bib.previewAlt", { name: cleanName || "" })}
+          design={bibDesign}
+          /* The 2D template is the fallback, and it is live: a visitor
+             whose device cannot run the engine still watches the name
+             appear as they type. */
+          fallback={(
+            <ProductTemplate
+              customName={customName}
+              nameColor={supportsColor && !letterColorList ? letterColor?.hex : null}
+              nameColors={supportsColor && letterColorList ? letterColorList.map(c => c.hex) : null}
+            />
+          )}
         />
         {/* Empty-state placeholder — hides as soon as the customer types.
             Shows a simple "type a name to preview yours" hint over the

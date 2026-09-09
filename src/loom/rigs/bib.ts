@@ -16,8 +16,8 @@ import {
   DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path,
   PlaneGeometry, Shape, TorusGeometry,
 } from "three";
-import { clothMaps } from "../materials/cloth.js";
-import { scriptDecal, type ScriptDecal } from "../stitch/script.js";
+import { clothMaps } from "../materials/cloth";
+import { scriptDecal, type ScriptDecal } from "../stitch/script";
 import type { BibDesign } from "../types";
 
 export interface BibRigOptions {
