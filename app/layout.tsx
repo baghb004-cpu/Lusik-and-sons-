@@ -13,6 +13,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
+import { CONFIG } from "../src/data/config.js";
 import { SiteChrome } from "../src/components/SiteChrome.jsx";
 import {
   SITE_URL,
@@ -64,9 +65,29 @@ export const metadata: Metadata = {
   // would wrongly propagate "/" to every non-overriding page).
 };
 
+// Capability ladder, pre-paint stamp (src/lib/capability.ts refines after
+// hydration). Reads the visitor's choice, a ?tier= test pin, then the cheap
+// synchronous signals, and sets <html data-tier> before first paint so the
+// lean/core CSS applies during the slow hydration window on exactly the
+// devices that need it. Keep this in step with capabilityTier.js. The
+// attribute is added outside React, hence suppressHydrationWarning on <html>.
+const TIER_BOOT = `(function(){try{var ok={full:1,lean:1,core:1};var t=null;try{var c=localStorage.getItem("lusik_tier_v1");if(c&&ok[c])t=c;}catch(e){}
+if(!t){try{var q=new URLSearchParams(location.search).get(${JSON.stringify(CONFIG.TIERS?.QUERY_PARAM || "tier")});if(q&&ok[q]){sessionStorage.setItem("lusik_tier_session_v1",q);t=q;}else{var s=sessionStorage.getItem("lusik_tier_session_v1");if(s&&ok[s])t=s;}}catch(e){}}
+if(!t){var n=navigator.connection||{};var et=String(n.effectiveType||"");var m=navigator.deviceMemory;var k=navigator.hardwareConcurrency;
+if(/(^|-)2g$/.test(et)||(typeof m=="number"&&m<2))t="core";else if(et==="3g"||n.saveData||(typeof m=="number"&&m<=3)||(typeof k=="number"&&k<=2))t="lean";}
+if(t)document.documentElement.setAttribute("data-tier",t);}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {CONFIG.TIERS?.ENABLED !== false ? <script dangerouslySetInnerHTML={{ __html: TIER_BOOT }} /> : null}
+        {/* JavaScript off is the "core" tier by definition and no script can stamp
+            it, so the core motion cut rides in a <noscript> style instead. */}
+        <noscript>
+          <style>{`html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}`}</style>
+        </noscript>
+      </head>
       <body>
         {/* The Netlify Identity widget is loaded by <Providers> with
             strategy="afterInteractive" (off the critical render path) instead

@@ -44,6 +44,8 @@ export function useTilt3D({ max = 6, touchMax = 4 }: Tilt3DOptions = {}) {
       if (!el || typeof window === "undefined" || !window.matchMedia) return;
 
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+      // Capability ladder: lean and core tiers browse without the tilt.
+      const lean = () => { const t = document.documentElement.dataset.tier; return !!t && t !== "full"; };
       let raf = 0;
       let hovering = false; // fine-pointer hover in progress
       let pressed = false; // touch press in progress
@@ -90,14 +92,14 @@ export function useTilt3D({ max = 6, touchMax = 4 }: Tilt3DOptions = {}) {
       };
 
       const onEnter = (e: PointerEvent) => {
-        if (e.pointerType === "touch" || reduced.matches) return;
+        if (e.pointerType === "touch" || reduced.matches || lean()) return;
         hovering = true;
         limit = max;
         el.setAttribute("data-t3d-live", "");
         track(e);
       };
       const onDown = (e: PointerEvent) => {
-        if (e.pointerType !== "touch" || reduced.matches) return;
+        if (e.pointerType !== "touch" || reduced.matches || lean()) return;
         pressed = true;
         limit = touchMax;
         el.setAttribute("data-t3d-live", "");

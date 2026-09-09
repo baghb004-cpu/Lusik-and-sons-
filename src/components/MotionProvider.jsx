@@ -25,11 +25,15 @@
 // ============================================================
 
 import { LazyMotion, domAnimation, MotionConfig } from "framer-motion";
+import { useTier } from "../lib/useTier";
 
 export function MotionProvider({ children }) {
+  // Capability ladder: the "core" tier cuts JS-driven motion the same way
+  // the CSS block cuts keyframes (Framer keeps opacity, drops transforms).
+  const tier = useTier();
   return (
     <LazyMotion features={domAnimation} strict>
-      <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      <MotionConfig reducedMotion={tier === "core" ? "always" : "user"}>{children}</MotionConfig>
     </LazyMotion>
   );
 }

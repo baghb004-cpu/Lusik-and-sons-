@@ -26,7 +26,11 @@ const PAGES = [
   ["story", "/story"],
 ];
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ context, page }) => {
+  // Pin the capability ladder to "full" so a baseline never depends on the
+  // runner's core count, network or battery (the tier projects in the e2e
+  // config exercise the other tiers on purpose).
+  await context.addInitScript(() => { try { sessionStorage.setItem("lusik_tier_session_v1", "full"); } catch {} });
   await page.emulateMedia({ reducedMotion: "reduce" });
   // No Netlify Functions in the test server: answer the public reads
   // with quiet, in-stock defaults so every page renders its normal state.
@@ -65,6 +69,9 @@ async function settle(page) {
     ])
   );
   await page.evaluate(() => document.fonts?.ready);
+  // The stylesheet must have applied; otherwise a broken server would write
+  // unstyled baselines in --update-snapshots mode without anyone noticing.
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg-page").trim()), { timeout: 10_000 }).not.toBe("");
 }
 
 for (const [name, path] of PAGES) {

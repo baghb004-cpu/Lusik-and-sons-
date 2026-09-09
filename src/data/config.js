@@ -64,6 +64,22 @@ export const CONFIG = {
   },
 
   // ============================================================
+  // CAPABILITY LADDER — full / lean / core (SITE_OVERHAUL_HANDOFF.md 11.1)
+  // ============================================================
+  // One device-tier decision that every asset class reads instead of
+  // sniffing on its own (src/lib/capability.ts + capabilityTier.js).
+  // <html data-tier> carries it to CSS; "capability:change" to JS.
+  //   ENABLED      false = everyone is "full", toggle hidden, no signals read
+  //   QUERY_PARAM  ?tier=full|lean|core pins the tier for the tab (testing)
+  //   RUM          report LCP / INP / CLS + tier through track() — only
+  //                when Umami is configured; otherwise nothing loads
+  TIERS: {
+    ENABLED: true,
+    QUERY_PARAM: "tier",
+    RUM: true,
+  },
+
+  // ============================================================
   // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
   // ============================================================
   // No URLs or anon keys live here anymore. Identity reads its

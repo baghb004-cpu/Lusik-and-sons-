@@ -29,6 +29,7 @@
 // ============================================================
 
 import React, { useEffect, useState } from "react";
+import { TierToggle } from "./TierToggle.jsx";
 import Image from "next/image";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
@@ -526,6 +527,11 @@ export function HomeView({
               <p className="text-sm mt-2 leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{label}</p>
             </button>
           ))}
+        </div>
+        {/* Capability ladder: the mobile home has no footer, so the
+            "lighter version" choice lives in this strip instead. */}
+        <div className="mt-6 rounded-2xl p-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}>
+          <TierToggle />
         </div>
         <p className="text-[0.7rem] opacity-45 text-center mt-8 leading-relaxed">
           © {new Date().getFullYear()} Lusik &amp; Sons · Made in Southern California

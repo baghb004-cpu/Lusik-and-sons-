@@ -43,9 +43,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 >    cover CCPA/GDPR rights; and every build enforces a **210 KB gzip
 >    first-load JS budget** per route (`scripts/check-bundle-budget.mjs`).
 
-> **Overhaul plan (Sept 2026):** `SITE_OVERHAUL_HANDOFF.md` is the phase-by-phase plan
-> for the site overhaul (remove the Embroidery Studio, real-time 3D product engine,
-> storyboarded pages, lead-time engine, order milestones). Plan only; nothing built yet.
+> **Overhaul (Sept 2026):** `SITE_OVERHAUL_HANDOFF.md` is the phase-by-phase plan
+> for the site overhaul (real-time 3D product engine, storyboarded pages, lead-time
+> engine, order milestones, the premium layer). Done so far: **PR 1** (the Embroidery
+> Studio is gone; product pages open on a photo hero; `designBus`; the visual-regression
+> suite) and **PR 16** (the capability ladder, see "Capability ladder" below). The
+> document's progress log says what is next.
 
 ## What this is
 
@@ -447,6 +450,12 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
    `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it for both Playwright configs instead
    of downloading the pinned revision.
 
+4. **Capability-ladder tiers** (`tests/e2e/tiers.spec.mjs`) — run only by the
+   `lean-3g` and `core-2g` projects in `playwright.config.mjs` (part of
+   `npm run test:e2e`): the throttled phone gets a usable page with the decorative
+   motion off and a tier choice that persists; the JavaScript-off browser still
+   browses, reads a product, and finds the phone number.
+
 ### One-time Netlify setup (fresh site)
 
 1. Connect the GitHub repo to a Netlify site.
@@ -462,6 +471,43 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
 ## Features beyond the core architecture
 
 A condensed list of things wired up that aren't obvious from the architecture overview.
+
+### Capability ladder — full / lean / core (Sept 2026)
+
+One device-tier decision that every asset class reads instead of sniffing on its
+own (`SITE_OVERHAUL_HANDOFF.md` 11.1). `src/lib/capability.ts` runs once on the
+client (from `app/providers.tsx`), reads the real signals (network type, Save-Data,
+`prefers-reduced-data`, rtt/downlink, `deviceMemory`, `hardwareConcurrency`, the
+storage estimate, battery, a measured first-image time, screen and preference media
+queries, and a WebGL probe deferred to idle), and resolves a tier through the pure
+resolver in `src/lib/capabilityTier.js` (plain JS so the Node 20 unit test can
+import it):
+
+- **full** — 4G+, 4 GB+ RAM, desktop or recent phone. Everything on.
+- **lean** — 3G, Save-Data / reduced-data, 2 to 3 GB RAM, two cores or fewer, a
+  dying battery, or a slow measured first image. Decorative motion off (theater
+  rise-ins, alphabet marquee, glare and shine, stagger), no speculative prefetch, no
+  DEPTH tilt.
+- **core** — 2G, under 2 GB RAM, or storage nearly full. Every animation and
+  transition collapses to a cut. The site also works with JavaScript off entirely
+  (server-rendered pages, `<noscript>` note with the phone number on the two
+  configurator products).
+
+The tier is published two ways: `<html data-tier>` for CSS (the "CAPABILITY LADDER"
+block at the end of `src/styles/index.css`) and the `capability:change` window
+event for JS (`useTier()` hook, `prefetchAllowed()`, `useTilt3D`). Detection may
+only *lower* the tier mid-session; the visitor's own choice may do anything: the
+"Lighter version" checkbox (`TierToggle`, in the desktop footer and the mobile
+For You "More" strip) persists in `localStorage` (`lusik_tier_v1`) and always wins,
+and `?tier=full|lean|core` pins the tier for the tab (`sessionStorage`) for
+testing. Dials: `CONFIG.TIERS`.
+
+`src/lib/rum.ts` reports LCP / INP / CLS plus the tier through the consent-aware
+`track()` wrapper, and only when Umami is configured; otherwise it imports nothing.
+The Playwright projects `lean-3g` (CDP Slow-3G + 4x CPU) and `core-2g` (JavaScript
+disabled) run `tests/e2e/tiers.spec.mjs` only; the smoke suite stays on the two
+rendering projects. Later PRs (photos, video, 3D, fonts, storage) read
+`getTier()` / `useTier()` instead of inventing their own checks.
 
 ### Gift-occasion reminder (opt-in, one-year-later email)
 - Checkbox at checkout (default off) → `orders.gift_reminder_opt_in`.

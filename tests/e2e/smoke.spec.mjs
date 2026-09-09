@@ -37,6 +37,9 @@ function watchForConsoleErrors(page, errors) {
 test.beforeEach(async ({ context }) => {
   await context.addInitScript(() => {
     try { localStorage.setItem("lusik_lang_v1", "en"); } catch {}
+    // Capability ladder: pin "full" so the smoke suite is deterministic on
+    // any runner; tests/e2e/tiers.spec.mjs covers the lean and core tiers.
+    try { sessionStorage.setItem("lusik_tier_session_v1", "full"); } catch {}
   });
 });
 

@@ -25,6 +25,9 @@ export const TRANSLATIONS = {
     // Photo hero at the top of every live product page (ProductHero)
     productHero: {
       eyebrow: "Made by hand in Buena Park, California",
+      noscriptLead: "The design tool on this page needs JavaScript, which is off in your browser. You can still order: call or text ",
+      noscriptOr: ", or email ",
+      noscriptTail: ", and Lusik will set the design up with you.",
     },
     // Navigation (desktop + mobile)
     nav: {
@@ -179,6 +182,8 @@ export const TRANSLATIONS = {
       returnsPolicy: "Returns & Exchanges",
       privacyPolicy: "Privacy Policy",
       privacyChoices: "Your privacy choices",
+      lighterVersion: "Lighter version",
+      lighterVersionHint: "Fewer animations and lighter pages. Turns itself on for slow connections and low-memory phones.",
       termsOfService: "Terms of Service",
       contactUs: "Contact Us",
       repliesNote: "Lusik writes back herself, usually within a day.",

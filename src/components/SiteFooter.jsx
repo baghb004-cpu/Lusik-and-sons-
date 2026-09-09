@@ -10,6 +10,7 @@
 // ============================================================
 
 import React from "react";
+import { TierToggle } from "./TierToggle.jsx";
 import { BetaTranslationBadge } from "./BetaTranslationBadge.jsx";
 import { NewsletterSignup } from "./NewsletterSignup.jsx";
 import { FooterLangToggle } from "./FooterLangToggle.jsx";
@@ -60,6 +61,8 @@ export function SiteFooter({ onOpenPolicy }) {
               <button onClick={() => openPolicy("privacyChoices")} className="text-left hover:opacity-60">{t("footer.privacyChoices")}</button>
               <button onClick={() => openPolicy("terms")} className="text-left hover:opacity-60">{t("footer.termsOfService")}</button>
               <button onClick={() => nav.goPage("contact")} className="text-left hover:opacity-60">{t("footer.contactUs")}</button>
+              {/* Capability ladder: the visitor's own "lighter version" choice. */}
+              <TierToggle className="mt-2" />
             </div>
           </div>
 

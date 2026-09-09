@@ -45,6 +45,27 @@ import { inventoryKeyForCatalog } from "../../lib/inventory";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
 
+// The two configurators need JavaScript. With scripts off (the ladder's
+// "core" path, exercised by the core-2g Playwright project) the page still
+// renders the product, the price and this note, so nobody hits a dead end.
+function NoScriptNote() {
+  const t = useT();
+  const c = CONFIG.TEXT_US || {};
+  return (
+    <noscript>
+      <div className="max-w-5xl mx-auto px-6 lg:px-12 pt-6" data-noscript-note="">
+        <p className="text-sm leading-relaxed" style={{ color: "var(--text-primary)" }}>
+          {t("productHero.noscriptLead")}
+          <a href={`tel:${c.phone_e164 || ""}`} className="underline">{c.phone_display || ""}</a>
+          {t("productHero.noscriptOr")}
+          <a href={`mailto:${c.email || ""}`} className="underline">{c.email || ""}</a>
+          {t("productHero.noscriptTail")}
+        </p>
+      </div>
+    </noscript>
+  );
+}
+
 export function ProductView({
   category,
   product,
@@ -133,6 +154,7 @@ export function ProductView({
           price={productData?.price != null ? `$${productData.price}` : null}
           inline={immersive}
         />
+        <NoScriptNote />
         {!immersive && (
           <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-8 lg:pt-10">
             <Breadcrumbs trail={trail} />
@@ -193,6 +215,7 @@ export function ProductView({
           title={loc(product, "name", lang)}
           price={customProductData?.price != null ? `$${customProductData.price}` : null}
         />
+        <NoScriptNote />
         <div className="max-w-5xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
         <Breadcrumbs trail={trail} />
         <CustomProductCard

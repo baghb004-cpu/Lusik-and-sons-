@@ -2231,3 +2231,52 @@
   .t3d-glare::after { display: none; }
   .t3d-pop { transform: none; }
 }
+
+/* ============================================================
+   CAPABILITY LADDER — html[data-tier] (SITE_OVERHAUL_HANDOFF.md 11.1)
+   ============================================================
+   src/lib/capability.ts stamps <html data-tier="full|lean|core">.
+   Nothing here touches layout: lean drops the decorative motion (the
+   theater rise-ins, the alphabet marquee, the specular glare and shine,
+   the stagger fade) and core additionally collapses every remaining
+   animation and transition to an instant cut. The prefers-reduced-motion
+   rules above keep working on their own; this is the same courtesy for
+   slow networks, low memory and dying batteries. */
+html[data-tier="lean"] .vt-rise,
+html[data-tier="core"] .vt-rise {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+}
+html[data-tier="lean"] .stagger-reveal,
+html[data-tier="core"] .stagger-reveal {
+  animation: none !important;
+}
+html[data-tier="lean"] .alpha-marquee,
+html[data-tier="lean"] .alpha-marquee *,
+html[data-tier="core"] .alpha-marquee,
+html[data-tier="core"] .alpha-marquee * {
+  animation: none !important;
+}
+html[data-tier="lean"] .alpha-marquee-curve,
+html[data-tier="core"] .alpha-marquee-curve {
+  transform: none;
+}
+html[data-tier="lean"] .t3d-glare::after,
+html[data-tier="lean"] .lg-shine::after,
+html[data-tier="core"] .t3d-glare::after,
+html[data-tier="core"] .lg-shine::after {
+  display: none;
+}
+html[data-tier="lean"] .t3d-pop,
+html[data-tier="core"] .t3d-pop {
+  transform: none;
+}
+html[data-tier="core"] { scroll-behavior: auto; }
+html[data-tier="core"] *,
+html[data-tier="core"] *::before,
+html[data-tier="core"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

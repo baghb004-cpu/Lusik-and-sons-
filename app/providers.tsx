@@ -22,9 +22,13 @@ import { MotionProvider } from "../src/components/MotionProvider.jsx";
 import { auth } from "../src/lib/auth.js";
 import { CONFIG } from "../src/data/config.js";
 import { adsOptedOut, ADS_CONSENT_EVENT } from "../src/lib/adConsent";
+import { initCapability } from "../src/lib/capability";
+import { initRum } from "../src/lib/rum";
 
 const META_PIXEL_ID: string = CONFIG.ANALYTICS?.META_PIXEL_ID || "";
 const GOOGLE_ADS_ID: string = CONFIG.ANALYTICS?.GOOGLE_ADS_ID || "";
+const UMAMI_ID: string = CONFIG.ANALYTICS?.UMAMI_WEBSITE_ID || "";
+const UMAMI_SRC: string = CONFIG.ANALYTICS?.UMAMI_SRC_URL || "";
 
 export function Providers({ children }: { children: ReactNode }) {
   // Ad-pixel consent gate. Starts false so the server and the client's first
@@ -114,6 +118,11 @@ export function Providers({ children }: { children: ReactNode }) {
       /* Identity unavailable — the site still renders without auth. */
     }
 
+    // Capability ladder: read the device, publish the tier (html[data-tier]
+    // + the capability:change event), then start consent-aware Web Vitals
+    // reporting. Neither may ever block render.
+    try { initCapability(); initRum(); } catch { /* telemetry is optional */ }
+
     // Initialize error monitoring (Sentry). Off until NEXT_PUBLIC_SENTRY_DSN is
     // set in the Netlify environment; dynamically imported so the Sentry SDK is
     // only shipped to the browser once a DSN is actually configured (no bundle
@@ -156,6 +165,14 @@ export function Providers({ children }: { children: ReactNode }) {
           do-not-share opt-out + GPC gate above. Keep any new ad/analytics
           tag behind the same gate, and keep the Privacy Policy's
           "Advertising pixels" section in sync with what loads here. */}
+      {/* Privacy-first analytics (Umami): cookieless, no cross-site tracking,
+          disclosed in the Privacy Policy. Off until CONFIG.ANALYTICS.UMAMI_WEBSITE_ID
+          is set; when on, track() and the capability ladder's Web Vitals report
+          (src/lib/rum.ts) have somewhere to land. Not ad tech, so it does not sit
+          behind the CPRA do-not-share switch. */}
+      {UMAMI_ID && UMAMI_SRC ? (
+        <Script src={UMAMI_SRC} data-website-id={UMAMI_ID} strategy="afterInteractive" />
+      ) : null}
       {META_PIXEL_ID && adsAllowed ? (
         <Script id="meta-pixel-base" strategy="afterInteractive">
           {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`}

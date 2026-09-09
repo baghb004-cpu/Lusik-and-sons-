@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Root package.json. Hosts the Next.js (App Router) build + Tailwind PostCSS pipeline and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external \u2014 DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
+  "description": "Root package.json. Hosts the Next.js (App Router) build + Tailwind PostCSS pipeline and the test harness (Playwright for browser smoke tests, Node's built-in test runner for backend unit tests). Functions have their OWN package.json under netlify/functions/ so the Stripe SDK can be marked as external — DO NOT MERGE the two graphs. `type: module` means root-level .js + src/**/*.js are interpreted as ESM (matches their `export` syntax); .mjs files and the netlify/functions/ subtree (which has its own package.json with `type: module` too) are unaffected.",
   "engines": {
     "node": ">=20"
   },
@@ -41,7 +41,8 @@
     "next": "^15.5.19",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "stripe": "^22.2.0"
+    "stripe": "^22.2.0",
+    "web-vitals": "^4.2.4"
   },
   "devDependencies": {
     "@axe-core/react": "^4.11.3",
