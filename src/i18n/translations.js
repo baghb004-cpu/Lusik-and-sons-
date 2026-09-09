@@ -22,19 +22,9 @@ export const TRANSLATIONS = {
   // Other languages may have subsets; missing keys fall back to English.
   // ============================================================
   en: {
-    // Live 3D stitch preview panel on product pages (+ studio link)
-    stitch3d: {
-      eyebrow: "Live 3D — the stitch preview",
-      titlePre: "Watch it ",
-      titleEm: "stitch",
-      titlePost: "",
-      body: "The same thread, in motion — drag to spin the fabric, pick a thread color, and watch the embroidery lay itself down the way Lusik's machine will.",
-      hint: "Drag to spin · scroll to zoom",
-      threadLabel: "Thread color",
-      studioLink: "Open the full Embroidery Studio",
-      typePlaceholder: "Type the name — it stitches live",
-      interact: "Tap to spin it",
-      interacting: "Spinning — tap ✕ to scroll again",
+    // Photo hero at the top of every live product page (ProductHero)
+    productHero: {
+      eyebrow: "Made by hand in Buena Park, California",
     },
     // Navigation (desktop + mobile)
     nav: {
@@ -419,11 +409,6 @@ export const TRANSLATIONS = {
 
     // /shop hierarchy chrome + editorial (ShopIndexView, CategoryView).
     shop: {
-      studioEyebrow: "The Embroidery Studio",
-      studioTitle: "Type a name. Watch the thread move.",
-      studioBody: "Lusik's live-3D studio: stitch any name onto a spinning fabric swatch, pick the thread, and send it over — she writes back with what it would cost on a bib, towel, or blanket.",
-      studioCta: "Step into the studio",
-
       breadcrumbHome: "Home",
       browseBy: "Browse by category",
       view: "View",
@@ -764,19 +749,6 @@ export const TRANSLATIONS = {
   // ============================================================
   hy: {
     // TODO_LUSIK_REVIEW — auto-translated, needs a native speaker pass
-    stitch3d: {
-      eyebrow: "Կենդանի 3D — ասեղնագործության նախադիտում",
-      titlePre: "Դիտեք ինչպես է ",
-      titleEm: "ասեղնագործվում",
-      titlePost: "",
-      body: "Նույն թելը՝ շարժման մեջ. պտտեք գործվածքը, ընտրեք թելի գույնը և դիտեք, թե ինչպես է ասեղնագործությունը դասավորվում։",
-      hint: "Քաշեք՝ պտտելու համար",
-      threadLabel: "Թելի գույն",
-      studioLink: "Բացել Ասեղնագործության ստուդիան",
-      typePlaceholder: "Գրեք անունը — այն անմիջապես ասեղնագործվում է",
-      interact: "Հպեք՝ պտտելու համար",
-      interacting: "Պտտվում է — հպեք ✕՝ շարունակելու համար",
-    },
     nav: {
       blanket: "Ծածկոցը",
       custom: "Հատուկ պատվերներ",
@@ -1127,10 +1099,6 @@ export const TRANSLATIONS = {
     // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
     shop: {
       // TODO_LUSIK_REVIEW — auto-translated, needs a native speaker pass
-      studioEyebrow: "Ասեղնագործության ստուդիա",
-      studioTitle: "Գրեք անուն։ Դիտեք թելի շարժումը։",
-      studioBody: "Լուսիկի կենդանի 3D ստուդիան․ ասեղնագործեք ցանկացած անուն պտտվող գործվածքի վրա, ընտրեք թելը և ուղարկեք — նա կպատասխանի գնով։",
-      studioCta: "Մտեք ստուդիա",
       breadcrumbHome: "Գլխավոր",
       browseBy: "Դիտել ըստ կատեգորիայի",
       view: "Դիտել",

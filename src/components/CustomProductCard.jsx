@@ -10,6 +10,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
+import { publishDesign } from "../lib/designBus";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
@@ -107,25 +108,12 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
 
-  // Feed the PDP's Live 3D stitch panel (Stitch3DPanel): as the customer
-  // types the name or picks a thread, the stage restitches in real time.
-  // Fire-and-forget CustomEvent — nothing listens on pages without the panel.
+  // Publish the bib design on the design bus as the customer types the
+  // name or picks a thread. Nothing subscribes today; the 3D product
+  // engine planned in SITE_OVERHAUL_HANDOFF.md (Phase 1) will use it.
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent("stitch3d:live", {
-      detail: { text: customName, thread: letterColor?.hex },
-    }));
+    publishDesign({ product: "bib-single", name: customName, threadHex: letterColor?.hex });
   }, [customName, letterColor]);
-
-  // The StageHero's on-stage name field feeds the configurator, so the
-  // name a shopper types on the 3D stage is the name that goes in the bag.
-  useEffect(() => {
-    const onHero = (e) => {
-      const d = e?.detail || {};
-      if (typeof d.text === "string") setCustomName(d.text);
-    };
-    window.addEventListener("stitch3d:hero", onHero);
-    return () => window.removeEventListener("stitch3d:hero", onHero);
-  }, []);
 
   // Validate the bib config, setting an inline error and returning false on
   // failure. Shared by Add-to-Bag and express Buy-it-now.

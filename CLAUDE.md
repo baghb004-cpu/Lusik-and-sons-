@@ -118,11 +118,11 @@ drift as the tree grows; use `rg`/`grep` to locate a component. High-level shape
 | `content/` | **CMS-managed JSON** (edited in the Studio at `/studio`): `products/*.json` (all 11), `categories/*.json` (4), `pages/*.json` (announcement bar, faq, home featured pick, story, testimonials) — see "Content layer" below |
 | `scripts/gen-*.mjs` | Build-time generators (`npm run gen:data`) that compile `content/` + `journalPosts.js` into `src/data/*.generated.js` / `journalPostsData.js`; `check-bundle-budget.mjs` is the postbuild JS-budget gate |
 | `src/data/*.{js,ts}` | Pure data: `product.js` (live Armenian Alphabet Blanket), `customProducts.js` (bib), `catalog.js` (catalog assembly over the generated CMS data), `config.js` (the dial board), `socialPlatforms.js`, `shippingCarriers.ts`, `shippingZones.js`, `policies.js` (privacy/terms text, single source for modal + `/privacy`), `journalPosts.js` |
-| `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `errorReporting` (Sentry), `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl`, `seo` (`organizationJsonLd()` etc.) |
+| `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `errorReporting` (Sentry), `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl`, `designBus` (typed `design:change` events the configurators publish; the planned 3D engine subscribes), `seo` (`organizationJsonLd()` etc.) |
 | `src/i18n/` | `LangContext.jsx` (+ `LanguageProvider`, `useT()`), `translations.js` (en / hy / hyw) |
 | `src/images/photos.js` | `PHOTO_*` / `IMG_*` constants → `/img/*.jpg` paths |
 | `src/components/` | Leaf + widget + domain components (see below) |
-| `src/components/shop/` | The `/shop` hierarchy: `ShopIndexView` (4 category cards), `CategoryView` (one category's product grid), `ProductView` (resolves live vs placeholder), `ProductPlaceholderView` (coming-soon / commission template), `Breadcrumbs`, `HelpDecidingSection` |
+| `src/components/shop/` | The `/shop` hierarchy: `ShopIndexView` (4 category cards), `CategoryView` (one category's product grid), `ProductView` (resolves live vs placeholder), `ProductHero` (the photo band at the top of every live product page; the planned 3D engine mounts inside it), `ProductPlaceholderView` (coming-soon / commission template), `Breadcrumbs`, `HelpDecidingSection` |
 | `src/styles/` | `index.css` with the `@tailwind` directives + the migrated custom CSS (animations, mega-menu, print styles, the mobile "Liquid Glass" nav) |
 
 Notable components: `HomeView` (the brand-story home + the "Explore" cards),
@@ -434,6 +434,19 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
 
    The suite is written against the post-redesign UI (PR #147): it routes home→shop and home→story through the **Explore cards** (which render on both viewports), asserts the **"Almost in Lusik's hands"** checkout heading, asserts the priced-placeholder **"Write Lusik to commission this"** link, and **skips the cart-drawer tests on `mobile-chromium`** (the drawer is desktop-only). When the UI copy or nav changes again, these selectors are the first thing to update.
 
+3. **Visual-regression baselines** (`tests/visual/baseline.spec.mjs`, config
+   `playwright.visual.config.mjs`) — one full-page screenshot per key page per
+   Playwright project, compared against the committed PNGs in
+   `tests/visual/__snapshots__/`. `npm run test:visual`; accept a deliberate
+   page change with `npm run test:visual -- --update-snapshots` **in the PR that
+   makes the change**, and say so in the PR body. Runs as its own CI job. Added
+   as the "nothing can break" evidence for the overhaul in
+   `SITE_OVERHAUL_HANDOFF.md`.
+
+   Sandboxes that ship a single Chromium build can point
+   `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it for both Playwright configs instead
+   of downloading the pinned revision.
+
 ### One-time Netlify setup (fresh site)
 
 1. Connect the GitHub repo to a Netlify site.
@@ -449,29 +462,6 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
 ## Features beyond the core architecture
 
 A condensed list of things wired up that aren't obvious from the architecture overview.
-
-### The Embroidery Studio (`/embroidery`) + the Live 3D stitch layer (July 2026)
-
-- **`/embroidery` is a static one-screen "loadout" studio** (`public/embroidery/`,
-  vanilla JS + vendored Three.js r160, outside the Next bundle): no sign-in, the
-  visitor lands directly on a dark three-zone screen (pieces rail | 3D stage |
-  customization rail) and types a name that stitches onto a fabric swatch in live
-  3D. The catalog is **intentionally empty for now** (`presets/*.json` hold the
-  schema + a `playground` garment type; `PLAYGROUND_PIECE` in `app.js` is the
-  stand-in). Submitting sends a **quote request** through the `embroidery-order`
-  Function — rate-limited, origin-checked — which emails Lusik the design spec
-  plus a **machine-ready `.pes`** generated in-browser by `js/engine/`
-  (pes-writer byte-identical to pyembroidery; planner does per-letter slab
-  tatami fill). The bare path 301s to `/embroidery/` (relative assets — never
-  200-rewrite the bare path).
-- **Every live PDP gets the same 3D treatment** via `Stitch3DPanel`
-  (`src/components/shop/Stitch3DPanel.jsx`): it iframes
-  `public/embroidery/stage.html` (the chrome-less stage driven over
-  postMessage), so **Three.js never enters the Next bundle** — the 210 KB
-  budget is untouched. Per-product signature stitches live in
-  `src/data/stitchPreviews.js`; the custom bib + alphabet blanket configurators
-  dispatch `stitch3d:live` CustomEvents so typing restitches the stage in real
-  time. The shop index's dark `StudioBanner` links into the studio.
 
 ### Gift-occasion reminder (opt-in, one-year-later email)
 - Checkbox at checkout (default off) → `orders.gift_reminder_opt_in`.

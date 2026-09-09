@@ -26,6 +26,7 @@
     "test:unit": "node --test --test-reporter=spec netlify/functions/_lib/__tests__/*.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:visual": "playwright test -c playwright.visual.config.mjs",
     "test:install": "playwright install --with-deps chromium",
     "postnext:build": "node scripts/check-bundle-budget.mjs",
     "analyze": "ANALYZE=true next build",

@@ -34,7 +34,7 @@ import { CribBlanketCard } from "./CribBlanketCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ImmersiveBuySheet } from "./ImmersiveBuySheet";
-import { StageHero } from "./StageHero.jsx";
+import { ProductHero } from "./ProductHero.jsx";
 import { getProductPhotos, BIB_CUSTOMER_EXAMPLES } from "../../lib/productPhotos";
 import { CONFIG } from "../../data/config.js";
 import { useIsMobile } from "../../lib/useIsMobile";
@@ -126,8 +126,9 @@ export function ProductView({
   if (product.key === "blanket-alphabet") {
     return (
       <div className="fade-in">
-        <StageHero
+        <ProductHero
           productKey="blanket-alphabet"
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={productData?.price != null ? `$${productData.price}` : null}
           inline={immersive}
@@ -164,8 +165,9 @@ export function ProductView({
     if (immersive) {
       return (
         <>
-          <StageHero
+          <ProductHero
             productKey="bib-single"
+            image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
             title={loc(product, "name", lang)}
             price={customProductData?.price != null ? `$${customProductData.price}` : null}
             inline
@@ -185,8 +187,9 @@ export function ProductView({
 
     return (
       <div className="fade-in">
-        <StageHero
+        <ProductHero
           productKey="bib-single"
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={customProductData?.price != null ? `$${customProductData.price}` : null}
         />
@@ -238,8 +241,9 @@ export function ProductView({
   if (spec?.buy?.kind === "cribBlanket") {
     return (
       <>
-        <StageHero
+        <ProductHero
           productKey={product.key}
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={(spec?.price ?? product.priceFrom) != null ? `$${spec?.price ?? product.priceFrom}` : null}
           inline={immersive}
@@ -261,8 +265,9 @@ export function ProductView({
   if (spec?.buy?.kind === "bibSet") {
     return (
       <>
-        <StageHero
+        <ProductHero
           productKey={product.key}
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={(spec?.price ?? product.priceFrom) != null ? `$${spec?.price ?? product.priceFrom}` : null}
           inline={immersive}
