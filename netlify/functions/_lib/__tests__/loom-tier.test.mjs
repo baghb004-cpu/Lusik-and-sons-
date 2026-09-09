@@ -11,7 +11,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   resolveLoomTier, isSoftwareRenderer, readLoomOverride, LOOM_SETTINGS, SLOW_PROBE_MS,
+  LOOM_SESSION_KEY,
 } from "../../../../src/loom/tier.js";
+
+// readLoomOverride persists a ?loom= pin the way the capability ladder
+// persists ?tier=. Node has no sessionStorage, so stand one up.
+globalThis.sessionStorage = {
+  store: new Map(),
+  getItem(k) { return this.store.has(k) ? this.store.get(k) : null; },
+  setItem(k, v) { this.store.set(k, String(v)); },
+  removeItem(k) { this.store.delete(k); },
+};
 
 const GOOD_GPU = { webgl2: true, webgl: true, renderer: "Apple M2", probeMs: 12 };
 
@@ -88,12 +98,29 @@ test("a junk override is ignored rather than trusted", () => {
 });
 
 test("readLoomOverride only accepts the three real tiers", () => {
+  sessionStorage.store.clear();
   assert.equal(readLoomOverride("?loom=high"), "high");
   assert.equal(readLoomOverride("?loom=mid"), "mid");
   assert.equal(readLoomOverride("?loom=low"), "low");
+  sessionStorage.store.clear();
   assert.equal(readLoomOverride("?loom=ultra"), null);
   assert.equal(readLoomOverride("?tier=full"), null);
   assert.equal(readLoomOverride(""), null);
+});
+
+test("a ?loom= pin survives navigation away from the pinned URL", () => {
+  // Without this the visual suite would pin the stage on the first page
+  // and silently lose it on the next link, screenshotting a live canvas.
+  sessionStorage.store.clear();
+  assert.equal(readLoomOverride("?loom=low"), "low");
+  assert.equal(readLoomOverride(""), "low", "the pin did not survive a navigation");
+  assert.equal(sessionStorage.getItem(LOOM_SESSION_KEY), "low");
+});
+
+test("a junk ?loom= does not clobber an existing pin", () => {
+  sessionStorage.store.clear();
+  readLoomOverride("?loom=high");
+  assert.equal(readLoomOverride("?loom=nonsense"), "high");
 });
 
 test("every tier has settings, and low is genuinely off", () => {

@@ -99,9 +99,23 @@ export function isSoftwareRenderer(renderer) {
   );
 }
 
+/** sessionStorage key holding a ?loom= pin for this tab. */
+export const LOOM_SESSION_KEY = "lusik_loom_session_v1";
+
+/** @param {unknown} value @returns {LoomTier | null} */
+function normalizeLoomTier(value) {
+  return value === "high" || value === "mid" || value === "low" ? value : null;
+}
+
 /**
- * Read the ?loom= override. Session-scoped like the capability ladder's
- * ?tier=, so a test can pin it without touching the visitor's stored choice.
+ * Read the ?loom= override, and remember it for the tab.
+ *
+ * Mirrors the capability ladder's ?tier= exactly: the query parameter pins
+ * the tier and persists to sessionStorage, so the pin survives client-side
+ * navigation instead of evaporating on the first link click. That matters
+ * for tests — the visual suite pins the stage to `low` so it screenshots
+ * the poster rather than a canvas whose pixels depend on the runner's GPU,
+ * and it navigates between pages while doing it.
  *
  * @param {string} [search] location.search, injectable for tests
  * @returns {LoomTier | null}
@@ -110,9 +124,17 @@ export function readLoomOverride(search) {
   const raw = typeof search === "string"
     ? search
     : (typeof window !== "undefined" ? window.location.search : "");
-  if (!raw) return null;
-  const value = new URLSearchParams(raw).get("loom");
-  return value === "high" || value === "mid" || value === "low" ? value : null;
+
+  const fromUrl = raw ? normalizeLoomTier(new URLSearchParams(raw).get("loom")) : null;
+  if (fromUrl) {
+    try { sessionStorage.setItem(LOOM_SESSION_KEY, fromUrl); } catch { /* storage blocked */ }
+    return fromUrl;
+  }
+  try {
+    return normalizeLoomTier(sessionStorage.getItem(LOOM_SESSION_KEY));
+  } catch {
+    return null;
+  }
 }
 
 /** Per-tier engine settings. The renderer reads these; nothing else decides. */

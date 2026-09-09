@@ -1,0 +1,240 @@
+#!/usr/bin/env node
+// ============================================================
+// gen-loom-posters.mjs — the still image every 3D stage shows first
+// ============================================================
+// Every Loom stage renders a poster as its LCP element and only fades the
+// canvas over it once a first frame exists. On a `low` device, with no
+// WebGL, or with the engine flag off, the poster is what the customer
+// sees — permanently. So it cannot be a placeholder; it has to be the
+// product.
+//
+// The honest way to produce it is to let the engine draw it. This boots
+// the real rig in a headless browser, renders one frame at the default
+// pose, and writes the result to public/img/loom/. Nothing here
+// approximates the engine, so a poster cannot drift away from what the
+// live stage shows.
+//
+// NOT part of `gen:data` and not a build step: it needs a browser and
+// takes seconds per product. Run it when a rig or the default pose
+// changes, and commit the output.
+//
+//   npm run gen:loom-posters
+//
+// Requires the repo's Playwright Chromium (or PLAYWRIGHT_CHROMIUM_EXECUTABLE).
+// ============================================================
+
+import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { createServer } from "node:http";
+import { dirname, extname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(HERE, "..");
+const OUT_DIR = join(ROOT, "public", "img", "loom");
+const WORK = join(ROOT, ".loom-poster-build");
+
+// One entry per rig the stage can mount. `design` is what gets stitched
+// into the poster — a real, representative design, not lorem ipsum.
+const PRODUCTS = [
+  {
+    key: "blanket-classic",
+    file: "alphabet-blanket.webp",
+    width: 1200,
+    height: 900,
+    clothColor: "#F7F3EA",
+    design: {
+      alphabet: "ԱԲԳԴԵԶԷ",
+      line1: "ANI",
+      line2: "2026",
+      blockColor: "#2B4C73",
+      lineColor: "#8B2C2C",
+    },
+  },
+];
+
+function log(...args) { console.log("[loom-posters]", ...args); }
+
+/** Compile src/loom to plain JS the browser can import. */
+function compile() {
+  if (existsSync(WORK)) rmSync(WORK, { recursive: true, force: true });
+  mkdirSync(WORK, { recursive: true });
+  const tsconfig = join(WORK, "tsconfig.json");
+  writeFileSync(tsconfig, JSON.stringify({
+    compilerOptions: {
+      module: "esnext", target: "es2020", moduleResolution: "bundler",
+      allowJs: true, checkJs: false, skipLibCheck: true,
+      outDir: join(WORK, "js"), rootDir: join(ROOT, "src", "loom"),
+    },
+    // The React shell is not needed and would drag in JSX.
+    include: [join(ROOT, "src", "loom", "**/*")],
+    exclude: [join(ROOT, "src", "loom", "LoomStage.tsx"), join(ROOT, "src", "loom", "index.ts")],
+  }, null, 2));
+  execFileSync(process.execPath, [join(ROOT, "node_modules", "typescript", "bin", "tsc"), "-p", tsconfig], { stdio: "inherit" });
+  mkdirSync(join(WORK, "js", "three"), { recursive: true });
+  for (const f of ["three.module.js", "three.core.js"]) {
+    writeFileSync(join(WORK, "js", "three", f), readFileSync(join(ROOT, "node_modules", "three", "build", f)));
+  }
+}
+
+function harness(product) {
+  const { design } = product;
+  return `<!doctype html><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<canvas id="c" width="${product.width}" height="${product.height}"></canvas>
+<script type="importmap">{"imports":{"three":"/three/three.module.js"}}</script>
+<script type="module">
+window.__done = (async () => {
+  const { createRenderer, createCamera } = await import("/core/renderer.js");
+  const { createScene } = await import("/core/scene.js");
+  const { createOrbit, POSES } = await import("/core/camera.js");
+  const { createBlanketRig } = await import("/rigs/alphabetBlanket.js");
+  const { makeChartResolver } = await import("/stitch/rasterize.js");
+  const { planDesign } = await import("/stitch/planner.js");
+  try { await document.fonts.load('600 40px "Fraunces"'); await document.fonts.ready; } catch {}
+
+  const W = 13, H = 15;
+  const chartFor = makeChartResolver({});
+  const lines = [];
+  const alphabet = ${JSON.stringify(design.alphabet)};
+  for (let i = 0; i < alphabet.length; i++) {
+    lines.push({ text: alphabet[i], slot: { x: i*W, y: 0, w: W, h: H }, color: ${JSON.stringify(design.blockColor)} });
+  }
+  lines.push({ text: ${JSON.stringify(design.line1)}, slot: { x: 0, y: H*3, w: W*alphabet.length, h: H }, color: ${JSON.stringify(design.lineColor)} });
+  lines.push({ text: ${JSON.stringify(design.line2)}, slot: { x: 0, y: H*5, w: W*alphabet.length, h: H }, color: ${JSON.stringify(design.lineColor)} });
+  const planned = planDesign({ lines, chartFor });
+  if (planned.unknown.length) throw new Error("unstitchable characters in poster design: " + planned.unknown.join(","));
+
+  const canvas = document.getElementById("c");
+  // Posters are drawn at the top tier regardless of what this machine is:
+  // the image is baked once and served to everyone.
+  const handle = createRenderer({ canvas, tier: "high" });
+  const { scene } = createScene(false);
+  const camera = createCamera(${product.width} / ${product.height});
+  const rig = createBlanketRig({ textureSize: 1024, clothColor: ${JSON.stringify(product.clothColor)} });
+  scene.add(rig.group);
+  rig.setStitches(planned.stitches);
+
+  // Frame the stitched area: the blanket spans x 0..2.2 and z 0..~2.5, so
+  // its centre is about (1.1, 0, 1.27). POSES.flat's own distance is set
+  // for a stage with UI around it; a poster wants the cloth to fill the
+  // frame.
+  const pose = { ...POSES.flat, target: [1.1, 0, 1.25], distance: 3.1 };
+  const orbit = createOrbit(camera, pose, { reducedMotion: () => true });
+  orbit.goTo(pose, true);
+
+  handle.resize(${product.width}, ${product.height});
+  handle.start(() => handle.renderer.render(scene, camera));
+  handle.invalidate();
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  // Encode in the browser: this is the LCP element on every product page,
+  // and WebP at q0.9 is a fraction of the PNG for no visible difference.
+  // Playwright's screenshot() only writes PNG or JPEG, and JPEG cannot
+  // hold the transparent background the stage composites over.
+  //
+  // The render MUST happen in the same tick as toDataURL. A WebGL drawing
+  // buffer is cleared once the frame is presented, so reading it a tick
+  // later returns a fully transparent image — which is exactly what the
+  // first version of this script wrote: 1200x900, one colour, zero alpha,
+  // 2 KB. preserveDrawingBuffer would also work but costs memory on every
+  // frame the live stage draws, for a guarantee only this script needs.
+  handle.renderer.render(scene, camera);
+  const dataUrl = canvas.toDataURL("image/webp", 0.9);
+  return { stitches: planned.stitches.length, dataUrl };
+})();
+</script>`;
+}
+
+async function main() {
+  const { chromium } = await import("@playwright/test");
+  compile();
+  mkdirSync(OUT_DIR, { recursive: true });
+
+  const jsRoot = join(WORK, "js");
+  const pages = new Map();
+  const server = createServer((req, res) => {
+    const path = decodeURIComponent(req.url.split("?")[0]);
+    if (pages.has(path)) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      res.end(pages.get(path));
+      return;
+    }
+    // src/loom imports TypeScript modules without an extension (the repo's
+    // convention, since webpack resolves them). tsc does not rewrite the
+    // specifiers, so serve `/foo` as `/foo.js` the way a bundler would.
+    const candidates = extname(path) ? [path] : [path, `${path}.js`, `${path}/index.js`];
+    for (const candidate of candidates) {
+      try {
+        const body = readFileSync(join(jsRoot, candidate));
+        res.writeHead(200, {
+          "content-type": extname(candidate) === ".html" ? "text/html" : "text/javascript; charset=utf-8",
+        });
+        res.end(body);
+        return;
+      } catch { /* try the next candidate */ }
+    }
+    res.writeHead(404);
+    res.end("not found: " + path);
+  });
+  await new Promise((r) => server.listen(0, r));
+  const port = server.address().port;
+
+  const browser = await chromium.launch({
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined,
+  });
+
+  let failures = 0;
+  for (const product of PRODUCTS) {
+    const path = `/${product.key}.html`;
+    pages.set(path, harness(product));
+    const page = await browser.newPage({
+      viewport: { width: product.width, height: product.height },
+      deviceScaleFactor: 1,
+    });
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(String(e)));
+    try {
+      await page.goto(`http://127.0.0.1:${port}${path}`, { waitUntil: "domcontentloaded" });
+      const result = await page.evaluate(() => window.__done);
+      if (!result.dataUrl?.startsWith("data:image/webp")) {
+        throw new Error("browser did not encode WebP (got " + String(result.dataUrl).slice(0, 30) + ")");
+      }
+      const bytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
+      // A blank poster is the failure mode that matters: it looks like a
+      // success in the log and ships an invisible product photo to every
+      // device that cannot run the engine. An empty 1200x900 WebP is
+      // about 2 KB; a real render of this blanket is tens of KB.
+      if (bytes.length < 8 * 1024) {
+        throw new Error(
+          `poster is only ${(bytes.length / 1024).toFixed(1)} KB, which means the canvas was blank. ` +
+          "The WebGL drawing buffer is cleared after present — render in the same tick as toDataURL.",
+        );
+      }
+      const dest = join(OUT_DIR, product.file);
+      writeFileSync(dest, bytes);
+      log(`${product.key}: ${result.stitches} stitches -> public/img/loom/${product.file} (${(bytes.length / 1024).toFixed(0)} KB)`);
+    } catch (e) {
+      failures += 1;
+      console.error(`[loom-posters] FAILED ${product.key}:`, String(e).slice(0, 400));
+      for (const err of errors) console.error("  page error:", err.slice(0, 300));
+    } finally {
+      await page.close();
+    }
+  }
+
+  await browser.close();
+  server.close();
+  rmSync(WORK, { recursive: true, force: true });
+
+  if (failures) {
+    // A missing poster is a stage with nothing to show on every device
+    // that cannot run the engine. Never let that pass quietly.
+    console.error(`[loom-posters] ${failures} poster(s) failed`);
+    process.exit(1);
+  }
+  log("done");
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });
