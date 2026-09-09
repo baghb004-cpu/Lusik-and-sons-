@@ -467,9 +467,21 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
    as the "nothing can break" evidence for the overhaul in
    `SITE_OVERHAUL_HANDOFF.md`.
 
-   Sandboxes that ship a single Chromium build can point
-   `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it for both Playwright configs instead
-   of downloading the pinned revision.
+   **The committed baselines are drawn by CI, not locally.** A pixel baseline
+   belongs to the browser that drew it: CI installs the Chromium revision
+   pinned by `@playwright/test`, and a sandbox pointing
+   `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at its own build is a different one. They
+   differ in text metrics, not just antialiasing, so paragraphs wrap
+   differently and the full-page height moves 16 to 32 px — and Playwright
+   fails outright on a size mismatch. To refresh a baseline: push, let the
+   Visual baselines job fail, download its `visual-diffs` artifact, **look at**
+   each `*-actual.png`, copy them over `tests/visual/__snapshots__/<project>/`,
+   and push again. A green local `--update-snapshots` run proves nothing about
+   CI. The full procedure is in the header of `tests/visual/baseline.spec.mjs`.
+
+   Sandboxes that ship a single Chromium build can still point
+   `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it to SEE what moved — just don't
+   commit the resulting PNGs.
 
 5. **Capability-ladder tiers** (`tests/e2e/tiers.spec.mjs`) — run only by the
    `lean-3g` and `core-2g` projects in `playwright.config.mjs` (part of
