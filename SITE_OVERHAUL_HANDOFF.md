@@ -830,3 +830,238 @@ for posters or comparisons.
 - The coupon sheet prints a DRAFT strip until real codes exist in Stripe.
 - `TODO_LUSIK` and `TODO_LUSIK_REVIEW` markers stay; they are addressed to the owner.
 - Placeholder products stay placeholders; do not flip a product to live.
+
+---
+
+## 11. The ten-million-dollar layer (added 2026-09-09)
+
+The owner asked what a team with a ten-million-dollar budget for coding, planning,
+storyboarding, and color theory would add, and how the site should degrade when
+bandwidth, RAM, storage, or screen size are constrained. This section answers both.
+It sits on top of Phases 0 to 5; it does not replace them. Everything here follows
+the same "nothing can break" protocol and ships behind flags.
+
+Two kinds of work appear below. **Claude work** is what the executing session can
+build. **Human work** is what a budget buys that code cannot: a photo and video
+shoot, physical texture capture of the actual pieces, a native Armenian linguist,
+and usability sessions with real families. Human work is listed so the owner can
+commission it; the code is designed so each human asset drops into a slot that
+already has a fallback.
+
+### 11.1 The capability ladder (fallbacks for slow networks, low RAM, low storage, small screens)
+
+One decision, made once per session in `src/lib/capability.ts`, drives every asset
+choice on the site. It never guesses from the user agent; it reads real signals and
+re-evaluates when they change.
+
+Signals read (each optional; missing signals default to the middle tier):
+
+- Network: `navigator.connection.effectiveType` (`slow-2g`, `2g`, `3g`, `4g`),
+  `downlink`, `rtt`, `saveData`, and the `prefers-reduced-data` media query. Also a
+  live measurement: the transfer time of the first product image, which corrects the
+  estimate on networks that lie.
+- Memory and CPU: `navigator.deviceMemory`, `navigator.hardwareConcurrency`, and
+  `performance.memory` where present.
+- Storage: `navigator.storage.estimate()` for quota and usage, plus a try/catch
+  around every `localStorage` write.
+- Screen: viewport width and height, `devicePixelRatio`, `screen.colorDepth`,
+  `prefers-contrast`, `forced-colors` (Windows high contrast), `prefers-reduced-motion`,
+  `hover: none` (touch), orientation, and the visual viewport when the keyboard is up.
+- GPU: the Loom probe from Phase 1 (WebGL 2 available, renderer string, a 200 ms
+  timed draw).
+- Power: `getBattery()` where it exists; below 15 percent and discharging, drop one
+  tier for animation and 3D.
+
+Three tiers, with an override `?tier=full|lean|core` for testing and a footer
+"Lighter version" toggle that persists the choice:
+
+| Asset class | Full (4G, 4 GB+, desktop or recent phone) | Lean (3G, save-data, 2 to 3 GB RAM, low battery) | Core (2G, under 2 GB RAM, storage nearly full, no WebGL, or JS off) |
+| --- | --- | --- | --- |
+| Photos | AVIF/WebP, responsive `sizes`, DPR up to 2, blur-up placeholder (a 20-byte base64 thumbhash inlined at build time) | AVIF/WebP at DPR 1, decorative photos skipped, blur-up kept | One small JPEG per product, no decorative images, hero is a color block with the poster only on demand |
+| Video (Scene 1 hero, story page) | HLS adaptive stream (Mux or Cloudflare Stream; both work with Netlify), muted autoplay, poster first | No autoplay; poster with a play button; 480p rendition | Poster image only, no video element |
+| 3D (Loom) | High tier: shadows, 2K procedural textures, DPR 2 | Mid tier: 1K textures, DPR 1.5, no shadows, fewer fringe strands; poster stays until interaction | Poster plus the 2D chart preview; never loads the engine |
+| Fonts | Fraunces, DM Sans, Allura, Noto Serif Armenian subsets, `font-display: swap`, `size-adjust` metrics on the fallback stacks so text does not shift | Display face `font-display: optional` (used only if cached), body font swapped | System fonts with the same metrics-matched fallback stack; Armenian glyphs from the system |
+| JavaScript | Full routes, engine on idle | Engine only on explicit tap ("Show it in 3D"), non-critical islands deferred until viewport | Server-rendered pages work without JS: browse, read, call, email. Configurators show a `<noscript>` note and the phone number |
+| Storage | Service worker caches the shell and the current product's posters, capped at 25 MB, evicts oldest first | Cache cap 8 MB, posters not cached | No caching; cart kept only in memory plus a cookie-sized fallback (the product keys and design text, under 2 KB) |
+| Motion | Full choreography | Shorter durations, no parallax, no scroll-driven camera | No motion beyond opacity |
+| Screens | Container-query layouts from 320 px to 5K; 3D DPR capped at 2 even on 5K | Same layouts, fewer columns | Single column, 44 px touch targets, no hover-only affordances |
+
+Rules that make the ladder trustworthy:
+
+- **Measure, do not assume.** `web-vitals` reports LCP, INP, CLS, and the chosen tier
+  to Umami (consent-gated, already in place) so the owner can see the real
+  distribution. If more than ten percent of sessions land in Lean, that is a design
+  input, not a failure.
+- **Never trap a user in a tier.** The footer toggle and the `?tier=` override always
+  work, and the choice is remembered per device.
+- **Test every tier in CI.** Playwright projects `lean-3g` (Chrome's Slow 3G profile,
+  CPU 4x slowdown, viewport 360 by 640, DPR 2) and `core-2g` (offline after first
+  load, JS disabled for the browse tests). Both run the smoke suite. Lighthouse adds
+  a throttled mobile run per PR.
+- **Budgets per tier.** Full: 210 KB first-load JS, LCP under 2.0 s. Lean: 150 KB,
+  LCP under 3.5 s on Slow 3G. Core: 60 KB, LCP under 4 s on 2G, and the page is
+  usable with JS disabled. The bundle-budget script grows a per-tier section.
+- **Offline.** A service worker serves an offline page with the phone number, the
+  email, the Instagram handle, and the 2D design chart so a parent can finish a
+  design on the train and add it to the bag when back online (queued in
+  IndexedDB, flushed on `online`).
+- **Screen constraints specifically.** Foldables and split-screen tablets are covered
+  by container queries, not viewport queries. Landscape phones get a two-column PDP
+  with the stage on the left. Very small screens (320 px) drop the second column
+  everywhere and hide the compare slider. Windows high-contrast mode gets real
+  borders instead of shadows (`forced-colors: active`). Large-print users
+  (`prefers-contrast: more`) get the AAA palette below.
+
+### 11.2 Color theory and the design system
+
+Today the palette is ink `#1A1612`, cream `#F5EFE3`, a pomegranate red, gold, and the
+DMC thread hexes. A funded team would turn that into a system.
+
+- **Derive from the cloth, not from a swatch book.** Sample the real materials: the
+  white waffle cloth, the terry, the six knit body colors, the satin, and the DMC
+  threads in use. Build the palette in OKLCH so lightness steps are perceptually
+  even: `linen-50` to `linen-900` (warm neutrals from the cloth), `ink-*` (from the
+  navy thread, not black), `pomegranate-*`, `gold-*`, and one accent per thread
+  family (rose, sage, delft, lavender, coral). Every token has a light and a dark
+  value.
+- **Two atmospheres.** "Morning at the table" (default: linen ground, ink text,
+  window light) and "Evening at the table" (dark mode: ink ground, warm lamp light,
+  thread colors slightly desaturated so they do not glow). Dark mode follows the
+  system setting and the footer toggle. A subtle time-of-day warmth shift (two
+  percent toward amber after 6 pm local time) is allowed on Full tier only and is
+  off under `prefers-contrast`.
+- **Contrast gates.** Body text AAA (7:1), UI text AA (4.5:1), large display AA, and
+  every thread chip labeled with its DMC number and name so color is never the only
+  signal. A unit test runs the whole token set through a contrast checker in both
+  atmospheres and fails on any regression. Color-blind simulation (protan, deutan,
+  tritan) is part of the visual suite for the thread picker.
+- **Thread truth.** The picker shows each DMC color as it looks on white terry and on
+  the waffle cloth (two tiny rendered chips per color, generated by the poster
+  script), with a note that dye lots vary. This replaces guesswork with the honesty
+  the owner already insists on in print.
+- **Type system.** Fraunces for display with optical size tied to rem, DM Sans for
+  UI, Allura only for signatures, Noto Serif Armenian for Armenian glyphs matched to
+  Fraunces' x-height with `size-adjust`. A modular scale (1.2 on phones, 1.25 on
+  desktop), a baseline grid of 4 px, and measure capped at 68 characters.
+- **Motion language.** One spring for finger-driven things, one ease for content,
+  durations 120/240/400 ms, and a documented "thread draw" reveal (a line draws
+  across, content follows) used sparingly. All documented in `docs/design-system.md`
+  with the tokens in `src/styles/tokens.css` and mirrored in `tailwind.config.mjs`.
+- **Print parity.** The same tokens feed the brochure and coupon sheet in `print/`
+  so the box and the site match.
+
+### 11.3 Premium features worth the money
+
+Each is scoped as a flag and a PR. Ordered by impact on the feeling of "a team built
+this."
+
+1. **Hands at work (human work + Claude work).** A one-day shoot: Lusik's hands
+   stitching a single Ա, thread pulled through the cloth in macro, the kitchen
+   table, the blankets folded, the box being packed. Deliverables: a 20-second hero
+   film, six 4-second loops, and stills. Code: the hero streams via HLS with the
+   capability ladder; the loops become the poster backgrounds on the story page.
+   Until the shoot exists, the Loom's "first stitch" scene plays instead, so nothing
+   waits on the shoot.
+2. **True texture capture (human work + Claude work).** Photograph each fabric on a
+   flatbed scanner or under cross-polarized light at 1200 dpi to produce real
+   albedo, normal, and roughness maps for the waffle weave, terry, knit, satin, and
+   fringe. Code: the Loom's `materials/cloth.ts` gains a "captured" path that
+   streams 512, 1K, and 2K mip levels by tier (KTX2 with Basis compression, about
+   300 KB per fabric at 1K). Procedural textures remain the fallback for Lean and
+   for any fabric not yet captured.
+3. **See it in your nursery (AR).** From any configured design: "View in your room."
+   iPhone gets a USDZ via Quick Look, Android gets a glTF via Scene Viewer, both
+   exported client-side from the live rig (`GLTFExporter`, `USDZExporter`, loaded
+   on demand, roughly 60 KB extra). The exported model is the real design with the
+   real name. Fallback: a "hold up your phone" poster with the blanket at true
+   scale on a ruler.
+4. **The certificate.** Every order ships with a signed PDF "Made for {name}": the
+   stitch chart of their design, the DMC thread numbers, the date, the piece's
+   number in Lusik's ledger, and her signature. A QR on it opens the design page.
+   Generated by a Function with the poster and the chart (no WebGL server-side).
+   Printed at home by the family or included in the box. Ties the box to the site.
+5. **Name meanings and the Armenian keyboard.** As a parent types a name, the page
+   offers the Armenian spelling and a one-line meaning ("Anoush means sweet") from a
+   curated list of a few hundred Armenian names, reviewed by a linguist (human
+   work). Western and Eastern spellings both shown. The on-screen Armenian keyboard
+   from Phase 5 becomes part of this.
+6. **Design together.** A shareable design link where two people edit the same
+   design live (both parents, or a parent and Grandma), with presence dots and a
+   one-tap "I like this one." Realtime through a small WebSocket service (PartyKit
+   or Ably; Netlify Functions cannot hold sockets). Fallback: the link carries the
+   design state in the URL and edits are shared by re-sending the link.
+7. **The alphabet room.** An interactive page for all 38 letters: each letter stitches
+   itself in, plays its pronunciation (recorded by Lusik, human work), shows a word
+   that starts with it, and links to a blanket with that letter. Doubles as SEO
+   content and as the thing families send each other.
+8. **Gift video.** A recipient scanning the QR in the box sees a recorded message
+   from the giver (uploaded at checkout, stored in Blobs, 60-second cap, expires in
+   a year). Fallback: the written gift message.
+9. **Concierge.** A "Talk it through with Lusik" booking (the Calendly link already
+   exists) placed on the PDP for the two blankets, plus a WhatsApp and iMessage
+   deep link next to the phone number.
+10. **Ledger and provenance.** Each piece gets a number in a public "ledger" page
+    (opt-in, first names only): number 214, a blanket for Olen, Buena Park,
+    March 2027. Quiet, credible, and it makes the waiting list visible without a
+    dashboard.
+11. **Page transitions and the thread.** The View Transitions API for route changes
+    (shared-element transition of the product poster into the PDP) with a plain
+    fade fallback in browsers without it, and the "thread draw" reveal on section
+    entry. Off under reduced motion.
+12. **Sound, off by default.** A single soft needle-through-cloth tick when a stitch
+    lands in the live preview, behind a mute toggle that starts muted. Never on Lean.
+13. **Easter egg.** Typing "Lusik" or "Լուսիկ" into any name field stitches a small
+    heart next to the name.
+
+### 11.4 Team and production plan a budget buys
+
+For the owner's planning, the roles and what each hands to the executing session:
+
+- Creative director and art director: the storyboard signed off as frames, a
+  motion reel, and the shot list for the shoot.
+- Photographer and videographer: item 1 above; deliver in ProRes and 4K stills.
+- Materials technician: item 2 above; deliver texture maps and physical
+  measurements of every product (the JSON still has a size `TODO_LUSIK` on the crib
+  blanket).
+- 3D artist: reviews the rigs against the real pieces and the captured textures;
+  provides the crib rail and tabletop props as small glTF files (under 200 KB each).
+- Armenian linguist (Western and Eastern): the name list, the `hyw` strings staged
+  in `translations.js`, and a review of every Armenian string on the site and in the
+  brochure.
+- Accessibility specialist: a WCAG 2.2 AA audit with AAA for text, screen reader
+  walkthroughs of the configurator and the 3D stage, and the high-contrast pass.
+- Performance engineer: owns the capability ladder budgets and the device lab (a
+  real low-end Android on a throttled network, an older iPhone, a 4K desktop).
+- Researcher: eight sessions with Armenian-American families ordering a real gift,
+  before Home v3 and after; findings feed copy and the chooser in
+  `HelpDecidingSection`.
+- Copywriter: keeps the sons' voice; every new string reviewed against the rules
+  (no em dashes, no prices in print, colors vary, honest lead times).
+
+### 11.5 Additional PRs
+
+| PR | Title | Depends on | Size | Flag |
+| --- | --- | --- | --- | --- |
+| 16 | Capability ladder: signals, tiers, override, RUM reporting, CI tier projects | 1 | L | `CONFIG.TIERS` |
+| 17 | Design tokens in OKLCH, two atmospheres, contrast tests, thread-truth chips | 1 | L | `CONFIG.THEME_V2` |
+| 18 | Service worker, offline page, queued cart, storage-aware caching | 16 | M | `CONFIG.PWA_V2` |
+| 19 | Hero film pipeline (HLS, poster ladder) with Loom fallback | 6, 16 | M | `CONFIG.HERO_FILM` |
+| 20 | Captured textures path with KTX2 streaming by tier | 2, 16 | L | `CONFIG.LOOM.CAPTURED_TEXTURES` |
+| 21 | AR export (USDZ, glTF) from the live rig | 2 | M | `CONFIG.LOOM.AR` |
+| 22 | Certificate PDF + design QR | 11 | M | `CONFIG.CERTIFICATE` |
+| 23 | Name meanings + Armenian keyboard + linguist review markers | 15 | M | `CONFIG.NAMES` |
+| 24 | Design together (realtime) with URL-state fallback | 11 | L | `CONFIG.COLLAB` |
+| 25 | The alphabet room | 2 | M | `CONFIG.ALPHABET_ROOM` |
+| 26 | Gift video | 11 | M | `CONFIG.GIFT_VIDEO` |
+| 27 | Ledger page, concierge links, view transitions, sound toggle, easter egg | 8 | M | per item |
+
+PR 16 should land right after PR 1; every later PR then reads the tier instead of
+inventing its own checks. PR 17 can run in parallel with the Loom work.
+
+### 11.6 What "premium" must never cost
+
+- A slower first paint for anyone. The Full tier is a reward for capable devices,
+  not the default that others fall short of.
+- The owner's rules: no prices in print, no em dashes in customer copy, colors vary
+  on every product, honest lead times with no explanation attached.
+- Any change to pricing, auth, or the cart shape outside PR 13.
