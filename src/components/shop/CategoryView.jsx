@@ -32,36 +32,23 @@ import { loc } from "../../i18n/localize.js";
 import { promoForCatalogProduct } from "../../lib/launchPromo.js";
 import { FoundingFromPrice } from "../FoundingPriceBadge.jsx";
 import { useTilt3D } from "../../lib/useTilt3D";
+import { productHeroImages as heroImagesFor } from "../../lib/productHeroImage.js";
 
 // Thumbnail image(s) for the category-grid card. Returns either:
 //   - a string (single image, no slideshow), OR
 //   - an array of strings (brisk slideshow on hover, auto-cycle
 //     on touch -- same behavior as the home-page Featured
 //     Categories cards)
-// Preference order:
-//   1. bib-single  -> the 4 past-customer bib photos as a
-//      brisk slideshow (real customer orders, not the old
-//      Romeo+blanket workshop shot)
-//   2. product.coverImage  -> explicit portrait crop if set
-//      (alphabet blanket, full-alphabet blanket placeholder)
-//   3. PRODUCT.gallery[0]  -> first gallery photo for the
-//      live alphabet blanket
-//   4. null  -> placeholder card renders the empty
-//      "Image goes here" frame
+// The choice itself lives in src/lib/productHeroImage.js, shared with the
+// home page's row of pieces — two places deciding separately is how one of
+// them ends up drawing an empty frame for the Custom Name Bib, which has
+// no cover photograph at all.
 function productHeroImages(product) {
-  if (product.status === "live" && product.key === "bib-single") {
-    return [
-      "/img/bib-examples/01.jpg",  // teddy bear + Armenian
-      "/img/bib-examples/02.jpg",  // daffodils + "Armig"
-      "/img/bib-examples/03.jpg",  // tulip + Armenian on pink
-      "/img/bib-examples/04.jpg",  // giraffe + Armenian on blue
-    ];
-  }
-  if (product.coverImage) return product.coverImage;
-  if (product.status === "live" && product.key === "blanket-alphabet") {
-    return PRODUCT.gallery?.[0] ?? null;
-  }
-  return null;
+  const images = heroImagesFor(product, { galleryFallback: PRODUCT.gallery?.[0] ?? null });
+  if (images.length === 0) return null;
+  // The name bib is a slideshow of past customer orders; everything else
+  // is a single photograph, and the card takes a bare string for that.
+  return images.length > 1 ? images : images[0];
 }
 
 // One product card in the category grid. A component (not a map body) so

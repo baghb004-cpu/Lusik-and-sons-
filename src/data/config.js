@@ -80,6 +80,21 @@ export const CONFIG = {
   },
 
   // ============================================================
+  // HOME v3 — the storyboarded home page
+  // ============================================================
+  // Three scenes added to the home feed: every live piece in a row you
+  // can push along, three ordering steps dated by the lead-time engine,
+  // and the two most recent journal posts. See
+  // SITE_OVERHAUL_HANDOFF.md section 4.
+  //
+  // A flag rather than a rewrite: the rest of the storyboard — hero,
+  // story, testimonials, Explore cards — was already on the page and is
+  // untouched, so turning this off puts the previous home page back
+  // exactly. The Explore cards and the "See what Lusik makes" CTA are
+  // load-bearing for the e2e suite and the mobile bottom nav either way.
+  HOME_V3: true,
+
+  // ============================================================
   // LOOM — the real-time 3D product engine (src/loom/)
   // ============================================================
   // ENABLED is the kill switch for the whole engine: off, every stage

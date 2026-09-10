@@ -45,11 +45,13 @@ import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Plus, Heart, Instagram, 
 import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import { getRecentlyViewed } from "../lib/recentActivity.js";
 import { AlphabetMarquee } from "./Theater.jsx";
+import { FromTheJournalScene, HowOrderingWorksScene, SevenPiecesScene } from "./home/HomeScenes.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import { useTilt3D } from "../lib/useTilt3D";
 // FAQ copy is CMS-managed (Content Studio /studio → "Site Content"), compiled
 // from content/pages/faq.json by scripts/gen-pages.mjs. Static at build time.
 import { CMS_PAGES } from "../data/pagesData.generated.js";
+import { CONFIG } from "../data/config.js";
 import {
   PHOTO_BIB_PILE,
   PHOTO_BIB_ROMEO,
@@ -166,6 +168,7 @@ export function HomeView({
   onNavigateCategory,
   onNavigateProduct,
   onNavigateJournal,
+  onNavigateJournalPost,
   // Section-page routing. When `pageSlug` is set, HomeView renders ONLY that
   // promoted section (Our Story / Workshop / FAQ / Contact / Shipping /
   // Newsletter) under a big "‹ For You" back header instead of the home
@@ -438,6 +441,30 @@ export function HomeView({
           ))}
         </div>
       </section>
+
+      {/* ============================================================
+          HOME v3 — the storyboarded scenes (CONFIG.HOME_V3)
+          ============================================================
+          Every live piece, how an order actually goes, and the journal.
+          They sit AFTER the Explore cards on purpose: the cards are how
+          a returning visitor gets where they were going, and the story
+          is for someone who is still deciding. Turning the flag off puts
+          the previous home page back exactly. */}
+      {CONFIG.HOME_V3 !== false && (
+        <>
+          <SevenPiecesScene
+            onNavigateProduct={onNavigateProduct}
+            onNavigateShop={onNavigateShop}
+            onPrefetch={onPrefetch}
+          />
+          <HowOrderingWorksScene />
+          <FromTheJournalScene
+            onNavigateJournal={onNavigateJournal}
+            onNavigateJournalPost={onNavigateJournalPost}
+            onPrefetch={onPrefetch}
+          />
+        </>
+      )}
 
       {/* The loom band — all thirty-eight letters drifting by at whisper
           opacity (Theater.jsx; pure CSS motion, still under reduced motion).

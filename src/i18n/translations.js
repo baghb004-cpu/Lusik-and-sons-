@@ -586,6 +586,31 @@ export const TRANSLATIONS = {
       othersAlt: "Past customer bibs",
     },
 
+    // Home v3 scenes (src/components/home/HomeScenes.jsx).
+    home: {
+      piecesEyebrow: "Everything Lusik makes",
+      piecesTitle: "{count} pieces, all by one pair of hands",
+      piecesAll: "See the whole shop",
+      pieceCardLabel: "{name} — open this product",
+
+      orderingEyebrow: "How ordering works",
+      orderingTitle: "Made to order, one at a time",
+      stepChooseTitle: "You choose",
+      stepChooseBody: "Pick the piece, the colors, and the name or date you want worked into it. Nothing is stitched before you order — that is what makes it yours.",
+      stepMadeTitle: "Lusik makes it",
+      stepMadeBody: "It joins the queue and Lusik works it by hand, on her own frame, in the order it came in.",
+      stepMadeBodyDated: "Your piece joins the queue and Lusik expects to start it around {start}, working it by hand in the order it came in.",
+      stepArrivesTitle: "It arrives",
+      stepArrivesBody: "Finished, photographed and posted from Buena Park. You get the photograph before the parcel.",
+      stepArrivesBodyDated: "Finished, photographed and posted from Buena Park — arriving around {arrives}. You get the photograph before the parcel.",
+
+      journalEyebrow: "From the journal",
+      journalTitle: "Where the letters come from",
+      journalAll: "Read the journal",
+      journalCardLabel: "Read: {title}",
+      journalReadMinutes: "{minutes} min read",
+    },
+
     // Heritage bib sets (BibSetCard) — shared option labels.
     bibSet: {
       colorLabel: "Thread color",
@@ -1288,6 +1313,31 @@ export const TRANSLATIONS = {
       othersTitlePost: " այլ ընտանիքների համար։",
       othersBody: "Հայկական անուններ, անգլերեն անուններ, յուրաքանչյուրի կողքին փոքր մոտիվ՝ այն իրադարձության համար, որ նշում էր — կակաչներ, արջուկներ, ընձուղտներ, նարգիզներ, այն բաները, որ մի օր երեխան կմատնացույց անի և կհարցնի դրանց անունը։ Սեղմեք ցանկացած լուսանկար՝ ավելի մոտիկից տեսնելու համար։",
       othersAlt: "Նախկին հաճախորդների թքակալներ",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    home: {
+      piecesEyebrow: "Այն ամենը, ինչ պատրաստում է Լուսիկը",
+      piecesTitle: "{count} գործ՝ բոլորը մեկ զույգ ձեռքով",
+      piecesAll: "Տեսնել ամբողջ խանութը",
+      pieceCardLabel: "{name} — բացել այս ապրանքը",
+
+      orderingEyebrow: "Ինչպես է աշխատում պատվերը",
+      orderingTitle: "Պատրաստվում է պատվերով՝ մեկ առ մեկ",
+      stepChooseTitle: "Դուք ընտրում եք",
+      stepChooseBody: "Ընտրեք գործը, գույները և անունը կամ ամսաթիվը, որ ուզում եք կարված լինի։ Ոչինչ չի կարվում մինչև ձեր պատվերը — հենց դա է այն ձերը դարձնում։",
+      stepMadeTitle: "Լուսիկը պատրաստում է",
+      stepMadeBody: "Այն մտնում է հերթ, և Լուսիկը կարում է ձեռքով՝ իր շրջանակի վրա, ըստ հերթականության։",
+      stepMadeBodyDated: "Ձեր գործը մտնում է հերթ, և Լուսիկը ակնկալում է սկսել այն մոտավորապես {start}՝ կարելով ձեռքով ըստ հերթականության։",
+      stepArrivesTitle: "Այն հասնում է",
+      stepArrivesBody: "Ավարտված, լուսանկարված և ուղարկված Բուենա Պարքից։ Լուսանկարը կստանաք ծանրոցից առաջ։",
+      stepArrivesBodyDated: "Ավարտված, լուսանկարված և ուղարկված Բուենա Պարքից՝ ժամանելով մոտավորապես {arrives}։ Լուսանկարը կստանաք ծանրոցից առաջ։",
+
+      journalEyebrow: "Օրագրից",
+      journalTitle: "Որտեղից են գալիս տառերը",
+      journalAll: "Կարդալ օրագիրը",
+      journalCardLabel: "Կարդալ՝ {title}",
+      journalReadMinutes: "{minutes} րոպե ընթերցում",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.

@@ -117,7 +117,16 @@ async function settle(page) {
 
 for (const [name, path] of PAGES) {
   test(`baseline: ${name}`, async ({ page }) => {
-    await page.goto(path, { waitUntil: "networkidle" });
+    // networkidle, because a capture taken while a product photograph is
+    // still arriving is a baseline of a half-loaded page. Sixty seconds
+    // rather than Playwright's default thirty: the suite grew as products
+    // gained 3D stages and photo-led pages, the repo runs this workflow
+    // twice on every push (once for the push, once for the pull request),
+    // and the two runs share a runner. The Hye Em Yes page — a full-bleed
+    // photo backdrop on mobile — timed out in one of a pair of runs while
+    // its twin passed on the same commit. Waiting longer changes nothing
+    // about what is captured.
+    await page.goto(path, { waitUntil: "networkidle", timeout: 60_000 });
     await settle(page);
     await expect(page).toHaveScreenshot(`${name}.png`, {
       fullPage: true,

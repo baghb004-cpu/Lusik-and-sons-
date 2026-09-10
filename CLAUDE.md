@@ -209,6 +209,27 @@ often trip up code/tests written against the old UI:
   (perspective) parent; `lg-shine` surfaces skip `.t3d-glare` (both use
   `::after`). Honors `prefers-reduced-motion`, checked live.
 
+## Home v3 — the storyboarded scenes (`CONFIG.HOME_V3`)
+
+Three scenes in the home feed, in `src/components/home/HomeScenes.jsx`,
+sitting **after** the Explore cards (which the e2e suite and the mobile
+bottom nav navigate by `aria-label`, so they and the "See what Lusik
+makes" hero CTA must not move):
+
+- **Seven pieces** — every live product, read from the catalog so a
+  Studio publish appears without a code change.
+- **How ordering works** — three steps dated by `src/lib/leadTime.js`,
+  computed **after mount**: the routes are prerendered, so a build-time
+  date would be stale and mismatch on hydration. The dated paragraphs
+  carry `data-live-dates` so the visual suite masks them.
+- **From the journal** — the two most recent posts.
+
+**Which photograph stands for a product is one decision**, in
+`src/lib/productHeroImage.js`, shared by this row and the category grid.
+The Custom Name Bib has no `coverImage` at all and falls back to the four
+past-customer photos; a surface that reads `product.coverImage` directly
+draws an empty frame for it.
+
 ## Content layer — CMS-managed JSON (`content/`)
 
 Since June 2026 the catalog and several page surfaces are **data, not code**,
