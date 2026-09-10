@@ -68,7 +68,11 @@ test.describe("Product chooser", () => {
     await pick(root, "English").click();
 
     const result = root.locator('[aria-live="polite"]');
-    await expect(result).toBeVisible();
+    // Something IS recommended. Asserting only that the wrong pieces are
+    // absent would pass just as happily if the filter removed everything
+    // and the page said "nothing fits" to every customer wanting an
+    // English name — which is most of them.
+    await expect(result.getByText("Lusik would make you")).toBeVisible();
     // The Armenian IS the product on these — the days of the week, the
     // blessing, "I am Armenian" — so none of them can be worked in
     // English and none may be offered for one.

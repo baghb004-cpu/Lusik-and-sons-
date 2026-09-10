@@ -167,7 +167,26 @@ for (const theme of ["light", "dark"]) {
       // Open the desktop mega-menu — it is a hover surface, so a plain page
       // scan never reaches it, which is how it stayed broken.
       await page.evaluate(() => document.querySelector(".shop-menu-trigger")?.focus());
-      await page.waitForTimeout(400);
+      // Wait for the menu to SETTLE, not for a fixed 400ms. It fades in,
+      // and on a loaded machine the fade was still running when the audit
+      // read the pixels: a label measured mid-transition at 0.56 opacity
+      // scored 4.31:1 against ink and failed a gate that its settled
+      // colour passes comfortably. Contrast is a property of the design,
+      // not of a frame of animation — and a fixed sleep racing a
+      // transition is a flaky test, which is worse than a failing one.
+      //
+      // Scoped to the menu on purpose: the page also carries the alphabet
+      // marquee, which loops forever, so waiting on all animations would
+      // never return.
+      await page.waitForFunction(() => {
+        const menu = document.querySelector(".shop-menu");
+        if (!menu) return true;
+        return document.getAnimations().every((a) => {
+          const target = a.effect && "target" in a.effect ? a.effect.target : null;
+          return !(target && menu.contains(target) && a.playState === "running");
+        });
+      }, null, { timeout: 10_000 }).catch(() => { /* settled enough; the audit is next */ });
+      await page.waitForTimeout(150);
 
       const { rows, unscoreable } = await page.evaluate(COLLECT);
       skippedOverImages += unscoreable;

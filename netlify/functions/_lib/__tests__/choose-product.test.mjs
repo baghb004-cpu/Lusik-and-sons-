@@ -97,6 +97,40 @@ test("an empty or malformed shop does not throw", () => {
   assert.equal(chooseProduct(noWeeks, { when: "soon" }).recommended?.key, "z");
 });
 
+test("every key the rules name is a real catalog key", async () => {
+  // ENGLISH_CAPABLE and SET_KEYS are written in CATALOG keys. The shop
+  // page used to hand the rules `trustedKey ?? key` instead, which
+  // coincides today only because trustedKey is not populated on those
+  // objects — the moment it is, "blanket-double_diag_br" arrives, matches
+  // nothing, and the alphabet blanket drops silently out of every English
+  // answer. Nothing would have failed; the shop would just have got
+  // quieter.
+  const { listCategories } = await import("../../../../src/data/catalog.js");
+  const known = new Set();
+  for (const category of listCategories()) {
+    for (const product of category.products ?? []) known.add(product.key);
+  }
+  for (const key of [...ENGLISH_CAPABLE, ...SET_KEYS]) {
+    // "bib" is the trusted checkout key for the name bib, kept alongside
+    // "bib-single" so either shape is recognised.
+    if (key === "bib") continue;
+    assert.ok(known.has(key), `${key} is not a product key in the catalog`);
+  }
+});
+
+test("asking for English still leaves something to recommend", async () => {
+  // The other direction from the filter test. A rule that removed
+  // EVERYTHING would pass a test that only checks the wrong things are
+  // absent, and the page would show "nothing fits" to anyone who wants an
+  // English name — which is most of the customers.
+  for (const who of WHO_OPTIONS.map((o) => o.key)) {
+    for (const when of WHEN_OPTIONS.map((o) => o.key)) {
+      const out = chooseProduct(SHOP, { who, when, language: "english" });
+      assert.ok(out.recommended, `nothing recommended for ${who} / ${when} / english`);
+    }
+  }
+});
+
 test("all three questions must be answered before anything is shown", () => {
   assert.equal(isAnswered({}), false);
   assert.equal(isAnswered({ who: "everyday" }), false);

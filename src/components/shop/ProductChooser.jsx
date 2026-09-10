@@ -37,13 +37,20 @@ function shopForChooser() {
   for (const category of listCategories()) {
     for (const product of category.products ?? []) {
       if (product.status !== "live") continue;
-      const key = product.trustedKey ?? product.key;
+      // Identity is the CATALOG key, not the trusted checkout key.
+      // ENGLISH_CAPABLE and SET_KEYS in chooseProduct.js are written in
+      // catalog keys, and the two happen to coincide today only because
+      // trustedKey is not populated on the objects this walks. The moment
+      // it is, `trustedKey ?? key` would hand the rules
+      // "blanket-double_diag_br" and the alphabet blanket would drop
+      // silently out of every English answer.
       out.push({
-        key,
+        key: product.key,
         slug: product.slug,
         categorySlug: category.slug,
         priceFrom: product.priceFrom ?? undefined,
-        weeks: weeks[key] ?? weeks[product.key] ?? fallback,
+        // The lead-time board is keyed by a mix of both, so try both.
+        weeks: weeks[product.trustedKey] ?? weeks[product.key] ?? fallback,
         product,
         category,
       });

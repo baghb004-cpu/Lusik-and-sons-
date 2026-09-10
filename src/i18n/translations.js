@@ -621,6 +621,9 @@ export const TRANSLATIONS = {
     home: {
       piecesEyebrow: "Everything Lusik makes",
       piecesTitle: "{count} pieces, all by one pair of hands",
+      // The Studio decides how many products are live, so the count can
+      // in principle fall to one and "1 pieces" is a typo nobody wrote.
+      piecesTitleOne: "One piece, by one pair of hands",
       piecesAll: "See the whole shop",
       pieceCardLabel: "{name} — open this product",
 
@@ -1381,6 +1384,7 @@ export const TRANSLATIONS = {
     home: {
       piecesEyebrow: "Այն ամենը, ինչ պատրաստում է Լուսիկը",
       piecesTitle: "{count} գործ՝ բոլորը մեկ զույգ ձեռքով",
+      piecesTitleOne: "Մեկ գործ՝ մեկ զույգ ձեռքով",
       piecesAll: "Տեսնել ամբողջ խանութը",
       pieceCardLabel: "{name} — բացել այս ապրանքը",
 

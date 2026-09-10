@@ -127,7 +127,9 @@ export function SevenPiecesScene({ onNavigateProduct, onNavigateShop, onPrefetch
         </p>
         <div className="flex items-end justify-between gap-6 mb-7">
           <h2 id="home-pieces-heading" className="font-display text-3xl lg:text-4xl leading-tight" style={{ fontWeight: 400 }}>
-            {t("home.piecesTitle", { count: pieces.length })}
+            {pieces.length === 1
+              ? t("home.piecesTitleOne")
+              : t("home.piecesTitle", { count: pieces.length })}
           </h2>
           <button
             type="button"
