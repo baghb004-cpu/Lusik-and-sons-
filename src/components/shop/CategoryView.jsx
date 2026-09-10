@@ -33,6 +33,8 @@ import { promoForCatalogProduct } from "../../lib/launchPromo.js";
 import { FoundingFromPrice } from "../FoundingPriceBadge.jsx";
 import { useTilt3D } from "../../lib/useTilt3D";
 import { productHeroImages as heroImagesFor } from "../../lib/productHeroImage.js";
+import { acceptsTryName } from "../../lib/tryName.js";
+import { TryNameField } from "./TryNameField.jsx";
 
 // Thumbnail image(s) for the category-grid card. Returns either:
 //   - a string (single image, no slideshow), OR
@@ -54,18 +56,23 @@ function productHeroImages(product) {
 // One product card in the category grid. A component (not a map body) so
 // each card can own a useTilt3D ref — the DEPTH tilt layer. lg-shine keeps
 // its own hover sweep, so no t3d-glare here.
-function CategoryProductCard({ category, product: p, index, soldOut, hero, onTap, onPrefetch }) {
+function CategoryProductCard({ category, product: p, index, soldOut, hero, onTap, onOpenHref, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const tiltRef = useTilt3D();
   const isLive = p.status === "live";
+  // The two products a customer configures get a name field under the
+  // card. It lives OUTSIDE the button: an <input> inside a <button> is
+  // invalid markup and a browser will not let you type into one.
+  const tryName = isLive && !soldOut && acceptsTryName(p.key);
   return (
+    <div className={tryName ? "flex flex-col" : "contents"}>
     <button
       ref={tiltRef}
       onClick={onTap}
       onPointerEnter={onPrefetch}
       onFocus={onPrefetch}
-      className="lg-button lg-shine t3d text-left flex flex-col stagger-reveal"
+      className={`lg-button lg-shine t3d text-left flex flex-col stagger-reveal${tryName ? " flex-1" : ""}`}
       style={{ "--i": index }}
       aria-label={isLive ? t("shop.viewAria", { name: loc(p, "name", lang) }) : t("shop.comingSoonAria", { name: loc(p, "name", lang) })}
     >
@@ -156,10 +163,21 @@ function CategoryProductCard({ category, product: p, index, soldOut, hero, onTap
         </div>
       </div>
     </button>
+    {tryName && (
+      <div className="lg-button" style={{ marginTop: "0.5rem" }}>
+        <TryNameField
+          name={loc(p, "name", lang)}
+          path={`/shop/${category.slug}/${p.slug}`}
+          onOpen={onOpenHref}
+          onPrefetch={onPrefetch}
+        />
+      </div>
+    )}
+    </div>
   );
 }
 
-export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct, onPrefetch }) {
+export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct, onNavigateHref, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const { isSoldOut } = useSite();
@@ -192,6 +210,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
             soldOut={p.status === "live" && isSoldOut(inventoryKeyForCatalog(p.key))}
             hero={productHeroImages(p)}
             onTap={() => onNavigateProduct(category.slug, p.slug)}
+            onOpenHref={onNavigateHref}
             onPrefetch={() => onPrefetch?.(`/shop/${category.slug}/${p.slug}`)}
           />
         ))}

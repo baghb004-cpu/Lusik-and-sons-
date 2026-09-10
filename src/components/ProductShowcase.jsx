@@ -19,6 +19,7 @@ import { CONFIG } from "../data/config.js";
 import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign } from "../lib/designUrl";
+import { readTryName } from "../lib/tryName.js";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import { useIsMobile } from "../lib/useIsMobile";
 import { useSwipe } from "../lib/useSwipe.js";
@@ -262,25 +263,52 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
   // the sender configured. We strip the param from the URL after
   // hydrating so the customer can keep tweaking without a stale
   // share-link in their address bar.
+  //
+  // ?name=<value> arrives the same way, from the "Try a name" field on
+  // the shop card. Someone who typed a name into a card should find it
+  // already in the box, not have to type it again — that is the whole
+  // point of the field. A ?d= blob WINS when both are present: it
+  // carries a whole design, name included, and someone opening a shared
+  // design asked for that design.
+  //
+  // Both are read in ONE effect, from one snapshot of the query string.
+  // Two effects cannot express that precedence: the first strips its own
+  // parameter before the second runs, so the second's `if (d) return`
+  // guard sees a URL with no `d` in it and overwrites the shared name.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("d");
-    if (!encoded) return;
-    const compact  = decodeDesignFromUrl(encoded);
-    const resolved = resolveDesign(compact, product);
-    if (!resolved) return;
-    if (resolved.alphabet)           setAlphabet(resolved.alphabet);
-    if (resolved.layout)             setLayout(resolved.layout);
-    if (resolved.blockColor)         setBlockColor(resolved.blockColor);
-    if (resolved.letterColor)        setLetterColor(resolved.letterColor);
-    if (resolved.letterColorList)    setLetterColorList(resolved.letterColorList);
-    setActivePresetKey(resolved.activePresetKey);
-    setColorMode(resolved.activePresetKey ? "preset" : "custom");
-    if (resolved.customLine1) setCustomLine1(resolved.customLine1);
-    if (resolved.customLine2) setCustomLine2(resolved.customLine2);
-    // Strip the param so the URL bar stays clean.
+    const typed = encoded ? "" : readTryName(params);
+    if (!encoded && !typed) return;
+
+    if (encoded) {
+      const compact  = decodeDesignFromUrl(encoded);
+      const resolved = resolveDesign(compact, product);
+      if (resolved) {
+        if (resolved.alphabet)           setAlphabet(resolved.alphabet);
+        if (resolved.layout)             setLayout(resolved.layout);
+        if (resolved.blockColor)         setBlockColor(resolved.blockColor);
+        if (resolved.letterColor)        setLetterColor(resolved.letterColor);
+        if (resolved.letterColorList)    setLetterColorList(resolved.letterColorList);
+        setActivePresetKey(resolved.activePresetKey);
+        setColorMode(resolved.activePresetKey ? "preset" : "custom");
+        if (resolved.customLine1) setCustomLine1(resolved.customLine1);
+        if (resolved.customLine2) setCustomLine2(resolved.customLine2);
+      }
+    } else {
+      setCustomLine1(typed);
+      // On a phone the configurator shows one step at a time, and the
+      // name lives in step 4. Without this the customer lands on the
+      // alphabet picker with their name set two screens below, invisible
+      // — which is the same as the field not having worked.
+      setOpenSection("custom");
+    }
+
+    // Strip the params so the URL bar stays clean and a later share link
+    // is built from the current design rather than the arriving one.
     params.delete("d");
+    params.delete("name");
     const newQs   = params.toString();
     const newPath = window.location.pathname + (newQs ? `?${newQs}` : "") + window.location.hash;
     window.history.replaceState({}, "", newPath);

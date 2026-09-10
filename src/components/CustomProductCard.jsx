@@ -32,11 +32,30 @@ import { FoundingPriceBadge } from "./FoundingPriceBadge.jsx";
 // both removed at user request. They'll be replaced by a real
 // photo slideshow on the bib product page in a follow-up PR.
 import { PRODUCT } from "../data/product.js";
+import { readTryName } from "../lib/tryName.js";
 
 export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey, immersive = false }) {
   const t = useT();
   const { lang } = useLang();
   const [customName, setCustomName] = useState("");
+
+  // ?name=<value> — the "Try a name" field on the shop card. Arriving
+  // here with the name already embroidered on the bib is the whole point
+  // of that field; an empty box would make it a decoration. Read in an
+  // effect rather than as the initial state because this component is
+  // server-rendered and window does not exist there.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const name = readTryName(params, config.maxNameLength ?? 6);
+    if (!name) return;
+    setCustomName(name);
+    params.delete("name");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash);
+    // config.maxNameLength is a constant for a mounted product.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [size, setSize] = useState("");
   const [error, setError] = useState("");
 

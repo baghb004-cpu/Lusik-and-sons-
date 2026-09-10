@@ -617,6 +617,17 @@ export const TRANSLATIONS = {
       callLusik: "Call Lusik on {phone}",
     },
 
+    // The "Try a name" field on the two shop cards a customer can
+    // configure (src/components/shop/TryNameField.jsx).
+    tryName: {
+      label: "Try a name",
+      placeholder: "Ani",
+      go: "See it",
+      inputAria: "Type a name to see it on the {name}",
+      goAria: "Open the {name} with the name {value}",
+      hint: "Up to {n} letters, Armenian or English.",
+    },
+
     // Home v3 scenes (src/components/home/HomeScenes.jsx).
     home: {
       piecesEyebrow: "Everything Lusik makes",
@@ -1378,6 +1389,16 @@ export const TRANSLATIONS = {
       excludedForTime: "ԵՒս {count} գործ ավելի երկար է պատրաստվում։ Ավելի շատ ժամանակ տվեք, և դրանք կվերադառնան։",
       nothingFits: "Խանութում ոչինչ չի հասցվի այդ ժամկետում այդ լեզվով։ Սակայն Լուսիկը ընդունում է հատուկ պատվերներ — արժե հարցնել։",
       callLusik: "Զանգահարեք Լուսիկին՝ {phone}",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    tryName: {
+      label: "Փորձեք անուն",
+      placeholder: "Անի",
+      go: "Տեսնել",
+      inputAria: "Մուտքագրեք անուն՝ {name}-ի վրա տեսնելու համար",
+      goAria: "Բացել {name}-ը {value} անունով",
+      hint: "Մինչև {n} տառ՝ հայերեն կամ անգլերեն։",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
