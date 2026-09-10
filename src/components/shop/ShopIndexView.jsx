@@ -61,7 +61,7 @@ const FEATURED_PIECES = [
     slug: "full-alphabet-crib-blanket",
     eyebrow: "The heirloom",
     name: "The Full Alphabet Crib Blanket",
-    tagline: "Every letter of the Armenian alphabet, all thirty-six.",
+    tagline: "Every letter of the Armenian alphabet, all thirty-eight.",
     // Placeholder priced at $245, sold by commission — surface
     // the commission framing rather than a clickable "From" price.
     price: "By direct order · $245",
