@@ -21,6 +21,7 @@ import { CONFIG } from "../data/config.js";
 import { getGpuSignal, getTier } from "../lib/capability";
 import { LOOM_BUILD_TAG } from "./buildTag";
 import { readLoomOverride, resolveLoomTier, LOOM_SETTINGS } from "./tier.js";
+import { THUMB_MAX_BYTES, THUMB_QUALITIES, sanitizeThumb, thumbSize } from "../lib/cartThumb.js";
 import type { BibDesign, HyeEmYesDesign, LoomDesign } from "./types";
 
 export type { LoomDesign } from "./types";
@@ -53,6 +54,12 @@ export interface LoomStageProps {
    */
   pose?: string;
   /**
+   * Filled in with a function that exports what the stage is currently
+   * showing as a small data URL, or left null while the engine is not
+   * live. The page calls it when the piece goes in the bag.
+   */
+  captureRef?: React.MutableRefObject<(() => string | null) | null>;
+  /**
    * Told when the stage changes what it is showing. The page needs this
    * to decide whether controls that only drive a live camera — the pose
    * chips — are worth rendering at all. A chip that does nothing is
@@ -65,7 +72,7 @@ export interface LoomStageProps {
 type Phase = "poster" | "loading" | "live" | "failed";
 
 export function LoomStage({
-  productKey, poster, fallback, label, design, clothColor, pose, onPhaseChange, className,
+  productKey, poster, fallback, label, design, clothColor, pose, captureRef, onPhaseChange, className,
 }: LoomStageProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -197,6 +204,42 @@ export function LoomStage({
           renderer.invalidate();
         };
         if (pose) poseRef.current(pose);
+
+        // Export what is on screen, for the bag row.
+        //
+        // The render and the read MUST happen in the same tick. A WebGL
+        // drawing buffer is cleared once its frame is presented, so
+        // reading it a tick later hands back a fully transparent image —
+        // which is exactly what the poster script wrote the first time
+        // it ran, 1200x900 of nothing, and logged success.
+        //
+        // preserveDrawingBuffer would also solve it and costs memory on
+        // every frame the live stage draws, for a guarantee only this
+        // one call needs.
+        if (captureRef) {
+          captureRef.current = () => {
+            try {
+              renderer.renderer.render(scene, camera);
+              const { width, height } = thumbSize(canvas.width, canvas.height);
+              const out = document.createElement("canvas");
+              out.width = width;
+              out.height = height;
+              const ctx = out.getContext("2d");
+              if (!ctx) return null;
+              ctx.drawImage(canvas, 0, 0, width, height);
+              for (const quality of THUMB_QUALITIES) {
+                const url = out.toDataURL("image/webp", quality);
+                if (url.length <= THUMB_MAX_BYTES) return sanitizeThumb(url);
+              }
+              // Every quality was too heavy, or the browser cannot
+              // encode WebP and fell back to PNG. A bag row with the
+              // product photograph is a perfectly good bag row.
+              return null;
+            } catch {
+              return null;
+            }
+          };
+        }
 
         // Whether the stage is on screen. The renderer stops drawing when
         // it is not, so a reveal started off screen has no frames to run
@@ -374,6 +417,7 @@ export function LoomStage({
         engineRef.current = {
           dispose: () => {
             poseRef.current = null;
+            if (captureRef) captureRef.current = null;
             host.removeEventListener("pointerdown", onDown);
             host.removeEventListener("pointermove", onMove);
             host.removeEventListener("pointerup", endDrag);

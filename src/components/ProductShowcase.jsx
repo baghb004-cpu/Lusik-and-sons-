@@ -132,7 +132,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       presetKey: activePresetKey,
       customLine1: customLine1.trim(),  // optional name/initials, "" if blank
       customLine2: customLine2.trim(),  // optional year/date, "" if blank
-    });
+    // Null unless the engine is live, in which case the bag row falls
+    // back to the product photograph exactly as it did before.
+    }, captureRef.current?.() ?? null);
     // Re-enable after the cart-drawer auto-open + heart-burst land.
     // 600ms matches the throttle so the visual debounce ends in sync.
     window.setTimeout(() => setAdding(false), 600);
@@ -154,7 +156,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       presetKey: activePresetKey,
       customLine1: customLine1.trim(),
       customLine2: customLine2.trim(),
-    });
+    }, captureRef.current?.() ?? null);
   };
 
   const [activeImg, setActiveImg] = useState(0);
@@ -463,6 +465,10 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
   const [pose, setPose] = useState("flat");
   const [stageLive, setStageLive] = useState(false);
   const onStagePhase = useCallback((phase) => setStageLive(phase === "live"), []);
+  // Filled in by the stage while the engine is live. Called at
+  // add-to-cart so the bag row shows the piece they just configured
+  // rather than a stock photograph of somebody else's blanket.
+  const captureRef = useRef(null);
   // null = all sections collapsed (after all selections made)
   // Default opens alphabet first since it's step 1.
 
@@ -566,6 +572,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   <LoomStage
                     productKey="blanket-classic"
                     pose={pose}
+                    captureRef={captureRef}
                     onPhaseChange={onStagePhase}
                     label={t("pdp.previewAlt", {
                       alphabet: alphabet.label,

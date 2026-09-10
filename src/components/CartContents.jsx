@@ -216,7 +216,15 @@ export function CartContents({
                     className="relative block flex-shrink-0"
                     aria-label={`View ${item.name} product page`}
                   >
-                    <CartItemThumb src={item.image || PRODUCT.gallery[0]} alt={item.name} width={80} height={96} className="cart-line-thumb w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                    {/* `thumb` first: the piece as the 3D stage was
+                        showing it when this went in the bag. A row that
+                        shows a stock photograph of somebody else's
+                        blanket, right after the customer spent five
+                        minutes choosing an alphabet and two thread
+                        colours, quietly loses the thing they came for.
+                        Absent on any device that cannot run the engine,
+                        and then this is the photograph it always was. */}
+                    <CartItemThumb src={item.thumb || item.image || PRODUCT.gallery[0]} alt={item.name} width={80} height={96} className="cart-line-thumb w-20 h-24 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                     {item.isCustom && (
                       <span className="absolute -top-1.5 -right-1.5 text-[0.55rem] tracking-[0.15em] uppercase px-1.5 py-0.5" style={{ background: "var(--accent)", color: "#fff", fontWeight: 500 }}>{t("bag.custom")}</span>
                     )}

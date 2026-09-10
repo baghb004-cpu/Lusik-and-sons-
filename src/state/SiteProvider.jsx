@@ -24,6 +24,7 @@ import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
 import { haptic } from "../lib/haptic.js";
 import { buildBlanketCartItem, buildCustomCartItem } from "../lib/cartItems.js";
+import { sanitizeThumb } from "../lib/cartThumb.js";
 import { mapLegacyId } from "../lib/cartId";
 import { inventoryGroup, remainingForKey, isSoldOutKey } from "../lib/inventory";
 
@@ -58,7 +59,19 @@ function readStoredCart() {
     return parsed.items
       .filter((i) => i && typeof i.id === "string" && typeof i.name === "string" && Number.isFinite(Number(i.price)))
       .slice(0, CART_STORAGE_MAX_ITEMS)
-      .map((i) => ({ ...i, qty: Math.min(99, Math.max(1, Math.floor(Number(i.qty) || 1))) }));
+      .map((i) => {
+        // `thumb` goes straight into an <img src>, so it is re-checked on
+        // the way out rather than trusted because it was in storage. An
+        // http URL there would make the browser fetch something for a
+        // third party on the customer's behalf; an SVG data URL can
+        // carry script. Anything that is not a self-contained raster
+        // data URL is dropped and the row falls back to the product
+        // photograph, which is what it showed before this field existed.
+        const thumb = sanitizeThumb(i.thumb);
+        const row = { ...i, qty: Math.min(99, Math.max(1, Math.floor(Number(i.qty) || 1))) };
+        if (thumb) row.thumb = thumb; else delete row.thumb;
+        return row;
+      });
   } catch {
     return [];
   }
@@ -114,7 +127,10 @@ export function SiteProvider({ children }) {
     });
   }, [toast]);
 
-  const addToCart = useCallback((color, qty = 1, selection = null, layout = null, colors = null) => {
+  // `thumb` is what the 3D stage was showing when the piece went in the
+  // bag. Display only: CheckoutView builds its payload from an explicit
+  // list of fields, so this one never reaches the server.
+  const addToCart = useCallback((color, qty = 1, selection = null, layout = null, colors = null, thumb = null) => {
     const item = buildBlanketCartItem(color, qty, selection, layout, colors);
     const key = item.productKey ?? mapLegacyId(item.id);
     const group = inventoryGroup(key);
@@ -127,10 +143,14 @@ export function SiteProvider({ children }) {
     }
     haptic(12);
     track("add-to-cart", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
+    const clean = sanitizeThumb(thumb);
     setCart((c) => {
       const existing = c.find((i) => i.id === item.id);
+      // A matching id IS the same design — the id encodes the alphabet,
+      // the layout and every thread colour — so the row it merges into
+      // already shows the right picture.
       if (existing) return c.map((i) => (i.id === item.id ? { ...i, qty: i.qty + addQty } : i));
-      return [...c, { ...item, qty: addQty }];
+      return [...c, { ...item, qty: addQty, ...(clean ? { thumb: clean } : {}) }];
     });
     setLastAddedKey(key);
     requestOpenCart();
@@ -145,22 +165,25 @@ export function SiteProvider({ children }) {
     }
     haptic(12);
     track("add-to-cart", { kind: "custom", productKey: payload.productKey });
-    setCart((c) => [...c, buildCustomCartItem(payload)]);
+    const customThumb = sanitizeThumb(payload.thumb);
+    setCart((c) => [...c, { ...buildCustomCartItem(payload), ...(customThumb ? { thumb: customThumb } : {}) }]);
     setLastAddedKey(payload.productKey);
     requestOpenCart();
   }, [requestOpenCart, cart, remainingFor, stockToast]);
 
   // Buy-now sets the single transient item; the calling route pushes /checkout.
-  const buyNowBlanket = useCallback((color, qty = 1, selection = null, layout = null, colors = null) => {
+  const buyNowBlanket = useCallback((color, qty = 1, selection = null, layout = null, colors = null, thumb = null) => {
     haptic(12);
     track("buy-now", { kind: "blanket", alphabet: selection?.key ?? null, layout: layout?.key ?? null });
-    setBuyNowItem(buildBlanketCartItem(color, qty, selection, layout, colors));
+    const clean = sanitizeThumb(thumb);
+    setBuyNowItem({ ...buildBlanketCartItem(color, qty, selection, layout, colors), ...(clean ? { thumb: clean } : {}) });
   }, []);
 
   const buyNowCustom = useCallback((payload) => {
     haptic(12);
     track("buy-now", { kind: "custom", productKey: payload.productKey });
-    setBuyNowItem(buildCustomCartItem(payload));
+    const clean = sanitizeThumb(payload.thumb);
+    setBuyNowItem({ ...buildCustomCartItem(payload), ...(clean ? { thumb: clean } : {}) });
   }, []);
 
   const removeFromCart = useCallback((id) => {

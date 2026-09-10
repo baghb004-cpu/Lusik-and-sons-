@@ -638,7 +638,7 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
             {cart.map((item) => (
               <div key={item.id} className="flex gap-3 py-4 items-start" style={{ borderBottom: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="relative shrink-0">
-                  <CartItemThumb src={item.image || PRODUCT.gallery[0]} alt={item.name} width={64} height={80} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
+                  <CartItemThumb src={item.thumb || item.image || PRODUCT.gallery[0]} alt={item.name} width={64} height={80} className="w-16 h-20 object-cover" style={{ background: "var(--bg-subtle)", border: item.isCustom ? "1px solid rgba(176,136,66,0.3)" : "none" }} />
                   {item.isCustom && (
                     <span className="absolute -top-1 -right-1 text-[0.5rem] tracking-[0.15em] uppercase px-1 py-0.5" style={{ background: "var(--accent)", color: "#F5EFE3", fontWeight: 500 }}>Custom</span>
                   )}

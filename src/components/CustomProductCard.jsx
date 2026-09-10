@@ -38,6 +38,9 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
   const t = useT();
   const { lang } = useLang();
   const [customName, setCustomName] = useState("");
+  // Filled in by the stage while the engine is live; called when the bib
+  // goes in the bag so the row shows the name they typed.
+  const captureRef = useRef(null);
 
   // ?name=<value> — the "Try a name" field on the shop card. Arriving
   // here with the name already embroidered on the bib is the whole point
@@ -191,6 +194,12 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           : null,
         color_preset_key: activePresetKey ?? null,
       },
+      // What the stage was embroidering when this went in the bag.
+      // Display only — CheckoutView builds its payload from an explicit
+      // list of fields, so it never reaches the server. Null unless the
+      // engine is live, in which case the row falls back to the product
+      // photograph exactly as it did before.
+      thumb: captureRef.current?.() ?? null,
     };
   };
 
@@ -238,6 +247,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
       <div className="relative aspect-square overflow-hidden lg:sticky lg:top-24 lg:self-start" style={{ background: "linear-gradient(135deg, #FAF6EC 0%, #EFE7D6 100%)" }}>
         <LoomStage
           productKey={config.key}
+          captureRef={captureRef}
           label={t("bib.previewAlt", { name: cleanName || "" })}
           design={bibDesign}
           /* The 2D template is the fallback, and it is live: a visitor
