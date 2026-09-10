@@ -36,6 +36,8 @@
     "test:a11y": "playwright test --grep=@a11y"
   },
   "dependencies": {
+    "@netlify/blobs": "^10.7.9",
+    "@netlify/functions": "^5.3.0",
     "@netlify/neon": "^0.1.0",
     "@sentry/react": "^10.73.0",
     "framer-motion": "^12.40.0",
@@ -50,7 +52,6 @@
     "@axe-core/playwright": "^4.13.0",
     "@axe-core/react": "^4.13.0",
     "@lhci/cli": "^0.15.1",
-    "@netlify/blobs": "^11.0.3",
     "@next/bundle-analyzer": "^16.3.4",
     "@playwright/test": "^1.63.0",
     "@types/node": "^25.9.2",
@@ -58,13 +59,13 @@
     "@types/react-dom": "^18.3.7",
     "@types/three": "^0.185.4",
     "autoprefixer": "^10.5.5",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.15",
     "serve": "^14.2.4",
     "tailwindcss": "^3.4.0",
     "typescript": "^6.0.3"
   },
   "overrides": {
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.15",
     "tmp": "^0.2.7",
     "uuid": "^11.1.1"
   }
