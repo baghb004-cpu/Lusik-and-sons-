@@ -127,11 +127,17 @@ Paste this as the first message of the new Claude Code session:
 | 2026-09-10 | What PR 6 cost in bugs | — | (1) The Custom Name Bib rendered as an empty grey box in a row of four real product photographs. It has no `coverImage` at all — the old workshop shot was removed at the owner's request and nothing replaced it — and the category grid had already worked around this with four past-customer photos. Two surfaces deciding separately is how one of them ends up blank; the choice is now one shared module with a unit test that also checks the files exist. (2) A claim I nearly shipped: I moved the journal card list onto a new summaries export "to keep the article bodies out of the home bundle", then measured and found the bodies already sit in the shared layout chunk for the site search, so it saved nothing. Reverted rather than ship a comment asserting a saving that was not there. |
 | 2026-09-10 | Visual suite | — | `page.goto` now allows sixty seconds rather than Playwright's thirty. The suite grew as products gained stages and photo-led pages; the repo runs the workflow twice per push (push and pull_request) on one runner; and the Hye Em Yes mobile page timed out in one of a pair of runs while its twin passed on the same commit. Waiting longer changes nothing about what is captured. |
 
+| 2026-09-10 | PR 7 in part, the three-question chooser | **Done**, same branch. | "Who is it for, when do you need it, Armenian or English" on the shop page, and one recommendation. The rules are in `src/lib/chooseProduct.js` — plain JS, ten unit tests — because this is advice a customer acts on. The load-bearing rule is that a deadline **removes** what cannot be finished rather than ranking it lower, and that the LONGEST estimate decides: quoting the optimistic end of a range to keep a product in the running is how a christening gift arrives after the christening. Asking for English filters to the pieces that can carry an English name, because on the rest the Armenian IS the product. The customer is told how many pieces were held back for time, so they can move their date instead of assuming the shop is that small. The "How ordering works" strip from Home v3 is reused on the desktop shop page rather than written twice. Gates: typecheck clean; 301 unit tests; e2e 81 passed, 17 skipped. |
+| 2026-09-10 | What PR 7's chooser cost in bugs | — | One, and it was mine to make: the shop page renders its mobile and desktop columns both into the DOM and switches them with CSS, so a hardcoded `id="chooser-heading"` appeared twice in the document — invalid, and `aria-labelledby` then points at whichever copy the browser picked. `useId` per instance. Worth remembering for anything else dropped into that page. |
+
 **Phase 1 is done.** Every live product has a rig: the Armenian Alphabet
 Blanket, the Custom Name Bib, the Hye Em Yes bib, the Days-of-the-Week and
 Anushig sets, the Bari Akhorzhak set, and the Full Alphabet Crib Blanket.
 
-Next up in Phase 2: PR 7 (shop and category) and PR 8 (the product page).
+Next up in Phase 2: the rest of PR 7 — Loom posters on the shop and
+category cards, and a "Try a name" field on the two configurator cards —
+both of which want the poster generator run first (see
+`public/img/loom/README.md`); then PR 8 (the product page).
 Home v3's remaining scene is **the first stitch** — the hero handing over
 to a Loom stage that works a letter in as you arrive, with scroll pulling
 the camera back. Left for its own slice because the home hero is the

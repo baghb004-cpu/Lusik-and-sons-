@@ -586,6 +586,37 @@ export const TRANSLATIONS = {
       othersAlt: "Past customer bibs",
     },
 
+    // The three-question chooser on the shop page (ProductChooser).
+    chooser: {
+      eyebrow: "Not sure which one",
+      title: "Three questions, one answer",
+      whoLabel: "What is it for",
+      who: {
+        keepsake: "A keepsake",
+        everyday: "Everyday use",
+        whole_gift: "A gift to open",
+      },
+      whenLabel: "When do you need it",
+      when: {
+        soon: "Within a month",
+        months: "Two or three months",
+        no_rush: "No rush",
+      },
+      languageLabel: "Armenian or English",
+      language: {
+        armenian: "Armenian",
+        english: "English",
+        either: "Either is fine",
+      },
+      resultEyebrow: "Lusik would make you",
+      leadTime: "About {min} to {max} weeks to make",
+      openRecommendation: "{name} — open this product",
+      alsoConsider: "Also worth a look:",
+      excludedForTime: "{count} more pieces take longer than that. Give it more time and they come back.",
+      nothingFits: "Nothing in the shop can be finished by then in that language. Lusik does take commissions, though — it is worth asking.",
+      callLusik: "Call Lusik on {phone}",
+    },
+
     // Home v3 scenes (src/components/home/HomeScenes.jsx).
     home: {
       piecesEyebrow: "Everything Lusik makes",
@@ -1313,6 +1344,37 @@ export const TRANSLATIONS = {
       othersTitlePost: " այլ ընտանիքների համար։",
       othersBody: "Հայկական անուններ, անգլերեն անուններ, յուրաքանչյուրի կողքին փոքր մոտիվ՝ այն իրադարձության համար, որ նշում էր — կակաչներ, արջուկներ, ընձուղտներ, նարգիզներ, այն բաները, որ մի օր երեխան կմատնացույց անի և կհարցնի դրանց անունը։ Սեղմեք ցանկացած լուսանկար՝ ավելի մոտիկից տեսնելու համար։",
       othersAlt: "Նախկին հաճախորդների թքակալներ",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    chooser: {
+      eyebrow: "Վստա՞հ չեք, թե որը",
+      title: "Երեք հարց, մեկ պատասխան",
+      whoLabel: "Ինչի՞ համար է",
+      who: {
+        keepsake: "Հիշատակի իր",
+        everyday: "Ամենօրյա օգտագործման",
+        whole_gift: "Նվեր՝ բացելու համար",
+      },
+      whenLabel: "Ե՞րբ է պետք",
+      when: {
+        soon: "Մեկ ամսվա ընթացքում",
+        months: "Երկու-երեք ամսում",
+        no_rush: "Շտապ չէ",
+      },
+      languageLabel: "Հայերեն թե անգլերեն",
+      language: {
+        armenian: "Հայերեն",
+        english: "Անգլերեն",
+        either: "Ցանկացածը",
+      },
+      resultEyebrow: "Լուսիկը ձեզ կպատրաստի",
+      leadTime: "Պատրաստումը՝ մոտ {min}-ից {max} շաբաթ",
+      openRecommendation: "{name} — բացել այս ապրանքը",
+      alsoConsider: "Արժե նաև նայել՝",
+      excludedForTime: "ԵՒս {count} գործ ավելի երկար է պատրաստվում։ Ավելի շատ ժամանակ տվեք, և դրանք կվերադառնան։",
+      nothingFits: "Խանութում ոչինչ չի հասցվի այդ ժամկետում այդ լեզվով։ Սակայն Լուսիկը ընդունում է հատուկ պատվերներ — արժե հարցնել։",
+      callLusik: "Զանգահարեք Լուսիկին՝ {phone}",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.

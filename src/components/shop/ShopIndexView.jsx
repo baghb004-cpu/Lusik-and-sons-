@@ -28,6 +28,8 @@ import { CATALOG } from "../../data/catalog.js";
 import { JOURNAL_POSTS } from "../../data/journalPosts.js";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
+import { ProductChooser } from "./ProductChooser.jsx";
+import { HowOrderingWorksScene } from "../home/HomeScenes.jsx";
 import { ArrowRight, Heart, Home, Sparkles } from "../icons.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
@@ -872,6 +874,15 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           </div>
         </section>
 
+        {/* Three questions, one recommendation. Above the contact block
+            on purpose: someone who can be helped by answering three
+            questions should not have to phone first. */}
+        <ProductChooser
+          className="mb-10"
+          onNavigateProduct={onNavigateProduct}
+          onPrefetch={onPrefetch}
+        />
+
         {/* "Need help deciding?" — the Specialist-contact block:
             placeholder photo, reassurance line, and one-tap Text /
             Call / Email circles. (Video call held until we pick a
@@ -907,6 +918,17 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
             />
           ))}
         </div>
+      </div>
+
+      {/* Desktop gets the same three questions, and the ordering strip
+          that used to be the studio banner's slot. Both are shared with
+          the home page rather than written twice — a customer who read
+          the promise there should not find a different one here. */}
+      <div className="hidden lg:block">
+        <div className="max-w-6xl mx-auto px-6 lg:px-12 pb-16">
+          <ProductChooser onNavigateProduct={onNavigateProduct} onPrefetch={onPrefetch} />
+        </div>
+        <HowOrderingWorksScene />
       </div>
 
     </div>

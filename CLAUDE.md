@@ -230,6 +230,20 @@ The Custom Name Bib has no `coverImage` at all and falls back to the four
 past-customer photos; a surface that reads `product.coverImage` directly
 draws an empty frame for it.
 
+## The three-question chooser (`/shop`)
+
+"What is it for, when do you need it, Armenian or English" → one product.
+The rules are `src/lib/chooseProduct.js` (plain JS, unit tested) because
+a customer acts on the answer. Two of them are not preferences but
+filters: **a deadline removes what cannot be finished in time** (judged
+on the LONGEST estimate in `CONFIG.LEAD_TIMES.WEEKS`), and asking for
+English removes the pieces whose Armenian *is* the product. The count of
+pieces held back for time is shown, never hidden.
+
+The shop page renders its mobile and desktop columns **both into the
+DOM**, switched by CSS — anything dropped in there needs `useId` rather
+than a literal `id`, or the document carries it twice.
+
 ## Content layer — CMS-managed JSON (`content/`)
 
 Since June 2026 the catalog and several page surfaces are **data, not code**,
