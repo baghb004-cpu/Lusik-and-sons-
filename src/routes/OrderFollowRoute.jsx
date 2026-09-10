@@ -40,7 +40,7 @@ export function OrderFollowRoute() {
   const phoneHref = CONFIG.TEXT_US?.phone_e164 || "";
 
   return (
-    <main className="max-w-2xl mx-auto px-6 lg:px-12 py-16 lg:py-24 fade-in">
+    <div className="max-w-2xl mx-auto px-6 lg:px-12 py-16 lg:py-24 fade-in" data-order-follow>
       <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>
         Lusik &amp; Sons
       </p>
@@ -72,6 +72,40 @@ export function OrderFollowRoute() {
           <p className="text-sm opacity-70 mb-8">
             Order {state.data.orderNumber}
           </p>
+
+          {/* What is in the box, by name and never by price. On a gift
+              this page IS the receipt the recipient gets: it tells them
+              what they are waiting for without telling them what somebody
+              spent on them, which is the whole reason the gift checkbox
+              exists. The Function does not even select the price column. */}
+          {Array.isArray(state.data.items) && state.data.items.length > 0 && (
+            <ul className="mb-8">
+              {state.data.items.map((item, i) => (
+                <li key={i} className="py-3 flex items-baseline justify-between gap-4" style={{ borderBottom: "1px solid var(--border-soft)" }}>
+                  <span>
+                    <span className="font-display text-base" style={{ fontWeight: 400 }}>{item.name}</span>
+                    {item.variant && <span className="block text-xs opacity-70 mt-0.5">{item.variant}</span>}
+                  </span>
+                  {item.qty > 1 && <span className="text-xs opacity-70 tabular-nums shrink-0">x{item.qty}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* The card message, shown back to the person it was written
+              for. Lusik copies it onto a card by hand; this is so the
+              recipient can read it again once the card is in a drawer. */}
+          {state.data.gift?.message && (
+            <figure className="mb-8 px-6 py-5" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
+              <blockquote className="text-lg leading-relaxed" style={{ fontFamily: "var(--font-script)" }}>
+                {state.data.gift.message}
+              </blockquote>
+              <figcaption className="text-[0.6rem] tracking-[0.25em] uppercase mt-3" style={{ color: "var(--text-muted)" }}>
+                The card in your box
+              </figcaption>
+            </figure>
+          )}
+
           <OrderTimeline rows={state.data.milestones} />
           <p className="text-xs opacity-60 leading-relaxed mt-8">
             This page updates as Lusik works. Keep the link from your email to come back to it.
@@ -79,6 +113,6 @@ export function OrderFollowRoute() {
           </p>
         </>
       )}
-    </main>
+    </div>
   );
 }

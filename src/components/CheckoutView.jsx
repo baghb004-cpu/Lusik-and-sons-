@@ -421,6 +421,28 @@ export function CheckoutView({ cart, subtotal, user, profile, onBack }) {
                   />
                   <span className="text-[0.6rem] opacity-55 mt-1 block tabular-nums">{giftMessage.length}/140</span>
                 </label>
+
+                {/* The card, as it will read.
+                    Lusik copies this onto a small card by hand, so the
+                    preview is set in the script face on cream rather than
+                    dressed up as stitching — claiming a handwritten card
+                    is embroidered would be a lie about the product. What
+                    it is for is the thing a text box cannot show: whether
+                    a message is short enough to sit on a card, and
+                    whether the line breaks fall where the buyer meant. */}
+                {giftMessage.trim() && (
+                  <figure className="mb-4 px-5 py-4 text-center" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
+                    <span className="block text-[0.55rem] tracking-[0.25em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>
+                      On the card
+                    </span>
+                    <blockquote
+                      className="text-lg leading-relaxed whitespace-pre-wrap break-words"
+                      style={{ fontFamily: "var(--font-script)" }}
+                    >
+                      {giftMessage.trim()}
+                    </blockquote>
+                  </figure>
+                )}
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"

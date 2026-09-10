@@ -60,7 +60,7 @@ export default async (req, context) => {
 
   try {
     const orders = await sql`
-      SELECT order_number, fulfillment_status, created_at
+      SELECT order_number, fulfillment_status, created_at, gift
       FROM orders WHERE id = ${orderId} LIMIT 1
     `;
     const order = orders?.[0];
@@ -73,10 +73,40 @@ export default async (req, context) => {
       ORDER BY created_at ASC, id ASC
     `;
 
+    // What is in the box, by name. NOT what it cost.
+    //
+    // This link is a capability URL: whoever holds it can read this, and
+    // for a gift that is meant to be the recipient. Naming the pieces
+    // tells them what they are waiting for, which is the whole point of
+    // a page called "your piece, step by step". A price would tell them
+    // what somebody spent on them, which is exactly what the gift
+    // checkbox exists to prevent — so `unit_price_cents` is not in this
+    // query at all, rather than selected and then dropped.
+    const items = await sql`
+      SELECT product_name, variant_label, quantity
+      FROM order_items
+      WHERE order_id = ${orderId}
+      ORDER BY created_at ASC, id ASC
+    `;
+
+    // The card message, and only when this really is a gift. It was
+    // written TO the person reading this. Everything else on the gift
+    // record — whether prices were hidden, whether it was wrapped — is
+    // the buyer's business and Lusik's, not the recipient's.
+    const gift = order.gift && order.gift.is_gift === true
+      ? { isGift: true, message: typeof order.gift.message === "string" ? order.gift.message.slice(0, 200) : "" }
+      : null;
+
     return new Response(JSON.stringify({
       orderNumber: order.order_number,
       status: order.fulfillment_status,
       placedAt: order.created_at,
+      items: (items ?? []).map((i) => ({
+        name: i.product_name,
+        variant: i.variant_label ?? null,
+        qty: Number(i.quantity) || 1,
+      })),
+      gift,
       milestones: (rows ?? []).map((r) => ({
         milestone: r.milestone,
         note: r.note ?? null,

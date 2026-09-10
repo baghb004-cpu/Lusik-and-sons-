@@ -171,3 +171,39 @@ test("the follow-along link lives in the confirmation email, not the cart recove
     if (savedKey !== undefined) process.env.RESEND_API_KEY = savedKey; else delete process.env.RESEND_API_KEY;
   }
 });
+
+// ============================================================
+// What a capability link is allowed to return
+// ============================================================
+// The follow-along page is reached by an HMAC link, which means whoever
+// holds it can read this — and for a gift that is meant to be the
+// recipient. Naming the pieces tells them what they are waiting for. A
+// price would tell them what somebody spent on them, which is the one
+// thing the gift checkbox exists to prevent.
+//
+// Source-level because the shape is the boundary: the query must not
+// SELECT the price at all, so it cannot be dropped later by accident and
+// cannot leak through a spread.
+test("the guest read never selects a price", () => {
+  const src = readFileSync(new URL("../../order-milestones.mjs", import.meta.url), "utf8");
+  const body = src.slice(src.indexOf("const items = await sql"), src.indexOf("return new Response"));
+  assert.ok(body.length > 50, "the item query is no longer where this test looks");
+  assert.ok(!/unit_price_cents|price/i.test(body.replace(/\/\/.*$/gm, "")),
+    "the guest item query selects a price column");
+  // And nothing else from the order row that is the buyer's business.
+  const all = src.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const column of ["customer_email", "shipping_address", "stripe_payment_intent", "total_cents", "subtotal_cents"]) {
+    assert.ok(!all.includes(column), `the guest read touches ${column}`);
+  }
+});
+
+test("only the gift message crosses to the recipient", () => {
+  const src = readFileSync(new URL("../../order-milestones.mjs", import.meta.url), "utf8");
+  const block = src.slice(src.indexOf("const gift ="), src.indexOf("return new Response"));
+  assert.ok(block.includes("is_gift === true"), "the gift block is returned for non-gift orders too");
+  assert.ok(block.includes("message"), "the gift block no longer carries the message");
+  // hide_prices and wrap are the buyer's arrangement with Lusik. Telling
+  // the recipient that prices were hidden is itself telling them there
+  // was a price worth hiding.
+  assert.ok(!/hide_prices|wrap/.test(block), "the gift block leaks the buyer's packing choices");
+});
