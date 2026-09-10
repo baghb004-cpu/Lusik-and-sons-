@@ -17,7 +17,7 @@ export function BetaTranslationBadge() {
       }}
       role="note"
     >
-      <p className="font-display text-sm mb-1" style={{ fontWeight: 500, color: "var(--accent)" }}>
+      <p className="font-display text-sm mb-1" style={{ fontWeight: 500, color: "var(--accent-text)" }}>
         ⚠ {t("betaBadge.label")}
       </p>
       <p>{t("betaBadge.body")}</p>

@@ -24,7 +24,8 @@
 // gallery — that selector was intentionally removed.
 // ============================================================
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
@@ -38,6 +39,13 @@ import { foundingPriceForKey } from "../../lib/launchPromo.js";
 import { FoundingPriceBadge } from "../FoundingPriceBadge.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
+import { CONFIG } from "../../data/config.js";
+import { publishDesign } from "../../lib/designBus";
+
+// Never a static import: three.js would land in this route's first-load JS
+// for a feature most visitors never trigger, and the bundle gate fails the
+// build when it does.
+const LoomStage = dynamic(() => import("../../loom/index").then((m) => m.LoomStage), { ssr: false });
 
 // Strip any "⚠️ TODO_LUSIK: ..." trailer before showing a detail
 // value to a customer (defense-in-depth; live copy shouldn't carry one).
@@ -71,6 +79,45 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   const foundingPrice = foundingPriceForKey(currentKey, currentPrice);
   const effectivePrice = foundingPrice ?? currentPrice;
   const capNameMax = cap?.nameMax ?? 12;
+
+  // ── The 3D stage ────────────────────────────────────────
+  // Only for products with a rig. Everything else keeps the photo gallery
+  // it has always had — a stage with no rig would be an empty frame.
+  // The RIG key, which is the product — not the SKU key, which changes to
+  // the "-with-cap" variant the moment the cap is added. LoomStage tears
+  // the engine down and rebuilds it when productKey changes, and a second
+  // WebGLRenderer cannot take the canvas back after the first one has
+  // force-lost its context: adding the cap dropped the stage to its poster
+  // and left it there. The cap is a property of the design.
+  const loomKey = spec.key;
+  const hasStage = (CONFIG.LOOM?.PRODUCTS ?? []).includes(loomKey);
+  // Memoised: LoomStage re-plans the piece whenever this identity changes,
+  // and a fresh object each render would restitch on every keystroke of
+  // any field on the page.
+  //
+  // One object for every set product. `withCap` is the Hye Em Yes bib's
+  // only choice; `swatch` is the colourway the other sets are worked in,
+  // passed through as the JSON stores it so the rig can read it the same
+  // way the gallery's colour row does. A rig ignores the half that is not
+  // about it.
+  const loomDesign = useMemo(
+    () => ({
+      withCap: capSelected,
+      swatch: colorway?.swatch ?? null,
+      // The Bari cap carries the baby's name or initial; trimmed so a
+      // half-typed trailing space does not restitch the cuff.
+      capName: capSelected ? capName.trim().slice(0, capNameMax) : "",
+    }),
+    [capSelected, colorway, capName, capNameMax],
+  );
+
+  // Publish on the design bus as well as passing the prop. The prop is what
+  // draws the piece; the bus is the documented channel other viewers listen
+  // on, and it is what arms a stage the customer has not touched yet.
+  useEffect(() => {
+    if (!hasStage) return;
+    publishDesign({ product: loomKey, ...loomDesign });
+  }, [hasStage, loomKey, loomDesign]);
 
   // Double-tap guard — same shape as CustomProductCard / ProductShowcase.
   const lastAddTsRef = useRef(0);
@@ -139,6 +186,38 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
         {/* GALLERY — Apple color row (name left, circles right) sits tight
             under the slideshow and drives both the photo and the order. */}
         <div className="min-w-0 w-full">
+          {/* The piece itself, in 3D, above the photographs. Not in the
+              immersive sheet: there the photos ARE the backdrop and the
+              gallery runs photosHidden, so a stage would sit over them. */}
+          {hasStage && !immersive && (
+            <div
+              /* 4/3 to match the stage's own box: a square frame would
+                 letterbox the poster and leave a band of dead colour
+                 under the piece while the engine loads. */
+              className="aspect-[4/3] gallery-frame overflow-hidden mb-4"
+              style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}
+            >
+              <LoomStage
+                productKey={loomKey}
+                /* Describes the PIECE, not the widget. The Hye Em Yes bib
+                   has words of its own; the sets are described by what
+                   they are and the colourway they are worked in. */
+                label={spec.key === "bib-hy-em"
+                  ? t("bibSet.previewAlt", { cap: capSelected ? t("bibSet.previewAltCap") : "" })
+                  : t("bibSet.previewAltSet", {
+                      name: productName,
+                      color: colorway?.label ?? "",
+                    })}
+                design={loomDesign}
+                /* The cover photograph is the fallback. Nothing on this
+                   product is personalised, so a still of the real piece is
+                   an honest stand-in for a visitor whose device cannot run
+                   the engine — unlike the configurator products, where the
+                   live 2D preview is the better fallback. */
+                poster={product.coverImage ?? undefined}
+              />
+            </div>
+          )}
           <ProductImageGallery
             images={product.images}
             alt={productName}
@@ -287,7 +366,7 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
               Desktop-only normally (MobilePurchaseBar is the mobile buy
               surface); UN-hidden in immersive mode so the delivery details +
               buy buttons live inside the immersive sheet on mobile. */}
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard productKey={product?.key} className={immersive ? "" : "hidden lg:block"}>
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}

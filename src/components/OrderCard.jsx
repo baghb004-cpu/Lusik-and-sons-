@@ -15,6 +15,7 @@
 // ============================================================
 
 import React from "react";
+import { OrderTimeline } from "./OrderTimeline.jsx";
 import { getTrackingUrl } from "../lib/tracking";
 import { ArrowRight, Check } from "./icons.jsx";
 import { STAGES as ORDER_STAGES, statusToStageIndex } from "./adminStatusLabels.js";
@@ -78,6 +79,10 @@ export function OrderProgressTimeline({ status }) {
   );
 }
 export function OrderCard({ order, onReorder }) {
+  // The timeline rides along on the order row (see netlify/functions/
+  // orders.mjs), so a page of order cards costs no extra requests.
+  const timeline = Array.isArray(order?.milestones) ? order.milestones : [];
+
   const statusLabel = (() => {
     // Money-status takes precedence over fulfillment-status for
     // the headline badge — a refunded order is "Refunded"
@@ -90,10 +95,10 @@ export function OrderCard({ order, onReorder }) {
       // "New" means Lusik has paid but not yet confirmed. Once she
       // clicks "Confirm order" in the admin panel, fulfillment_status
       // moves to awaiting_lusik and the label here flips to "Confirmed".
-      case "in_progress":     return { text: "New",                color: "var(--accent)" };
-      case "awaiting_lusik":  return { text: "Confirmed",          color: "var(--accent)" };
-      case "in_production":   return { text: "Lusik is stitching", color: "var(--accent)" };
-      case "quality_check":   return { text: "Final review",       color: "var(--accent)" };
+      case "in_progress":     return { text: "New",                color: "var(--accent-text)" };
+      case "awaiting_lusik":  return { text: "Confirmed",          color: "var(--accent-text)" };
+      case "in_production":   return { text: "Lusik is stitching", color: "var(--accent-text)" };
+      case "quality_check":   return { text: "Final review",       color: "var(--accent-text)" };
       case "ready_to_ship":   return { text: "Ready to ship",      color: "#3D5A3D" };
       case "shipped":         return { text: "Shipped",            color: "#3D5A3D" };
       case "delivered":       return { text: "Delivered",          color: "#3D5A3D" };
@@ -197,6 +202,16 @@ export function OrderCard({ order, onReorder }) {
         <OrderProgressTimeline status={order.fulfillment_status} />
       )}
 
+      {/* While she stitches — the steps Lusik has marked on this order.
+          Loaded per card and only rendered once something exists, so a
+          brand-new order does not show an empty rail. */}
+      {timeline.length > 0 && (
+        <div className="mb-5 pt-4" style={{ borderTop: "1px solid var(--border-soft)" }}>
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-60 mb-3">Progress</p>
+          <OrderTimeline rows={timeline} />
+        </div>
+      )}
+
       {/* Finished-piece photo — uploaded by Lusik from the admin
           view. Shows up forever once attached, as a small keepsake
           of the actual blanket made for this customer. Click to
@@ -218,7 +233,7 @@ export function OrderCard({ order, onReorder }) {
             loading="lazy"
           />
           <p className="px-3 py-2 text-[0.65rem] tracking-[0.18em] uppercase opacity-70" style={{ background: "rgba(176,136,66,0.06)" }}>
-            <span style={{ color: "var(--accent)", fontWeight: 500 }}>From Lusik</span> · photo of your finished blanket
+            <span style={{ color: "var(--accent-text)", fontWeight: 500 }}>From Lusik</span> · photo of your finished blanket
           </p>
         </a>
       )}
@@ -256,7 +271,7 @@ export function OrderCard({ order, onReorder }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline hover:opacity-100"
-                      style={{ color: "var(--accent)", fontWeight: 500 }}
+                      style={{ color: "var(--accent-text)", fontWeight: 500 }}
                     >
                       Track {order.tracking_number}
                     </a>

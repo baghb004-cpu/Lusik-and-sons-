@@ -22,19 +22,12 @@ export const TRANSLATIONS = {
   // Other languages may have subsets; missing keys fall back to English.
   // ============================================================
   en: {
-    // Live 3D stitch preview panel on product pages (+ studio link)
-    stitch3d: {
-      eyebrow: "Live 3D — the stitch preview",
-      titlePre: "Watch it ",
-      titleEm: "stitch",
-      titlePost: "",
-      body: "The same thread, in motion — drag to spin the fabric, pick a thread color, and watch the embroidery lay itself down the way Lusik's machine will.",
-      hint: "Drag to spin · scroll to zoom",
-      threadLabel: "Thread color",
-      studioLink: "Open the full Embroidery Studio",
-      typePlaceholder: "Type the name — it stitches live",
-      interact: "Tap to spin it",
-      interacting: "Spinning — tap ✕ to scroll again",
+    // Photo hero at the top of every live product page (ProductHero)
+    productHero: {
+      eyebrow: "Made by hand in Buena Park, California",
+      noscriptLead: "The design tool on this page needs JavaScript, which is off in your browser. You can still order: call or text ",
+      noscriptOr: ", or email ",
+      noscriptTail: ", and Lusik will set the design up with you.",
     },
     // Navigation (desktop + mobile)
     nav: {
@@ -189,6 +182,8 @@ export const TRANSLATIONS = {
       returnsPolicy: "Returns & Exchanges",
       privacyPolicy: "Privacy Policy",
       privacyChoices: "Your privacy choices",
+      lighterVersion: "Lighter version",
+      lighterVersionHint: "Fewer animations and lighter pages. Turns itself on for slow connections and low-memory phones.",
       termsOfService: "Terms of Service",
       contactUs: "Contact Us",
       repliesNote: "Lusik writes back herself, usually within a day.",
@@ -379,7 +374,7 @@ export const TRANSLATIONS = {
         { q: "What happens on a video call?", a: "You book a time and Lusik (or one of her sons) hops on a quick video call. She'll walk you through the blankets, show you thread colors and fabric up close, and help you decide on an alphabet, a name, and a layout. You don't have to be on camera if you'd rather not." },
         { q: "Can you help me pick colors and a name?", a: "That's exactly what these chats are for. Bring the nursery palette, a sibling's blanket, or just a feeling — Lusik will help you land on a combination that looks right and stitches well. Nothing is ordered until you're happy with it." },
         { q: "What if I'd rather just text or email?", a: "Totally fine — most people do. Tap Text us or Email us above and write in whatever's on your mind. Lusik writes back herself when she can, otherwise one of her sons does, usually within a day." },
-        { q: "How long does a finished piece take?", a: "Each blanket is hand cross-stitched to order, so most take about 5–10 business days once the design is set. You'll get a photo before it ships and a tracking link when it's on its way." },
+        { q: "How long does a finished piece take?", a: "Every piece is made to order, one at a time, and each has its own build time: about 2 to 3 weeks for a single bib, 3 to 4 for a matched set, 5 to 6 for the Days of the Week set, 4 to 6 for the Armenian Alphabet Blanket, and 10 to 12 for the Full Alphabet Crib Blanket. Each product page shows real dates. You'll get a photo before it ships and a tracking link when it's on its way." },
         { q: "Do you offer local pickup?", a: "Yes — if you're in the Orange County or Los Angeles area, you can pick up your order in person and skip shipping. Just message Lusik (Text us or Email us) after you order and we'll arrange a time and place. Everywhere else in the U.S., shipping is priced by distance from Lusik's workshop in Buena Park, CA — $9.99 to $15.49 in the lower 48 — and orders over $150 ship free." },
         { q: "Will my piece look exactly like the photos?", a: "The photos are examples of past work. Because every piece is made by hand and materials change over time, the exact fabric, trim, closure style, and colors may vary a little — current bibs may even use a different neck closure than older photos show. Each order is made with the same care, but it isn't an exact copy of the sample photo." },
       ],
@@ -419,11 +414,6 @@ export const TRANSLATIONS = {
 
     // /shop hierarchy chrome + editorial (ShopIndexView, CategoryView).
     shop: {
-      studioEyebrow: "The Embroidery Studio",
-      studioTitle: "Type a name. Watch the thread move.",
-      studioBody: "Lusik's live-3D studio: stitch any name onto a spinning fabric swatch, pick the thread, and send it over — she writes back with what it would cost on a bib, towel, or blanket.",
-      studioCta: "Step into the studio",
-
       breadcrumbHome: "Home",
       browseBy: "Browse by category",
       view: "View",
@@ -458,7 +448,7 @@ export const TRANSLATIONS = {
       newestTagline: "Two Armenian meal blessings, one matched set.",
       featured: [
         { eyebrow: "Lusik's signature", name: "The Armenian Alphabet Blanket", tagline: "Ա Բ Գ, hand cross-stitched corner to corner.", price: "From $65" },
-        { eyebrow: "The heirloom", name: "The Full Alphabet Crib Blanket", tagline: "Every letter of the Armenian alphabet, all thirty-six.", price: "By direct order · $245" },
+        { eyebrow: "The heirloom", name: "The Full Alphabet Crib Blanket", tagline: "Every letter of the Armenian alphabet, all thirty-eight.", price: "By direct order · $245" },
         { eyebrow: "For every day", name: "The Custom Name Bib", tagline: "Your child's name, in Armenian or English.", price: "From $22" },
       ],
       difference: [
@@ -544,12 +534,15 @@ export const TRANSLATIONS = {
       saveHintGuest: "Sign in to save your design and pick up where you left off later.",
       alphabetLabel: "{label} alphabet — {translit}",
       cubeOutline: "{name} cube outline",
+      // Text alternative for the live preview (2D and 3D share it).
+      previewAlt: "Preview of the {alphabet} blanket, reading {line1} {line2}",
       letterInside: "{name} letter inside",
       finalSale: "FINAL SALE —",
       finalSaleBody: "This blanket is stitched specifically for you, so all sales are final. No returns, exchanges, or refunds. Please review your alphabet, colors, and any name or year before checking out.",
       readPolicy: "Read the full policy",
       buyNow: "Buy it now",
       ships: "Ships {date}",
+      shipsWeeks: "Ships in {weeks}",
       arrives: " · arrives {date}",
       deliveryNote: "Based on Lusik's current production time and ground shipping to a U.S. address.",
       yourDesign: "Your design",
@@ -564,6 +557,9 @@ export const TRANSLATIONS = {
 
     // Bib configurator (CustomProductCard).
     bib: {
+      // Text alternative for the bib preview; the 2D template and the 3D
+      // stage share it, so it must describe the DESIGN not the widget.
+      previewAlt: "Preview of the bib embroidered with {name}",
       errSize: "Please choose a size.",
       errName: "Please type a name to embroider.",
       errTooLong: "Name must be {n} letters or fewer — the bib is small.",
@@ -590,6 +586,158 @@ export const TRANSLATIONS = {
       othersAlt: "Past customer bibs",
     },
 
+    // The three-question chooser on the shop page (ProductChooser).
+    chooser: {
+      eyebrow: "Not sure which one",
+      title: "Three questions, one answer",
+      whoLabel: "What is it for",
+      who: {
+        keepsake: "A keepsake",
+        everyday: "Everyday use",
+        whole_gift: "A gift to open",
+      },
+      whenLabel: "When do you need it",
+      when: {
+        soon: "Within a month",
+        months: "Two or three months",
+        no_rush: "No rush",
+      },
+      languageLabel: "Armenian or English",
+      language: {
+        armenian: "Armenian",
+        english: "English",
+        either: "Either is fine",
+      },
+      resultEyebrow: "Lusik would make you",
+      leadTime: "About {min} to {max} weeks to make",
+      openRecommendation: "{name} — open this product",
+      alsoConsider: "Also worth a look:",
+      excludedForTime: "{count} more pieces take longer than that. Give it more time and they come back.",
+      nothingFits: "Nothing in the shop can be finished by then in that language. Lusik does take commissions, though — it is worth asking.",
+      callLusik: "Call Lusik on {phone}",
+    },
+
+    // The "Try a name" field on the two shop cards a customer can
+    // configure (src/components/shop/TryNameField.jsx).
+    tryName: {
+      label: "Try a name",
+      placeholder: "Ani",
+      go: "See it",
+      inputAria: "Type a name to see it on the {name}",
+      goAria: "Open the {name} with the name {value}",
+      hint: "Up to {n} letters, Armenian or English.",
+    },
+
+    // The /welcome page — where the printed card lands. Written in the
+    // card's voice, which means no em dashes: the print piece was set
+    // without them on purpose.
+    welcome: {
+      eyebrow: "Welcome",
+      title: "Thank you for taking a card.",
+      lede: "Every piece here is cross stitched by hand by Lusik, in her workshop in Buena Park, California. Nothing is printed on, and no two pieces come out quite the same.",
+
+      orderEyebrow: "Ordering",
+      orderTitle: "Three ways to order",
+      orderBody: "Call her, order from this website, or send a message on Instagram. All three reach the same person.",
+      orderOnline: "Order on this website",
+
+      colorsEyebrow: "Colors",
+      colorsTitle: "Colors may vary",
+      colorsBody: "Thread and cloth are bought in small lots and the photographs were taken in daylight, so the color that arrives may not match the color on your screen or on the card. Every piece is worked by hand, so no two are identical. That is the nature of the thing.",
+
+      timeEyebrow: "Timing",
+      timeTitle: "How long a piece takes",
+      timeBibs: "Bibs",
+      timeBlanket: "The alphabet blanket",
+      timeCrib: "The full alphabet crib blanket",
+      timeBody: "If you need a piece by a particular date, call before you order and ask.",
+
+      codeEyebrow: "Coupons",
+      codeTitle: "If you have a code",
+      codeBody: "Type it into the promo box at checkout. It comes off on top of the multi piece savings, so both apply.",
+      codeCta: "Start with the shop",
+
+      careEyebrow: "Care",
+      careTitle: "Looking after a piece",
+      careBody: "Professional dry cleaning is what keeps hand stitching, crochet edging and a satin backing looking the way they left the workshop. A washing machine, a dryer or bleach will wear a handmade textile down quickly, and one wrong setting cannot be undone.",
+
+      photoEyebrow: "After it arrives",
+      photoTitle: "Send her a photo",
+      photoBody: "Lusik keeps every photograph customers send of a piece in use. If you would like to send one, write to her.",
+      photoSubject: "A photo of the piece you made",
+
+      closing: "Follow along on Instagram. New pieces and new colors show up there first.",
+    },
+
+    // The fitting room on the product page: camera poses, and the wipe
+    // between the render and a photograph of a finished piece.
+    pose: {
+      groupLabel: "How to look at the piece",
+      flat: "On the table",
+      detail: "Close up",
+      chart: "From above",
+    },
+    compare: {
+      toggle: "Compare with a photo",
+      sliderLabel: "Drag to compare",
+      valueText: "{percent}% render, the rest a photograph",
+      renderBadge: "Your design",
+      photoBadge: "A finished piece",
+      caption: "On the left is the design you have configured, drawn from the real stitch chart. On the right is a photograph of a piece Lusik finished. Thread and cloth colors on a screen are never exactly the colors in your hands.",
+    },
+
+    // The /design/<encoded> page: a design somebody sent you.
+    designShare: {
+      eyebrow: "Someone sent you this",
+      title: "A blanket, worked by hand",
+      titleFor: "A blanket for {name}",
+      lede: "Every letter here is cross-stitched by hand by Lusik, one at a time, on waffle cloth with a satin backing. Nothing about it is printed.",
+      alphabet: "Alphabet",
+      layout: "Arrangement",
+      threads: "Threads",
+      year: "Second line",
+      openCta: "Open this design",
+      copyLink: "Copy the link",
+      copied: "Copied",
+      registryEyebrow: "Baby registry",
+      registryBody: "Most universal registries take a pasted link. Copy this one into yours and the design comes with it.",
+      registryCopy: "Copy for a registry",
+      questions: "Questions about this piece, or want it changed? Lusik answers herself.",
+      mailSubject: "About a blanket design someone shared with me",
+      colorsNote: "Screens and thread do not agree. The colors above are as close as a screen gets; {product} that arrives is dyed thread on cloth, and no two pieces come out identical.",
+      brokenTitle: "That link did not come through whole",
+      brokenBody: "A shared design carries the whole design in its link, so a link that lost its last few characters cannot be put back together. Ask whoever sent it to send it again, or start one of your own.",
+      brokenCta: "Design a blanket",
+    },
+
+    // Home v3 scenes (src/components/home/HomeScenes.jsx).
+    home: {
+      piecesEyebrow: "Everything Lusik makes",
+      piecesTitle: "{count} pieces, all by one pair of hands",
+      // The Studio decides how many products are live, so the count can
+      // in principle fall to one and "1 pieces" is a typo nobody wrote.
+      piecesTitleOne: "One piece, by one pair of hands",
+      piecesAll: "See the whole shop",
+      pieceCardLabel: "{name} — open this product",
+
+      orderingEyebrow: "How ordering works",
+      orderingTitle: "Made to order, one at a time",
+      stepChooseTitle: "You choose",
+      stepChooseBody: "Pick the piece, the colors, and the name or date you want worked into it. Nothing is stitched before you order — that is what makes it yours.",
+      stepMadeTitle: "Lusik makes it",
+      stepMadeBody: "It joins the queue and Lusik works it by hand, on her own frame, in the order it came in.",
+      stepMadeBodyDated: "Your piece joins the queue and Lusik expects to start it around {start}, working it by hand in the order it came in.",
+      stepArrivesTitle: "It arrives",
+      stepArrivesBody: "Finished, photographed and posted from Buena Park. You get the photograph before the parcel.",
+      stepArrivesBodyDated: "Finished, photographed and posted from Buena Park — arriving around {arrives}. You get the photograph before the parcel.",
+
+      journalEyebrow: "From the journal",
+      journalTitle: "Where the letters come from",
+      journalAll: "Read the journal",
+      journalCardLabel: "Read: {title}",
+      journalReadMinutes: "{minutes} min read",
+    },
+
     // Heritage bib sets (BibSetCard) — shared option labels.
     bibSet: {
       colorLabel: "Thread color",
@@ -602,10 +750,19 @@ export const TRANSLATIONS = {
       capNameHint: "Optional — leave blank and Lusik uses the first initial.",
       includesCap: "Includes the matching cap",
       flagFixed: "Hand cross-stitched in the three colors of the Armenian flag — red, blue, orange. The flag is the design, so the colors are fixed.",
+      // Describes the PIECE, not the widget: this is the text alternative
+      // for the 3D stage, and a screen reader should hear what is on the
+      // cloth rather than that a canvas exists.
+      previewAlt: "Hye Em Yes bib: հայ եմ ես cross-stitched in red, blue and orange{cap}",
+      previewAltCap: ", with the matching cap and its Armenian flag",
+      previewAltSet: "{name}, hand cross-stitched, shown in {color}",
     },
 
     // Full Alphabet Crib Blanket (CribBlanketCard).
     cribBlanket: {
+      // Describes the PIECE: the whole alphabet, the colour it is worked
+      // in, and the name in the free square when there is one.
+      previewAlt: "Full Alphabet Crib Blanket: the Armenian alphabet from Ա to Ֆ hand-knit in {color}{name}",
       bodyColorLabel: "Body color",
       nameLabel: "Optional name (set into a free square)",
       namePlaceholder: "e.g. Anna",
@@ -764,19 +921,6 @@ export const TRANSLATIONS = {
   // ============================================================
   hy: {
     // TODO_LUSIK_REVIEW — auto-translated, needs a native speaker pass
-    stitch3d: {
-      eyebrow: "Կենդանի 3D — ասեղնագործության նախադիտում",
-      titlePre: "Դիտեք ինչպես է ",
-      titleEm: "ասեղնագործվում",
-      titlePost: "",
-      body: "Նույն թելը՝ շարժման մեջ. պտտեք գործվածքը, ընտրեք թելի գույնը և դիտեք, թե ինչպես է ասեղնագործությունը դասավորվում։",
-      hint: "Քաշեք՝ պտտելու համար",
-      threadLabel: "Թելի գույն",
-      studioLink: "Բացել Ասեղնագործության ստուդիան",
-      typePlaceholder: "Գրեք անունը — այն անմիջապես ասեղնագործվում է",
-      interact: "Հպեք՝ պտտելու համար",
-      interacting: "Պտտվում է — հպեք ✕՝ շարունակելու համար",
-    },
     nav: {
       blanket: "Ծածկոցը",
       custom: "Հատուկ պատվերներ",
@@ -1086,7 +1230,7 @@ export const TRANSLATIONS = {
         { q: "Ի՞նչ է լինում տեսազանգի ժամանակ։", a: "Դուք ընտրում եք ժամ, և Լուսիկը (կամ իր որդիներից մեկը) միանում է կարճ տեսազանգի։ Նա ձեզ ցույց կտա ծածկոցները, թելերի գույներն ու գործվածքը մոտիկից, և կօգնի ընտրել այբուբեն, անուն ու դասավորություն։ Կարիք չկա տեսախցիկը միացնելու, եթե չեք ցանկանում։" },
         { q: "Կարո՞ղ եք օգնել ընտրել գույներ ու անուն։", a: "Հենց դրա համար են այս զրույցները։ Բերեք մանկական սենյակի գունապնակը, քրոջ կամ եղբոր ծածկոցը կամ պարզապես մի զգացողություն — Լուսիկը կօգնի ընտրել համադրություն, որը և՛ լավ տեսք ունի, և՛ լավ է կարկատվում։ Ոչինչ չի պատվիրվում, մինչև դուք գոհ չլինեք։" },
         { q: "Իսկ եթե նախընտրեմ պարզապես գրել կամ էլ. փոստ ուղարկել։", a: "Միանգամայն ընդունելի է — մարդկանց մեծ մասն այդպես է անում։ Սեղմեք վերևի «Գրեք մեզ» կամ «Էլ. փոստ գրեք» կոճակը և գրեք այն, ինչ մտքիդ կա։ Լուսիկն ինքն է պատասխանում, երբ կարող է, այլապես՝ իր որդիներից մեկը, սովորաբար մեկ օրվա ընթացքում։" },
-        { q: "Որքա՞ն ժամանակ է պահանջում մի կտոր պատրաստելը։", a: "Յուրաքանչյուր ծածկոց ձեռքով խաչաձև կարկատվում է պատվերով, ուստի մեծ մասը պահանջում է մոտ 5–10 աշխատանքային օր, երբ ձևավորումը հաստատված է։ Դուք կստանաք լուսանկար նախքան առաքելը և հետևման հղում, երբ այն ճանապարհին լինի։" },
+        { q: "Որքա՞ն ժամանակ է պահանջում մի կտոր պատրաստելը։", a: "Յուրաքանչյուր կտոր պատրաստվում է պատվերով՝ մեկ առ մեկ, և յուրաքանչյուրն ունի իր ժամկետը՝ մոտ 2–3 շաբաթ մեկ թքակալի, 3–4՝ հավաքածուի, 5–6՝ «Շաբաթվա օրերը» հավաքածուի, 4–6՝ Հայկական այբուբենի ծածկոցի, և 10–12՝ Ամբողջ այբուբենով ծածկոցի համար։ Յուրաքանչյուր ապրանքի էջում նշված են ստույգ ամսաթվերը։ Առաքումից առաջ կստանաք լուսանկար, իսկ ճանապարհին՝ հետևման հղում։" },
         { q: "Կա՞ տեղական վերցնելու հնարավորություն։", a: "Այո — եթե դուք Օրինջ Քաունթիի կամ Լոս Անջելեսի տարածքում եք, կարող եք ձեր պատվերն անձամբ վերցնել՝ առանց առաքման։ Պատվերից հետո կապ հաստատեք Լուսիկի հետ («Գրեք մեզ» կամ «Էլ. փոստ գրեք»)՝ ժամն ու վայրը պայմանավորվելու համար։ ԱՄՆ-ի մնացած հասցեների համար առաքումը հաշվարկվում է հեռավորությամբ՝ $9.99–$15.49, իսկ $150-ից ավելի պատվերներն առաքվում են անվճար։" },
         { q: "Իմ կտորը ճի՞շտ նույն տեսքը կունենա, ինչ լուսանկարներում։", a: "Լուսանկարները նախկին աշխատանքների օրինակներ են։ Քանի որ յուրաքանչյուր կտոր ձեռագործ է, և նյութերը ժամանակի ընթացքում փոխվում են, գործվածքը, եզրագիծը, ամրակման ոճը և գույները կարող են փոքր-ինչ տարբերվել — ընթացիկ թքակալները կարող են նույնիսկ ունենալ վզի այլ ամրակում, քան ցույց են տալիս հին լուսանկարները։ Յուրաքանչյուր պատվեր պատրաստվում է նույն խնամքով, բայց այն նմուշային լուսանկարի ճշգրիտ պատճենը չէ։" },
       ],
@@ -1127,10 +1271,6 @@ export const TRANSLATIONS = {
     // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
     shop: {
       // TODO_LUSIK_REVIEW — auto-translated, needs a native speaker pass
-      studioEyebrow: "Ասեղնագործության ստուդիա",
-      studioTitle: "Գրեք անուն։ Դիտեք թելի շարժումը։",
-      studioBody: "Լուսիկի կենդանի 3D ստուդիան․ ասեղնագործեք ցանկացած անուն պտտվող գործվածքի վրա, ընտրեք թելը և ուղարկեք — նա կպատասխանի գնով։",
-      studioCta: "Մտեք ստուդիա",
       breadcrumbHome: "Գլխավոր",
       browseBy: "Դիտել ըստ կատեգորիայի",
       view: "Դիտել",
@@ -1251,12 +1391,15 @@ export const TRANSLATIONS = {
       saveHintGuest: "Մուտք գործեք՝ ձևավորումը պահպանելու և ավելի ուշ շարունակելու համար։",
       alphabetLabel: "{label} այբուբեն — {translit}",
       cubeOutline: "{name} խորանարդի եզրագիծ",
+      // ⚠️ TODO_LUSIK_REVIEW — auto-translated, needs a native speaker.
+      previewAlt: "{alphabet} վերմակի նախադիտում՝ {line1} {line2}",
       letterInside: "{name} տառ՝ ներսում",
       finalSale: "ՎԵՐՋՆԱԿԱՆ ՎԱՃԱՌՔ —",
       finalSaleBody: "Այս ծածկոցը կարկատվում է հատկապես ձեզ համար, ուստի բոլոր վաճառքները վերջնական են։ Ոչ վերադարձ, ոչ փոխանակում, ոչ գումարի վերադարձ։ Խնդրում ենք ստուգել ձեր այբուբենը, գույները և ցանկացած անուն կամ տարի նախքան վճարելը։",
       readPolicy: "Կարդալ ամբողջ կանոնը",
       buyNow: "Գնել հիմա",
       ships: "Առաքվում է {date}",
+      shipsWeeks: "Առաքվում է {weeks}-ից",  // ⚠️ TODO_LUSIK_REVIEW
       arrives: " · ժամանում է {date}",
       deliveryNote: "Հիմնված Լուսիկի ընթացիկ արտադրության ժամանակի և ԱՄՆ հասցեով ցամաքային առաքման վրա։",
       yourDesign: "Ձեր ձևավորումը",
@@ -1271,6 +1414,8 @@ export const TRANSLATIONS = {
 
     // ⚠️ TODO_LUSIK_REVIEW — auto-translated, please refine.
     bib: {
+      // ⚠️ TODO_LUSIK_REVIEW — auto-translated, needs a native speaker.
+      previewAlt: "{name} ասեղնագործված թքակալի նախադիտում",
       errSize: "Խնդրում ենք ընտրել չափ։",
       errName: "Խնդրում ենք մուտքագրել ասեղնագործելու անուն։",
       errTooLong: "Անունը պետք է լինի {n} տառ կամ պակաս — թքակալը փոքր է։",
@@ -1298,6 +1443,152 @@ export const TRANSLATIONS = {
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    chooser: {
+      eyebrow: "Վստա՞հ չեք, թե որը",
+      title: "Երեք հարց, մեկ պատասխան",
+      whoLabel: "Ինչի՞ համար է",
+      who: {
+        keepsake: "Հիշատակի իր",
+        everyday: "Ամենօրյա օգտագործման",
+        whole_gift: "Նվեր՝ բացելու համար",
+      },
+      whenLabel: "Ե՞րբ է պետք",
+      when: {
+        soon: "Մեկ ամսվա ընթացքում",
+        months: "Երկու-երեք ամսում",
+        no_rush: "Շտապ չէ",
+      },
+      languageLabel: "Հայերեն թե անգլերեն",
+      language: {
+        armenian: "Հայերեն",
+        english: "Անգլերեն",
+        either: "Ցանկացածը",
+      },
+      resultEyebrow: "Լուսիկը ձեզ կպատրաստի",
+      leadTime: "Պատրաստումը՝ մոտ {min}-ից {max} շաբաթ",
+      openRecommendation: "{name} — բացել այս ապրանքը",
+      alsoConsider: "Արժե նաև նայել՝",
+      excludedForTime: "ԵՒս {count} գործ ավելի երկար է պատրաստվում։ Ավելի շատ ժամանակ տվեք, և դրանք կվերադառնան։",
+      nothingFits: "Խանութում ոչինչ չի հասցվի այդ ժամկետում այդ լեզվով։ Սակայն Լուսիկը ընդունում է հատուկ պատվերներ — արժե հարցնել։",
+      callLusik: "Զանգահարեք Լուսիկին՝ {phone}",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    tryName: {
+      label: "Փորձեք անուն",
+      placeholder: "Անի",
+      go: "Տեսնել",
+      inputAria: "Մուտքագրեք անուն՝ {name}-ի վրա տեսնելու համար",
+      goAria: "Բացել {name}-ը {value} անունով",
+      hint: "Մինչև {n} տառ՝ հայերեն կամ անգլերեն։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    welcome: {
+      eyebrow: "Բարի գալուստ",
+      title: "Շնորհակալություն, որ վերցրեցիք քարտը։",
+      lede: "Այստեղ ամեն գործ ձեռքով խաչասեղմ ասեղնագործված է Լուսիկի կողմից՝ Բուենա Պարքի (Կալիֆոռնիա) իր արհեստանոցում։ Ոչինչ տպագրված չէ, և ոչ մի երկու գործ միանգամայն նույնը չեն ստացվում։",
+
+      orderEyebrow: "Պատվեր",
+      orderTitle: "Պատվիրելու երեք ձև",
+      orderBody: "Զանգահարեք, պատվիրեք այս կայքից կամ գրեք Instagram-ով։ Երեքն էլ հասնում են նույն մարդուն։",
+      orderOnline: "Պատվիրել այս կայքից",
+
+      colorsEyebrow: "Գույներ",
+      colorsTitle: "Գույները կարող են տարբերվել",
+      colorsBody: "Թելն ու կտորը գնվում են փոքր խմբաքանակներով, իսկ լուսանկարներն արվել են ցերեկային լույսի տակ, ուստի ստացվող գույնը կարող է չհամընկնել ձեր էկրանի կամ քարտի գույնի հետ։ Ամեն գործ ձեռքով է արվում, ուստի երկուսը նույնական չեն։",
+
+      timeEyebrow: "Ժամկետ",
+      timeTitle: "Որքան է տևում մի գործը",
+      timeBibs: "Թքակալներ",
+      timeBlanket: "Այբուբենի ծածկոցը",
+      timeCrib: "Ամբողջ այբուբենի օրորոցի ծածկոցը",
+      timeBody: "Եթե գործը պետք է որոշակի ամսաթվին, զանգահարեք նախքան պատվիրելը և հարցրեք։",
+
+      codeEyebrow: "Կուպոններ",
+      codeTitle: "Եթե ունեք կոդ",
+      codeBody: "Մուտքագրեք այն վճարման էջի կուպոնի դաշտում։ Այն կիրառվում է բազմաթիվ գործերի զեղչի վրայից, ուստի երկուսն էլ գործում են։",
+      codeCta: "Սկսել խանութից",
+
+      careEyebrow: "Խնամք",
+      careTitle: "Ինչպես խնամել գործը",
+      careBody: "Մասնագիտական չոր մաքրումն է պահում ասեղնագործությունը, կեռասեղի եզրն ու ատլասե աստառը այնպես, ինչպես դուրս են եկել արհեստանոցից։ Լվացքի մեքենան, չորանոցը կամ սպիտակեցնողը արագ մաշում են ձեռագործ գործվածքը, և մեկ սխալ ռեժիմը հետ չի շտկվում։",
+
+      photoEyebrow: "Երբ հասնի",
+      photoTitle: "Ուղարկեք լուսանկար",
+      photoBody: "Լուսիկը պահում է հաճախորդների ուղարկած ամեն լուսանկարը։ Եթե ցանկանում եք ուղարկել, գրեք նրան։",
+      photoSubject: "Լուսանկար ձեր պատրաստած գործից",
+
+      closing: "Հետևեք Instagram-ում։ Նոր գործերն ու նոր գույներն այնտեղ են հայտնվում առաջինը։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    pose: {
+      groupLabel: "Ինչպես դիտել գործը",
+      flat: "Սեղանին",
+      detail: "Մոտիկից",
+      chart: "Վերևից",
+    },
+    compare: {
+      toggle: "Համեմատել լուսանկարի հետ",
+      sliderLabel: "Քաշեք համեմատելու համար",
+      valueText: "{percent}% պատկեր, մնացածը՝ լուսանկար",
+      renderBadge: "Ձեր ձևավորումը",
+      photoBadge: "Պատրաստի գործ",
+      caption: "Ձախում ձեր ընտրած ձևավորումն է՝ գծված իրական ասեղնագործության սխեմայից։ Աջում Լուսիկի ավարտած գործի լուսանկարն է։ Թելի և կտորի գույներն էկրանին երբեք ճիշտ նույնը չեն, ինչ ձեր ձեռքերում։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    designShare: {
+      eyebrow: "Ինչ-որ մեկը սա ուղարկել է ձեզ",
+      title: "Ձեռքով գործված ծածկոց",
+      titleFor: "Ծածկոց {name}-ի համար",
+      lede: "Այստեղ ամեն տառ ձեռքով խաչասեղմ ասեղնագործված է Լուսիկի կողմից՝ մեկ առ մեկ, վաֆլե կտորի վրա՝ ատլասե աստառով։ Ոչինչ տպագրված չէ։",
+      alphabet: "Այբուբեն",
+      layout: "Դասավորություն",
+      threads: "Թելեր",
+      year: "Երկրորդ տող",
+      openCta: "Բացել այս ձևավորումը",
+      copyLink: "Պատճենել հղումը",
+      copied: "Պատճենվեց",
+      registryEyebrow: "Մանկական ցանկ",
+      registryBody: "Ցանկերի մեծ մասն ընդունում է տեղադրված հղում։ Պատճենեք սա ձեր ցանկի մեջ, և ձևավորումը կգա դրա հետ։",
+      registryCopy: "Պատճենել ցանկի համար",
+      questions: "Հարցե՞ր ունեք այս գործի մասին, կամ ուզում եք փոխել։ Լուսիկն ինքն է պատասխանում։",
+      mailSubject: "Ինձ ուղարկված ծածկոցի ձևավորման մասին",
+      colorsNote: "Էկրանն ու թելը չեն համընկնում։ Վերևի գույներն այնքան մոտ են, որքան էկրանը կարող է. հասնող {product}-ը ներկված թել է կտորի վրա, և ոչ մի երկու գործ նույնական չեն։",
+      brokenTitle: "Այդ հղումն ամբողջությամբ չի հասել",
+      brokenBody: "Համօգտագործված ձևավորումն ամբողջ ձևավորումը կրում է իր հղման մեջ, ուստի վերջին նիշերը կորցրած հղումը հնարավոր չէ վերականգնել։ Խնդրեք ուղարկողին նորից ուղարկել, կամ սկսեք ձերը։",
+      brokenCta: "Ձևավորել ծածկոց",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    home: {
+      piecesEyebrow: "Այն ամենը, ինչ պատրաստում է Լուսիկը",
+      piecesTitle: "{count} գործ՝ բոլորը մեկ զույգ ձեռքով",
+      piecesTitleOne: "Մեկ գործ՝ մեկ զույգ ձեռքով",
+      piecesAll: "Տեսնել ամբողջ խանութը",
+      pieceCardLabel: "{name} — բացել այս ապրանքը",
+
+      orderingEyebrow: "Ինչպես է աշխատում պատվերը",
+      orderingTitle: "Պատրաստվում է պատվերով՝ մեկ առ մեկ",
+      stepChooseTitle: "Դուք ընտրում եք",
+      stepChooseBody: "Ընտրեք գործը, գույները և անունը կամ ամսաթիվը, որ ուզում եք կարված լինի։ Ոչինչ չի կարվում մինչև ձեր պատվերը — հենց դա է այն ձերը դարձնում։",
+      stepMadeTitle: "Լուսիկը պատրաստում է",
+      stepMadeBody: "Այն մտնում է հերթ, և Լուսիկը կարում է ձեռքով՝ իր շրջանակի վրա, ըստ հերթականության։",
+      stepMadeBodyDated: "Ձեր գործը մտնում է հերթ, և Լուսիկը ակնկալում է սկսել այն մոտավորապես {start}՝ կարելով ձեռքով ըստ հերթականության։",
+      stepArrivesTitle: "Այն հասնում է",
+      stepArrivesBody: "Ավարտված, լուսանկարված և ուղարկված Բուենա Պարքից։ Լուսանկարը կստանաք ծանրոցից առաջ։",
+      stepArrivesBodyDated: "Ավարտված, լուսանկարված և ուղարկված Բուենա Պարքից՝ ժամանելով մոտավորապես {arrives}։ Լուսանկարը կստանաք ծանրոցից առաջ։",
+
+      journalEyebrow: "Օրագրից",
+      journalTitle: "Որտեղից են գալիս տառերը",
+      journalAll: "Կարդալ օրագիրը",
+      journalCardLabel: "Կարդալ՝ {title}",
+      journalReadMinutes: "{minutes} րոպե ընթերցում",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
     bibSet: {
       colorLabel: "Թելի գույնը",
       capHeading: "Համապատասխան գլխարկ",
@@ -1309,10 +1600,14 @@ export const TRANSLATIONS = {
       capNameHint: "Ըստ ցանկության — թողեք դատարկ, և Լուսիկը կօգտագործի առաջին տառը։",
       includesCap: "Ներառում է համապատասխան գլխարկը",
       flagFixed: "Ձեռքով խաչաձև կարված հայկական դրոշի երեք գույներով՝ կարմիր, կապույտ, նարնջագույն։ Դրոշը հենց ձևավորումն է, ուստի գույները հաստատուն են։",
+      previewAlt: "«Հայ եմ ես» թքակալ՝ հայ եմ ես խաչաձև կարված կարմիրով, կապույտով և նարնջագույնով{cap}",
+      previewAltCap: "՝ համապատասխան գլխարկով և հայկական դրոշով",
+      previewAltSet: "{name}՝ ձեռքով խաչաձև կարված, ցուցադրված {color} գույնով",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
     cribBlanket: {
+      previewAlt: "Ամբողջ այբուբենի օրորոցի ծածկոց՝ հայկական այբուբենը Ա-ից Ֆ ձեռքով հյուսված {color} գույնով{name}",
       bodyColorLabel: "Հիմնական գույնը",
       nameLabel: "Ըստ ցանկության անուն (տեղադրվում է ազատ վանդակում)",
       namePlaceholder: "օր.՝ Աննա",

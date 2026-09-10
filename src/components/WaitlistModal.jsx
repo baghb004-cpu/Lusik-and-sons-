@@ -68,7 +68,7 @@ export function WaitlistModal({ product, onClose }) {
         <button onClick={onClose} aria-label="Close" className="absolute top-3 right-3 opacity-50 hover:opacity-100 transition">
           <X size={18} />
         </button>
-        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>Almost ready</p>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>Almost ready</p>
         <h3 className="font-display text-2xl lg:text-3xl mb-3" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
           {product.name}
         </h3>
@@ -93,7 +93,7 @@ export function WaitlistModal({ product, onClose }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={busy}
-              className="flex-1 px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+              className="flex-1 px-3 py-2.5 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
               style={{ border: "1px solid rgba(26,22,18,0.15)" }}
               aria-label="Email address"
             />

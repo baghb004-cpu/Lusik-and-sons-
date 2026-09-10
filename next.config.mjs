@@ -66,17 +66,6 @@ const nextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },
-      // The embeddable 3D stitch stage: product pages iframe this ONE static
-      // page (Stitch3DPanel), so it alone may be framed — by our own origin
-      // only. Later entries override same-key headers from the catch-all.
-      // netlify.toml carries the matching production override.
-      {
-        source: "/embroidery/stage.html",
-        headers: [
-          { key: "Content-Security-Policy", value: CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'") },
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-        ],
-      },
     ];
   },
 };

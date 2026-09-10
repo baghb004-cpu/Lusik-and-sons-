@@ -6,24 +6,44 @@
     "collect": {
       "startServerCommand": "npx next start --port 4173",
       "startServerReadyPattern": "Local:",
+      "_comment_urls": "The six pages a customer actually lands on: home, the shop index, a live product page, the bag, and the journal (index + a post). Adding the shop path mattered — /shop was where the one real accessibility defect turned up.",
       "url": [
         "http://localhost:4173/",
+        "http://localhost:4173/shop",
+        "http://localhost:4173/shop/blankets/armenian-alphabet-blanket",
+        "http://localhost:4173/cart",
         "http://localhost:4173/journal",
         "http://localhost:4173/journal/armenian-alphabet-gift"
       ],
       "numberOfRuns": 1,
-      "_comment_runs": "One run per URL keeps CI under 2 min. Bump to 3 if scores get noisy."
+      "_comment_runs": "One run per URL. Only the deterministic categories (accessibility, SEO) are blocking, and those score identically every run, so a median of three would cost six minutes of CI to change nothing. Raise this to 3 in the same PR that promotes performance to 'error' — that one IS noisy."
     },
 
     "assert": {
-      "_comment_thresholds": "All four categories start at 'warn' so we can SEE the scores on every PR without blocking merges. Once we know the baseline scores from a few real runs (and address any specific findings we want to enforce), promote each one to 'error' individually to make it a blocking gate.",
-      "_comment_floors": "Floors deliberately permissive at MVP. Performance especially — the alphabet blanket gallery has lots of large JPEGs; an Image CDN would push this higher, but the photo set is small enough today that it's not yet worth it.",
-      "assertions": {
-        "categories:accessibility":  ["warn", { "minScore": 0.90 }],
-        "categories:best-practices": ["warn", { "minScore": 0.85 }],
-        "categories:seo":            ["warn", { "minScore": 0.90 }],
-        "categories:performance":    ["warn", { "minScore": 0.70 }]
-      }
+      "_comment_promotion": "Accessibility and SEO are now BLOCKING, at floors the site clears with room: measured 1.00 accessibility on every page (0.99 on /shop until the redundant category-card alt was fixed) and 1.00 SEO on every indexable page. A gate set above what the site scores is a gate somebody switches off, so performance and best-practices stay warnings until the work behind them lands.",
+      "_comment_best_practices": "Best practices is CAPPED at 0.75 by 'third-party-cookies', which is the Meta and Google Ads tags doing what ad tags do. That is a business decision the owner made (the pixels are live and consent-gated), not a defect, so the category cannot reach 0.95 while the ads run. Left as a warning rather than pretending otherwise.",
+      "_comment_performance": "Measured 0.58 on mobile home in CI. The lazily-loaded LCP image was fixed in this pass; the rest is total blocking time and render-blocking CSS, which is real work and not a config change. The product page is the worst at 0.48 — that is the configurator. Promote this to 'error' when it clears 0.75 twice in a row.",
+      "_comment_read_the_ci_numbers": "Run this locally and the scores come out much higher — performance 0.82 and best-practices 0.96 on home. That is not the site being fast; it is a sandboxed network refusing the ad hosts, so no third-party cookie is ever set and none of that JavaScript ever executes. Accessibility and SEO are DOM audits and do score the same either way, which is exactly why those two are the ones promoted to blocking. For performance and best-practices, believe CI and nothing else.",
+      "assertMatrix": [
+        {
+          "matchingUrlPattern": "^(?!.*/cart$).*$",
+          "assertions": {
+            "categories:accessibility":  ["error", { "minScore": 0.95 }],
+            "categories:seo":            ["error", { "minScore": 0.95 }],
+            "categories:best-practices": ["warn",  { "minScore": 0.85 }],
+            "categories:performance":    ["warn",  { "minScore": 0.70 }]
+          }
+        },
+        {
+          "_comment_cart": "The bag is deliberately noindex — a cart in a search index is a bug, not a win. That single audit ('is-crawlable') is 4 of the 10 SEO points, so /cart scores 0.63 and always will. It is held to accessibility like every other page; SEO is simply not a question that applies to it.",
+          "matchingUrlPattern": ".*/cart$",
+          "assertions": {
+            "categories:accessibility":  ["error", { "minScore": 0.95 }],
+            "categories:best-practices": ["warn",  { "minScore": 0.85 }],
+            "categories:performance":    ["warn",  { "minScore": 0.70 }]
+          }
+        }
+      ]
     },
 
     "upload": {

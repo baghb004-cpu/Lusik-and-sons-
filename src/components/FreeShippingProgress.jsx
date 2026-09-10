@@ -21,7 +21,7 @@ export function FreeShippingProgress({ subtotalCents }) {
       <div className="flex justify-between items-baseline mb-2">
         <p className="text-xs leading-snug">
           {isEarned ? (
-            <span style={{ color: "var(--accent)", fontWeight: 500 }}>You've earned free U.S. shipping.</span>
+            <span style={{ color: "var(--accent-text)", fontWeight: 500 }}>You've earned free U.S. shipping.</span>
           ) : (
             <>
               <span style={{ fontWeight: 500 }}>${(remaining / 100).toFixed(2)}</span>

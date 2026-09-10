@@ -43,6 +43,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 >    cover CCPA/GDPR rights; and every build enforces a **210 KB gzip
 >    first-load JS budget** per route (`scripts/check-bundle-budget.mjs`).
 
+> **Overhaul (Sept 2026):** `SITE_OVERHAUL_HANDOFF.md` is the phase-by-phase plan
+> for the site overhaul (real-time 3D product engine, storyboarded pages, lead-time
+> engine, order milestones, the premium layer). **Phases 1 to 3 are done.** That
+> covers: **PR 1** (Embroidery Studio gone, photo hero, `designBus`,
+> visual-regression suite), **PR 16** (the capability ladder), **PRs 2 to 5 — the
+> Loom**, the real-time 3D product engine with a rig for every live product (see
+> "The Loom" below), **PRs 6 to 8** (Home v3's scenes, the shop chooser, "Try a
+> name", `/welcome` and the stitched 404, the fitting room, cart thumbnails of the
+> configured design), **PR 9** (lead-time engine), **PR 10** (order milestones),
+> **PR 11** (shared designs, the gift card preview and the gift receipt), **PR 12**
+> (reviews and the "Made for" wall), **PR 13** (coupons that always work), and
+> **PR 17's contrast half** (see the colour token rule under Conventions). What is
+> left is Phase 4 onward: PR 14 (performance), PR 15 (admin/content/docs), PR 18
+> (offline) and the premium layer, plus Home v3's parked "first stitch" scene. The
+> document's progress log says what is next and records what each piece cost in
+> bugs.
+
 ## What this is
 
 A marketing + e-commerce site for **Lusik & Sons**, a Buena Park, CA maker of hand
@@ -84,7 +101,16 @@ Runtime stack:
   redirect still works. Driven programmatically through the `auth` wrapper.
 - **Sentry** (`@sentry/react`) — error monitoring, dynamically imported and off
   until `NEXT_PUBLIC_SENTRY_DSN` is set (no bundle cost when unconfigured).
-- Google Fonts: Fraunces (display), DM Sans (body), Allura
+- **Fonts are self-hosted**, not fetched from Google: `src/styles/fonts.css`
+  declares every `@font-face` against woff2 files in `public/fonts/`. Fraunces
+  (display), DM Sans (body), Allura (the machine-embroidery script), plus **Noto
+  Serif Armenian and Noto Sans Armenian** — the other three have no Armenian
+  coverage at all, so without those two every Armenian character on the site,
+  and every letterform the Loom charts into a stitch grid, came from whatever
+  font the visitor's device happened to have. The stacks live in one place: the
+  `--font-display` / `--font-body` / `--font-script` tokens in
+  `src/styles/index.css`; `tailwind.config.mjs` points at those tokens rather
+  than repeating them
 
 Deploy target is **Netlify**. `netlify.toml` has `command = "npm ci && npm run next:build"`,
 `publish = ".next"`, and the `@netlify/plugin-nextjs` plugin (which wires SSR/ISR +
@@ -114,11 +140,11 @@ drift as the tree grows; use `rg`/`grep` to locate a component. High-level shape
 | `content/` | **CMS-managed JSON** (edited in the Studio at `/studio`): `products/*.json` (all 11), `categories/*.json` (4), `pages/*.json` (announcement bar, faq, home featured pick, story, testimonials) — see "Content layer" below |
 | `scripts/gen-*.mjs` | Build-time generators (`npm run gen:data`) that compile `content/` + `journalPosts.js` into `src/data/*.generated.js` / `journalPostsData.js`; `check-bundle-budget.mjs` is the postbuild JS-budget gate |
 | `src/data/*.{js,ts}` | Pure data: `product.js` (live Armenian Alphabet Blanket), `customProducts.js` (bib), `catalog.js` (catalog assembly over the generated CMS data), `config.js` (the dial board), `socialPlatforms.js`, `shippingCarriers.ts`, `shippingZones.js`, `policies.js` (privacy/terms text, single source for modal + `/privacy`), `journalPosts.js` |
-| `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `errorReporting` (Sentry), `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl`, `seo` (`organizationJsonLd()` etc.) |
+| `src/lib/*.{js,ts}` | Non-React wrappers: `auth` (Netlify Identity), `db` (fetch wrapper around every Function), `analytics`, `errorReporting` (Sentry), `cartId` (`mapLegacyId`), `tracking` (`getTrackingUrl`), `galleryRotation`, `designUrl`, `designBus` (typed `design:change` events the configurators publish; the planned 3D engine subscribes), `seo` (`organizationJsonLd()` etc.) |
 | `src/i18n/` | `LangContext.jsx` (+ `LanguageProvider`, `useT()`), `translations.js` (en / hy / hyw) |
 | `src/images/photos.js` | `PHOTO_*` / `IMG_*` constants → `/img/*.jpg` paths |
 | `src/components/` | Leaf + widget + domain components (see below) |
-| `src/components/shop/` | The `/shop` hierarchy: `ShopIndexView` (4 category cards), `CategoryView` (one category's product grid), `ProductView` (resolves live vs placeholder), `ProductPlaceholderView` (coming-soon / commission template), `Breadcrumbs`, `HelpDecidingSection` |
+| `src/components/shop/` | The `/shop` hierarchy: `ShopIndexView` (4 category cards), `CategoryView` (one category's product grid), `ProductView` (resolves live vs placeholder), `ProductHero` (the photo band at the top of every live product page; the planned 3D engine mounts inside it), `ProductPlaceholderView` (coming-soon / commission template), `Breadcrumbs`, `HelpDecidingSection` |
 | `src/styles/` | `index.css` with the `@tailwind` directives + the migrated custom CSS (animations, mega-menu, print styles, the mobile "Liquid Glass" nav) |
 
 Notable components: `HomeView` (the brand-story home + the "Explore" cards),
@@ -199,6 +225,41 @@ often trip up code/tests written against the old UI:
   (perspective) parent; `lg-shine` surfaces skip `.t3d-glare` (both use
   `::after`). Honors `prefers-reduced-motion`, checked live.
 
+## Home v3 — the storyboarded scenes (`CONFIG.HOME_V3`)
+
+Three scenes in the home feed, in `src/components/home/HomeScenes.jsx`,
+sitting **after** the Explore cards (which the e2e suite and the mobile
+bottom nav navigate by `aria-label`, so they and the "See what Lusik
+makes" hero CTA must not move):
+
+- **Seven pieces** — every live product, read from the catalog so a
+  Studio publish appears without a code change.
+- **How ordering works** — three steps dated by `src/lib/leadTime.js`,
+  computed **after mount**: the routes are prerendered, so a build-time
+  date would be stale and mismatch on hydration. The dated paragraphs
+  carry `data-live-dates` so the visual suite masks them.
+- **From the journal** — the two most recent posts.
+
+**Which photograph stands for a product is one decision**, in
+`src/lib/productHeroImage.js`, shared by this row and the category grid.
+The Custom Name Bib has no `coverImage` at all and falls back to the four
+past-customer photos; a surface that reads `product.coverImage` directly
+draws an empty frame for it.
+
+## The three-question chooser (`/shop`)
+
+"What is it for, when do you need it, Armenian or English" → one product.
+The rules are `src/lib/chooseProduct.js` (plain JS, unit tested) because
+a customer acts on the answer. Two of them are not preferences but
+filters: **a deadline removes what cannot be finished in time** (judged
+on the LONGEST estimate in `CONFIG.LEAD_TIMES.WEEKS`), and asking for
+English removes the pieces whose Armenian *is* the product. The count of
+pieces held back for time is shown, never hidden.
+
+The shop page renders its mobile and desktop columns **both into the
+DOM**, switched by CSS — anything dropped in there needs `useId` rather
+than a literal `id`, or the document carries it twice.
+
 ## Content layer — CMS-managed JSON (`content/`)
 
 Since June 2026 the catalog and several page surfaces are **data, not code**,
@@ -239,7 +300,7 @@ Unlike the previous Supabase-backed setup, everything server-side now lives in t
 
 ```
 netlify/
-├── schema.sql                       # apply once: `netlify db query --file netlify/schema.sql`
+├── schema.sql                       # applied automatically on every deploy (`prenext:build` → `npm run db:migrate`)
 └── functions/
     ├── package.json                 # function-only deps; Netlify CI runs `npm install`
     ├── _lib/
@@ -257,7 +318,9 @@ netlify/
     │   ├── scheduled.mjs            # scheduled-function auth (Netlify scheduler / SCHEDULED_FN_SECRET)
     │   ├── origin.mjs               # request-origin checks
     │   ├── image-sniff.mjs          # magic-byte sniffing for uploaded images
-    │   └── inventory.mjs            # shared inventory/cap logic
+    │   ├── inventory.mjs            # shared inventory/cap logic
+    │   ├── lead-time-queue.mjs      # queue-aware ship-by dates (mirrors CONFIG.LEAD_TIMES)
+    │   └── order-tokens.mjs         # HMAC capability tokens — PURPOSE-PREFIXED (`order-view:` vs `order-review:`), one secret
     ├── profile.mjs                  # GET/PUT /profile
     ├── addresses.mjs                # GET/POST/DEL /addresses
     ├── saved-cart.mjs               # GET/PUT /saved-cart
@@ -276,6 +339,14 @@ netlify/
     ├── admin-waitlist-notify.mjs    # POST — "it's available" emails (admin, capped)
     ├── inventory.mjs                # GET — public availability snapshot per product group
     ├── zip-lookup.mjs               # GET ?zip= → { city, state } (first-party, for checkout confirmation)
+    ├── lead-time.mjs                # GET — queue-aware ship-by estimate per product
+    ├── order-milestones.mjs         # GET ?id=&t= — token-gated follow-along (items + gift message, NEVER a price)
+    ├── admin-order-milestone.mjs    # POST — advance an order's milestone (admin)
+    ├── reviews.mjs                  # GET — approved reviews, per product or for the photo wall (public)
+    ├── review-submit.mjs            # GET/POST ?id=&t= — token-gated; always writes status `pending`
+    ├── review-photo-get.mjs         # GET ?key=... — serves a review photo only while approved AND consented
+    ├── admin-reviews.mjs            # GET/PUT — moderation queue; can write `status` and nothing else
+    ├── review-request.mjs           # scheduled daily — "how is it holding up?" email 14 days after delivery
     ├── chat.mjs                     # POST — Anthropic API proxy for ChatAssistant (key server-side, usage-capped)
     ├── gift-reminder.mjs            # scheduled daily — one-year gift reminder emails
     ├── unsubscribe-gift-reminder.mjs# GET — HMAC-signed unsubscribe, no sign-in
@@ -287,7 +358,10 @@ netlify/
 ### Database — Netlify Database (Neon-backed Postgres)
 
 - One database per Netlify site, provisioned by `netlify database init`. Connection string is injected as `NETLIFY_DATABASE_URL`; `@netlify/neon`'s `neon()` reads it implicitly.
-- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items` — defined in `netlify/schema.sql`.
+- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items`, `product_waitlist`, `order_milestones`, `reviews` — defined in `netlify/schema.sql`.
+- **The schema applies itself on every deploy.** `prenext:build` runs `npm run db:migrate` (`scripts/apply-schema.mjs`), so code and the tables it expects ship together and there is no manual step to forget. It skips silently without a `NETLIFY_DATABASE_URL` (CI, local builds) and fails the build rather than publishing a site whose database is missing tables. This exists because the manual step *was* forgotten: production ran for months on an empty database while the code using it deployed fine.
+- **That makes `schema.sql` load-bearing in a new way: it runs unattended against the real database on every build, deploy previews included.** `apply-schema.test.mjs` enforces what keeps that safe — each statement arrives whole (balanced parens, no stray semicolon, no dollar-quoted body the splitter would cut in half), nothing is destructive, every required table is still created, **every `CREATE`/`ADD COLUMN` is guarded by `IF NOT EXISTS` so the second deploy behaves like the first**, and the schema's last word on any constraint is `ADD`, never `DROP`. Every one of those is verified red by mutation. **If one starts failing, fix the schema or stop running it on every build — do not weaken the test.**
+- **Watch out locally:** `npm run next:build` migrates whatever database is in your environment. A local build with the production URL exported will migrate production.
 - **No Row-Level Security.** Supabase used RLS as the authorization layer because the browser hit the DB directly. On the Netlify stack, every query runs inside a Function; the Function checks the Identity JWT and filters by `user_id` itself. Postgres just trusts the Function.
 
 ### File storage — Netlify Blobs
@@ -412,6 +486,36 @@ city/state via the first-party `zip-lookup` Function (place data generated by
 - **Browser/server pricing pairs have drift tests.** `CONFIG.BUNDLE_DISCOUNT` ↔ `_lib/bundle-discount.mjs`, `CONFIG.LAUNCH_PROMO` ↔ `_lib/launch-promo.mjs`, the free-shipping threshold ↔ `_lib/pricing.mjs`. Change both halves in the same commit.
 - **`CONFIG.ROTATED_GALLERY_INDEXES`** is a CSS-rotation band-aid for sideways source images; remove an index once its image is re-uploaded correctly.
 - **Reduced-motion is honored.** Decorative animations (heart-burst, cart pulse) check `prefers-reduced-motion`. Match this for any new animation.
+- **Type goes through a token too, and the charting face is not the display
+  face.** `--font-display` / `--font-body` / `--font-script` in
+  `src/styles/index.css` are the only place a font stack is written; Tailwind's
+  `font-display` / `font-body` / `font-script` utilities resolve to them. The
+  Loom is the exception that proves the rule: a canvas cannot read a custom
+  property, so `STITCH_FONT_STACK` in `src/loom/stitch/rasterize.js` names its
+  family outright — and deliberately does **not** name Fraunces. At 13x15 cells
+  the display cut's hairlines fall under the sampler's threshold, so "A" charted
+  as a bare diagonal with no crossbar. Charts come from Noto Serif Armenian,
+  which also means a child's Latin name and the Armenian alphabet beside it are
+  worked in one hand. `stitch-font.test.mjs` and `tests/e2e/loom-glyphs.spec.mjs`
+  hold the two halves of that.
+- **Color goes through a token, and the gold has three of them.** `--accent`
+  (`#B08842`) is the brand gold for borders, icons and fills; it reads 2.8:1 on
+  cream, so it is never text on a light ground. Use `--accent-text` on a normal
+  surface, `--accent-on-ink` on an `--ink` panel (which inverts with the theme,
+  like `--text-on-ink`), and `--text-on-accent` for text on a gold fill. Never
+  hardcode a hex for text or for a surface that sits under themed text — that is
+  what left the desktop mega-menu cream-on-cream and every `bg-white` input
+  showing cream text on white in dark mode. `docs/design-system.md` has the full
+  table and the reasoning; two tests enforce it (see below).
+- **A cart row's `thumb` is display-only, and re-validated on read.** It is a
+  small WebP the 3D stage exported when the piece went in the bag, so the row
+  shows what the customer configured rather than a stock photo. It never
+  reaches the server — `CheckoutView` builds its payload from an explicit list
+  of fields — and `readStoredCart` runs it through `sanitizeThumb`
+  (`src/lib/cartThumb.js`) on the way out of localStorage, because the value
+  goes straight into an `<img src>` and storage is not something this code
+  wrote. Absent on any device that cannot run the engine, and the row then
+  shows the product photograph exactly as before.
 - **Cart IDs encode the variant.** A blanket cart row's `id` looks like `blanket-{alphabet}-{layout}-{blockDMC}-{letterDMC}[-multi-{dmcs}]`. Two orders with different colors stay separate line items, not qty=2. The trusted-products map keys off the layout suffix.
 
 ## Local development
@@ -424,18 +528,72 @@ city/state via the first-party `zip-lookup` Function (place data generated by
 
 Two layers, both run by `npm test`, and CI runs both on every push and PR (`.github/workflows/test.yml`, the **Tests** workflow):
 
-1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`, ~135 tests) — Node's built-in test runner, no extra install. Covers the security-critical helpers (`requireUser`/`requireAdmin` + `ADMIN_EMAILS` fallback, HMAC token roundtrip, origin allowlist, image sniffing, header safety, the `TRUSTED_PRODUCTS` price-map shape, webhook logic) **and the browser↔server drift tests** (`pricing-drift`, `bundle-discount-drift`, `launch-promo-drift`, `shipping-zones-drift`). `npm run test:unit` (its `pre` hook runs `gen:data` first; the function deps need `npm install` inside `netlify/functions/` when running outside CI).
+1. **Unit tests** (`netlify/functions/_lib/__tests__/*.test.mjs`, ~172 tests) — Node's built-in test runner, no extra install. Covers the security-critical helpers (`requireUser`/`requireAdmin` + `ADMIN_EMAILS` fallback, HMAC token roundtrip, origin allowlist, image sniffing, header safety, the `TRUSTED_PRODUCTS` price-map shape, webhook logic) **and the browser↔server drift tests** (`pricing-drift`, `bundle-discount-drift`, `launch-promo-drift`, `shipping-zones-drift`). `npm run test:unit` (its `pre` hook runs `gen:data` first; the function deps need `npm install` inside `netlify/functions/` when running outside CI).
 
 2. **E2E smoke tests** (`tests/e2e/*.spec.mjs`) — Playwright headless Chromium against a production Next build of the site, configured in `playwright.config.mjs` with **two projects**: `desktop-chromium` and `mobile-chromium` (Pixel 5, so `isMobile` is true). The `webServer` block runs `npm run next:build && npx next start --port 4173`. Backend calls are stubbed via `page.route()`. `npm run test:e2e` (first time: `npm run test:install`).
 
    The suite is written against the post-redesign UI (PR #147): it routes home→shop and home→story through the **Explore cards** (which render on both viewports), asserts the **"Almost in Lusik's hands"** checkout heading, asserts the priced-placeholder **"Write Lusik to commission this"** link, and **skips the cart-drawer tests on `mobile-chromium`** (the drawer is desktop-only). When the UI copy or nav changes again, these selectors are the first thing to update.
+
+3. **Contrast gates** — two layers, both failing the build rather than warning.
+   `netlify/functions/_lib/__tests__/token-contrast.test.mjs` scores every token
+   pairing against its gate (7:1 body, 4.5:1 other text, 3:1 large text and
+   control boundaries) in both atmospheres, reading the real stylesheet.
+   `tests/e2e/contrast.spec.mjs` walks every visible text node on ten routes, in
+   both themes on both viewports, and scores the real composited colors — that
+   is the layer that catches a component hardcoding a hex. It exempts
+   `aria-hidden` decoration, `role="img"` product previews (a thread color on a
+   cloth color is a truthful property of the product), and text over a
+   background image (counted and annotated, never silently dropped). Details and
+   the reasoning for each exemption: `docs/design-system.md`.
+
+4. **Visual-regression baselines** (`tests/visual/baseline.spec.mjs`, config
+   `playwright.visual.config.mjs`) — one full-page screenshot per key page per
+   Playwright project, compared against the committed PNGs in
+   `tests/visual/__snapshots__/`. `npm run test:visual`; accept a deliberate
+   page change with `npm run test:visual -- --update-snapshots` **in the PR that
+   makes the change**, and say so in the PR body. Runs as its own CI job. Added
+   as the "nothing can break" evidence for the overhaul in
+   `SITE_OVERHAUL_HANDOFF.md`.
+
+   **The committed baselines are drawn by CI, not locally.** A pixel baseline
+   belongs to the browser that drew it: CI installs the Chromium revision
+   pinned by `@playwright/test`, and a sandbox pointing
+   `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at its own build is a different one. They
+   differ in text metrics, not just antialiasing, so paragraphs wrap
+   differently and the full-page height moves 16 to 32 px — and Playwright
+   fails outright on a size mismatch. To refresh a baseline: push, let the
+   Visual baselines job fail, download its `visual-diffs` artifact, **look at**
+   each `*-actual.png`, copy them over `tests/visual/__snapshots__/<project>/`,
+   and push again. A green local `--update-snapshots` run proves nothing about
+   CI. The full procedure is in the header of `tests/visual/baseline.spec.mjs`.
+
+   Sandboxes that ship a single Chromium build can still point
+   `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it to SEE what moved — just don't
+   commit the resulting PNGs.
+
+6. **Accessibility gate** (`tests/e2e/a11y.spec.mjs`, `npm run test:a11y`) — axe
+   on fifteen routes, on both viewports; **serious and critical violations fail
+   the build**, lower tiers are logged but not enforced. `color-contrast` is
+   disabled in axe on purpose: the contrast suite above is the stricter, reasoned
+   owner of that question, and two checkers disagreeing means arguing with a tool
+   instead of reading a page. Both viewports matter — the one real defect it
+   found was mobile-only (the immersive sheet's photo strip was a scroll region
+   no keyboard could reach, so on a phone the whole photo set of every photo-led
+   product was pointer-only). Runs as its own CI job so it does not lengthen the
+   e2e one.
+
+5. **Capability-ladder tiers** (`tests/e2e/tiers.spec.mjs`) — run only by the
+   `lean-3g` and `core-2g` projects in `playwright.config.mjs` (part of
+   `npm run test:e2e`): the throttled phone gets a usable page with the decorative
+   motion off and a tier choice that persists; the JavaScript-off browser still
+   browses, reads a product, and finds the phone number.
 
 ### One-time Netlify setup (fresh site)
 
 1. Connect the GitHub repo to a Netlify site.
 2. Site → Identity → Enable (decide email-confirmation policy).
 3. From a local checkout: `netlify link`, then `netlify database init`.
-4. Apply schema: `netlify db query --file netlify/schema.sql`.
+4. Apply schema: nothing to do — the first deploy applies it (`prenext:build` → `npm run db:migrate`). `netlify db query --file netlify/schema.sql` still works if you want it applied before deploying.
 5. Set env vars in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
 6. In Stripe, add a webhook at `https://<site>.netlify.app/api/stripe-webhook`. Subscribe to **all three** of `checkout.session.completed`, `charge.refunded`, `checkout.session.expired`. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 7. (Recommended) Sign up at resend.com, set `RESEND_API_KEY` + `ADMIN_NOTIFICATION_EMAIL` (optionally verify the domain + set `RESEND_FROM_EMAIL`).
@@ -446,33 +604,193 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
 
 A condensed list of things wired up that aren't obvious from the architecture overview.
 
-### The Embroidery Studio (`/embroidery`) + the Live 3D stitch layer (July 2026)
+### Capability ladder — full / lean / core (Sept 2026)
 
-- **`/embroidery` is a static one-screen "loadout" studio** (`public/embroidery/`,
-  vanilla JS + vendored Three.js r160, outside the Next bundle): no sign-in, the
-  visitor lands directly on a dark three-zone screen (pieces rail | 3D stage |
-  customization rail) and types a name that stitches onto a fabric swatch in live
-  3D. The catalog is **intentionally empty for now** (`presets/*.json` hold the
-  schema + a `playground` garment type; `PLAYGROUND_PIECE` in `app.js` is the
-  stand-in). Submitting sends a **quote request** through the `embroidery-order`
-  Function — rate-limited, origin-checked — which emails Lusik the design spec
-  plus a **machine-ready `.pes`** generated in-browser by `js/engine/`
-  (pes-writer byte-identical to pyembroidery; planner does per-letter slab
-  tatami fill). The bare path 301s to `/embroidery/` (relative assets — never
-  200-rewrite the bare path).
-- **Every live PDP gets the same 3D treatment** via `Stitch3DPanel`
-  (`src/components/shop/Stitch3DPanel.jsx`): it iframes
-  `public/embroidery/stage.html` (the chrome-less stage driven over
-  postMessage), so **Three.js never enters the Next bundle** — the 210 KB
-  budget is untouched. Per-product signature stitches live in
-  `src/data/stitchPreviews.js`; the custom bib + alphabet blanket configurators
-  dispatch `stitch3d:live` CustomEvents so typing restitches the stage in real
-  time. The shop index's dark `StudioBanner` links into the studio.
+One device-tier decision that every asset class reads instead of sniffing on its
+own (`SITE_OVERHAUL_HANDOFF.md` 11.1). `src/lib/capability.ts` runs once on the
+client (from `app/providers.tsx`), reads the real signals (network type, Save-Data,
+`prefers-reduced-data`, rtt/downlink, `deviceMemory`, `hardwareConcurrency`, the
+storage estimate, battery, a measured first-image time, screen and preference media
+queries, and a WebGL probe deferred to idle), and resolves a tier through the pure
+resolver in `src/lib/capabilityTier.js` (plain JS so the Node 20 unit test can
+import it):
+
+- **full** — 4G+, 4 GB+ RAM, desktop or recent phone. Everything on.
+- **lean** — 3G, Save-Data / reduced-data, 2 to 3 GB RAM, two cores or fewer, a
+  dying battery, or a slow measured first image. Decorative motion off (theater
+  rise-ins, alphabet marquee, glare and shine, stagger), no speculative prefetch, no
+  DEPTH tilt.
+- **core** — 2G, under 2 GB RAM, or storage nearly full. Every animation and
+  transition collapses to a cut. The site also works with JavaScript off entirely
+  (server-rendered pages, `<noscript>` note with the phone number on the two
+  configurator products).
+
+The tier is published two ways: `<html data-tier>` for CSS (the "CAPABILITY LADDER"
+block at the end of `src/styles/index.css`) and the `capability:change` window
+event for JS (`useTier()` hook, `prefetchAllowed()`, `useTilt3D`). Detection may
+only *lower* the tier mid-session; the visitor's own choice may do anything: the
+"Lighter version" checkbox (`TierToggle`, in the desktop footer and the mobile
+For You "More" strip) persists in `localStorage` (`lusik_tier_v1`) and always wins,
+and `?tier=full|lean|core` pins the tier for the tab (`sessionStorage`) for
+testing. Dials: `CONFIG.TIERS`.
+
+`src/lib/rum.ts` reports LCP / INP / CLS plus the tier through the consent-aware
+`track()` wrapper, and only when Umami is configured; otherwise it imports nothing.
+The Playwright projects `lean-3g` (CDP Slow-3G + 4x CPU) and `core-2g` (JavaScript
+disabled) run `tests/e2e/tiers.spec.mjs` only; the smoke suite stays on the two
+rendering projects. Later PRs (photos, video, 3D, fonts, storage) read
+`getTier()` / `useTier()` instead of inventing their own checks.
+
+### The Loom — the real-time 3D product engine (Sept 2026)
+
+`src/loom/` renders a product as real cross-stitch geometry and restitches
+as the customer types. It is the centrepiece of `SITE_OVERHAUL_HANDOFF.md`
+Phase 1. Live on the Armenian Alphabet Blanket's configurator; dials in
+`CONFIG.LOOM` (`ENABLED` is a kill switch, `PRODUCTS` lists which product
+keys mount a stage). **Every live product has a rig**: the Armenian
+Alphabet Blanket, the Custom Name Bib, the Hye Em Yes bib, the
+Days-of-the-Week and Anushig sets, the Bari Akhorzhak set, and the Full
+Alphabet Crib Blanket. The photo-led products' stages are desktop-only:
+on phones they open in the immersive sheet, where the photographs are the
+backdrop.
+
+**What a piece says is data, checked against the page that sells it.**
+The Armenian on the sets lives in `src/data/setBibs.js`, the flag colours
+in `hyeEmYes.js`, the alphabet grid in `cribBlanketLayout.js` — all plain
+JS, all with drift tests comparing them to the product JSON. A wrong
+Armenian word is not a red build; it is a hand-stitched mistake in a box.
+Never transcribe stitched Armenian off a photograph: the crib blanket's
+letters come from the Unicode block and the render is then compared to
+the photograph.
+
+**Pass the RIG key to `LoomStage`, never the SKU key.** Adding a cap
+switches a product's SKU to its `-with-cap` variant, and `LoomStage`
+rebuilds the engine whenever `productKey` changes — a second
+`WebGLRenderer` cannot take the canvas back after the first has
+force-lost its context, so the stage drops to its poster and stays
+there. A cap is a property of the design (`withCap`), not a second rig.
+
+**A set fits itself into the frame; the camera does not move.** The pose
+frames one bib, so `rigs/arrange.js` lays a set out, measures it, and
+shrinks it. The measurement is tighter than a single bib because the near
+row projects larger, and multi-piece arrangements lean away from the
+camera. Never hand-write an extent beside the placements — they drift.
+
+**Reaching it.** Only ever through `next/dynamic` — `src/loom/index.ts` is
+the single entry point. A static import folds three.js into that route's
+first-load JS, and `scripts/check-bundle-budget.mjs` fails the build if it
+does. That gate finds the engine's chunks by a set of signatures (the
+build tag in `src/loom/buildTag.ts`, plus `__THREE_DEVTOOLS__` for three's
+vendor chunks — matching only the tag missed 123 KB, nearly the whole
+cost). Budget: 230 KB gzip; currently 127 KB.
+
+**Language.** Rendering code is `.ts`. Pure logic that a Node 20 unit test
+must import is plain `.js` with JSDoc — `tier.js`, `stitch/chart.js`,
+`stitch/planner.js`, `stitch/rasterize.js` — the same convention as
+`capabilityTier.js` and `leadTime.js`. A test has to import the real
+module, not a transcription of it.
+
+**Tiers.** `src/loom/tier.js` resolves high / mid / low and does NOT sniff
+the device: the capability ladder already decided once, and PR 16 left
+`getGpuSignal()` for this caller. `low` never loads the engine. `?loom=`
+pins a tier for the tab (sessionStorage), which is how the visual suite
+keeps its baselines free of GPU-dependent pixels.
+
+**Never a blank box.** Every failure path — `low`, no WebGL, two lost
+contexts, the flag off, any exception — lands on the fallback. In the
+configurator that fallback is the **live 2D preview**, not a still image,
+so a visitor who cannot run the engine still watches their name appear.
+
+**Placement is shared.** Which cell holds which letter, the name, the year
+and the woven motifs comes from `src/data/blanketLayout.js`, used by both
+`BlanketLayoutPreview` and the Loom. Two renderers each deciding would
+drift, and the customer would configure against one arrangement and be
+shown another. Change placement there, never in a renderer.
+
+**Placement is shared, and so is the cloth.** Which cell holds which
+letter, the name, the year and the woven motifs comes from
+`src/data/blanketLayout.js`, used by both `BlanketLayoutPreview` and the
+Loom; the bib's outline comes from `src/loom/rigs/bibBody.ts`, used by
+both bib rigs. Two renderers each deciding would drift, and the customer
+would configure against one arrangement and be shown another.
+
+**Capitals and lowercase are charted differently.** Capitals share a band,
+so each is centred in its own 13x15 cube. Lowercase does not: հ rises, ղ
+drops, ա sits between, and centring each in its own box makes a word bob
+instead of sit on a line. `lowercaseChartForChar` draws every letter in a
+family at ONE measured size against a fixed baseline row (`LOWER_*` in
+`chart.js`) and trims only sideways, so letters keep their own widths and
+the planner spaces them proportionally. Anything worked ON a piece sits at
+that rig's surface constant, which must clear the extrusion's depth plus
+bevel — below it the stitching is inside the cloth and simply invisible.
+
+**The stitch-in plays once, when the piece first appears.** Replaying it
+on a design change unstitches the whole piece and works it back in on
+every keystroke — four letters, four restarts of an entire alphabet
+blanket. The letters changing is the feedback a customer wants while
+typing; the animation is for arrival. `tests/e2e/loom-stage.spec.mjs`
+counts the restarts.
+
+**A rig can restitch itself.** The letterforms come out of a webfont, so a
+piece is planned once in the fallback face and again when the real one
+lands. `MountedRig.onRestitch` reports the new stitch total; without it
+the stage's reveal keeps counting toward the old one and the piece stays
+half-worked. For the same reason the reveal is driven by elapsed clock
+time, never by accumulated frame deltas — those are clamped, so on a
+software renderer a 1.4 second stitch-in used to take about thirty.
+
+**Colour is pinned.** sRGB out, tone mapping off. The DMC hexes appear in
+the 2D preview, the cart thumbnail and the printed brochure; a filmic
+curve would make the 3D quietly disagree with all of them.
+
+**Posters.** `npm run gen:loom-posters` boots the real rig headlessly and
+writes `public/img/loom/*.webp`, so a poster cannot drift from the engine.
+Not a build step (it needs a browser); run it when a rig or the default
+pose changes and commit the output.
+
+**Rendering is on demand** and pauses off screen. If you add anything
+driven by the frame loop, remember it stops when the stage is not visible
+— that is what once froze the stitch-in animation half-worked.
 
 ### Gift-occasion reminder (opt-in, one-year-later email)
 - Checkbox at checkout (default off) → `orders.gift_reminder_opt_in`.
 - `netlify/functions/gift-reminder.mjs` — scheduled function (daily 09:00 UTC). Finds ~11-month-old opted-in orders, claims each atomically (`UPDATE … SET sent_at = now() WHERE … AND sent_at IS NULL RETURNING id`), sends via Resend.
 - `netlify/functions/unsubscribe-gift-reminder.mjs` — HMAC-signed unsubscribe URL, verified with `timingSafeEqual`, no sign-in needed.
+
+### Reviews and the "Made for" wall (Sept 2026)
+
+Customers are invited to review a piece **fourteen days after it is delivered**,
+by an emailed capability link — there is no account, no login, and no review
+form anywhere else on the site. A review can only exist against an order.
+
+- **The token carries a purpose.** `_lib/order-tokens.mjs` signs
+  `order-view:<id>` for the follow-along page and `order-review:<id>` for the
+  review page, from **one** secret (`ORDER_LINK_SECRET`). Drop the prefixes and
+  a forwarded tracking link becomes a review link for somebody else's order — a
+  unit test collapses the two purposes and is verified red.
+- **Everything lands as `pending`.** `review-submit` writes `status: 'pending'`
+  on insert *and* on re-submit (`ON CONFLICT (order_id) DO UPDATE`), so an
+  approved review can never be edited into something else afterwards. The
+  product key is read from `order_items`, never the request body.
+- **Two separate yeses for a photograph.** The customer ticks consent, and Lusik
+  approves the review. `review-photo-get` re-checks **both on every request**, so
+  withdrawing either takes the picture down without editing a page or deleting a
+  file. In `ReviewForm` the **file picker does not render until consent is
+  given** — a picker that reads a photo of somebody's child and then asks
+  permission has already read it.
+- **Where they appear.** `ReviewList` under a live product, keyed by the product's
+  **trusted** key (that is what `order_items` stores; the catalog slug finds
+  nothing), wired into **both** PDP branches — the classic page and the mobile
+  immersive sheet. `MadeForWall` at the top of `/gallery`. Both render nothing
+  when there is nothing: "no reviews yet" advertises that nobody has bought this.
+- **Moderation.** `AdminReviewsPanel` (top of `/admin`) can set `status` and
+  nothing else — `admin-reviews` refuses edits to the words and refuses to grant
+  photo consent.
+- **Setup:** nothing — the `reviews` table lands with the deploy that carries this code.
+  The signing key is `ORDER_LINK_SECRET`, falling back to `REMINDER_SECRET`
+  (already required), so links work without new configuration — set
+  `ORDER_LINK_SECRET` only to separate the two key roles. With neither set,
+  every capability link 404s.
 
 ### Product waitlist (placeholder catalog → real notification)
 - `waitlist.mjs` — public POST, IP-keyed daily rate limit (20/day), strict `productKey` regex, upserts into `product_waitlist`.

@@ -12,10 +12,12 @@
 // blockColor, letterColor, letterColors, customLine1,
 // customLine2). No global state.
 //
-// component — no external imports beyond React.
+// component — placement comes from src/data/blanketLayout.js,
+// shared with the 3D Loom so the two can never disagree.
 // ============================================================
 
 import React from "react";
+import { GRID, buildLayoutCells } from "../data/blanketLayout.js";
 
 export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, blockColor, letterColor, letterColors, customLine1, customLine2, showCustomTextHints = false }) {
   // Build the 7x7 cells array (49 positions). For each filled position
@@ -31,117 +33,30 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
   // a central band, with breathing room of plain fabric on both
   // sides. Cells are 1/7 of the canvas instead of 1/5, so cubes are
   // automatically smaller and don't crowd.
-  const GRID = 7;
-  const cells = Array(GRID * GRID).fill(null);
-  layout.preview.forEach((pos, i) => {
-    cells[pos] = {
-      kind: "alphabet",   // alphabet cube (the existing 3D outline+letter)
-      glyph: letters[i % letters.length],
-      idx: i,
-      letterIdx: i % letters.length,
-    };
-  });
-
-  // ============================================================
-  // YEAR + NAME placement — multi-cell diagonal text
-  // ============================================================
-  // The real blanket stitches the year and the name as letter-per-
-  // cell sequences PARALLEL to the alphabet diagonals — same ↘
-  // slope, one column offset from the alphabet so the two reads
-  // (alphabet + personalization) sit side-by-side as twin diagonals.
-  //
-  // For the canonical `double_diag_br` layout (alphabet at top-right
-  // corner and bottom-left corner regions):
-  //
-  //   Year diagonal sits next to the upper alphabet, one column to
-  //   the LEFT — cells (0,3), (1,4), (2,5), (3,6) = positions
-  //   [3, 11, 19, 27]. 4 cells fit a 4-digit year ("2026").
-  //
-  //   Name diagonal sits next to the lower alphabet, one column to
-  //   the RIGHT — cells (3,0), (4,1), (5,2), (6,3) = positions
-  //   [21, 29, 37, 45]. 4 cells fit a 4-character name; longer
-  //   names get distributed across the cells (1–2 chars per cell).
-  //
-  // Text cells render WITHOUT a cube outline since the real product
-  // stitches the name/year directly onto the waffle weave, not
-  // inside an alphabet cube frame.
-  const line1Trim = (customLine1 ?? "").trim();
-  const line2Trim = (customLine2 ?? "").trim();
-
-  const yearCellPositions = [3, 11, 19, 27]; // (0,3) → (3,6) ↘
-  const nameCellPositions = [21, 29, 37, 45]; // (3,0) → (6,3) ↘
-
-  // Split a text string across N cells. ≤N chars: one per cell with
-  // trailing cells empty. >N chars: distribute as evenly as possible
-  // (longer text gets 2 chars per cell, etc.). Returns an array of
-  // length N with the per-cell glyph (empty string for blank cells).
-  const splitAcrossCells = (text, n) => {
-    if (!text) return Array(n).fill("");
-    if (text.length <= n) {
-      return Array.from({ length: n }, (_, i) => text[i] ?? "");
-    }
-    const perCell = Math.ceil(text.length / n);
-    return Array.from({ length: n }, (_, i) =>
-      text.slice(i * perCell, (i + 1) * perCell)
-    );
-  };
-
-  const placeTextDiagonal = (positions, text, placeholderLabel) => {
-    if (text.length > 0) {
-      const pieces = splitAcrossCells(text, positions.length);
-      positions.forEach((pos, i) => {
-        if (pieces[i] && cells[pos] === null) {
-          cells[pos] = { kind: "text", glyph: pieces[i] };
-        }
-      });
-    } else if (showCustomTextHints) {
-      // Single-cell placeholder hint at the MIDDLE position of the
-      // diagonal — enough to show the customer WHERE their text will
-      // be stitched, without filling all four cells with a fake
-      // multi-char sample.
-      const hintPos = positions[Math.floor(positions.length / 2)];
-      if (cells[hintPos] === null) {
-        cells[hintPos] = { kind: "text", glyph: placeholderLabel, placeholder: true };
-      }
-    }
-  };
-  placeTextDiagonal(yearCellPositions, line2Trim, "year");
-  placeTextDiagonal(nameCellPositions, line1Trim, "name");
-
-  // ============================================================
-  // POMEGRANATE MOTIF cells — light line-art decoration
-  // ============================================================
-  // The real blanket fabric has a woven pomegranate pattern in the
-  // empty squares — a heritage motif that's part of Lusik's design
-  // language (see Lusik's Journal post on the pomegranate). The
-  // preview hints at this with a sparse scattering of line-art
-  // pomegranate icons in selected empty cells.
-  //
-  // Positions are curated by hand for visual balance — denser
-  // through the middle of the canvas where the customer's eye is
-  // looking, sparser at the corners. The original "no two adjacent"
-  // rule was relaxed per Lusik's hand-drawn reference: the real
-  // blanket has pomegranate motifs woven on a tighter rhythm than
-  // a strict checkerboard, with neighbors visible across the
-  // empty squares between alphabet cubes.
-  const POMEGRANATE_POSITIONS = [
-    0,    2,    6,         // row 0:  (0,0), (0,2), (0,6)
-    8,    10,              // row 1:  (1,1), (1,3)
-    14,   16,   18,        // row 2:  (2,0), (2,2), (2,4)
-    22,   24,   26,        // row 3:  (3,1), (3,3), (3,5)  — split around the
-                           //          removed (3,2) entry per the X-mark
-    30,   32,   34,        // row 4:  (4,2), (4,4), (4,6)
-    38,   40,              // row 5:  (5,3), (5,5)
-    42,   46,   48,        // row 6:  (6,0), (6,4), (6,6)
-  ];
-  POMEGRANATE_POSITIONS.forEach((pos) => {
-    if (cells[pos] === null) {
-      cells[pos] = { kind: "pomegranate" };
-    }
+  // Placement is shared with the 3D Loom (src/data/blanketLayout.js) rather
+  // than computed here. Two renderers each deciding where the letters go
+  // would eventually disagree, and the customer would see one arrangement
+  // while configuring and another on the stage beside it.
+  const cells = buildLayoutCells({
+    letters,
+    layout,
+    line1: customLine1,
+    line2: customLine2,
+    showHints: showCustomTextHints,
   });
 
   // Grid frame border (the blanket's own outline)
   const borderColor = darkMode ? "rgba(245,239,227,0.18)" : "rgba(26,22,18,0.12)";
+
+  // Text alternative for the whole preview (see role="img" below).
+  const previewLabel = [
+    "Preview of the blanket",
+    layout?.shortLabel ? `laid out ${layout.shortLabel}` : null,
+    customLine1 ? `reading ${customLine1}` : null,
+    customLine2 ? `and ${customLine2}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   // Block outline color — what the customer picked, or a gold default for the
   // "no colors selected" / catalog-card preview case.
@@ -256,6 +171,17 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
   const canvas = (
     <div
       className="aspect-square w-full"
+      // A picture of the finished blanket, not a text layout: the letters
+      // inside are rendered in the customer's chosen THREAD color on the
+      // chosen CLOTH, so their contrast is a truthful property of the
+      // product (cream thread on cream waffle really does read softly) and
+      // must not be "corrected". role="img" says so — assistive tech reads
+      // the label instead of spelling out the grid, and the contrast audit
+      // skips the subtree for the same reason. The color names and DMC
+      // numbers are carried as text in the summary beside the preview, so
+      // color is never the only signal.
+      role="img"
+      aria-label={previewLabel}
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))`,
@@ -326,7 +252,11 @@ export function BlanketLayoutPreview({ letters, layout, darkMode, size = 120, bl
           ? colorForLetter(cell.letterIdx)
           : isTextCell
             ? (isPlaceholderText
-                ? (darkMode ? "rgba(245,239,227,0.4)" : "rgba(26,22,18,0.35)")  // faded hint
+                // Faded hint — still a "ghost of the text to come", but the
+                // old 0.35/0.4 alphas read 2.1:1 on the white waffle tile,
+                // under the 3:1 large-text gate. These clear it and still
+                // sit well behind the real embroidered text below.
+                ? (darkMode ? "rgba(245,239,227,0.55)" : "rgba(26,22,18,0.5)")
                 : (darkMode ? "#F5EFE3" : "#1A1612"))                            // real embroidered text
             : "transparent";
 

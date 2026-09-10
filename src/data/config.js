@@ -64,6 +64,74 @@ export const CONFIG = {
   },
 
   // ============================================================
+  // CAPABILITY LADDER — full / lean / core (SITE_OVERHAUL_HANDOFF.md 11.1)
+  // ============================================================
+  // One device-tier decision that every asset class reads instead of
+  // sniffing on its own (src/lib/capability.ts + capabilityTier.js).
+  // <html data-tier> carries it to CSS; "capability:change" to JS.
+  //   ENABLED      false = everyone is "full", toggle hidden, no signals read
+  //   QUERY_PARAM  ?tier=full|lean|core pins the tier for the tab (testing)
+  //   RUM          report LCP / INP / CLS + tier through track() — only
+  //                when Umami is configured; otherwise nothing loads
+  TIERS: {
+    ENABLED: true,
+    QUERY_PARAM: "tier",
+    RUM: true,
+  },
+
+  // ============================================================
+  // HOME v3 — the storyboarded home page
+  // ============================================================
+  // Three scenes added to the home feed: every live piece in a row you
+  // can push along, three ordering steps dated by the lead-time engine,
+  // and the two most recent journal posts. See
+  // SITE_OVERHAUL_HANDOFF.md section 4.
+  //
+  // A flag rather than a rewrite: the rest of the storyboard — hero,
+  // story, testimonials, Explore cards — was already on the page and is
+  // untouched, so turning this off puts the previous home page back
+  // exactly. The Explore cards and the "See what Lusik makes" CTA are
+  // load-bearing for the e2e suite and the mobile bottom nav either way.
+  HOME_V3: true,
+
+  // ============================================================
+  // LOOM — the real-time 3D product engine (src/loom/)
+  // ============================================================
+  // ENABLED is the kill switch for the whole engine: off, every stage
+  // renders its poster and the 2D BlanketLayoutPreview stays the live
+  // preview, which is also exactly what the `low` device tier gets. So
+  // turning this off is a well-trodden path, not an untested one.
+  //
+  // PRODUCTS lists the product keys whose pages mount a stage. It starts
+  // with the alphabet blanket alone and each later PR adds its rigs, so a
+  // rig that is not ready cannot reach a customer.
+  LOOM: {
+    ENABLED: true,
+    // These are the keys the COMPONENTS pass to LoomStage, which are not
+    // always the CMS product keys: the bib's CMS entry is "bib-single" but
+    // CustomProductCard passes CUSTOM_PRODUCTS.bib.key, which is "bib".
+    // Getting it wrong is silent — the stage simply never arms — so
+    // loom-rigs.test.mjs asserts every key here has a rig.
+    PRODUCTS: [
+      "blanket-classic", "bib",
+      "bib-hy-em", "bib-hy-em-with-cap",
+      "bib-days-of-week", "bib-anushig-pair",
+      "bib-bari-akhorzhak-set", "bib-bari-akhorzhak-set-with-cap",
+      "blanket-full-alphabet",
+    ],
+    QUERY_PARAM: "loom",
+    // Wait this long after the last keystroke before the camera drifts
+    // back from the slot being edited to the resting pose.
+    RETURN_TO_POSE_MS: 1200,
+    // Poster to canvas crossfade. Cut instantly under reduced motion.
+    CROSSFADE_MS: 250,
+    // How long the piece takes to stitch itself in. A duration, not a
+    // rate, so a six-letter blanket and a full alphabet finish in the
+    // same beat instead of the big one crawling.
+    STITCH_IN_MS: 1400,
+  },
+
+  // ============================================================
   // BACKEND — Netlify Database (Postgres) + Netlify Identity (auth)
   // ============================================================
   // No URLs or anon keys live here anymore. Identity reads its
@@ -131,7 +199,42 @@ export const CONFIG = {
   // DELIVERY_NOTE is always shown; the pickup row only renders when
   // LOCAL_PICKUP.ENABLED is true. Flip ENABLED to false to drop the
   // pickup line (and the word "pickup" disappears from the label).
-  DELIVERY_NOTE: "Made to order — hand-stitched in ~2 weeks, then 3–5 business days in transit.",
+  DELIVERY_NOTE: "Made to order, one piece at a time. Each product page shows its own timing, then 3–5 business days in transit.",
+
+  // ============================================================
+  // LEAD TIMES — how long each piece really takes
+  // ============================================================
+  // The owner's real, per-product build times, in WEEKS. These are the
+  // same numbers printed in the delivery brochure under print/ — the
+  // site and the box must never disagree. See src/lib/leadTime.js.
+  //
+  // The queue dials model the fact that Lusik works one piece at a
+  // time: the /lead-time Function counts orders still on her table and
+  // the browser adds QUEUE_DAYS_PER_OPEN_ORDER per open order, capped
+  // at QUEUE_BUFFER_CAP_DAYS. Mirrored in netlify/functions/lead-time.mjs
+  // and kept in lockstep by lead-time-drift.test.mjs.
+  //
+  // Never print WHY the times are what they are. State the time, and
+  // offer a phone call when a customer needs a specific date.
+  LEAD_TIMES: {
+    ENGINE: true,
+    QUEUE_ENABLED: true,
+    QUEUE_DAYS_PER_OPEN_ORDER: 2,
+    QUEUE_BUFFER_CAP_DAYS: 21,
+    DEFAULT_WEEKS: [3, 5],
+    WEEKS: {
+      "blanket-alphabet":            [4, 6],
+      "blanket-full-alphabet":       [10, 12],
+      "bib-days-of-week":            [5, 6],
+      "bib-single":                  [2, 3],
+      "bib":                         [2, 3],   // trusted-products key for the name bib
+      "bib-hy-em":                   [2, 3],
+      "bib-hy-em-with-cap":          [2, 3],
+      "bib-anushig-pair":            [3, 4],
+      "bib-bari-akhorzhak-set":      [3, 4],
+      "bib-bari-akhorzhak-set-with-cap": [3, 4],
+    },
+  },
   LOCAL_PICKUP: {
     ENABLED: true,
     AREA: "the Orange County & Los Angeles area only",

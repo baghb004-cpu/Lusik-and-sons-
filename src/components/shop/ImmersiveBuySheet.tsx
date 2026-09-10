@@ -327,10 +327,21 @@ export function ImmersiveBuySheet({
   return createPortal(
     <div ref={rootRef} className={cx(styles.root, reduced && styles.reduced)}>
       {/* Full-screen swipeable photo backdrop (next/image, optimized).
-          Tap behavior is detent-aware — see onGalleryPointerUp. */}
+          Tap behavior is detent-aware — see onGalleryPointerUp.
+
+          `tabIndex={0}` is load-bearing, not decoration. This strip is
+          scrolled by swiping and its position dots are plain spans, so
+          without a tab stop there was no way to reach the photographs at
+          all without a pointer — on the crib blanket that is 61 pictures
+          a keyboard or switch user could never see. Focused, arrow keys
+          scroll it natively; the named region tells a screen reader what
+          it just landed in. */}
       <div
         ref={galleryRef}
         className={styles.gallery}
+        role="region"
+        aria-label={`Photographs of ${title}`}
+        tabIndex={0}
         onScroll={onGalleryScroll}
         onPointerDown={onGalleryPointerDown}
         onPointerUp={onGalleryPointerUp}

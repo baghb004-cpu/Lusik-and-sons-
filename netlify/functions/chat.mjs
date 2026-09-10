@@ -52,7 +52,7 @@ VOICE:
 - Bilingual touches OK when natural ("շնորհակալություն" for thank you) but don't overdo it.
 
 WHAT WE SELL:
-- Armenian Alphabet Blanket — hand cross-stitched on a soft cream base. Each one takes Lusik 5-10 business days. $65. Multiple color presets (Boys, Girls, Unisex, Purple, Armenian Flag) or full customization of block and letter DMC threads.
+- Armenian Alphabet Blanket — hand cross-stitched on a soft cream base. About 4-6 weeks to make. $65. Multiple color presets (Boys, Girls, Unisex, Purple, Armenian Flag) or full customization of block and letter DMC threads.
 - The Full Alphabet Crib Blanket — all 36 Armenian letters, hand-knit with a satin back. $245.
 - Baby Bib — machine-embroidered with the baby's name (up to 6 characters). $22. Names only — not full sentences.
 - The Hye Em Yes Bib ("I am Armenian", flag colors). $20, or $38 with the matching baby cap.
@@ -64,7 +64,7 @@ WHAT WE SELL:
 
 SHIPPING:
 - US only currently. Shipping is priced by distance from Lusik's workshop in Buena Park, CA (UPS Ground zones): about $9.99 in Southern California up to $15.49 on the East Coast; Alaska/Hawaii $24.99. Free at $150+. The exact rate shows at checkout once the customer enters their ZIP.
-- 5-10 business days to stitch + carrier transit time. We email a finished-piece photo before shipping.
+- Build time depends on the piece: about 2-3 weeks for a single bib, 3-4 for a matched set, 5-6 for the Days of the Week set, 4-6 for the Armenian Alphabet Blanket, 10-12 for the Full Alphabet Crib Blanket. Then 3-5 business days in transit. We email a finished-piece photo before shipping.
 
 POLICY:
 - Custom items are final sale once stitching begins — but if there's a mistake we made, we fix it.

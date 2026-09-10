@@ -117,7 +117,7 @@ export function YouMayAlsoLikeSheet({ open, addedKey, onClose, onContinue, onNav
           <div className="flex justify-center px-4 pt-4">
             <span
               className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm"
-              style={{ background: "var(--accent-soft, #FAF1DF)", color: "var(--accent)", fontWeight: 600 }}
+              style={{ background: "var(--accent-soft, #FAF1DF)", color: "var(--accent-text)", fontWeight: 600 }}
             >
               <Check /> Product added to Bag
             </span>
@@ -144,7 +144,7 @@ export function YouMayAlsoLikeSheet({ open, addedKey, onClose, onContinue, onNav
                     {loc(p, "name", lang)}
                   </p>
                   {typeof p.priceFrom === "number" && (
-                    <p className="text-xs mt-1" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                    <p className="text-xs mt-1" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
                       {t("shop.from", { price: p.priceFrom })}
                     </p>
                   )}

@@ -16,6 +16,12 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 4173;
 const BASE_URL = `http://localhost:${PORT}`;
 
+// Escape hatch for sandboxes that ship one Chromium build and can't
+// download the exact revision this @playwright/test pins: point
+// PLAYWRIGHT_CHROMIUM_EXECUTABLE at the binary. Unset = Playwright's
+// own managed browser, which is what CI uses.
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   workers: 1,
@@ -29,10 +35,17 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
+    ...(executablePath ? { launchOptions: { executablePath } } : {}),
   },
   projects: [
-    { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile-chromium", use: { ...devices["Pixel 5"] } },
+    { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: /tiers\.spec/ },
+    { name: "mobile-chromium", use: { ...devices["Pixel 5"] }, testIgnore: /tiers\.spec/ },
+    // Capability-ladder projects (SITE_OVERHAUL_HANDOFF.md 11.1). Only
+    // tests/e2e/tiers.spec.mjs runs here: a small phone on a throttled
+    // Slow-3G link with a 4x slower CPU, and a browser with JavaScript
+    // switched off entirely (the "core" path: browse, read, call, email).
+    { name: "lean-3g", use: { ...devices["Pixel 5"], viewport: { width: 360, height: 640 } }, testMatch: /tiers\.spec/ },
+    { name: "core-2g", use: { ...devices["Desktop Chrome"], javaScriptEnabled: false }, testMatch: /tiers\.spec/ },
   ],
   webServer: {
     command: `npm run next:build && npx next start --port ${PORT}`,

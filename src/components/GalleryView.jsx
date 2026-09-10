@@ -23,6 +23,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { MadeForWall } from "./MadeForWall.jsx";
 
 // The full list of photo filenames in /img/gallery/. Generated
 // from the source archive — see SLIDESHOW_PHOTOS_PROCESSING.md.
@@ -103,6 +104,11 @@ export function GalleryView() {
         </p>
         <div className="gold-line mt-10 mb-12 max-w-xs mx-auto" />
       </section>
+
+      {/* Photographs the families sent, above the archive because they
+          are the only pictures here of a piece in the house it went to.
+          Renders nothing until there is something to show. */}
+      <MadeForWall className="max-w-7xl mx-auto px-6 lg:px-12 pb-12" />
 
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pb-20">
         {/* Filter chips */}

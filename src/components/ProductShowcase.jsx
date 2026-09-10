@@ -13,21 +13,32 @@
 // in src/components/ shows up somewhere on the page.
 // ============================================================
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { CONFIG } from "../data/config.js";
 import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
-import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign } from "../lib/designUrl";
+import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign, toUrlSafe } from "../lib/designUrl";
+import { readTryName } from "../lib/tryName.js";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import { useIsMobile } from "../lib/useIsMobile";
 import { useSwipe } from "../lib/useSwipe.js";
 import { useGlideCarousel } from "../lib/useGlideCarousel.js";
 import { PHOTO_DATE_DETAIL } from "../images/photos.js";
-import { getDeliveryEstimate } from "../lib/deliveryEstimate";
+import { useLeadTime } from "../lib/useLeadTime";
+import { publishDesign } from "../lib/designBus";
+import dynamic from "next/dynamic";
 import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
+
+// The 3D engine, loaded only if a visitor's device and the flag allow it.
+// next/dynamic with ssr:false keeps three.js out of this route's
+// first-load JS entirely — scripts/check-bundle-budget.mjs fails the
+// build if it ever leaks in.
+const LoomStage = dynamic(() => import("../loom/index").then((m) => m.LoomStage), { ssr: false });
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
+import { PoseChips } from "./shop/PoseChips.jsx";
+import { CompareSlider } from "./shop/CompareSlider.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
 import { PurchaseCard } from "./shop/PurchaseCard.jsx";
 import { MobilePurchaseBar } from "./shop/MobilePurchaseBar.jsx";
@@ -39,7 +50,7 @@ import {
   Instagram, Mail, Minus, Phone, Plus, Share2, X, ZoomIn,
 } from "./icons.jsx";
 
-export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown, soldOut = false, notifyKey, immersive = false }) {
+export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user, onRequireSignIn, onStickyCtaShown, soldOut = false, notifyKey, immersive = false, leadTimeKey = "blanket-alphabet" }) {
   const toast = useToast();
   const t = useT();
   const { lang } = useLang();
@@ -121,7 +132,9 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       presetKey: activePresetKey,
       customLine1: customLine1.trim(),  // optional name/initials, "" if blank
       customLine2: customLine2.trim(),  // optional year/date, "" if blank
-    });
+    // Null unless the engine is live, in which case the bag row falls
+    // back to the product photograph exactly as it did before.
+    }, captureRef.current?.() ?? null);
     // Re-enable after the cart-drawer auto-open + heart-burst land.
     // 600ms matches the throttle so the visual debounce ends in sync.
     window.setTimeout(() => setAdding(false), 600);
@@ -143,7 +156,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       presetKey: activePresetKey,
       customLine1: customLine1.trim(),
       customLine2: customLine2.trim(),
-    });
+    }, captureRef.current?.() ?? null);
   };
 
   const [activeImg, setActiveImg] = useState(0);
@@ -165,6 +178,10 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       document.body.style.overflow = prevOverflow;
     };
   }, [zoomOpen]);
+
+  // Lead-time engine: this product's own build time plus the live queue
+  // ahead of it, as concrete dates (SITE_OVERHAUL_HANDOFF.md, PR 9).
+  const lead = useLeadTime(leadTimeKey);
 
   const [color, setColor] = useState(product.colors[0]);
   const [alphabet, setAlphabet] = useState(product.alphabets[0]);
@@ -208,39 +225,36 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
   );
   const [colorMode, setColorMode] = useState("preset");  // "preset" | "custom"
 
-  // Feed the PDP's 3D stage hero — the FULL blanket design (alphabet,
-  // layout, name/year, preset colors), so the stage renders the real
-  // blanket exactly as the 2D preview below draws it, restitching live
-  // as any of it changes.
-  useEffect(() => {
-    const text = [customLine1, customLine2].map((s) => (s || "").trim()).filter(Boolean).join(" · ");
-    window.dispatchEvent(new CustomEvent("stitch3d:live", {
-      detail: {
-        text,
-        thread: letterColor?.hex,
-        blanket: {
-          letters: alphabet.letters,
-          preview: layout.preview,
-          name: (customLine1 || "").trim(),
-          year: (customLine2 || "").trim(),
-          blockHex: blockColor?.hex,
-          letterHex: letterColor?.hex,
-          letterHexes: letterColorList ? letterColorList.map((c) => c.hex) : null,
-        },
-      },
-    }));
-  }, [customLine1, customLine2, letterColor, alphabet, layout, blockColor, letterColorList]);
+  // What the 3D stage stitches. Memoised because LoomStage restitches on
+  // every identity change of this object, and a new object each render
+  // would rebuild tens of thousands of instance matrices per keystroke.
+  const loomDesign = useMemo(() => ({
+    letters: alphabet.letters,
+    layout,
+    blockColor: blockColor.hex,
+    letterColor: letterColor.hex,
+    letterColors: letterColorList ? letterColorList.map((c) => c.hex) : null,
+    line1: customLine1,
+    line2: customLine2,
+  }), [alphabet.letters, layout, blockColor.hex, letterColor.hex, letterColorList, customLine1, customLine2]);
 
-  // StageHero's on-stage field → personalization line 1, so the hero and
-  // the configurator never disagree about what's being stitched.
+  // Publish the full blanket design (alphabet, layout, name/year, colors)
+  // on the design bus. Nothing subscribes today; the 3D product engine
+  // planned in SITE_OVERHAUL_HANDOFF.md (Phase 1) will restitch from it.
   useEffect(() => {
-    const onHero = (e) => {
-      const d = e?.detail || {};
-      if (typeof d.text === "string") setCustomLine1(d.text);
-    };
-    window.addEventListener("stitch3d:hero", onHero);
-    return () => window.removeEventListener("stitch3d:hero", onHero);
-  }, []);
+    publishDesign({
+      product: "blanket-alphabet",
+      letters: alphabet.letters,
+      alphabet: alphabet.key,
+      layoutKey: layout.key,
+      preview: layout.preview,
+      name: (customLine1 || "").trim(),
+      year: (customLine2 || "").trim(),
+      blockHex: blockColor?.hex,
+      letterHex: letterColor?.hex,
+      letterHexes: letterColorList ? letterColorList.map((c) => c.hex) : null,
+    });
+  }, [customLine1, customLine2, letterColor, alphabet, layout, blockColor, letterColorList]);
   // The currently-selected preset, if customer chose one. Helps the UI
   // show which preset card is highlighted; null when in custom mode.
   const [activePresetKey, setActivePresetKey] = useState(defaultPreset.key);
@@ -253,25 +267,52 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
   // the sender configured. We strip the param from the URL after
   // hydrating so the customer can keep tweaking without a stale
   // share-link in their address bar.
+  //
+  // ?name=<value> arrives the same way, from the "Try a name" field on
+  // the shop card. Someone who typed a name into a card should find it
+  // already in the box, not have to type it again — that is the whole
+  // point of the field. A ?d= blob WINS when both are present: it
+  // carries a whole design, name included, and someone opening a shared
+  // design asked for that design.
+  //
+  // Both are read in ONE effect, from one snapshot of the query string.
+  // Two effects cannot express that precedence: the first strips its own
+  // parameter before the second runs, so the second's `if (d) return`
+  // guard sees a URL with no `d` in it and overwrites the shared name.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("d");
-    if (!encoded) return;
-    const compact  = decodeDesignFromUrl(encoded);
-    const resolved = resolveDesign(compact, product);
-    if (!resolved) return;
-    if (resolved.alphabet)           setAlphabet(resolved.alphabet);
-    if (resolved.layout)             setLayout(resolved.layout);
-    if (resolved.blockColor)         setBlockColor(resolved.blockColor);
-    if (resolved.letterColor)        setLetterColor(resolved.letterColor);
-    if (resolved.letterColorList)    setLetterColorList(resolved.letterColorList);
-    setActivePresetKey(resolved.activePresetKey);
-    setColorMode(resolved.activePresetKey ? "preset" : "custom");
-    if (resolved.customLine1) setCustomLine1(resolved.customLine1);
-    if (resolved.customLine2) setCustomLine2(resolved.customLine2);
-    // Strip the param so the URL bar stays clean.
+    const typed = encoded ? "" : readTryName(params);
+    if (!encoded && !typed) return;
+
+    if (encoded) {
+      const compact  = decodeDesignFromUrl(encoded);
+      const resolved = resolveDesign(compact, product);
+      if (resolved) {
+        if (resolved.alphabet)           setAlphabet(resolved.alphabet);
+        if (resolved.layout)             setLayout(resolved.layout);
+        if (resolved.blockColor)         setBlockColor(resolved.blockColor);
+        if (resolved.letterColor)        setLetterColor(resolved.letterColor);
+        if (resolved.letterColorList)    setLetterColorList(resolved.letterColorList);
+        setActivePresetKey(resolved.activePresetKey);
+        setColorMode(resolved.activePresetKey ? "preset" : "custom");
+        if (resolved.customLine1) setCustomLine1(resolved.customLine1);
+        if (resolved.customLine2) setCustomLine2(resolved.customLine2);
+      }
+    } else {
+      setCustomLine1(typed);
+      // On a phone the configurator shows one step at a time, and the
+      // name lives in step 4. Without this the customer lands on the
+      // alphabet picker with their name set two screens below, invisible
+      // — which is the same as the field not having worked.
+      setOpenSection("custom");
+    }
+
+    // Strip the params so the URL bar stays clean and a later share link
+    // is built from the current design rather than the arriving one.
     params.delete("d");
+    params.delete("name");
     const newQs   = params.toString();
     const newPath = window.location.pathname + (newQs ? `?${newQs}` : "") + window.location.hash;
     window.history.replaceState({}, "", newPath);
@@ -344,9 +385,18 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       toast({ kind: "error", message: "Couldn't build a share link — please try again." });
       return;
     }
-    const url = new URL(window.location.href);
-    url.searchParams.set("d", encoded);
-    url.hash = "blanket";
+    // Shared links land on /design/<blob>, which shows the piece large
+    // and read-only with a way through to the configurator. Somebody who
+    // has just been sent a blanket wants to see it, not to arrive in the
+    // middle of a seven-step picker with somebody else's choices in it.
+    //
+    // The design still travels in the link rather than in a database:
+    // saved designs live behind their owner's login and their ids are
+    // short, so a lookup endpoint would be an enumerable read of other
+    // people's children's names. The `?d=` form the configurator has
+    // always accepted still works, so every link shared before this
+    // keeps opening.
+    const url = new URL(`/design/${toUrlSafe(encoded)}`, window.location.origin);
     const shareUrl = url.toString();
 
     // Try the native share sheet first — better UX on mobile.
@@ -414,6 +464,20 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
   // selection — see the `onClick` handlers on each picker button.
   const isMobile = useIsMobile();
   const [openSection, setOpenSection] = useState("alphabet"); // "alphabet" | "layout" | "colors" | null
+
+  // ---- the fitting room ----
+  // Which camera the stage is looking through, and whether the stage is
+  // actually live. The chips only render in the live case: on a device
+  // that falls back to the 2D preview there is no camera to point, and a
+  // chip that does nothing reads as a broken page rather than a lighter
+  // one.
+  const [pose, setPose] = useState("flat");
+  const [stageLive, setStageLive] = useState(false);
+  const onStagePhase = useCallback((phase) => setStageLive(phase === "live"), []);
+  // Filled in by the stage while the engine is live. Called at
+  // add-to-cart so the bag row shows the piece they just configured
+  // rather than a stock photograph of somebody else's blanket.
+  const captureRef = useRef(null);
   // null = all sections collapsed (after all selections made)
   // Default opens alphabet first since it's step 1.
 
@@ -464,6 +528,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             `top-24` (~96px) clears the sticky nav (~80px) with breathing
             room. `max-h-[calc(100vh-7rem)]` + `overflow-y-auto` is a safety
             net for short laptop screens. */}
+        <div>
         <div className="lg:sticky lg:top-24 lg:self-start pdp-sticky-col lg:overflow-y-auto">
           {/* View toggle — "Your design" (live SVG preview) | "Real photos".
               Hidden in immersive mode: the real photos are the full-screen
@@ -503,25 +568,50 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   current configuration: alphabet, layout, colors, optional text.
                   Wrapped in a square frame matching the photo gallery's
                   aspect-ratio so the layout doesn't jump when toggling modes. */}
-              <div className="aspect-[4/5] gallery-frame overflow-hidden mb-4 flex items-center justify-center p-6 lg:p-8" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}>
+              <CompareSlider
+                className="mb-4"
+                /* The photograph currently chosen in the gallery, so the
+                   comparison follows what the customer was just looking
+                   at rather than always the first shot. */
+                photo={product.gallery?.[activeImg] ?? product.gallery?.[0] ?? null}
+                photoIndex={product.gallery?.[activeImg] ? activeImg : 0}
+                controls={stageLive ? <PoseChips value={pose} onChange={setPose} /> : null}
+              >
+              <div className="aspect-[4/5] gallery-frame overflow-hidden flex items-center justify-center p-6 lg:p-8" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="w-full max-w-[420px]">
-                  <BlanketLayoutPreview
-                    letters={alphabet.letters}
-                    layout={layout}
-                    darkMode={false}
-                    size={420}
-                    blockColor={blockColor.hex}
-                    letterColor={letterColor.hex}
-                    letterColors={letterColorList ? letterColorList.map(c => c.hex) : null}
-                    customLine1={customLine1}
-                    customLine2={customLine2}
-                    showCustomTextHints
+                  <LoomStage
+                    productKey="blanket-classic"
+                    pose={pose}
+                    captureRef={captureRef}
+                    onPhaseChange={onStagePhase}
+                    label={t("pdp.previewAlt", {
+                      alphabet: alphabet.label,
+                      line1: customLine1 || "",
+                      line2: customLine2 || "",
+                    })}
+                    design={loomDesign}
+                    /* The 2D preview IS the fallback, and a better one than a
+                       still image would be: it is already live, so a visitor
+                       whose device cannot run the engine still watches their
+                       child's name appear as they type. */
+                    fallback={(
+                      <BlanketLayoutPreview
+                        letters={alphabet.letters}
+                        layout={layout}
+                        darkMode={false}
+                        size={420}
+                        blockColor={blockColor.hex}
+                        letterColor={letterColor.hex}
+                        letterColors={letterColorList ? letterColorList.map(c => c.hex) : null}
+                        customLine1={customLine1}
+                        customLine2={customLine2}
+                        showCustomTextHints
+                      />
+                    )}
                   />
                 </div>
               </div>
-              <p className="text-[0.65rem] opacity-70 italic text-center leading-relaxed">
-                {t("pdp.livePreviewCaption")}
-              </p>
+              </CompareSlider>
             </>
           ) : (
             <>
@@ -625,6 +715,28 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           )}
         </div>
 
+        {/* The prose under the picture, and OUTSIDE the sticky column on
+            purpose.
+
+            That column is capped at the viewport height with
+            `overflow-y-auto` (a safety net for short laptops), and the
+            preview frame alone is taller than the cap on a 720-pixel
+            screen — so anything placed after it inside the column lands
+            in an internal scroll area a customer has no reason to
+            discover. The colour note is the one thing on this page that
+            must not be missable: it is what says a rendered thread colour
+            is not the colour that arrives. Out here it is always in the
+            flow, still directly beneath the preview. */}
+        {(immersive || leftPaneMode === "preview") && (
+          <>
+            <p className="text-[0.65rem] opacity-70 italic text-center leading-relaxed mb-4 mt-4">
+              {t("pdp.livePreviewCaption")}
+            </p>
+            <ProductVariationNote className="mb-2" />
+          </>
+        )}
+        </div>
+
         <div>
           <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent-text)" }}>{t("pdp.madeToOrderEyebrow")}</p>
           <h2 className="font-display text-4xl lg:text-5xl mb-3 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{loc(product, "name", lang)}</h2>
@@ -638,10 +750,6 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           </p>
 
           <p className="text-base leading-relaxed mb-8 opacity-85">{product.description}</p>
-
-          {/* Photos shown are examples of past work — each handmade piece may
-              vary a little from the samples. */}
-          <ProductVariationNote className="mb-8" />
 
           <CollapsibleSection
             title={t("pdp.step1")}
@@ -832,8 +940,16 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                       }}
                       title={preset.description}
                     >
-                      {/* Tiny block-with-letter preview swatch — outline + depth */}
+                      {/* Tiny block-with-letter preview swatch — outline + depth.
+                          A picture of the cube as it will be stitched: the glyph
+                          is drawn in the actual DMC thread color, so its contrast
+                          is a property of the thread, not a styling choice. Same
+                          reasoning as BlanketLayoutPreview's role="img" — the
+                          preset's name sits beside it as real text, so color is
+                          never the only signal. */}
                       <div
+                        role="img"
+                        aria-label={`${preset.label} — ${block.name} outline, ${singleLetter.name} letters`}
                         className="flex items-center justify-center flex-shrink-0"
                         style={{
                           width: "32px", height: "32px",
@@ -1154,13 +1270,13 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   {layout.shortLabel}
                 </p>
                 <p className="text-xs opacity-70 mt-1 leading-snug">
-                  <span style={{ color: blockColor.hex, fontWeight: 600 }}>■</span> {t("pdp.cubeOutline", { name: blockColor.name })}
+                  <span aria-hidden="true" style={{ color: blockColor.hex, fontWeight: 600 }}>■</span> {t("pdp.cubeOutline", { name: blockColor.name })}
                 </p>
                 {letterColorList ? (
                   <p className="text-xs opacity-70 mt-0.5 leading-snug">
                     {letterColorList.map((c, idx) => (
                       <span key={c.dmc}>
-                        <span style={{ color: c.hex, fontWeight: 600 }}>■</span> {c.name}
+                        <span aria-hidden="true" style={{ color: c.hex, fontWeight: 600 }}>■</span> {c.name}
                         {idx < letterColorList.length - 1 ? " · " : ""}
                       </span>
                     ))}
@@ -1168,7 +1284,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   </p>
                 ) : (
                   <p className="text-xs opacity-70 mt-0.5 leading-snug">
-                    <span style={{ color: letterColor.hex, fontWeight: 600 }}>■</span> {t("pdp.letterInside", { name: letterColor.name })}
+                    <span aria-hidden="true" style={{ color: letterColor.hex, fontWeight: 600 }}>■</span> {t("pdp.letterInside", { name: letterColor.name })}
                   </p>
                 )}
                 <p className="text-xs opacity-70 mt-2">
@@ -1218,7 +1334,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           {soldOut ? (
             <SoldOutPanel name={product.name} productKey={notifyKey ?? "blanket-double_diag_br"} className="mb-4" />
           ) : (<>
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard productKey={leadTimeKey} className={immersive ? "" : "hidden lg:block"}>
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center border" style={{ borderColor: "var(--border-strong)" }}>
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3" aria-label="Decrease quantity"><Minus size={14} /></button>
@@ -1277,22 +1393,24 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           />
           )}
           </>)}
-          {/* Estimated delivery — concrete ship-by / arrives-by range
-              instead of a vague "5–10 days" line. Computed on every
-              render from today's date so it stays current; ranges
-              are wide enough that a one-day shift around a federal
-              holiday doesn't make it lie. */}
-          <p className="text-xs opacity-70 leading-relaxed mb-4">
-            {(() => {
-              const est = getDeliveryEstimate();
-              return (
-                <>
-                  <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: est.shipBy })}</span>
-                  <span>{t("pdp.arrives", { date: est.arrives })}</span>
-                  <span className="block mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
-                </>
-              );
-            })()}
+          {/* Estimated delivery — this product's own build time plus the
+              live queue ahead of it (src/lib/leadTime.js + the /lead-time
+              Function), turned into concrete dates. Recomputed on every
+              render from today's date so it never goes stale. */}
+          {/* Before mount (and with JavaScript off) this shows the weeks
+              range, which never goes stale in a prerendered page; the exact
+              dates appear once the visitor's own clock is available.
+              data-live-dates lets the visual suite mask the moving text. */}
+          <p className="text-xs opacity-70 leading-relaxed mb-4" data-live-dates="">
+            {lead.ready ? (
+              <>
+                <span style={{ fontWeight: 500 }}>{t("pdp.ships", { date: lead.shipBy })}</span>
+                <span>{t("pdp.arrives", { date: lead.arrives })}</span>
+              </>
+            ) : (
+              <span style={{ fontWeight: 500 }}>{t("pdp.shipsWeeks", { weeks: lead.weeksText })}</span>
+            )}
+            <span className="block mt-0.5 text-[0.65rem]">{t("pdp.deliveryNote")}</span>
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button onClick={() => window.open("tel:+17608742333")} className="py-3 text-xs tracking-wide flex items-center justify-center gap-2 border hover:bg-[rgba(26,22,18,0.04)]" style={{ borderColor: "var(--border-strong)" }}>

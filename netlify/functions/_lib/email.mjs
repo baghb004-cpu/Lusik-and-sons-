@@ -64,9 +64,9 @@ export function baseUrl() {
  * Never throws — callers shouldn't have to wrap in try/catch.
  *
  * `attachments` (optional): [{ filename, content }] with base64
- * content — Resend's native shape, used for the embroidery-order
- * .pes file. `replyTo` (optional) sets Resend's reply_to so a
- * plain reply in the mail client reaches the requester.
+ * content — Resend's native shape. `replyTo` (optional) sets
+ * Resend's reply_to so a plain reply in the mail client reaches
+ * the requester.
  */
 export async function sendEmail({ to, subject, html, text, attachments, replyTo }) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -395,6 +395,13 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
   ` : "";
 
   const url = baseUrl();
+  // The guest's only way back to their order: most customers here never
+  // make an account. Empty when no secret is configured, in which case the
+  // email simply omits the link rather than shipping a guessable one.
+  const followToken = signOrderToken(order.id);
+  const followUrl = followToken
+    ? `${url}/order/${encodeURIComponent(followToken)}?id=${encodeURIComponent(order.id)}`
+    : "";
   const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
   <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
@@ -443,6 +450,13 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
       <a href="tel:${CONTACT.phoneTel}" style="color:${accent};text-decoration:none;">${CONTACT.phoneDisplay}</a>
     </p>
 
+    ${followUrl ? `<p style="margin:0 0 22px 0;">
+      <a href="${followUrl}" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">Follow your order &rarr;</a>
+    </p>
+    <p style="font-size:13px;color:${muted};margin:0 0 22px 0;">
+      That link shows each step as Lusik works, and it needs no account. Keep this email to come back to it.
+    </p>` : ""}
+
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Southern California.</em><br>
       Lusik &amp; Sons · <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
@@ -483,6 +497,8 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
     `  ${CONTACT.email}`,
     `  ${CONTACT.phoneDisplay}`,
     "",
+    followUrl ? `Follow your order: ${followUrl}` : "",
+    followUrl ? "" : null,
     `Made by hand in Southern California.`,
     `${url}`,
   ].filter(Boolean).join("\n");
@@ -510,6 +526,60 @@ export async function sendCustomerOrderConfirmation({ order, items, pending, cus
  * `order` — the orders row (post-upload; finished_photo_key is
  *           set; shipping_address.name is the recipient when present)
  */
+/**
+ * "Lusik has started on your piece" — sent once, the first time the
+ * stitching milestone is marked (admin-order-milestone claims
+ * orders.stitching_emailed_at atomically, so a double tap cannot send
+ * twice).
+ *
+ * Short on purpose. It carries the signed follow-along link so a guest
+ * with no account can watch the rest of the piece come together.
+ */
+export async function sendStitchingStartedEmail({ to, orderNumber, orderId, note }) {
+  if (!to) {
+    console.warn("[email] customer email missing on stitching notification; skipping");
+    return false;
+  }
+  const { accent, ink, cream } = PALETTE;
+  const url = baseUrl();
+  const token = signOrderToken(orderId);
+  const followUrl = token ? `${url}/order/${encodeURIComponent(token)}?id=${encodeURIComponent(orderId)}` : `${url}/`;
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+    <h1 style="font-size:30px;font-weight:500;margin:0 0 14px 0;letter-spacing:-0.01em;line-height:1.2;">Lusik has started on your piece.</h1>
+    <p style="font-size:16px;margin:0 0 22px 0;">Your order ${esc(orderNumber || "")} is on her table now. The thread is going in.</p>
+    ${note ? `<p style="font-size:15px;margin:0 0 22px 0;padding:16px;background:#FFFFFF;border:1px solid #E8E1D2;">${esc(note)}</p>` : ""}
+    <p style="margin:0 0 26px 0;">
+      <a href="${followUrl}" style="display:inline-block;padding:12px 22px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">Follow along &rarr;</a>
+    </p>
+    <p style="font-size:13px;color:${PALETTE.muted};margin:0;">
+      Lusik &amp; Sons &middot; <a href="${url}" style="color:${PALETTE.muted};text-decoration:underline;">lusikandsons.com</a>
+    </p>
+  </div>
+</body></html>`;
+
+  const text = [
+    "Lusik has started on your piece.",
+    "",
+    `Your order ${orderNumber || ""} is on her table now. The thread is going in.`,
+    note ? `\n${note}` : "",
+    "",
+    `Follow along: ${followUrl}`,
+    "",
+    `Lusik & Sons · ${url}`,
+  ].filter(Boolean).join("\n");
+
+  return await sendEmail({
+    to,
+    subject: `Lusik has started on your piece${orderNumber ? ` (${orderNumber})` : ""}`,
+    html,
+    text,
+  });
+}
+
 export async function sendFinishedPhotoNotification({ order }) {
   const to = order.customer_email;
   if (!to) {
@@ -972,6 +1042,7 @@ export async function sendGiftReminderEmail({ order, unsubscribeUrl }) {
 // mode is "set the env var" once, not "you broke a year of links."
 // ============================================================
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { signOrderToken } from "./order-tokens.mjs";
 
 function reminderSecret() {
   return process.env.REMINDER_SECRET ?? "";
@@ -1059,7 +1130,7 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     </div>
 
     <p style="font-size:14px;color:${muted};margin:0 0 24px 0;">
-      Made by hand, made-to-order. Each piece takes 5–10 business days before it ships.
+      Made by hand, made to order. Each piece has its own build time, shown on its product page, before it ships.
     </p>
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
@@ -1082,11 +1153,106 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
     "",
     `Have a look: ${href}`,
     "",
-    `Made by hand, made-to-order. Each piece takes 5–10 business days before it ships.`,
+    `Made by hand, made to order. Each piece has its own build time, shown on its product page, before it ships.`,
     "",
     `Lusik & Sons · ${url}`,
     "",
     `You're getting this because you signed up for the ${productName} waitlist. This is a one-time send — we won't email you again from this list.`,
+  ].join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}
+
+// ============================================================
+// sendReviewRequest — "how is it holding up?"
+// ============================================================
+// Sent a fortnight after a piece shipped, once per order, from the
+// scheduled review-request job.
+//
+// Fourteen days rather than the day it lands: a hand cross-stitched
+// blanket is not judged on arrival, it is judged after a fortnight of
+// being slept under and washed once. It also puts the ask far enough
+// from the money that it does not read as part of the transaction.
+//
+// No incentive, no discount for a review, and no star rating baked into
+// the links. A review that was paid for is not a review, and a link that
+// pre-selects five stars is a leading question.
+// ============================================================
+export async function sendReviewRequest({ order, reviewUrl }) {
+  const to = order.customer_email;
+  if (!to) {
+    console.warn("[email] customer email missing on review request; skipping");
+    return false;
+  }
+  if (!reviewUrl) {
+    console.warn("[email] no review URL (no signing secret configured); skipping");
+    return false;
+  }
+
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
+  const ship = order.shipping_address ?? {};
+  const first = typeof ship.name === "string" && ship.name.trim() ? ship.name.trim().split(" ")[0] : null;
+  const greeting = first ? `Hi ${esc(first)},` : "Hi there,";
+  const orderNumber = order.order_number ?? order.id;
+
+  const subject = "How is it holding up?";
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+
+    <h1 style="font-size:28px;font-weight:500;margin:0 0 18px 0;letter-spacing:-0.01em;line-height:1.25;">
+      How is it holding up?
+    </h1>
+
+    <p style="font-size:16px;margin:0 0 18px 0;">${greeting}</p>
+
+    <p style="font-size:16px;margin:0 0 22px 0;">
+      Your piece went out a couple of weeks ago, which is about long enough to have been slept under and washed once. Lusik would like to know how it is doing.
+    </p>
+
+    <div style="margin:24px 0 28px 0;">
+      <a href="${esc(reviewUrl)}" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+        Tell her how it is &rarr;
+      </a>
+    </div>
+
+    <p style="font-size:14px;color:${muted};margin:0 0 22px 0;">
+      A sentence is plenty. If you would like to send a photograph of it in use, there is a place for that too, and nothing appears anywhere on the site unless you say it may.
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      Order ${esc(String(orderNumber))}<br>
+      <em>Made by hand in Southern California.</em><br>
+      Lusik &amp; Sons &middot; <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
+      This is the only email we send about a review. If you would rather not, just ignore it.
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    "LUSIK & SONS",
+    "How is it holding up?",
+    "",
+    first ? `Hi ${first},` : "Hi there,",
+    "",
+    "Your piece went out a couple of weeks ago, which is about long enough to have been slept under and washed once. Lusik would like to know how it is doing.",
+    "",
+    `Tell her how it is: ${reviewUrl}`,
+    "",
+    "A sentence is plenty. If you would like to send a photograph of it in use, there is a place for that too, and nothing appears anywhere on the site unless you say it may.",
+    "",
+    `Order ${orderNumber}`,
+    `Lusik & Sons · ${url}`,
+    "",
+    "This is the only email we send about a review. If you would rather not, just ignore it.",
   ].join("\n");
 
   return await sendEmail({ to, subject, html, text });
@@ -1170,8 +1336,9 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
     </div>
 
     <p style="font-size:14px;color:${muted};margin:0 0 12px 0;">
-      Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
+      Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different color combination than the picker showed you, just reply to this email.
     </p>
+
 
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
       <em>Made by hand in Southern California.</em><br>
@@ -1197,7 +1364,7 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
     "",
     `Pick up where you left off: ${url}/`,
     "",
-    `Made-to-order, by hand — every piece takes 5–10 business days before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
+    `Made to order, by hand — each piece has its own build time, shown on its product page, before it ships. If you have a question or need a different combination than the picker showed you, just reply to this email.`,
     "",
     `Lusik & Sons · ${url}`,
     "",
@@ -1205,109 +1372,4 @@ export async function sendCartAbandonmentRecovery({ to, items, totalCents }) {
   ].join("\n");
 
   return await sendEmail({ to, subject, html, text });
-}
-
-/**
- * Send the embroidery-order / quote-request email to Lusik.
- * Fired by the embroidery-order Function when the /embroidery
- * order desk submits. The machine-ready .pes file rides along as
- * an attachment when the browser engine produced one; when it
- * didn't (old browser, engine error), the email says so and the
- * design parameters are enough to digitize manually.
- *
- * `order` — validated payload from embroidery-order.mjs:
- *   { ref, account, contact{name,email,phone}, productName,
- *     panelLabel, areaMm[w,h], modeLine, textStitched, threadName,
- *     threadHex, fabricName, fabricHex, notes, stats|null }
- * `pesBase64` — base64 .pes bytes or null.
- */
-export async function sendEmbroideryOrderEmail({ order, pesBase64 }) {
-  const to = process.env.ADMIN_NOTIFICATION_EMAIL;
-  if (!to) {
-    console.warn("[email] ADMIN_NOTIFICATION_EMAIL not set; skipping embroidery order email");
-    return false;
-  }
-  const { accent, ink, cream, muted } = PALETTE;
-  const isCompany = order.account === "company";
-  const kind = isCompany ? "Embroidery order" : "Embroidery quote request";
-  const subject = headerSafe(
-    `🧵 ${kind} ${order.ref} — "${order.textStitched}" on ${order.productName}`
-  );
-
-  const row = (label, value) => `
-    <tr>
-      <td style="padding:6px 12px 6px 0;color:${muted};font-size:13px;white-space:nowrap;vertical-align:top;">${esc(label)}</td>
-      <td style="padding:6px 0;color:${ink};font-size:14px;">${value}</td>
-    </tr>`;
-
-  const swatch = (hex, name) =>
-    `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${esc(hex)};border:1px solid rgba(0,0,0,.2);vertical-align:middle;margin-right:6px;"></span>${esc(name)} <span style="color:${muted};font-size:12px;">${esc(hex)}</span>`;
-
-  const statsLine = order.stats
-    ? `${order.stats.stitchCount} stitches · ${order.stats.widthMm} × ${order.stats.heightMm} mm · ${order.stats.jumps} trims`
-    : null;
-
-  const contactBits = [
-    order.contact.name ? esc(order.contact.name) : null,
-    order.contact.email ? `<a href="mailto:${esc(order.contact.email)}" style="color:${accent};">${esc(order.contact.email)}</a>` : null,
-    order.contact.phone ? esc(order.contact.phone) : null,
-  ].filter(Boolean).join(" · ");
-
-  const html = `<!DOCTYPE html>
-<html><body style="margin:0;padding:0;background:${cream};font-family:Georgia,'Times New Roman',serif;">
-  <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
-    <div style="font-size:12px;letter-spacing:2px;color:${accent};text-transform:uppercase;">Lusik &amp; Sons — Embroidery desk</div>
-    <h1 style="font-size:22px;color:${ink};margin:8px 0 4px;">${esc(kind)} ${esc(order.ref)}</h1>
-    <div style="color:${muted};font-size:13px;margin-bottom:20px;">${isCompany
-      ? "Billed to the Tuxedos Online company account."
-      : "Public request — reply with a price before stitching."}</div>
-
-    <div style="background:#fff;border-radius:12px;padding:20px 24px;">
-      <table style="border-collapse:collapse;width:100%;">
-        ${row("Stitch text", `<b style="font-size:16px;">${esc(order.textStitched)}</b>`)}
-        ${row("Design", esc(order.modeLine))}
-        ${row("Product", esc(order.productName))}
-        ${row("Placement", `${esc(order.panelLabel)} · about ${order.areaMm[0]} × ${order.areaMm[1]} mm`)}
-        ${row("Thread", swatch(order.threadHex, order.threadName))}
-        ${row("Fabric", swatch(order.fabricHex, order.fabricName))}
-        ${statsLine ? row("Machine file", `${esc(order.ref)}.pes attached — ${esc(statsLine)}`) : ""}
-        ${order.notes ? row("Notes", esc(order.notes)) : ""}
-        ${contactBits ? row("Contact", contactBits) : ""}
-      </table>
-      ${pesBase64 ? "" : `<div style="margin-top:14px;padding:10px 14px;background:${cream};border-radius:8px;color:${muted};font-size:13px;">No .pes attached — the browser couldn't run the stitch engine. The parameters above are complete; digitize manually.</div>`}
-    </div>
-
-    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
-      Sent by the /embroidery order desk on lusikandsons.com.
-    </div>
-  </div>
-</body></html>`;
-
-  const text = [
-    `LUSIK & SONS — EMBROIDERY DESK`,
-    `${kind} ${order.ref}`,
-    "",
-    `Stitch text: ${order.textStitched}`,
-    `Design:      ${order.modeLine}`,
-    `Product:     ${order.productName}`,
-    `Placement:   ${order.panelLabel} · about ${order.areaMm[0]} x ${order.areaMm[1]} mm`,
-    `Thread:      ${order.threadName} ${order.threadHex}`,
-    `Fabric:      ${order.fabricName} ${order.fabricHex}`,
-    statsLine ? `Machine file: ${order.ref}.pes attached — ${statsLine}` : `No .pes attached — digitize manually from the parameters above.`,
-    order.notes ? `Notes:       ${order.notes}` : null,
-    contactBits ? `Contact:     ${[order.contact.name, order.contact.email, order.contact.phone].filter(Boolean).join(" · ")}` : null,
-    "",
-    isCompany ? "Billed to the Tuxedos Online company account." : "Public request — reply with a price before stitching.",
-  ].filter((l) => l !== null).join("\n");
-
-  return await sendEmail({
-    to,
-    subject,
-    html,
-    text,
-    replyTo: order.contact.email || undefined,
-    attachments: pesBase64
-      ? [{ filename: `${order.ref}.pes`, content: pesBase64 }]
-      : undefined,
-  });
 }

@@ -66,7 +66,22 @@ export default async (req, context) => {
           FROM order_items oi WHERE oi.order_id = o.id
         ),
         '[]'::json
-      ) AS order_items
+      ) AS order_items,
+      -- Milestones ride along with the order rather than a request per
+      -- card: the account page renders every order a customer has ever
+      -- placed, and one fetch each is a needless fan-out.
+      COALESCE(
+        (
+          SELECT json_agg(json_build_object(
+            'milestone', om.milestone,
+            'note',      om.note,
+            'photoKey',  om.photo_key,
+            'at',        om.created_at
+          ) ORDER BY om.created_at, om.id)
+          FROM order_milestones om WHERE om.order_id = o.id
+        ),
+        '[]'::json
+      ) AS milestones
     FROM orders o
     WHERE o.user_id = ${user.id}
     ORDER BY o.created_at DESC

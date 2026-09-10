@@ -105,7 +105,7 @@ export function NewsletterSignup({ variant = "footer" }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={busy}
-          className="flex-1 px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+          className="flex-1 px-3 py-2.5 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
           style={{ border: "1px solid rgba(26,22,18,0.15)" }}
           aria-label="Email address"
         />

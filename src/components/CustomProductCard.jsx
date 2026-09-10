@@ -9,7 +9,13 @@
 //
 // ============================================================
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import dynamic from "next/dynamic";
+
+// The 3D engine. next/dynamic with ssr:false keeps three.js out of this
+// route's first-load JS; the bundle gate fails the build if it leaks in.
+const LoomStage = dynamic(() => import("../loom/index").then((m) => m.LoomStage), { ssr: false });
+import { publishDesign } from "../lib/designBus";
 import { ProductTemplate } from "./ProductTemplate.jsx";
 import { ArrowRight } from "./icons.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
@@ -26,11 +32,33 @@ import { FoundingPriceBadge } from "./FoundingPriceBadge.jsx";
 // both removed at user request. They'll be replaced by a real
 // photo slideshow on the bib product page in a follow-up PR.
 import { PRODUCT } from "../data/product.js";
+import { readTryName } from "../lib/tryName.js";
 
 export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedback, soldOut = false, notifyKey, immersive = false }) {
   const t = useT();
   const { lang } = useLang();
   const [customName, setCustomName] = useState("");
+  // Filled in by the stage while the engine is live; called when the bib
+  // goes in the bag so the row shows the name they typed.
+  const captureRef = useRef(null);
+
+  // ?name=<value> — the "Try a name" field on the shop card. Arriving
+  // here with the name already embroidered on the bib is the whole point
+  // of that field; an empty box would make it a decoration. Read in an
+  // effect rather than as the initial state because this component is
+  // server-rendered and window does not exist there.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const name = readTryName(params, config.maxNameLength ?? 6);
+    if (!name) return;
+    setCustomName(name);
+    params.delete("name");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash);
+    // config.maxNameLength is a constant for a mounted product.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [size, setSize] = useState("");
   const [error, setError] = useState("");
 
@@ -100,6 +128,14 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
 
   const maxNameLength = config.maxNameLength ?? 6;
   const cleanName = customName.trim();
+
+  // What the 3D stage embroiders. Memoised: LoomStage redraws the decal on
+  // every identity change, and a fresh object each render would re-rasterise
+  // the name on every keystroke of any field on the page.
+  const bibDesign = useMemo(() => ({
+    name: cleanName,
+    threadColor: (supportsColor && letterColor?.hex) || "#8B2C2C",
+  }), [cleanName, supportsColor, letterColor?.hex]);
   const canAdd = !!size && cleanName.length > 0 && cleanName.length <= maxNameLength;
 
   // Double-tap guard — same shape as ProductShowcase's add-to-cart.
@@ -107,25 +143,12 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
 
-  // Feed the PDP's Live 3D stitch panel (Stitch3DPanel): as the customer
-  // types the name or picks a thread, the stage restitches in real time.
-  // Fire-and-forget CustomEvent — nothing listens on pages without the panel.
+  // Publish the bib design on the design bus as the customer types the
+  // name or picks a thread. Nothing subscribes today; the 3D product
+  // engine planned in SITE_OVERHAUL_HANDOFF.md (Phase 1) will use it.
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent("stitch3d:live", {
-      detail: { text: customName, thread: letterColor?.hex },
-    }));
+    publishDesign({ product: "bib-single", name: customName, threadHex: letterColor?.hex });
   }, [customName, letterColor]);
-
-  // The StageHero's on-stage name field feeds the configurator, so the
-  // name a shopper types on the 3D stage is the name that goes in the bag.
-  useEffect(() => {
-    const onHero = (e) => {
-      const d = e?.detail || {};
-      if (typeof d.text === "string") setCustomName(d.text);
-    };
-    window.addEventListener("stitch3d:hero", onHero);
-    return () => window.removeEventListener("stitch3d:hero", onHero);
-  }, []);
 
   // Validate the bib config, setting an inline error and returning false on
   // failure. Shared by Add-to-Bag and express Buy-it-now.
@@ -171,6 +194,12 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           : null,
         color_preset_key: activePresetKey ?? null,
       },
+      // What the stage was embroidering when this went in the bag.
+      // Display only — CheckoutView builds its payload from an explicit
+      // list of fields, so it never reaches the server. Null unless the
+      // engine is live, in which case the row falls back to the product
+      // photograph exactly as it did before.
+      thumb: captureRef.current?.() ?? null,
     };
   };
 
@@ -216,10 +245,21 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
           while the customer scrolls through name / color / size below.
           `lg:top-24` clears the sticky nav (~80px) with breathing room. */}
       <div className="relative aspect-square overflow-hidden lg:sticky lg:top-24 lg:self-start" style={{ background: "linear-gradient(135deg, #FAF6EC 0%, #EFE7D6 100%)" }}>
-        <ProductTemplate
-          customName={customName}
-          nameColor={supportsColor && !letterColorList ? letterColor?.hex : null}
-          nameColors={supportsColor && letterColorList ? letterColorList.map(c => c.hex) : null}
+        <LoomStage
+          productKey={config.key}
+          captureRef={captureRef}
+          label={t("bib.previewAlt", { name: cleanName || "" })}
+          design={bibDesign}
+          /* The 2D template is the fallback, and it is live: a visitor
+             whose device cannot run the engine still watches the name
+             appear as they type. */
+          fallback={(
+            <ProductTemplate
+              customName={customName}
+              nameColor={supportsColor && !letterColorList ? letterColor?.hex : null}
+              nameColors={supportsColor && letterColorList ? letterColorList.map(c => c.hex) : null}
+            />
+          )}
         />
         {/* Empty-state placeholder — hides as soon as the customer types.
             Shows a simple "type a name to preview yours" hint over the
@@ -471,7 +511,7 @@ export function CustomProductCard({ config, onAddCustom, onBuyNow, onCartFeedbac
         ) : (<>
         {/* Add to Bag + Buy it now — inside the Apple-style purchase card
             (delivery & pickup details on top, buy buttons at the bottom) */}
-        <PurchaseCard className={immersive ? "mt-2" : "hidden lg:block mt-2"}>
+        <PurchaseCard productKey="bib-single" className={immersive ? "mt-2" : "hidden lg:block mt-2"}>
           <button
             onClick={handleAdd}
             disabled={!canAdd || adding}

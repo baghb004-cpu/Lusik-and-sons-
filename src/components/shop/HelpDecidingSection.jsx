@@ -68,7 +68,7 @@ export function StillHaveQuestionsCard({
             className="flex items-center justify-center"
             style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--accent-soft)" }}
           >
-            <MessageCircle size={20} strokeWidth={1.7} style={{ color: "var(--accent)" }} />
+            <MessageCircle size={20} strokeWidth={1.7} style={{ color: "var(--accent-text)" }} />
           </a>
           <a
             href={TEL_HREF}
@@ -76,7 +76,7 @@ export function StillHaveQuestionsCard({
             className="flex items-center justify-center"
             style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--accent-soft)" }}
           >
-            <Phone size={20} strokeWidth={1.7} style={{ color: "var(--accent)" }} />
+            <Phone size={20} strokeWidth={1.7} style={{ color: "var(--accent-text)" }} />
           </a>
         </div>
       </div>
@@ -148,7 +148,7 @@ export function HelpDecidingSection({
             marginBottom: 20,
           }}
         >
-          <span className="font-display" style={{ fontSize: "1.5rem", color: "var(--accent)", letterSpacing: "0.01em" }}>
+          <span className="font-display" style={{ fontSize: "1.5rem", color: "var(--accent-text)", letterSpacing: "0.01em" }}>
             Lusik &amp; Sons
           </span>
         </div>
@@ -188,7 +188,7 @@ export function HelpDecidingSection({
                   boxShadow: "0 2px 10px rgba(26,22,18,0.08)",
                 }}
               >
-                <Ico size={26} strokeWidth={1.6} style={{ color: "var(--accent)" }} />
+                <Ico size={26} strokeWidth={1.6} style={{ color: "var(--accent-text)" }} />
               </span>
               <span
                 className="text-sm text-center"
@@ -229,7 +229,7 @@ export function HelpDecidingSection({
                     size={20}
                     strokeWidth={1.8}
                     style={{
-                      color: "var(--accent)",
+                      color: "var(--accent-text)",
                       flexShrink: 0,
                       transition: "transform 0.2s ease",
                       transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",

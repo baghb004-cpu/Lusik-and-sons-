@@ -36,7 +36,7 @@ export function CollapsibleCard({ title, eyebrow, defaultOpen = false, children,
       >
         <span className="min-w-0">
           {eyebrow && (
-            <span className="block text-[0.6rem] tracking-[0.25em] uppercase mb-0.5" style={{ color: "var(--accent)" }}>{eyebrow}</span>
+            <span className="block text-[0.6rem] tracking-[0.25em] uppercase mb-0.5" style={{ color: "var(--accent-text)" }}>{eyebrow}</span>
           )}
           <span className="text-sm" style={{ fontWeight: 600 }}>{title}</span>
         </span>

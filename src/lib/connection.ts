@@ -9,9 +9,15 @@
 // is always best-effort — navigation still works via router.push when
 // this returns false.
 
+import { getTier } from "./capability";
+
 export function prefetchAllowed(): boolean {
   // No navigator on the server; prefetch is a client-only optimization.
   if (typeof navigator === "undefined") return false;
+  // The capability ladder already folded Save-Data, slow links, low memory
+  // and a dying battery into one decision: anything below "full" browses
+  // without speculative fetches.
+  if (getTier() !== "full") return false;
   // `navigator.connection` is non-standard (absent in Safari/Firefox) —
   // when it's missing we proceed, matching the prior main-nav behavior.
   const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;

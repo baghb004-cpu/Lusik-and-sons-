@@ -40,11 +40,12 @@ export default {
     },
     extend: {
       fontFamily: {
-        // Match the Google Fonts pulled in <head>. Listed in the
-        // same order so the CSS variable cascades match too.
-        display: ['"Fraunces"', "Georgia", "serif"],
-        body:    ['"DM Sans"', "system-ui", "-apple-system", "sans-serif"],
-        script:  ['"Allura"', "cursive"],
+        // Point at the tokens in index.css rather than repeating the
+        // stacks. They are the only place the Armenian faces are named,
+        // and a second copy here is how one of them goes stale.
+        display: ["var(--font-display)"],
+        body:    ["var(--font-body)"],
+        script:  ["var(--font-script)"],
       },
       colors: {
         // Brand palette mirrored from the stylesheet's CSS custom

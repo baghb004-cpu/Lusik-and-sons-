@@ -255,6 +255,16 @@ export default async (req, context) => {
     // logs + returns false; it never throws and never blocks
     // the admin save.
     if (stampShippedAt) {
+      // Close the customer's timeline with the same transition that
+      // fires the email. Isolated — a milestone must never fail a save.
+      try {
+        await sql`
+          INSERT INTO order_milestones (order_id, milestone)
+          VALUES (${id}, 'shipped')
+        `;
+      } catch (err) {
+        console.warn("[admin-orders] shipped milestone skipped:", err?.message ?? err);
+      }
       await sendShippedNotification({ order: rows[0] })
         .catch((err) => console.warn("[admin-orders] shipped email failed:", err?.message ?? err));
     }

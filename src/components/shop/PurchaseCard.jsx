@@ -17,7 +17,7 @@
 import React from "react";
 import { DeliveryPickupDetails } from "../DeliveryPickupDetails.jsx";
 
-export function PurchaseCard({ children, priceNode = null, className = "" }) {
+export function PurchaseCard({ children, priceNode = null, className = "", productKey = null }) {
   return (
     <div
       className={`rounded-2xl overflow-hidden ${className}`}
@@ -29,7 +29,7 @@ export function PurchaseCard({ children, priceNode = null, className = "" }) {
     >
       {/* Delivery & pickup disclosure — top of the card */}
       <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border-soft)" }}>
-        <DeliveryPickupDetails />
+        <DeliveryPickupDetails productKey={productKey} />
       </div>
 
       {/* Price (optional) + buy buttons — bottom of the card */}

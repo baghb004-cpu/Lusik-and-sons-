@@ -21,6 +21,9 @@ export function CategoryRoute() {
       onNavigateHome={nav.goForYou}
       onNavigateShop={nav.goShopIndex}
       onNavigateProduct={nav.goShopProduct}
+      /* The "Try a name" field builds its own path with the typed name
+         in it, so it needs the raw pusher rather than the slug pair. */
+      onNavigateHref={nav.go}
       onPrefetch={nav.prefetch}
     />
   );

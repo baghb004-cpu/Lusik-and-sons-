@@ -4,14 +4,21 @@
 # Runs on every push to non-main branches + every PR. Builds
 # the site (next build) and serves it with `next start` (see
 # lighthouserc.json startServerCommand), runs Lighthouse
-# against three URLs (home, journal index, one journal post),
-# and asserts category scores against the floors in
-# lighthouserc.json.
+# against six URLs (home, shop, a product page, the bag, the
+# journal index and one post), and asserts category scores
+# against the floors in lighthouserc.json.
 #
-# Failing thresholds in lighthouserc.json are 'error' for
-# accessibility / best-practices / SEO (these BLOCK the merge)
-# and 'warn' for performance (lets you see it slipping without
-# blocking a fix that intentionally trades perf for a feature).
+# What BLOCKS: accessibility and SEO, at 0.95. Both are DOM
+# audits, so they score the same on every run and on every
+# machine — that is what makes them safe to gate on. /cart is
+# held to accessibility but not to SEO: the bag is deliberately
+# noindex, and that one audit is 4 of the 10 SEO points.
+#
+# What only WARNS: performance and best-practices. Performance
+# is genuinely poor on the product page and is real work, not a
+# threshold; best-practices is capped around 0.75 by the ad
+# tags' third-party cookies, which is a business decision. The
+# reasoning for each is written out in lighthouserc.json.
 #
 # The Lighthouse report URL gets posted as a PR comment so
 # reviewers can click through to the full audit.

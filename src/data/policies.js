@@ -46,7 +46,7 @@ export const POLICIES = {
       },
       {
         heading: "Cookies and tracking",
-        body: "We use the cookies necessary to keep you signed in and to remember your cart, plus the optional advertising cookies described in the next section — those are the only cross-site tracking on the site, and you can turn them off. The site may also use a privacy-first analytics provider (Umami) for aggregate pageview counts; if active, it doesn't set cookies, doesn't track you across other sites, and doesn't collect personal data. On mobile, the site also remembers your recently viewed items and recent searches locally in your own browser to help you pick up where you left off — that history stays on your device, is never sent to us, and you can clear it anytime from the search screen. You can confirm what's running by opening your browser's developer tools and looking at the Network tab — every request the site makes will be visible there."
+        body: "We use the cookies necessary to keep you signed in and to remember your cart, plus the optional advertising cookies described in the next section — those are the only cross-site tracking on the site, and you can turn them off. The site may also use a privacy-first analytics provider (Umami) for aggregate pageview counts and anonymous page-speed measurements (how quickly pages load on different kinds of devices and connections); if active, it doesn't set cookies, doesn't track you across other sites, and doesn't collect personal data. On mobile, the site also remembers your recently viewed items and recent searches locally in your own browser to help you pick up where you left off — that history stays on your device, is never sent to us, and you can clear it anytime from the search screen. You can confirm what's running by opening your browser's developer tools and looking at the Network tab — every request the site makes will be visible there."
       },
       {
         heading: "Advertising pixels — and your off switch",
@@ -89,7 +89,7 @@ export const POLICIES = {
       },
       {
         heading: "Shipping",
-        body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Most orders ship within 5–10 business days of order confirmation; the Full Alphabet Crib Blanket — every letter, by hand — needs 3–4 weeks. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
+        body: "We currently ship only within the United States via USPS, UPS, or FedEx (your choice at checkout). Every piece is made to order and each one has its own build time, shown with real dates on its product page: about 2 to 3 weeks for a single bib, 3 to 4 for a matched set, 5 to 6 for the seven-bib Days of the Week set, 4 to 6 for the Armenian Alphabet Blanket, and 10 to 12 for the Full Alphabet Crib Blanket. Transit adds 3 to 5 business days. You'll receive a tracking number when your order ships. Shipping costs and any duties are the customer's responsibility."
       },
       {
         heading: "Documentation and disputes",

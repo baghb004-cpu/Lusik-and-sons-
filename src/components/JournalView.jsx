@@ -229,13 +229,13 @@ export function JournalPostView({ post, onBack, onSelectPost }) {
             }
             if (node.type === "blockquote") {
               return (
-                <blockquote key={i} className="font-display italic text-lg lg:text-xl border-l pl-5 leading-relaxed" style={{ borderColor: "var(--accent)", fontWeight: 400, color: "#3D332A" }}>
+                <blockquote key={i} className="font-display italic text-lg lg:text-xl border-l pl-5 leading-relaxed" style={{ borderColor: "var(--accent)", fontWeight: 400, color: "var(--text-secondary)" }}>
                   {node.text}
                 </blockquote>
               );
             }
             return (
-              <p key={i} className="text-base lg:text-lg leading-relaxed" style={{ color: "#3D332A" }}>
+              <p key={i} className="text-base lg:text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                 {node.text}
               </p>
             );

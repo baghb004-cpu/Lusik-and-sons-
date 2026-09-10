@@ -32,53 +32,47 @@ import { loc } from "../../i18n/localize.js";
 import { promoForCatalogProduct } from "../../lib/launchPromo.js";
 import { FoundingFromPrice } from "../FoundingPriceBadge.jsx";
 import { useTilt3D } from "../../lib/useTilt3D";
+import { productHeroImages as heroImagesFor } from "../../lib/productHeroImage.js";
+import { acceptsTryName } from "../../lib/tryName.js";
+import { TryNameField } from "./TryNameField.jsx";
 
 // Thumbnail image(s) for the category-grid card. Returns either:
 //   - a string (single image, no slideshow), OR
 //   - an array of strings (brisk slideshow on hover, auto-cycle
 //     on touch -- same behavior as the home-page Featured
 //     Categories cards)
-// Preference order:
-//   1. bib-single  -> the 4 past-customer bib photos as a
-//      brisk slideshow (real customer orders, not the old
-//      Romeo+blanket workshop shot)
-//   2. product.coverImage  -> explicit portrait crop if set
-//      (alphabet blanket, full-alphabet blanket placeholder)
-//   3. PRODUCT.gallery[0]  -> first gallery photo for the
-//      live alphabet blanket
-//   4. null  -> placeholder card renders the empty
-//      "Image goes here" frame
+// The choice itself lives in src/lib/productHeroImage.js, shared with the
+// home page's row of pieces — two places deciding separately is how one of
+// them ends up drawing an empty frame for the Custom Name Bib, which has
+// no cover photograph at all.
 function productHeroImages(product) {
-  if (product.status === "live" && product.key === "bib-single") {
-    return [
-      "/img/bib-examples/01.jpg",  // teddy bear + Armenian
-      "/img/bib-examples/02.jpg",  // daffodils + "Armig"
-      "/img/bib-examples/03.jpg",  // tulip + Armenian on pink
-      "/img/bib-examples/04.jpg",  // giraffe + Armenian on blue
-    ];
-  }
-  if (product.coverImage) return product.coverImage;
-  if (product.status === "live" && product.key === "blanket-alphabet") {
-    return PRODUCT.gallery?.[0] ?? null;
-  }
-  return null;
+  const images = heroImagesFor(product, { galleryFallback: PRODUCT.gallery?.[0] ?? null });
+  if (images.length === 0) return null;
+  // The name bib is a slideshow of past customer orders; everything else
+  // is a single photograph, and the card takes a bare string for that.
+  return images.length > 1 ? images : images[0];
 }
 
 // One product card in the category grid. A component (not a map body) so
 // each card can own a useTilt3D ref — the DEPTH tilt layer. lg-shine keeps
 // its own hover sweep, so no t3d-glare here.
-function CategoryProductCard({ category, product: p, index, soldOut, hero, onTap, onPrefetch }) {
+function CategoryProductCard({ category, product: p, index, soldOut, hero, onTap, onOpenHref, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const tiltRef = useTilt3D();
   const isLive = p.status === "live";
+  // The two products a customer configures get a name field under the
+  // card. It lives OUTSIDE the button: an <input> inside a <button> is
+  // invalid markup and a browser will not let you type into one.
+  const tryName = isLive && !soldOut && acceptsTryName(p.key);
   return (
+    <div className={tryName ? "flex flex-col" : "contents"}>
     <button
       ref={tiltRef}
       onClick={onTap}
       onPointerEnter={onPrefetch}
       onFocus={onPrefetch}
-      className="lg-button lg-shine t3d text-left flex flex-col stagger-reveal"
+      className={`lg-button lg-shine t3d text-left flex flex-col stagger-reveal${tryName ? " flex-1" : ""}`}
       style={{ "--i": index }}
       aria-label={isLive ? t("shop.viewAria", { name: loc(p, "name", lang) }) : t("shop.comingSoonAria", { name: loc(p, "name", lang) })}
     >
@@ -169,10 +163,21 @@ function CategoryProductCard({ category, product: p, index, soldOut, hero, onTap
         </div>
       </div>
     </button>
+    {tryName && (
+      <div className="lg-button" style={{ marginTop: "0.5rem" }}>
+        <TryNameField
+          name={loc(p, "name", lang)}
+          path={`/shop/${category.slug}/${p.slug}`}
+          onOpen={onOpenHref}
+          onPrefetch={onPrefetch}
+        />
+      </div>
+    )}
+    </div>
   );
 }
 
-export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct, onPrefetch }) {
+export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavigateProduct, onNavigateHref, onPrefetch }) {
   const t = useT();
   const { lang } = useLang();
   const { isSoldOut } = useSite();
@@ -205,6 +210,7 @@ export function CategoryView({ category, onNavigateHome, onNavigateShop, onNavig
             soldOut={p.status === "live" && isSoldOut(inventoryKeyForCatalog(p.key))}
             hero={productHeroImages(p)}
             onTap={() => onNavigateProduct(category.slug, p.slug)}
+            onOpenHref={onNavigateHref}
             onPrefetch={() => onPrefetch?.(`/shop/${category.slug}/${p.slug}`)}
           />
         ))}

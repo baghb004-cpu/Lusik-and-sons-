@@ -1,0 +1,1198 @@
+# Lusik & Sons: site overhaul hand-off
+
+**Status: PLAN ONLY. Nothing in this document has been built.** Written 2026-09-09
+on branch `claude/lusik-sons-brochure-gt38ja`, after the printed brochure and coupon
+sheet work (see `print/`). It is meant to be handed to a fresh Claude Code session,
+possibly on a different account, and executed phase by phase.
+
+Owner's brief, in their words: make the website feature rich and optimized, nothing
+can break, make it feel like a million-dollar team storyboarded the whole production
+from start to finish, remove the Embroidery Studio completely, model every product in
+accurate 3D with as much detail as possible, and keep the live auto-preview feeling
+of the "Your design" tab (typing a name and date on the alphabet blanket page shows the
+design update as you type) across all products. Be very creative. The owner is low on
+usage credits, so the executing session must work in tight, verifiable increments.
+
+---
+
+## 0. Read this first (for the executing session)
+
+### 0.1 Orientation
+
+- `CLAUDE.md` is the authoritative architecture guide. Read it fully before touching
+  code. This document is the plan; where they disagree about how the code works today,
+  `CLAUDE.md` wins and this plan should be corrected.
+- Stack: Next.js 15 App Router, React 18, Tailwind via PostCSS, Netlify Functions +
+  Neon Postgres + Netlify Blobs + Identity, Stripe Checkout, Resend email. Content is
+  CMS JSON under `content/` compiled by `npm run gen:data`. Photos live in
+  `public/img/`.
+- Hard gates that already exist and must stay green on every PR:
+  - `npm run typecheck`
+  - `npm run test:unit` (Node test runner, ~135 tests incl. drift tests)
+  - `npm run test:e2e` (Playwright, `desktop-chromium` + `mobile-chromium`;
+    `npm run test:install` first)
+  - `npm run next:build` (fails if any route's first-load JS exceeds **210 KB gzip**,
+    see `scripts/check-bundle-budget.mjs`)
+  - Lighthouse CI on PRs (`lighthouserc.json`, currently warn-only)
+- Branch protection: `main` needs a PR with an approving review and passing Tests +
+  Lighthouse. Never push to `main`. One PR per phase step below.
+
+### 0.2 The "nothing can break" protocol
+
+Every PR in this plan follows the same rules. They are not optional.
+
+1. **Baseline before change.** PR 1 adds a Playwright visual-regression suite
+   (`tests/visual/*.spec.mjs`) that screenshots home, `/shop`, one category, three
+   product pages, cart, checkout, account, and a journal post on both projects.
+   Baselines are committed. Every later PR runs it; intentional changes update
+   baselines in the same PR with a note in the PR body.
+2. **Feature flags, not forks.** New surfaces ship behind `CONFIG` flags
+   (`CONFIG.LOOM.ENABLED`, `CONFIG.HOME_V3`, `CONFIG.ORDER_TRACKER`, and so on) so a
+   flag flip is the rollback. Old components are deleted only in the PR after the new
+   one has been live for a deploy.
+3. **Money, auth, and cart shape are frozen.** Do not change `_lib/trusted-products.mjs`
+   prices, the cart-ID shape (`mapLegacyId`), `requireUser` / `requireAdmin`, the
+   Identity loading path, or anything under `netlify/functions/_lib/pricing*`
+   except where Phase 3 explicitly says so (and then with the drift tests updated
+   in the same commit).
+4. **Budget discipline.** The 3D engine is an async chunk loaded after first paint.
+   It must never appear in a route's first-load JS. A second, named budget for the
+   engine chunk is added in PR 2.
+5. **Every new surface gets a test.** At minimum one e2e assertion per new page or
+   interaction, and unit tests for pure logic (stitch planner, glyph charts, lead-time
+   math).
+6. **Accessibility and motion.** Every canvas has a text equivalent. Every animation
+   honors `prefers-reduced-motion` (the codebase already does this; match it).
+7. **PR body template.** Each PR body has three sections: What changed, How to verify
+   in five minutes (exact clicks), and Rollback (the flag or the revert).
+8. **Stop at phase boundaries.** Finish a PR, report, wait. Do not start the next
+   phase in the same PR. The owner has limited credits; a half-built phase is worse
+   than a finished smaller one.
+
+### 0.3 Kickoff prompt for the new session
+
+Paste this as the first message of the new Claude Code session:
+
+> Read `CLAUDE.md`, then read `SITE_OVERHAUL_HANDOFF.md` completely. Execute the plan
+> one PR at a time, starting with PR 1 (Phase 0). Before writing code, run
+> `npm ci`, `npm run test:install`, `npm run typecheck`, `npm run test:unit`, and
+> `npm run next:build` to confirm the baseline is green, and tell me the bundle-budget
+> numbers the build prints. Follow the "nothing can break" protocol in section 0.2
+> exactly. Work on a branch named `claude/overhaul-pr1-remove-studio` (then
+> `claude/overhaul-pr2-loom-core`, and so on). When PR 1 is ready, open the pull
+> request with the three-section body described in 0.2 and stop so I can review.
+
+### 0.4 What is already done on this branch
+
+- `print/`: the tri-fold delivery brochure and coupon sheet (HTML sources, fonts,
+  render script, PDFs). The brochure's lead times (4 to 6 weeks for the alphabet
+  blanket, 10 to 12 for the full alphabet crib blanket, 5 to 6 for the days-of-the-week
+  set, 2 to 3 for the name bib and the Hye Em Yes bib, 3 to 4 for the Anushig pair and
+  the Bari Akhorzhak set) are the owner's realistic numbers. **The website still says
+  5 to 10 business days in several places.** Phase 3 aligns the site to the brochure.
+
+### 0.5 Progress log
+
+| Date | PR | Status | Notes |
+| --- | --- | --- | --- |
+| 2026-09-09 | PR 1, Phase 0: remove the Embroidery Studio | **Done**, on branch `claude/lusik-sons-brochure-gt38ja` (commits `df3d3e1` and the baseline commit after it). Open the pull request from that branch. | Deleted `public/embroidery/`, `StageHero`, `stitchPreviews`, the `embroidery-order` Function and test, and the stage CSP overrides; `/embroidery/*` now 301s to `/shop`. Added `ProductHero` (photo band, same box), `src/lib/designBus.ts` (`design:change`), the visual-regression suite (`tests/visual`, own config, `npm run test:visual`, CI job, 18 committed baselines), and the `PLAYWRIGHT_CHROMIUM_EXECUTABLE` override. Gates: typecheck clean; 135 unit tests pass; build under budget with the product page at 180 KB of 210; e2e 27 passed and 5 expected skips across both projects; visual baselines 18 of 18 stable on a second run. Cart and checkout are not in the visual suite yet (see the note in the spec). |
+
+| 2026-09-09 | PR 16, section 11.1: the capability ladder | **Done**, same branch. | `src/lib/capabilityTier.js` (pure resolver, plain JS so the Node unit test can import it) + `src/lib/capability.ts` (browser wiring: network, Save-Data, `prefers-reduced-data`, rtt/downlink, `deviceMemory`, cores, storage estimate, battery, measured first-image time, screen/preference media queries, a deferred WebGL probe). Publishes `<html data-tier>` for CSS and a `capability:change` event for JS (`useTier`, `prefetchAllowed`, `useTilt3D`, `MotionProvider`). A pre-paint boot script in `app/layout.tsx` stamps the tier before first paint; a `<noscript>` style carries the core motion cut when scripts are off. `TierToggle` ("Lighter version") in the desktop footer and the mobile For You strip persists the visitor's own choice, which always wins; `?tier=` pins for the tab. `src/lib/rum.ts` reports LCP/INP/CLS + tier through the consent-aware `track()` wrapper, only when Umami is configured (the Privacy Policy's cookies section was updated in the same commit, per the CLAUDE.md rule). Two new Playwright projects, `lean-3g` (CDP Slow-3G + 4x CPU) and `core-2g` (JavaScript off), run `tests/e2e/tiers.spec.mjs` only. Gates: typecheck clean; 141 unit tests pass; build under budget with the product page at 182 KB of 210; e2e 33 passed and 11 skips across four projects; 18 of 18 visual baselines regenerated and stable on a second run. A five-lens adversarial review ran over the diff; its confirmed findings (baseline regeneration hygiene, `reuseExistingServer: false` for the visual config, a stylesheet-applied assertion in `settle()`, the noscript style, `scroll-behavior` on the root, and the toggle's accessible name and hint contrast) are all folded in. |
+
+| 2026-09-09 | PR 9, the lead-time engine | **Done**, same branch. | `CONFIG.LEAD_TIMES.WEEKS` holds each product's real build time, the same numbers printed in the brochure; `src/lib/leadTime.js` (plain JS, Node-testable) turns them into dates; `netlify/functions/lead-time.mjs` + `_lib/lead-time-queue.mjs` report the live queue buffer, fail-soft. The server renders the timeless weeks range (product routes are prerendered, so a baked date would be stale and mismatch on hydration) and concrete dates appear after mount. Wired to every live product through the shared `PurchaseCard`. Copy aligned in the FAQ (English and Armenian), the shipping policy, `CONFIG.DELIVERY_NOTE`, the bag, the shipping estimator, two transactional emails, the chat brief, and five product "Made" rows. A unit test enforces the owner's rule that copy states the time and never the reason. |
+| 2026-09-09 | PR 13, coupons that always work | **Done**, same branch. | The multi-piece savings no longer ride as a Stripe session coupon, so `allow_promotion_codes` is on for every checkout and a printed code stacks on top. `allocateBundleDiscount()` turns the savings into integer per-unit price reductions, hands any remainder to the first single-unit line, and never takes a unit below Stripe's floor; the browser mirror allocates identically and the bag shows the allocated amount. The drift test covers seven cart shapes, proves the reductions add up, and fails if anyone re-adds a session coupon. Printed terms and `print/README.md` updated; PDFs re-rendered. |
+| 2026-09-09 | Review pass over PR 9 + PR 13 | **Done**, same branch. | Fifteen confirmed findings fixed, including two silent ones: the visual suite's mask was passed a Locator instead of an array so it threw and never compared pixels, and `db.getLeadTime` never unwrapped the `{ error, data }` envelope so the queue buffer was always zero. Also fixed: prerender staleness, the engine running on only one product, four surfaces still quoting the retired flat lead time, a self-contradicting coupon sheet, and two drift tests that a mutation could pass. |
+
+| 2026-09-09 | PR 10, order milestones | **Done**, same branch. | Six milestones (`received`, `cloth_cut`, `stitching`, `backing`, `finished`, `shipped`) recorded per order, stamped by Lusik from the dashboard and read back by the customer. Two ways in: a signed-in owner reads their own order, and a guest opens a capability URL, `/order/<token>?id=<order-id>`, whose HMAC token is signed with `ORDER_LINK_SECRET` (falling back to `REMINDER_SECRET`) under an `order-view:` purpose prefix so it can never be confused with an unsubscribe token. With no secret set the feature stays dark rather than opening. The link ships in the order confirmation email. `OrderTimeline` renders the same data on the account page and in the guest view. Gates: typecheck clean; 168 unit tests pass; build 184 KB of 210 on the heaviest route; e2e 33 passed, 11 skipped; 18 of 18 visual baselines unchanged. |
+| 2026-09-09 | Review pass over PR 10 | **Done**, same branch. | Sixteen confirmed findings fixed. The worst was silent: the follow-along link block had been written into `sendCartAbandonmentRecovery`, which has no `order` in scope, so every abandoned-cart email threw a `ReferenceError` that the webhook's `.catch()` swallowed while the pending-order blob was deleted anyway. Recovery mail was being lost with nothing in the logs. Also fixed: the ad pixels loaded on `/order/` URLs and would have handed Meta and Google a working capability token in `document.location`; Lusik could not open a customer's timeline from the dashboard; the endpoint distinguished "not yours" from "does not exist" and so could be used to probe real order IDs; milestone responses were cacheable; the account page made one round trip per order card; and the admin write accepted unvalidated milestone keys. |
+
+| 2026-09-09 | PR 17, design tokens + contrast gates | **Done in part**, same branch. See "deliberately not done" below. | The token system was already sound; the components were not using it. A rendered-page audit (both atmospheres, both viewports, ten routes) started at **145 failing text styles and ends at 0**. The dark-mode findings were the severe ones, and none of them were visible by reading code: the desktop mega-menu hardcoded a cream background under `var(--text-primary)` items, so every product name in it rendered cream-on-cream at 1:1 — the main desktop path into the catalog was blank in dark mode; every `bg-white` form field (checkout ZIP, account, auth, newsletter, waitlist, admin) showed cream text on white at 1.15:1, so anything a customer typed was invisible; the home hero, story blockquote and journal body copy hardcoded `#3D332A` (exactly the light value of `--text-secondary`, so the token swap is a no-op in light mode); the payment-methods row sat at 1.03:1. In light mode the brand gold was used as text at 2.8:1 across ~80 call sites including the mobile nav labels, the cart badge, the bag's savings row and the mobile PDP price. Three tokens now make the right choice obvious — `--accent-text` (normal surface), `--accent-on-ink` (an ink panel, which inverts with the theme exactly as `--text-on-ink` does), `--text-on-accent` (a gold fill) — plus `--border-on-ink`. `--border-strong` went from 1.5:1 to 3.3:1 because it is the only boundary identifying an input on a cream page. Two gates keep it: `token-contrast.test.mjs` scores every pairing against the plan's gates in both atmospheres from the real stylesheet (verified by mutating two tokens back — it failed with exact ratios and named the pairing), and `tests/e2e/contrast.spec.mjs` walks every visible text node on the rendered pages. Exemptions are principled and documented: `aria-hidden` decoration, `role="img"` product previews (a thread color on a cloth color is a truthful property of the product, and the blanket preview and preset swatches gained real `aria-label`s), and text over a background image, which is counted and annotated rather than dropped. `docs/design-system.md` is the written system. Gates: typecheck clean; 172 unit tests pass; build 184 KB of 210 on the heaviest route; e2e 37 passed, 11 skipped. |
+
+| 2026-09-09 | PR 2, the Loom — a real-time 3D product engine | **Done**, same branch. | The engine renders the Armenian Alphabet Blanket as real cross-stitch geometry on procedural waffle cloth and restitches as the customer types. Built in slices, each gated: **2a** dependency + the async-chunk budget + `src/loom/tier.js` (which reads the capability ladder rather than sniffing again — PR 16 left `getGpuSignal()` for exactly this caller); **2b** charts, planner, and glyphs rasterised from the real font rather than 74 hand-drawn grids; **2c** renderer, scene, cloth materials, instanced stitch mesh, blanket rig; **2d** camera poses and the React stage shell; **2e** the poster generator; **2f** wiring to the configurator's live-preview slot; **2g** the stitch-in animation and pointer orbit. Colour management is pinned (sRGB, no tone mapping) so the DMC hexes match the 2D preview, the cart thumbnail and the printed brochure. Rendering is on demand and pauses off screen. Every failure path lands on the fallback: a `low` device, no WebGL, two lost contexts, the flag off, or any exception — and in the configurator that fallback is the **live 2D preview**, not a still, so someone whose device cannot run the engine still watches their child's name appear. Placement moved to `src/data/blanketLayout.js`, shared with `BlanketLayoutPreview`, so the two renderers cannot drift. Gates: typecheck clean; 225 unit tests; e2e 49 passed, 11 skipped, 0 flaky; build 186 KB of 210 with the engine at 127 KB of 230 and three.js out of first-load. |
+| 2026-09-09 | What PR 2 cost in bugs, and how each was caught | — | Recorded because the pattern repeated: **every one was found by looking at output, not at code or logs.** (1) The glyph rasteriser composed an invalid CSS font shorthand; a canvas does not throw on that, it silently keeps 10px sans-serif, so all 74 charts were blank. No unit test could see it — they feed the sampler directly. (2) The first render was upside down AND rows were reversed; it looked like two bugs and was one sign error, found by rendering "FJ"/"PR" instead of Armenian, which I cannot proofread. (3) The chunk budget reported a 3 KB engine because webpack splits three.js into vendor chunks carrying none of our tag — the gate had been "verified" against a fake chunk, which proved it fired but not that it measured. (4) The poster script wrote a blank 2 KB image and logged success: a WebGL buffer is cleared after present. (5) The stage clipped the square 2D preview into a 4:3 window, cutting rows off the blanket for every low-tier visitor. (6) The reveal froze half-worked when scrolled off screen — surfaced as a *flaky* test, not a red one. |
+
+| 2026-09-09 | PR 3, the bibs — shared body, name bib, Hye Em Yes with its cap | **Done**, same branch. | Three pieces. **The shared bib body** moved to `src/loom/rigs/bibBody.ts` so the Custom Name Bib and the Hye Em Yes bib are the same cloth worked differently, and its proportions were re-derived from `public/img/hye-em-bib/01.jpg` as fractions of the piece (1.11:1 wide, shoulders at 0.74 of the width, a teardrop neck from 8% to 38% down, lettering at 67%) rather than the near-rectangle with a circular hole it had been, which read as a coaster. **Lowercase Armenian** needed a different treatment from capitals, not just a smaller box: capitals all occupy one band, so centring each in its own cube lines them up, while հ rises, ղ drops and ա sits between — centring those would make a word bob. `LOWER_*` is a taller box with a fixed baseline row, every glyph in a family is drawn at ONE size measured from a probe carrying the script's extremes, and `trimChartX` crops only sideways so each letter keeps its own width; `layoutText` gained proportional spacing and `measureLine` reports a run's real width. **The Hye Em Yes rig** stitches հայ եմ ես in the three flag colours as real crosses (it is hand work, unlike the machine-embroidered name bib, and the product page says so), and the optional cap is a lathe-turned beanie with a turned-up cuff carrying a cross-stitched Armenian flag. The camera pose is fixed, so the rig shrinks and slides itself when the cap joins rather than letting the crown leave the frame. Colours live in `src/data/hyeEmYes.js` (plain JS) and a drift test compares them to the colorway in `content/products/hy-em-armenian-bib.json`, so a Studio edit cannot make the swatch and the stitched piece disagree. Gates: typecheck clean; 253 unit tests; e2e 57 passed, 13 skipped; build 186 KB of 210 with the engine at 133 KB of 230. |
+| 2026-09-09 | What PR 3 cost in bugs | — | Same pattern as PR 2, same lesson: **all three were found by looking at the render.** (1) The lettering was invisible because `SURFACE_Y` sat below the extrusion's own top face — laying the shape flat maps depth plus bevel onto world y, so anything worked "on" the cloth at less than that is inside it. It would have shipped the name bib's decal buried too. (2) `ա` came out exactly as wide as the box, which is what a clipped letter looks like from outside: the lowercase size is fitted vertically, so a wide glyph can still overrun sideways. The box is now generous and the trim does the fitting. (3) The stitch-in animation drove itself from accumulated frame deltas clamped at 50 ms — a guard against a backgrounded tab resuming in one jump. On a software renderer managing a few frames a second that advances the reveal at a fifth of real time, so a 1.4 second stitch-in took roughly thirty, and the bib sat with a third of its stitches looking like a broken chart rather than a slow animation. The reveal is now measured against the clock, which is what a duration means; this fixed the blanket too. A rig can also restitch itself without the design changing (the letterforms come from a webfont), so `MountedRig.onRestitch` now tells the stage the new total instead of leaving its reveal counting toward a stale one. |
+
+| 2026-09-10 | PR 4a, the sets — Days of the Week and the Anushig pair | **Done**, same branch. | Two products, one rig, because that is genuinely all they are: hand cross-stitched bibs laid out and shrunk to fit a frame the camera sized for one bib. The seven day names and the Mama/Papa phrases live in `src/data/setBibs.js` (plain JS) and a drift test checks every Armenian phrase against the copy in the product JSON in both directions — a word invented in the rig and a day dropped from it both fail, because nobody reviewing a diff would catch a misspelling that ships hand-stitched in a box. `arrange.js` does the layout arithmetic (three, three and one for seven, as photographed) and is unit-tested, including that every piece lands inside the extent the fit scale is computed from. Cloth colour moved from the baked texture to the material, so seven pastels cost one shared weave instead of seven 1024-square texture sets. Colourway handling is in `pieceColors`: a swatch is one thread, or a cloth-and-thread pair, or a colour per piece. Gates: typecheck clean; 276 unit tests; e2e 59 passed, 15 skipped; build 186 KB of 210, engine 133 KB of 230. |
+| 2026-09-10 | What PR 4a cost in bugs | — | (1) The seven-bib set rendered with Sunday cut in half: the fit is flat arithmetic and the camera is not, so the near row projects larger and lower than the far one. The frame allowance is now tighter than a single bib measures, and a multi-row set leans away from the camera. (2) Pastel swatches stitched onto pale cloth were invisible — and in the Rainbow days set the cloth and the thread start out as literally the same value. Snapping to Lusik's eight-colour thread drawer was tried and was worse: nearest-in-RGB turns the gold colourway into wine red, and the drawer has no gold. The rule is now to keep the customer's hue and move only lightness, and only as far as it must. (3) Changing a colourway left the set half-stitched: clicking a swatch scrolls the colour row into view and the stage out of it, and the renderer stops drawing off screen, so the reveal had no frames to advance it. The stage now applies a design whole when nobody is looking at it. That bug was found by an e2e assertion hanging, and the assertion stayed as its regression test. |
+
+| 2026-09-10 | PR 4b, the Bari Akhorzhak set | **Done**, same branch. | Three pieces in one stage: the bib says Բարի ախորժակ, the burp cloth answers Անույշ ըլլայ, and an optional cap carries the baby's name or initial. The burp cloth is its own module — a rounded rectangle with modelled picot edging, a ring of instanced beads round the hem, because a normal map on a flat edge reads as nothing. The knit cap came out of the Hye Em Yes rig into `knitCap.ts` and now takes whatever is worked on its cuff: a flag there, a name here. The strawberry between the words is two charts sharing an origin, the same shape as the flag, since a chart cell says what to work and not in which colour. `boundsOf` measures the hand-placed arrangement rather than trusting a hand-written extent, and the pieces are centred and leaned back from what it measures. Gates: typecheck clean; 276 unit tests; e2e 60 passed, 16 skipped; build 186 KB of 210, engine 133 KB of 230. |
+| 2026-09-10 | What PR 4b cost in bugs | — | (1) The set rendered with the bib off the right edge and the burp cloth off the bottom: the extent was written out by hand next to the placements and the two stopped agreeing. It is measured now. (2) The blessing on the burp cloth came out running right to left — the cloth is a portrait rectangle laid down landscape, and the quarter turn that puts the words along its long axis has to be the negative one. (3) **The important one.** Adding the cap dropped the stage to its poster and left it there, because `BibSetCard` passed the SKU key as `productKey` and that key changes to the `-with-cap` variant on the click. `LoomStage` rebuilds the engine when `productKey` changes, and a second `WebGLRenderer` cannot take a canvas back after the first has force-lost its context. The cap is a property of the design, not a different rig, so the RIG key is what gets passed now. The Hye Em Yes bib had the same bug and its test passed anyway: the rebuild happened to succeed on the cheaper rig. Found because an e2e assertion hung, then confirmed by screenshotting the stage and recognising the photograph. |
+
+| 2026-09-10 | PR 5, the Full Alphabet Crib Blanket — Phase 1 complete | **Done**, same branch. | Knit body, a stitched grid of six squares by seven, the whole Armenian alphabet between four corner motifs, a crochet picot edge, and a satin backing matched to the thread. The letters are NOT transcribed from the photograph — stitched Armenian capitals in that script are not something to read by eye, and a wrong one arrives in a box at a christening. They come from the Unicode block, Ա U+0531 to Ֆ U+0556, which is the same range the glyph spec already checks the rasteriser against; the render then reproduces `public/img/full-alphabet/12.jpg` square for square, which is the evidence that the canonical order is the one Lusik works. `src/data/cribBlanketLayout.js` holds the grid and is unit-tested: every letter appears exactly once, the corners carry what the photographs show, and adding a name does not displace a letter. **One thing for Lusik:** the product description says "every letter from Ա to Ք", which is the thirty-six of the classical alphabet, while the photographs appear to include Օ and Ֆ — and thirty-eight is exactly what fills the grid once the four corner squares are spoken for. The rig follows the photographs. Gates: typecheck clean; 283 unit tests; e2e 61 passed, 17 skipped; build 187 KB of 210, engine 134 KB of 230. |
+| 2026-09-10 | What PR 5 cost in bugs | — | Two, both caught by looking. (1) The blanket ran its front hem out of the bottom of the picture: scaled to its real proportion against a bib it is simply bigger than the frame the camera pose shows. (2) The optional name came out as a single initial. A capital is thirteen chart cells wide and a square is sixteen, so the planner — which truncates and never shrinks, by design — fitted one letter and dropped the rest silently. The name is worked in its own scaled group now, the way every other piece of lettering in the engine is sized to its cloth. Also worth recording: the two photographed blankets do not agree with each other on the bottom-left square, one carrying a medallion and the other a letter. That is not a contradiction to resolve — the pieces are made by hand, years apart — and the medallion version is what leaves the "optional name set into a free square" of the product copy somewhere to go. |
+
+| 2026-09-10 | PR 6, Home v3 — the storyboarded scenes | **Done** (three of the seven scenes; see below), same branch. | The storyboard in section 4 lists seven scenes and four were already on the page — the hero, the story, the testimonials, the Explore cards — so this adds the three that were not: **Seven pieces**, a row of every live product you can push along, read from the catalog so a Studio publish appears here without a code change; **How ordering works**, three steps dated by the same lead-time engine the product pages and the confirmation emails use, computed after mount because the routes are prerendered; and **From the journal**, the two most recent posts. All behind `CONFIG.HOME_V3`, and placed AFTER the Explore cards on purpose — the cards are how a returning visitor gets where they were going. `src/lib/productHeroImage.js` is new and shared with the category grid. Gates: typecheck clean; 291 unit tests; e2e 61 passed plus 10 new scene tests, 17 skipped; build 187 KB of 210, home 172 KB. |
+| 2026-09-10 | What PR 6 cost in bugs | — | (1) The Custom Name Bib rendered as an empty grey box in a row of four real product photographs. It has no `coverImage` at all — the old workshop shot was removed at the owner's request and nothing replaced it — and the category grid had already worked around this with four past-customer photos. Two surfaces deciding separately is how one of them ends up blank; the choice is now one shared module with a unit test that also checks the files exist. (2) A claim I nearly shipped: I moved the journal card list onto a new summaries export "to keep the article bodies out of the home bundle", then measured and found the bodies already sit in the shared layout chunk for the site search, so it saved nothing. Reverted rather than ship a comment asserting a saving that was not there. |
+| 2026-09-10 | Visual suite | — | `page.goto` now allows sixty seconds rather than Playwright's thirty. The suite grew as products gained stages and photo-led pages; the repo runs the workflow twice per push (push and pull_request) on one runner; and the Hye Em Yes mobile page timed out in one of a pair of runs while its twin passed on the same commit. Waiting longer changes nothing about what is captured. |
+
+| 2026-09-10 | PR 7 in part, the three-question chooser | **Done**, same branch. | "Who is it for, when do you need it, Armenian or English" on the shop page, and one recommendation. The rules are in `src/lib/chooseProduct.js` — plain JS, ten unit tests — because this is advice a customer acts on. The load-bearing rule is that a deadline **removes** what cannot be finished rather than ranking it lower, and that the LONGEST estimate decides: quoting the optimistic end of a range to keep a product in the running is how a christening gift arrives after the christening. Asking for English filters to the pieces that can carry an English name, because on the rest the Armenian IS the product. The customer is told how many pieces were held back for time, so they can move their date instead of assuming the shop is that small. The "How ordering works" strip from Home v3 is reused on the desktop shop page rather than written twice. Gates: typecheck clean; 301 unit tests; e2e 81 passed, 17 skipped. |
+| 2026-09-10 | What PR 7's chooser cost in bugs | — | One, and it was mine to make: the shop page renders its mobile and desktop columns both into the DOM and switches them with CSS, so a hardcoded `id="chooser-heading"` appeared twice in the document — invalid, and `aria-labelledby` then points at whichever copy the browser picked. `useId` per instance. Worth remembering for anything else dropped into that page. |
+
+| 2026-09-10 | Review pass over this branch's own diff | **Done**, same branch. | Three real findings. (1) **The stitch-in replayed on every design change**, so typing a name unstitched the whole piece and worked it back in per keystroke — four letters, four full restarts of an entire alphabet blanket. The plan says in as many words that unchanged stitches must not flicker. The reveal is now a once-per-mount thing: the letters changing IS the feedback while someone types. Measured before (four restarts) and after (zero), and an e2e test counts them. (2) The chooser identified products by `trustedKey ?? key` while its rules are written in catalog keys — they coincide only because `trustedKey` is unpopulated on those objects, and the day it is, the alphabet blanket drops silently out of every English answer. (3) The dark-mode contrast audit was flaky because it opened the mega-menu and slept a fixed 400 ms; at 100 ms the menu is at 0.76 opacity with six transitions still running, which is exactly the 4.31:1 reading it failed on. It waits for the transitions now. Two of my own tests were also weaker than they read: the English filter test only checked the wrong products were absent, which would pass if the filter removed everything. |
+
+| 2026-09-10 | The face every stitch is charted from | **Done**, same branch. Not on the list — found while trying to run the poster generator. | Two bugs in the shipped engine, one of them in the product's whole reason for existing. **Fraunces has no Armenian coverage at all** — its unicode-ranges stop at latin-ext — so the shape of every letter this shop stitches came from whatever the visitor's operating system fell back to: one letterform on a Mac, another on Windows, another on Android, and on a machine with no Armenian font, empty boxes charted as stitches. And **Fraunces is a display cut**, so at 13x15 cells its hairlines never reach the sampler's threshold: "A" charted as a bare diagonal with no crossbar and no left leg, and the digits came out in fragments. Every existing glyph test passed the whole time, because the glyph had plenty of ink — it just was not the letter any more. Noto Serif Armenian (armenian + latin + latin-ext) and Noto Sans Armenian (armenian) are now self-hosted beside the other faces, `STITCH_FONT_STACK` charts from the serif for both scripts, and the page's own Armenian — the hy translations, the product names, the alphabet marquee on the home page — has a pinned face for the first time. Font stacks moved into `--font-display` / `--font-body` / `--font-script` tokens, which also fixed the immersive mobile sheet's title rendering in Georgia (it read `var(--font-display, Georgia, serif)` and the token had never been defined). Five rigs waited on the wrong face before re-charting, and the alphabet blanket — the product the shop is named for — never re-charted at all, so an alphabet drawn before the webfont arrived stayed in the fallback for the life of the page. Gates: typecheck clean; 309 unit tests; e2e 86 passed, 18 skipped; build 188 KB of 210, engine 134 KB of 230. |
+| 2026-09-10 | What that cost, and how each was caught | — | (1) The poster generator had **never once succeeded**: its font guard required "Fraunces" measured on Armenian text, which is a check that can never pass, so the failure read as a missing typeface rather than as a check asking the wrong question. It also fetched from Google Fonts even though this repo has self-hosted its faces since long before — it now serves `src/styles/fonts.css` and `public/fonts/` from its own loopback server and touches the network not at all. (2) **My own comment broke the stylesheet.** The header I wrote above the new faces contained a nested comment delimiter; the first inner close-comment ended the block early and the CSS parser silently ate the `@font-face` rule that followed it. The stylesheet parsed, the site looked fine in English, and the serif face was simply absent. Caught by listing `document.fonts` in a browser, not by reading the CSS — there is a unit test for it now. (3) The Latin charts were only visibly wrong **in the rendered poster**; the same lesson as PR 2 through PR 5, for the fourth time. |
+
+| 2026-09-10 | PR 7 finished, "Try a name" | **Done**, same branch. | A one-field form under the two shop cards a customer can configure: type a name, press Enter, and the product page opens with the name already in its box — the bib's own field, or the blanket's first custom line, with the stage stitching it. The rules are in `src/lib/tryName.js` (plain JS, eight unit tests) because what the field lets through is what someone sees stitched: Armenian and accented Latin survive, digits and markup do not, a trailing space survives so typing does not fight the field, and six letters is the cap because six is what the bib holds — a drift test ties that number to the bib config and to the blanket's own two inputs rather than letting a fourth copy wander. Twelve browser tests walk the whole path on both viewports. Gates: typecheck clean; 317 unit tests; e2e 98 passed, 18 skipped; build 189 KB of 210. |
+| 2026-09-10 | What "Try a name" cost in bugs | — | (1) **Precedence that could not work as written.** The name hydrated in its own effect, guarded by "return if there is a ?d= share blob". The `?d=` effect runs first and strips its own parameter, so by the time the guard looked, there was no `d` in the URL and a shared design's name was overwritten by a stray `?name=`. One effect, one snapshot of the query string. (2) On a phone the blanket configurator shows one step at a time and the name lives in step four, so a customer who typed a name landed on the alphabet picker with their name set two screens below, invisible — the same as the field not having worked. It opens that step now. Both were caught by tests written before the feature was believed to work, which is the only reason they were caught at all. |
+| 2026-09-10 | The posters, and where they are NOT used | — | The generator now runs anywhere, so `alphabet-blanket.webp` and `name-bib.webp` are committed. They are deliberately **not** put on the shop and category cards, which is what section 4 of this plan asks for. Two reasons, both found by looking at what the cards already show: every product on those grids already has a photograph of the real piece — the name bib's card shows four past-customer bibs — and a photograph of a thing Lusik actually made beats a render of it. And a poster carries a baked-in name, so showing one while a customer types their own is not a preview of anything. The posters do the job they were built for: the still the stage fades out of. A turntable sprite is not built either — a sprite sheet is a second representation of a piece that can drift from the engine, and the plan's reason for wanting one (no engine on grids) is served by not putting the engine on grids at all. |
+
+| 2026-09-10 | PR 8 in part: `/welcome` and the stitched 404 | **Done**, same branch. | Two pages nothing else on the site links to, which is why both are in the test suites: one is reached by typing a URL off a printed card, the other by getting one wrong. **`/welcome`** answers, in order, what a person holding that card wants to know: three ways to order (call, this website, Instagram), that colours may vary and why, how long each piece takes, what to do with a coupon code, how to look after a piece, and where to send a photograph afterwards. It is written in the printed piece's voice, which means no em dashes, and its lead times are read from `CONFIG.LEAD_TIMES` through the same helper the product pages and the confirmation emails use, so it cannot quote a number the shop has stopped working to. The copy-rule test that forbids explaining WHY a piece takes as long as it does now covers `src/i18n/translations.js` too, and it was verified red by planting a reason in the new string. The **404** gets a real stitched swatch: `Ա` followed by a question mark, drawn by the Loom itself through a new entry in the poster generator, which grew a grid size and a camera distance so a poster can be something other than a whole blanket. Both pages joined the visual suite and the rendered-contrast audit, and `/shop/bibs` joined the audit with them because that is where the new name field lives. Gates: typecheck clean; 317 unit tests; e2e 110 passed, 18 skipped; build 190 KB of 210, `/welcome` at 135 KB. |
+
+| 2026-09-10 | PR 8: the fitting room | **Done**, same branch. | Three controls under the stage on the alphabet blanket. **Pose chips** drive the camera to named views and render only when the engine is actually live — on a device that falls back to the 2D preview there is no camera to point, and a chip that does nothing reads as a broken page rather than a lighter one. **The compare wipe** overlays a photograph of a finished piece on the render and lets the customer drag the seam; it is off by default, because the stage under it is draggable and a permanent handle would fight that. It answers the question a 3D preview raises and cannot answer on its own, and it answers honestly: if the render flatters the product, this is where someone finds out. **The colour note** moved out of the right-hand column to directly under the stage, because a note saying a rendered colour is not the colour in your hands belongs next to the render, not four scrolls away next to the price. Gates: typecheck clean; 318 unit tests; e2e 119 passed, 18 skipped; build 191 KB of 210, engine 134 KB of 230. |
+| 2026-09-10 | What the fitting room cost in bugs | — | **Two of the four camera poses had never been rendered by anyone, and both were wrong.** The chips are what finally gave someone a way to press them. `back`, labelled "the backing", could never have worked: the orbit clamps the camera above the table and the satin backing is a plane on the underside, so it showed a blank slab edge — it is deleted, with the reason written where the next person will look, and a unit test now fails if it comes back. `detail` dropped the camera to polar 1.15, almost table level, which foreshortens a large flat piece into a featureless plane with its stitching squashed onto the far edge. Retuned to a real close-up — and that surfaced the deeper one: **a close-up aimed at the origin frames the bare middle of the blanket**, because this product's design lives on two diagonals. A centroid would not have fixed it either; two symmetric diagonals average to the same empty middle. Poses can now ask to be aimed at the piece's FIRST stitch, which the planner guarantees is the start of the first letter. The regression test for it counts pixels: it screenshots the stage and measures how much of the frame is thread rather than cloth, and it was verified against the bug — 0.0% aimed at the origin, 2.3% on desktop and 15.4% on a phone aimed at the stitching. |
+| 2026-09-10 | Still open on the blanket rig | — | The 2D preview draws a woven pomegranate motif in every cell the alphabet does not use, and the photographs show it in the real cloth. The 3D cloth is a plain waffle, so the render is faithful in placement but reads sparser than the piece: six letters on two diagonals with nothing between them. That is a cloth-texture change in the rig, not a placement bug, and it is the single largest thing left between the render and the photograph. |
+
+| 2026-09-10 | PR 8 complete: cart thumbnails | **Done**, same branch. | The stage exports a small WebP when a piece goes in the bag, and the bag row and the checkout summary show it. A row that shows a stock photograph of somebody else's blanket, right after the customer spent five minutes choosing an alphabet and two thread colours, quietly loses the thing they came for. Kept honest three ways. It is **display only**: `CheckoutView` builds its payload from an explicit list of fields, so a 40 KB data URL per row never reaches Stripe — a unit test reads that source and fails if the list becomes a spread, and a browser test watches the real POST. It is **re-validated on the way out of localStorage**, because the value goes straight into an `<img src>` and storage is not something this code wrote: an http URL there would make the browser fetch something for a third party, and an SVG data URL can carry script. And it is **absent on any device that cannot run the engine**, where the row shows the product photograph exactly as before. The capture renders and reads in ONE tick, because a WebGL drawing buffer is cleared once its frame is presented — a capture taken a tick later is a fully transparent image, which is a valid data URL, passes every shape check, and renders as an empty box. Gates: typecheck clean; 327 unit tests; e2e 128 passed, 21 skipped; build 192 KB of 210, engine 134 KB of 230. |
+| 2026-09-10 | What the thumbnails cost in bugs | — | Three, all in the tests rather than the feature, and all worth recording because each would have left a test passing while proving nothing. (1) The checkout assertion was wrapped in `if (await pay.count())` — and the Pay button is not visible until a shipping ZIP is entered and the city/state echo confirms it, so the assertion never ran at all. Asserted now, not guarded. (2) The bag-row tests were written against `/cart` on both viewports; that page is `lg:hidden`, so on desktop the URL renders nothing and the row assertions were failing against an empty page rather than a missing thumbnail. They are phone-only now, with the reason written down. (3) Seeding a corrupt thumbnail by visiting a page and writing localStorage raced the provider mirroring its own cart back, which made the test flaky; it seeds through an init script now, before anything mounts. |
+
+| 2026-09-10 | PR 11a, a design somebody sent you | **Done**, same branch. | `/design/<blob>` shows a configured blanket large and read-only, names who it is for, and offers three ways on: open it in the configurator with the design applied, copy the link, or copy it for a baby registry. **There is no endpoint behind it.** Saved designs live on a profile behind their owner's login and their ids are a timestamp plus five random characters, so a public page that looked designs up by id would be an enumerable read of other people's children's names; the design travels in the link instead, which is the same compact blob the share button has always produced. That also means the page server-renders with no fetch, no auth and no database, an old link keeps working forever, and the share card in a message app shows the child's name because it comes out of the same blob. The registry ask is a copy button and a sentence rather than a third-party script: universal registries take a pasted URL, and adding somebody else's JavaScript to a page showing a child's name is not a trade this shop should make. Fourteen browser tests, including that a hostile blob in the path cannot get markup onto the page and that a truncated link fails softly. |
+| 2026-09-10 | The visual suite could not see a third of a column | **Fixed**, same branch. | Adopting the fitting room's baselines turned up something worse than a stale PNG: the compare control, the caption and the colour note were **missing from the capture** while being present, visible and correctly positioned in the DOM. The product page's left column is `lg:sticky` with `max-height: calc(100dvh - 7rem)` and `overflow-y-auto`, and the preview frame alone is taller than that cap on a 720-pixel laptop — so anything after it lands in an internal scroll area, invisible both to the baseline and, more to the point, to a customer who has no reason to look for it. The colour note is the one thing on that page that must not be missable. The caption and the note moved out of the clipped column into the flow beneath it, still directly under the preview; the compare control stays with the picture it acts on. The suite also un-sticks every `position: sticky` element before capturing, so a full-page screenshot shows the document as laid out rather than as stuck. Found by cropping the CI artifact and reading pixels, then confirmed by dumping the DOM from inside the visual run — the element screenshot showed the button perfectly while the full-page capture did not. |
+
+| 2026-09-10 | PR 11b, the card and the gift receipt — **PR 11 done** | **Done**, same branch. | Two halves of the same promise. At checkout the gift message is previewed as the card it becomes, set in the script face on cream: a textarea cannot show whether four lines fit on a small card or where the breaks fall, which is the only thing the preview is for. It is deliberately NOT dressed up as stitching — the card is handwritten, and pretending otherwise would be a lie about the product. On the follow-along page (the `/order/<token>` capability link, which for a gift is meant to reach the recipient) the page now names the pieces in the box and reads the message back, **and never shows a price**. That is a boundary, not a layout choice, so the Function does not select `unit_price_cents` at all and returns only `is_gift` and the message — `hide_prices` and `wrap` stay behind, because telling the recipient prices were hidden is itself telling them there was a price worth hiding. Two source-level unit tests hold the query shape, both verified red. Also fixed on the way past: that route rendered its own `<main>` inside the chrome's, a duplicate landmark the 404 page had already been careful about. Gates: typecheck clean; 329 unit tests; e2e 151 passed, 21 skipped. |
+
+| 2026-09-10 | PR 12a, the reviews backend | **Done**, same branch. | A `reviews` table (one row per order, `UNIQUE (order_id)`), five Functions, and a purpose-prefixed capability token. The link in the email carries `order-review:` where the follow-along link carries `order-view:`; they share a secret, so **without the prefixes a follow-along link would also be a review link** and anyone forwarded a gift's tracking page could write a review as that customer. A source-level test collapses the two purposes and is verified red. `review-submit` always writes `status: 'pending'` — including on a re-submit, via `ON CONFLICT (order_id) DO UPDATE … status = 'pending'`, so an approved review cannot be edited into something else after the fact. The product key comes from `order_items`, never the request body, so a review cannot be aimed at a product the customer never bought. A photograph is stored only with consent and only after magic-byte sniffing. `review-request` is the scheduled half: `INTERVAL '14 days'`, cancelled orders excluded, and it stamps `review_request_sent_at` **before** sending and releases it on failure, so a Resend outage retries tomorrow instead of a crash-loop mailing the same customer nightly. |
+| 2026-09-10 | PR 12b, the review page, the PDP block, the "Made for" wall — **PR 12 done, Phase 3 complete** | **Done**, same branch. | `/review/<token>` is stars, a sentence, a name and a consent checkbox, `noindex`. **The file picker does not exist until consent is given**: a picker that reads a photograph of somebody's child and then asks permission has already read it, and unticking the box throws away what was picked. The photo is down-scaled to 1400px JPEG in the browser before it travels. Under a live product, `ReviewList` renders approved reviews keyed by the **trusted** key, because that is what `order_items` carries — the catalog slug would find nothing — and it is wired into **both** render branches, the classic page and the mobile immersive sheet. It renders nothing at all when there are none: "no reviews yet" is a page advertising that nobody has bought this, on a shop where most orders are gifts nobody reviews. The `MadeForWall` at the top of `/gallery` shows only photographs with both yeses, and always through `review-photo-get`, which re-checks approval and consent on every request — so a withdrawn consent takes the picture down without anybody editing a page or deleting a file. `AdminReviewsPanel` can set status and nothing else; the Function refuses edits to the words and refuses to grant consent. Gates: typecheck clean; 340 unit tests; e2e 168 passed, 22 skipped across all four projects; product page 194 KB of 210, Loom chunk 134 KB of 230. |
+| 2026-09-10 | What PR 12 cost in bugs | — | Fewer than the rigs, because the shape was the safeguard rather than the feature: the risky parts are all refusals, and a refusal is cheap to test. Five gates were written and each verified red by mutation before being trusted — collapsing the two token purposes, approving on submit instead of pending, dropping the approval check from the photo endpoint, selecting a price column on the gift page, and rendering the file picker without consent. The one that mattered was the **immersive branch**: the reviews block was wired into the classic product page and the e2e test passed on both viewports, because the two live configurator products are exactly the ones excluded from the sheet. A phone customer looking at the Full Alphabet Crib Blanket — the product most likely to have reviews — would have seen none. Caught by asking which branch the passing test actually rendered, not by reading the diff; the added mobile-only test fails when either branch is unwired. |
+
+| 2026-09-10 | PR 14 in part, the quality bar | **Done in part**, same branch. See "deliberately not done" for the rest. | Three things, and two of them were bugs nobody had seen because nobody had looked at the right output. **The axe gate** (`tests/e2e/a11y.spec.mjs`, its own CI job so it does not lengthen the e2e one) runs on fifteen routes on both viewports and fails on serious or critical. `color-contrast` is disabled in it because the contrast suite is the stricter owner of that question and two checkers disagreeing means arguing with a tool. **Lighthouse** now audits six URLs instead of three, and **accessibility and SEO are blocking at 0.95** — both are DOM audits that score identically on every run, which is what makes them safe to gate on. `/cart` is exempt from SEO only: the bag is deliberately `noindex`, and that one audit is 4 of the 10 SEO points, so it scores 0.63 and always will. Performance and best-practices stay warnings, with the reason written into the config rather than a number nobody can meet: best-practices is capped near 0.75 by the ad tags' third-party cookies (a business decision), and performance is 0.58 on home and 0.48 on the product page, which is real work. **Next/image was already done** — every product photo goes through it; the remaining raw `<img>` are data-URIs and Function-served blobs, which the optimizer cannot fetch and should not. |
+| 2026-09-10 | What the quality bar found | — | Three real defects, none visible from the code. (1) **The photo strip in the immersive sheet was a scroll region no keyboard could reach.** Its position dots are `<span>`s and it has no focusable children, so on a phone the entire photo set of every photo-led product was pointer-only — 61 pictures on the crib blanket that a keyboard or switch user could never see. It is now a named region with a tab stop and a focus ring drawn inside (the element is `inset: 0`, so an outline outside it would be off-screen). Found by axe on the mobile project; the desktop project was green, which is the argument for running both. (2) **Our own CSP was blocking the Google Ads conversion beacon.** `connect-src` listed `googleads.g.doubleclick.net` while `frame-src` already allowed `*.doubleclick.net`, and the collect endpoint is `ad.doubleclick.net` — so the tag loaded, ran, and was refused when it tried to report. The shop was paying for clicks it could not fully attribute, and nothing in the site's behaviour showed it; it was one line in a Lighthouse console-errors audit. A unit test now checks every host the shipped tags contact against the header, verified red. (3) **The mobile home page's LCP element was lazy-loaded.** On a phone the hero section is hidden, so the page leads with the "For You" card and its 72px thumbnail is the largest contentful paint — measured at 4.8 s with 39% of it spent in Load Delay purely because the image was lazy. It carries `priority` now. Also fixed: the shop category cards described their own images, so a screen reader said each category name three times. |
+| 2026-09-10 | The visual suite timed out again, at sixty seconds | — | Recorded because the same thing has now happened twice and the second time cost a wrong diagnosis before the artifact was read. `045255f` failed the Visual job and the obvious story was wrong: the commit corrected "thirty-six" to "thirty-eight" on pages the suite guards, so it looked like baselines needing re-adoption. They did not. The artifact's error was `page.goto: Timeout 60000ms exceeded` on the days-of-the-week page, both viewports, before a single pixel was compared — and the very next run passed against the **identical** committed baselines. The first time this happened `page.goto` was raised from thirty seconds to sixty (row above); it has now outgrown sixty. That page carries 22 photographs and the product route is the site's worst Lighthouse score at 0.48, so this is the performance debt in PR 14 showing up as a flaky gate rather than a separate problem. **Raising the timeout a second time would be masking it.** The lesson worth keeping: when a visual job fails right after a copy change, read the artifact before assuming it is the copy — a timeout and a real diff look identical from the check name. |
+| 2026-09-10 | Read the CI Lighthouse numbers, not the local ones | — | Recorded because it nearly caused a false claim. Run Lighthouse in this sandbox and home scores 0.82 performance and 0.96 best-practices; in CI the same commit scores 0.58 and 0.75. The difference is not the site — it is a sandboxed network refusing `googletagmanager` and `facebook`, so no third-party cookie is ever set and none of that JavaScript ever runs. Accessibility and SEO are DOM audits and do score the same in both places, which is exactly why those two are the ones promoted to blocking. The note is in `lighthouserc.json` so the next session does not have to rediscover it. |
+
+**Phase 1 is done.** Every live product has a rig: the Armenian Alphabet
+Blanket, the Custom Name Bib, the Hye Em Yes bib, the Days-of-the-Week and
+Anushig sets, the Bari Akhorzhak set, and the Full Alphabet Crib Blanket.
+
+**Phase 2 is done (PR 6, PR 7, PR 8), and Phase 3 is done:**
+PR 9, PR 10, PR 11, PR 12 and PR 13 have all landed. PR 12 adds a
+`reviews` table and a scheduled Function, so the owner must apply the
+schema (`netlify db query --file netlify/schema.sql`) before review links
+work. The token key is `ORDER_LINK_SECRET` falling back to
+`REMINDER_SECRET`, which is already set, so no new secret is needed. Home v3's remaining
+scene, "the first stitch", is still deliberately parked: the hero is the
+LCP element and Lighthouse is a required check, so it needs measuring
+before and after rather than folding into a content PR.
+Home v3's remaining scene is **the first stitch** — the hero handing over
+to a Loom stage that works a letter in as you arrive, with scroll pulling
+the camera back. Left for its own slice because the home hero is the
+site's LCP element and the Lighthouse check is a required one: that scene
+needs measuring before and after, not folding into a content PR. Placeholder rigs for the four
+coming-soon products are the one piece of Phase 1 deliberately left: those
+products have no photographs to model from and no price, and a 3D piece
+invented for one would be a picture of something Lusik has not made.
+
+Deliberately not done in PR 3, each with a reason: the Hye Em Yes bib gets
+**no generated poster** — it is photo-led, and its stage uses the product's own
+cover photograph, which is a truer fallback than a render of the piece and
+exists today rather than after someone runs a script on another machine (the
+note is in `public/img/loom/README.md`); and there is **no "3D" segment in the
+immersive mobile sheet**, which is owner decision 2, so the Hye Em Yes stage is
+desktop-only and its two e2e tests skip on `mobile-chromium` and say why.
+
+PR 17 landed its contrast half. Still open under that PR, each blocked on
+something code cannot supply on its own, and each explained in
+`docs/design-system.md`: the OKLCH palette re-derived from the real cloth
+(needs the physical materials measured, and converting the existing hexes
+without that measurement is notation change dressed as color science — the
+hexes are also load-bearing for the printed brochure), the thread-truth chips
+(need the poster script that arrives with the Loom in PR 2), color-blind
+simulation in the visual suite (worth doing once the thread picker is rebuilt on
+the Loom rather than baselining a picker about to be replaced), and a
+`prefers-contrast: more` AAA atmosphere, which is now a small follow-up because
+the gates exist to verify it.
+
+Deliberately not done in PR 14, each with a reason. **`next/font` is the one to
+be careful about**: it hashes the family name it generates, and the Loom's
+canvas rasteriser looks its face up BY NAME (`STITCH_FONT_STACK` in
+`src/loom/stitch/rasterize.js`), so adopting it would silently change which
+face every stitch is charted from — the exact bug that once charted "A" with
+no crossbar. The fonts are already self-hosted with trimmed `unicode-range`s,
+which is most of what `next/font` buys, so the remaining gain is small and the
+risk is not. **Performance is not promoted to a blocking gate** because the
+site does not meet it: 0.58 on home, 0.48 on the product page. A gate above
+what the site scores is a gate somebody switches off. The work behind those
+numbers is total blocking time and three render-blocking stylesheets, which is
+its own slice. **`numberOfRuns` stays at 1** for the same reason — a median of
+three only matters for the noisy categories, and none of those are blocking
+yet; raise it in the PR that promotes performance. **The INP audit and the
+Sentry release-SHA tagging** are untouched.
+
+---
+
+## 1. The storyboard
+
+The production idea in one line: **one woman, one kitchen table, one stitch at a
+time.** Every screen should feel like being welcomed into the workshop, and the thing
+the customer is about to buy should be visibly, physically real on the screen before
+they pay for it. Seven scenes, in the order a customer meets them.
+
+| Scene | Where | What the customer sees | What makes it feel produced |
+| --- | --- | --- | --- |
+| 1. The first stitch | Home hero | A single Armenian Ա stitches itself in real thread on real cloth, then the camera pulls back to reveal the whole blanket. | Live 3D (Phase 1) behind a pre-rendered poster so the first paint is instant. Scroll drives the camera. Reduced motion shows the finished blanket. |
+| 2. The table | `/shop` and category pages | The pieces laid out on a linen tabletop. Each card is a 3D poster; hovering (or pressing on a phone) turns it slightly. | Posters are rendered at build time from the same 3D rigs, so the grid loads nothing heavy. The existing tilt-and-glare layer is kept. |
+| 3. The fitting room | Product page | The piece in 3D. Type a name, it stitches in. Pick a thread, it recolors. Pose chips: Flat lay, On the crib, Folded, The back. A slider compares the model with a real photo. | Poster-first load, engine on idle or first interaction. The 2D preview remains the no-WebGL fallback. Real photos stay one tap away. |
+| 4. Into Lusik's hands | Cart and checkout | Each bag row shows a small turntable thumbnail of the exact configured design. Checkout says "Lusik would start this around Oct 6 and ship it around Nov 3" from the lead-time engine. | The estimate is real (per product, plus the current queue), not a constant. Gift flow with a stitched-card preview. |
+| 5. While she stitches | Account, order page, email | A milestone timeline: Received, Cloth cut, Stitching, Backing, Finished, Shipped, with photos Lusik posts from the admin page. | Guests get a signed link in the confirmation email; no login needed. |
+| 6. The box | Real life | The printed brochure and coupon sheet in the box. Its QR code lands on `/welcome`. | `/welcome` says thank you, explains care, activates the coupon, asks for a photo. |
+| 7. The next baby | Return visits | Saved designs, "order again for the next baby," gift reminders (exist), a public design page to share with Grandma, a "Made for" wall of customer photos. | Everything is one tap from the account page. |
+
+Copy tone stays what the site already has: warm, specific, first person plural from
+the sons. No prices in printed pieces, no em dashes in customer-facing copy (owner's
+rule), and every product carries "colors vary."
+
+---
+
+## 2. Phase 0: remove the Embroidery Studio (PR 1)
+
+**Status: done (2026-09-09). Kept here as the record of what was removed and why.**
+
+The owner wants it gone entirely. The studio is a static SPA in `public/embroidery/`
+plus a Netlify Function, plus an iframe-embedded "stage" used by every live product
+page. Removing the stage would leave product pages without their hero, so PR 1 also
+installs a temporary photo hero and the event bus the 3D engine will use later.
+
+### 2.1 Exact removal inventory
+
+Delete:
+
+- `public/embroidery/` (about 800 KB): `index.html`, `stage.html`, `css/studio.css`,
+  `js/app.js`, `js/stage3d.js`, `js/engine/engine.js`, `js/engine/pes-writer.js`,
+  `js/engine/stitch-planner.js`, `presets/products.json`, `presets/household.json`,
+  `vendor/three.module.min.js`.
+- `netlify/functions/embroidery-order.mjs`
+- `netlify/functions/_lib/__tests__/embroidery-order.test.mjs`
+- `src/components/shop/StageHero.jsx`
+- `src/data/stitchPreviews.js`
+
+Edit:
+
+- `netlify/functions/_lib/email.mjs`: remove `sendEmbroideryOrderEmail` (around lines
+  1211 to 1290) and the comment at line 67 about Resend's attachment shape if nothing
+  else uses it. Grep for `pesBase64` and `content:` attachments to be sure.
+- `netlify.toml`: remove the `/embroidery` and `/embroidery/` redirects (around lines
+  54 to 68) and the `/embroidery/stage.html` CSP header block (around lines 97 to 105).
+  Add one redirect so old links do not dead-end: `from = "/embroidery/*"` to `/shop`
+  with `status = 301`. (Owner decision 1 in section 9; 301 is the recommendation.)
+- `next.config.mjs`: remove the `/embroidery/stage.html` entry in `headers()` (around
+  lines 70 to 80).
+- `src/components/shop/ShopIndexView.jsx`: delete `StudioBanner` (around lines 659 to
+  700) and its render near line 951. Replace with nothing in PR 1; Phase 2 fills the
+  slot with the "How ordering works" strip.
+- `src/components/shop/ProductView.jsx`: `StageHero` is imported at line 37 and rendered
+  five times (around lines 129, 167, 188, 241, 264). Replace each with the new
+  `ProductHero` (section 2.2).
+- `src/components/ProductShowcase.jsx` (lines around 217 to 242) and
+  `src/components/CustomProductCard.jsx` (around 110 to 127): these dispatch and listen
+  for `stitch3d:live` / `stitch3d:hero` CustomEvents. Replace with the typed design bus
+  (section 2.3). Keep the configurator behavior identical.
+- `src/i18n/translations.js`: remove the `stitch3d` blocks (around line 26 and line
+  767) and `studioEyebrow` (line 422) in all three languages. Keep `previewOnly`
+  (line 575); it belongs to the bib SVG preview, not the studio.
+- `CLAUDE.md`: delete the section "The Embroidery Studio (`/embroidery`) + the Live 3D
+  stitch layer (July 2026)" and the status-banner sentence that mentions it. Add a
+  status-banner line pointing at this hand-off document.
+- `scripts/gen-sitemap.mjs`, `public/robots.txt`: no references today; confirm with
+  grep after the deletes.
+
+Keep (they only use the word "embroidery" in prose or for a different feature):
+
+- `src/components/ProductTemplate.jsx` (the bib name SVG preview)
+- `CONFIG.UPLOAD_MAX_BYTES` / `UPLOAD_ACCEPTED_TYPES` (custom-embroidery image uploads
+  on orders, used by `AdminOrderDetail.jsx`)
+- `GalleryView.jsx` line 101, `HeroSlideshow.jsx` line 8, `policies.js` line 181,
+  `content/pages/testimonials.json`, the Bari Akhorzhak product JSON.
+
+### 2.2 Temporary `ProductHero`
+
+`src/components/shop/ProductHero.jsx`: the product's cover image (`coverImage` from the
+catalog, `next/image`, priority) in the same box `StageHero` occupied, with the same
+eyebrow and title treatment so the page layout does not shift. In Phase 1 this
+component gains a `LoomStage` child behind `CONFIG.LOOM.ENABLED`; the photo becomes the
+poster it crossfades from. Keep the `aria` structure the e2e tests rely on
+(`aria-label="View {name}"` cards live in `CategoryView`, not here; verify nothing in
+`tests/e2e/smoke.spec.mjs` targets `StageHero`; a grep today finds nothing).
+
+### 2.3 The design bus
+
+`src/lib/designBus.ts`: a typed replacement for the two CustomEvents.
+
+```ts
+export type DesignChange =
+  | { product: "blanket-alphabet"; letters: string[]; alphabet: "hy" | "en";
+      layoutKey: string; name: string; year: string; blockHex: string;
+      letterHex: string; letterHexes: string[] | null }
+  | { product: "bib-single"; name: string; threadHex: string; script: boolean }
+  | { product: string; [k: string]: unknown };
+export function publishDesign(d: DesignChange): void   // window CustomEvent "design:change"
+export function subscribeDesign(fn: (d: DesignChange) => void): () => void
+```
+
+`ProductShowcase` and `CustomProductCard` publish on every state change (they already
+compute this object for the old events). Nothing subscribes until Phase 1.
+
+### 2.4 Baseline visual-regression suite
+
+`tests/visual/baseline.spec.mjs` using Playwright `toHaveScreenshot` with
+`maxDiffPixelRatio: 0.01`, `animations: "disabled"`, and `reducedMotion: "reduce"`.
+Pages: `/`, `/shop`, `/shop/blankets`, `/shop/blankets/armenian-alphabet-blanket`,
+`/shop/bibs/days-of-the-week-bib-set`, `/shop/blankets/full-alphabet-crib-blanket`,
+`/cart` (with one seeded item via localStorage `lusik_cart_v1`), `/checkout`,
+`/journal/armenian-alphabet-gift`, `/story`. Both Playwright projects. Add
+`npm run test:visual`. CI: add it to `.github/workflows/test.yml` as a separate job that
+uploads diffs as artifacts.
+
+### 2.5 Acceptance for PR 1
+
+- `/embroidery/` returns a 301 to `/shop` on the deploy preview; `stage.html` is gone.
+- All five live product pages render the photo hero with no layout shift versus
+  before (visual suite passes with updated baselines only for those five pages).
+- `npm run next:build` prints a first-load number per route that is equal to or lower
+  than before (record both in the PR body).
+- Unit, e2e, Lighthouse green. No console errors on home, shop, PDP.
+- `grep -rn "embroidery\|stitch3d\|StageHero\|stitchPreviews" src app netlify
+  netlify.toml next.config.mjs` returns only the "keep" list above.
+
+---
+
+## 3. Phase 1: the Loom, a real-time 3D product engine (PRs 2 to 5)
+
+"Loom" is the working name for `src/loom/`. It renders every product as an accurate
+3D object, restitches live as the customer types, and produces the posters the rest
+of the site uses. It is the centerpiece of the overhaul, so it gets the most detail
+here.
+
+### 3.1 Non-negotiable constraints
+
+- **Dependency:** add `three` (npm, pin the latest 0.17x) as a real dependency. Import
+  only named exports from `three` inside `src/loom/**`. No `three/examples/jsm/*`
+  except, if truly needed, `OrbitControls`; prefer the small custom orbit in 3.4.
+- **Loading:** `LoomStage` is loaded with `next/dynamic(() => import("../loom/LoomStage"),
+  { ssr: false })` from a tiny shell. The engine chunk must not be in any route's
+  first-load JS. PR 2 extends `scripts/check-bundle-budget.mjs` with a named async
+  chunk budget: the chunk whose path contains `loom` must be **at most 230 KB gzip**
+  (three core is roughly 150 KB gzip when tree-shaken; the rest is ours). The script
+  should find the chunk via `.next/build-manifest.json` plus a filename match and
+  fail the build if it exceeds the budget or if it shows up in any route's first-load
+  list.
+- **Poster-first:** every stage renders a static poster (`<img>` from
+  `public/img/loom/...webp`, generated by the script in 3.8) as the LCP element. The
+  engine loads on `requestIdleCallback` after the page's load event, or immediately on
+  the first pointer/keyboard interaction with the stage or the configurator, whichever
+  is first. When the first frame is ready the canvas crossfades over the poster
+  (250 ms; instant under reduced motion). Poster and canvas share one sized box so
+  there is zero layout shift.
+- **Device tiers:** decide once per session in `src/loom/tier.ts`:
+  `high` (desktop class: shadows on, DPR capped at 2, full instance counts),
+  `mid` (most phones: DPR 1.5, no shadow maps, contact shadow as a baked blob),
+  `low` (`deviceMemory <= 2`, `hardwareConcurrency <= 2`, or a WebGL probe that fails
+  or takes over 200 ms: poster only, and the existing 2D `BlanketLayoutPreview` stays
+  the live preview). The tier is overridable with `?loom=high|mid|low` for testing.
+- **Fallback:** WebGL unavailable or context lost twice: show the poster and the 2D
+  preview, and log to Sentry with the tier. Never a blank box.
+- **Color accuracy:** `renderer.outputColorSpace = SRGBColorSpace`, tone mapping off
+  (`NoToneMapping`), physically based materials with neutral white lighting. Thread
+  colors come from the DMC hex values already in `src/data/product.js` and
+  `customProducts.js`; fabric colors are sampled from the product photos (section 3.6).
+- **Frame budget:** 60 fps on `high`, 30 on `mid`. Render only while visible
+  (IntersectionObserver) and only when something changed or the camera is moving
+  (on-demand rendering, not a free-running loop).
+- **Memory:** under 120 MB total GPU + JS for the heaviest rig (the full alphabet crib
+  blanket). Dispose geometries, materials, and textures on unmount.
+- **Accessibility:** the stage container is `role="img"` with an `aria-label` built
+  from the design ("Armenian Alphabet Blanket, Armenian letters, name OLEN, year 2026,
+  navy thread on white"), plus a visually hidden live region that announces
+  "Stitched: OLEN" after typing pauses. Keyboard: arrow keys orbit, `R` resets, `1` to
+  `4` jump to pose presets. Focus ring on the stage.
+
+### 3.2 Module layout
+
+```
+src/loom/
+  LoomStage.tsx          React shell: sizing, poster crossfade, tier, a11y, pointer, keys
+  index.ts               public API: mountStage(), poses, poster helpers
+  tier.ts                device tier probe
+  core/renderer.ts       WebGLRenderer setup, color management, DPR, on-demand render loop
+  core/scene.ts          lights, ground, environment (procedural, no downloads)
+  core/camera.ts         pose presets + damped orbit + choreography (goTo)
+  core/loop.ts           requestAnimationFrame scheduling, visibility pausing
+  materials/cloth.ts     procedural weave textures (waffle, terry, knit, satin, linen)
+  materials/thread.ts    thread material + per-instance color
+  stitch/glyphs.ts       cross-stitch charts (Armenian, Latin, digits, motifs, cube outline)
+  stitch/planner.ts      text + slot → list of stitches (grid coords, color, order)
+  stitch/renderer.ts     InstancedMesh of one X-stitch; stitch-in animation via shader
+  stitch/script.ts       machine satin-stitch decal (name bib): canvas text → normal/color maps
+  rigs/alphabetBlanket.ts
+  rigs/fullAlphabetBlanket.ts
+  rigs/bib.ts            shared bib body; variants below compose it
+  rigs/nameBib.ts
+  rigs/hyeEmYesBib.ts
+  rigs/anushigPair.ts
+  rigs/bariAkhorzhakSet.ts
+  rigs/daysOfWeekSet.ts
+  rigs/placeholders.ts   towel, baptism towel, swaddle, bathrobe (simple, Phase 1b)
+  rigs/index.ts          productKey → rig factory
+  poses.ts               per-rig camera/pose presets (flat, crib, folded, back)
+```
+
+Everything under `src/loom/` is TypeScript (the repo's migration direction).
+
+### 3.3 Fabric and materials (what "accurate" means here)
+
+Textures are generated procedurally on an offscreen canvas at first use and cached,
+so nothing is downloaded and nothing bloats the repo. Each fabric has a color map, a
+normal map, and a roughness map, tiled.
+
+| Fabric | Used by | Look to match | Reference photos |
+| --- | --- | --- | --- |
+| Thermal waffle weave with embossed medallions | Armenian Alphabet Blanket | The photos show a honeycomb thermal weave, with every other square carrying an embossed pomegranate medallion (a round motif) and the cross-stitch cubes sitting inside plain squares. Fringe on the edges, satin backing. | `public/img/abc-blanket/03.jpg` (OLEN 2026 layout), `07.jpg` (weave texture and medallions), `08.jpg` (macro of one Ա cube, coral thread), `12.jpg` (full navy layout), `14.jpg` (English ABC), `/img/date-detail.jpg` |
+| Hand-knit stockinette with crochet picot edge | Full Alphabet Crib Blanket | Knit V-columns, a grid of 6 by 6 squares, letters knit in a contrasting color inside each square, a scalloped crochet edge in the body color, satin backing matched to the body. Six body colors. | `public/img/full-alphabet/12.jpg` (whole grid, pink), `33.jpg` and `38.jpg` (corner with satin backing), `41.jpg` to `44.jpg` (letter macros), `cover.jpg` (stack) |
+| Terry cloth with satin bias trim | All bibs, burp cloth | Looped terry surface, a smooth satin binding around the edge and neck, a tie or hook closure at the back. Bari Akhorzhak bibs have a smooth white inset panel for the lettering and picot edging. | `public/img/days-bib/02.jpg`, `14.jpg`; `anushig-bib/01.jpg`; `hye-em-bib/cover.jpg`, `03.jpg`; `bari-akhorzhak-set/cover.jpg`, `07.jpg`, `24.jpg` |
+| Knit baby cap | Hye Em Yes cap, Bari Akhorzhak cap | Fine rib knit, folded brim, the motif on the brim. | `public/img/hye-em-bib/cover.jpg`, `bari-akhorzhak-set/cover.jpg`, `hero/06-blue-baby-hat.jpg` |
+| Satin | Backing, trim | High sheen, soft anisotropic highlight, slight quilting near seams. | `public/img/full-alphabet/33.jpg`, `38.jpg` |
+
+Thread: a slightly twisted two-ply look. Each X-stitch is one small mesh (two crossed
+arcs, about 60 triangles) with a normal map that fakes the twist. Machine satin stitch
+(name bib) is a decal: render the name with the Allura font onto a canvas, derive a
+stroke-aligned striped normal map, and project it on the bib as color + normal + a
+little height. That is far cheaper and closer to real machine embroidery than text
+geometry.
+
+### 3.4 Camera, poses, and choreography
+
+Poses per rig (all with a damped orbit the user can leave and return from):
+
+- **Flat lay** (default): three-quarter top view on a linen tabletop, soft window
+  light from the upper left, a faint contact shadow.
+- **On the crib**: the blanket draped over a simple crib rail (a few rounded bars, no
+  full crib) so the drape and the fringe read.
+- **Folded**: the piece folded in thirds, the way it ships; for sets, the pieces
+  stacked or fanned the way the photos show (`days-bib/02.jpg`).
+- **The back**: a corner lifted to show the satin backing (blankets) or the closure
+  (bibs).
+
+`goTo(pose, ms)` eases position, target, and FOV together. While the customer types,
+the camera drifts to frame the slot being edited (name or year) and returns to the
+pose 1.2 s after the last keystroke. Reduced motion: cuts instead of eases, no
+drift. The custom orbit is about 80 lines (spherical coordinates, damping, pinch
+zoom, bounds); it avoids pulling in `OrbitControls` and its dependencies.
+
+### 3.5 Stitch charts and the planner
+
+`stitch/glyphs.ts` holds cross-stitch charts as arrays of strings, one character per
+cell: `.` empty, `X` a full stitch, `/` and `\` half stitches, `-` and `|` backstitch
+segments for outlines. Grid 13 wide by 15 tall for capitals, which is the size the
+photos show inside the cube outline.
+
+Required sets:
+
+- Armenian capitals Ա through Ֆ (38) and lowercase where the site uses them (the day
+  names and blessings on the bib sets are lowercase Armenian, so the lowercase set is
+  needed for those rigs).
+- Latin A to Z, a to z, digits 0 to 9, period, slash, hyphen, space.
+- Motifs: heart, cross, bottle, strawberry, grape, carrot, butterfly, chick, car,
+  pomegranate, and the **cube outline** (the isometric block drawn around each letter
+  on the alphabet blanket; see `abc-blanket/08.jpg`, it is a backstitched 3D box with
+  the letter on its front face).
+
+Authoring guidance: start from the letterforms the 2D `BlanketLayoutPreview` draws and
+the macros in `abc-blanket/08.jpg` and `full-alphabet/41.jpg` to `44.jpg`. A unit test
+asserts every chart is exactly 13 by 15, uses only the allowed characters, and that
+every character the configurators accept has a chart. A second test renders every
+chart to a PNG contact sheet (`tests/visual/glyphs.spec.mjs`) so a human can eyeball
+the alphabet once.
+
+`stitch/planner.ts` turns a design into stitches: `{ x, y, color, order }` in grid
+units for a named slot. Rules:
+
+- Alphabet blanket: the six letter cubes sit at the 7 by 7 grid positions in
+  `PRODUCT.layouts[].preview` (today `[4, 12, 20, 28, 36, 44]`, the two diagonals).
+  `BlanketLayoutPreview.jsx` is the source of truth for which cell is the name slot
+  and which is the year slot; read it and mirror it exactly. The name runs on a
+  stepped diagonal baseline (each letter one cell lower, as in `abc-blanket/03.jpg`
+  where OLEN steps down); the year runs straight.
+- Name length cap and allowed characters come from the configurator
+  (`ProductShowcase.jsx`); the planner never invents its own limits.
+- `order` is the sequence a hand would stitch in (left to right, top to bottom per
+  glyph) and drives the stitch-in animation.
+- Full alphabet blanket: fixed content; the planner only recolors.
+- Bibs: fixed content per product, plus the name/initial on caps, plus the name on
+  the name bib (decal path, not stitches).
+
+### 3.6 Rig-by-rig accuracy checklist
+
+Each rig exports `build(scene, design, tier) => { update(design), setPose(pose),
+dispose(), bounds }`. The executing session must open the reference photos and match
+these details.
+
+**Armenian Alphabet Blanket** (`blanket-alphabet`, `src/data/product.js`)
+- 52 by 52 inches. 7 by 7 grid of quilted squares; alternate squares embossed with a
+  round pomegranate medallion; edges fringed (instanced fringe strands on `high`, an
+  alpha-tested fringe strip on `mid`); satin backing in the body color.
+- Six letter cubes on the two diagonals, each a backstitched isometric cube with the
+  letter cross-stitched on the front face. Block color and letter color are separate
+  (the configurator has both). The Armenian-flag preset colors letters red, blue,
+  orange in stitch order.
+- Name and year slots per the 2D preview. Live restitch on every keystroke.
+- Colorway sampling: fabric white `#f4f1ea` (from `abc-blanket/12.jpg`), fringe the
+  same, medallion emboss depth subtle.
+
+**Full Alphabet Crib Blanket** (`blanket-full-alphabet`, `content/products/full-alphabet-crib-blanket.json`)
+- Knit body, roughly 30 by 36 inches (the JSON has a `TODO_LUSIK: confirm` on size;
+  do not remove that marker). Derive the exact 6 by 6 cell contents from
+  `full-alphabet/12.jpg` and `55.jpg`: the alphabet fills the grid in reading order
+  with a cross in the first cell and a heart in the last (verify against the photo
+  and write the sequence into the rig with a comment naming the photo).
+- Body colors from `CRIB_BLANKET_BODY_COLORS` in `customProducts.js`; letters knit in
+  a matching deeper shade; crochet picot edge in the body color; satin backing.
+- Poses include a "corner lifted" back view because the satin backing is a selling
+  point.
+
+**Custom Name Bib** (`bib-single`, `customProducts.js`)
+- Terry bib, satin trim, machine satin-stitch script name (decal path), thread color
+  from `BIB_THREAD_COLORS`, Armenian or Latin script. Matches `hero-olen-bib.jpg` and
+  `bib-romeo.jpg`.
+
+**Hye Em Yes Bib** (`bib-hy-em`)
+- Three lowercase Armenian words in red, blue, orange (fixed), optional cap with the
+  same tricolor motif on the brim. `hye-em-bib/cover.jpg`.
+
+**Mama and Papa's Anushig Set** (`bib-anushig-pair`)
+- Two bibs side by side, two-line lowercase Armenian text each with a small motif
+  between lines; thread color from the picker (pink, blue, mint, yellow).
+  `anushig-bib/01.jpg`, `03.jpg`, `04.jpg`.
+
+**Bari Akhorzhak Set** (`bib-bari-akhorzhak-set`, `-with-cap` variant)
+- Bib with a white inset panel and a tie closure, burp cloth in single-color terry,
+  optional cap with a name or initial; three colorways (quiet harmony, gentle
+  complement, bold contrast) from the JSON `colorways`. `bari-akhorzhak-set/cover.jpg`,
+  `07.jpg`, `24.jpg`, `25.jpg`.
+
+**Days of the Week Set** (`bib-days-of-week`)
+- Seven bibs, each with one lowercase Armenian day name, thread color from the picker
+  (the colorways in the JSON include a rainbow variant with a color per bib). Poses:
+  fanned (`days-bib/14.jpg`) and stacked (`days-bib/02.jpg`).
+
+**Placeholders** (`towel-hand`, `towel-baptism`, `baby-swaddle`, `baby-bathrobe`)
+- Simple rigs with an embroidered name so coming-soon pages have a poster. Phase 1b,
+  only after the live seven are done.
+
+### 3.7 Live typing, exactly
+
+- Configurator input → `publishDesign` (already wired in Phase 0) → `LoomStage`
+  subscribes → planner diff by slot → only changed slots re-plan → instance buffers
+  updated (`instanceMatrix.needsUpdate`, `instanceColor.needsUpdate`) → new stitches
+  animate in over 350 ms in stitch order via a `uProgress` uniform and a per-instance
+  `aOrder` attribute injected with `material.onBeforeCompile`. Unchanged stitches do
+  not flicker.
+- Debounce 50 ms. Planner work stays under 4 ms on `mid` (measure with
+  `performance.mark`; a unit test benchmarks the planner on the longest allowed name).
+- The 2D preview keeps working underneath and is what `low` tier and no-WebGL see.
+- The design object saved to the cart is unchanged (cart-ID shape is frozen); the
+  stage is a view, not a source of truth.
+
+### 3.8 Posters and turntables
+
+`scripts/render-loom-posters.mjs` (run manually, output committed):
+
+- Launches Playwright Chromium with `--use-gl=angle --use-angle=swiftshader
+  --enable-unsafe-swiftshader` against a hidden route `/loom/poster?product=...&pose=...&design=...`
+  that renders a stage at 1600 by 1200 and signals ready.
+- Writes `public/img/loom/<productKey>/<pose>.webp` (quality 82) and a 12-frame
+  turntable sprite `public/img/loom/<productKey>/turn.webp` (12 frames of 480 by 360)
+  used by shop cards on hover/press. Also 1200 by 630 OG posters per product.
+- The hidden route is excluded from the sitemap and `noindex`.
+- Budget: each poster under 120 KB, each sprite under 400 KB.
+
+### 3.9 PDP integration (behind `CONFIG.LOOM.ENABLED`)
+
+`CONFIG.LOOM = { ENABLED: true, PRODUCTS: ["blanket-alphabet"], TIER_OVERRIDE: null,
+IDLE_LOAD_MS: 1500 }`. PR 2 enables only the alphabet blanket; later PRs append keys as
+rigs land. `ProductHero` renders the poster, then `LoomStage` on idle or interaction.
+The classic two-tab layout ("Your design" / "Real photos") stays; "Your design" becomes
+the stage with pose chips beneath, and the 2D preview moves into a small "chart" toggle
+for people who like the schematic (and for the fallback).
+
+Mobile: keep the classic page for configurator products (they are already in
+`CONFIG.SHEET.EXCLUDE_KEYS`) and put the stage at the top. For photo-led products, the
+immersive sheet's backdrop gains a "3D" segment next to the photos (owner decision 2).
+
+### 3.10 Tests for the engine
+
+- Unit: glyph charts shape and coverage; planner slot mapping matches
+  `BlanketLayoutPreview` (import both and compare the cells); planner determinism;
+  tier decisions for fixed inputs.
+- E2E (`tests/e2e/loom.spec.mjs`, desktop project, launched with the SwiftShader
+  flags via `playwright.config.mjs` `launchOptions.args`): open the alphabet blanket
+  page, wait for `[data-loom-state="ready"]`, type `OLEN` and `2026`, assert
+  `[data-loom-stitches]` grows and `aria-label` contains "OLEN", press `2` and assert
+  the pose attribute changes. Mobile project: assert poster renders and the 2D
+  preview still updates.
+- Visual: one screenshot per rig at the flat-lay pose on `high`, tolerance 2 percent.
+
+### 3.11 Sequence for Phase 1
+
+- **PR 2, Loom core + alphabet blanket rig + PDP integration.** Engine, tier, cloth
+  and thread materials, glyphs for Armenian and Latin capitals plus digits, planner,
+  stitch renderer, alphabet blanket rig with all four poses, named-chunk budget,
+  tests, poster script producing the alphabet blanket posters. Flag on for that
+  product only.
+- **PR 3, bibs.** Shared bib body, name bib (decal script), Hye Em Yes (with cap),
+  lowercase Armenian charts. Posters. Flag extended.
+- **PR 4, sets.** Days of the Week, Anushig pair, Bari Akhorzhak set with cap and
+  colorways. Posters.
+- **PR 5, full alphabet crib blanket + placeholders.** Knit material, picot edge,
+  the fixed grid, six body colors. Placeholder rigs if the budget allows.
+
+---
+
+## 4. Phase 2: the storyboarded surfaces (PRs 6 to 8)
+
+### PR 6, Home v3 (`CONFIG.HOME_V3`)
+
+Scenes, top to bottom, each a `<section>` with the existing scroll-driven "theater"
+effects and the DEPTH tilt layer kept:
+
+1. **The first stitch.** Poster of the alphabet blanket with a single Ա; on idle the
+   Loom stage takes over and stitches the letter in; scrolling pulls the camera back
+   over the whole blanket (scroll progress drives `goTo`). Headline stays short
+   ("Baby blankets and bibs, stitched by hand."). Primary CTA remains "See what Lusik
+   makes" because the e2e suite clicks it.
+2. **One woman, one table.** Two-column: the coral Ա macro (`abc-blanket/08.jpg`) and
+   the story in four sentences with a link to `/story`.
+3. **Seven pieces.** A horizontal scroller of the seven live products using the
+   turntable sprites; each card is a real link to its product page.
+4. **How ordering works.** Three steps with the realistic lead-time promise from the
+   lead-time engine ("Order today, Lusik starts around ..., ships around ...").
+5. **Notes from the families.** The CMS testimonials, already in `content/pages`.
+6. **From the journal.** Latest two posts.
+7. Existing Explore cards remain (the e2e suite and the mobile nav depend on their
+   `aria-label` values). If a card is removed or renamed, update
+   `tests/e2e/smoke.spec.mjs` in the same PR.
+
+### PR 7, shop and category pages
+
+- Category and shop cards show the Loom poster with the turntable sprite on hover
+  (desktop) or while pressed (mobile). No engine load on grids.
+- "Try a name" inline field on the alphabet blanket and name bib cards: typing swaps
+  the poster for the live stage on that card only, then carries the name into the
+  product page via the existing design URL helper (`src/lib/designUrl.ts`).
+- The slot left by the removed studio banner becomes the "How ordering works" strip.
+- `HelpDecidingSection` gains a three-question chooser (Who is it for, When do you
+  need it, Armenian or English) that recommends a product and pre-fills the design.
+
+### PR 8, the fitting room (PDP) and cart thumbnails
+
+- Pose chips, the compare slider (stage versus the closest real photo, using the
+  existing `ProductImageGallery` photos), the "About colors" honesty block kept and
+  moved directly under the stage.
+- Bag rows and checkout summary show a small poster of the configured design. At
+  add-to-cart time the stage exports a 320 by 240 WebP via `toDataURL` (cap 40 KB);
+  it is stored on the cart item under `thumb`. `SiteProvider`'s localStorage
+  shape-validator must accept the optional field, and `mapLegacyId` must ignore it
+  (verify the e2e test "Pay with Stripe POSTs to create-checkout-session" still
+  passes; the server ignores unknown fields).
+- `/welcome`: the landing page for the brochure QR (thank you, care, coupon
+  activation link to `/shop`, "send us a photo" mailto with a prefilled subject,
+  follow on Instagram). Static, no engine.
+- `app/not-found.tsx`: a stitched "Ա?" poster and links back.
+
+---
+
+## 5. Phase 3: commerce, trust, and retention (PRs 9 to 13)
+
+### PR 9, the lead-time engine and copy alignment
+
+- Replace the constants in `src/lib/deliveryEstimate.ts` with `CONFIG.LEAD_TIMES`, in
+  weeks, keyed by product group, matching the brochure:
+  `blanket-alphabet: [4, 6]`, `blanket-full-alphabet: [10, 12]`,
+  `bib-days-of-week: [5, 6]`, `bib-single: [2, 3]`, `bib-hy-em: [2, 3]`,
+  `bib-anushig-pair: [3, 4]`, `bib-bari-akhorzhak-set: [3, 4]`.
+- New Function `lead-time.mjs` (GET, public, cached 10 minutes): counts open orders
+  (`fulfillment_status` not shipped or cancelled) per product group and returns a
+  buffer in days (`ceil(openCount * perItemDays)`), capped. The PDP, cart, and
+  checkout show "Lusik would start around {date} and ship around {date range}". No
+  explanation of why (owner's rule). The confirmation email repeats the range.
+- Update every place the site currently promises 5 to 10 business days or "about 2
+  weeks": `content/pages/faq.json`, `src/data/policies.js` (shipping section),
+  `CONFIG.DELIVERY_NOTE`, `src/i18n/translations.js` FAQ entries, the product JSON
+  `details` "Made" rows. Keep the brochure and the site saying the same thing.
+- A "Need it by a date?" button opens the existing Text Us / email path with the date
+  and product in the message.
+
+### PR 10, order milestones ("While she stitches")
+
+- `netlify/schema.sql`: add
+  ```sql
+  CREATE TABLE IF NOT EXISTS order_milestones (
+    id          bigserial PRIMARY KEY,
+    order_id    uuid NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    milestone   text NOT NULL CHECK (milestone IN
+                ('received','cloth_cut','stitching','backing','finished','shipped')),
+    note        text,
+    photo_key   text,
+    created_at  timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS order_milestones_order_idx ON order_milestones(order_id, created_at);
+  ```
+- Functions: `admin-order-milestone.mjs` (POST, `requireAdmin`, optional photo via the
+  existing `admin-order-photo` blob flow), `order-milestones.mjs` (GET for the
+  signed-in owner of the order, or for a signed guest token).
+- Guest access: the confirmation email gets a link `/order/{token}` where the token is
+  an HMAC of the order id with a new `ORDER_LINK_SECRET` (same pattern as the gift
+  reminder unsubscribe). No login, read-only.
+- UI: `AdminOrderDetail` gets one-tap milestone buttons with an optional photo; the
+  account `OrderCard` and the guest page show a vertical timeline with photos.
+  "Received" is inserted automatically by `stripe-webhook.mjs` when the order row is
+  created; "shipped" is inserted when `shipped_at` is stamped.
+- Email: an optional "Lusik started on your piece" email at the `stitching`
+  milestone, sent once (stamp `orders.stitching_emailed_at`), reusing the
+  finished-photo email pattern.
+
+### PR 11, gifts, saved designs, sharing
+
+- Gift flow at checkout: message (previewed as a small stitched card), ship to the
+  recipient, hide prices on the packing note (a checkbox stored on the order and
+  shown in admin), gift receipt page reached from the recipient's tracking link.
+- Public design page `/design/[id]` for saved designs (they already exist under
+  `saved-designs`): the poster of the design, "Made by Lusik for ...", an
+  `opengraph-image.tsx` route that composes the pre-rendered poster and the name with
+  `next/og` (no WebGL at request time). Share sheet with copy link.
+- "Add to your baby registry": a copy-link button with guidance for universal
+  registries. No third-party script.
+
+### PR 12, reviews and the "Made for" wall
+
+- Post-delivery email 14 days after `shipped_at` (a scheduled Function like
+  `gift-reminder.mjs`) with a signed link to `/review/{token}`: stars, a sentence,
+  an optional photo, and a consent checkbox for showing the photo publicly (the site
+  already models `social_consent`).
+- `reviews` table (order_id, product_key, rating, body, photo_key, consent, status,
+  created_at); `admin-reviews.mjs` to approve; the PDP shows approved, verified
+  reviews under the CMS testimonials; `/gallery` gains a "Made for" wall of consented
+  photos.
+
+### PR 13, coupons that always work
+
+- Today the checkout attaches the automatic bundle coupon when the bag has two or
+  more units, and Stripe then hides the promotion-code field (documented in
+  `_lib/bundle-discount.mjs`). The printed coupon sheet needs codes to work on any
+  order. Recommended fix: keep `allow_promotion_codes: true` always, and apply the
+  bundle savings server-side as a per-unit price reduction on the line items instead
+  of a Stripe coupon (the webhook already records `amount_total`). Update
+  `CONFIG.BUNDLE_DISCOUNT`, `_lib/bundle-discount.mjs`, the drift test, and the bag's
+  savings row in the same PR. Owner decision 5.
+- Document in `print/README.md` how to create the three coupon codes in Stripe and
+  flip `CODES_CONFIRMED` in `print/coupons/coupons.html`.
+
+---
+
+## 6. Phase 4: performance and the quality bar (PR 14)
+
+- Product photos through `next/image` with the Netlify image CDN (AVIF and WebP,
+  responsive `sizes`), `priority` on the hero and first card only. Target LCP under
+  2.0 s on the mobile Lighthouse run for `/`, `/shop`, and one PDP.
+- Fonts via `next/font` (Fraunces, DM Sans, Allura, and a Noto Serif Armenian subset
+  for Armenian glyphs) with `display: swap`; remove the Google Fonts `<link>`.
+- `lighthouserc.json`: add `/shop`, `/shop/blankets/armenian-alphabet-blanket`, and
+  `/cart`; raise assertions to `error` at performance 0.90, accessibility 0.95,
+  best-practices 0.95, SEO 0.95 (owner decision 6). Three runs per URL.
+- Axe: add `@axe-core/playwright` and run it on every page in the visual suite;
+  fail on serious and critical violations.
+- INP: audit the configurator and the stage for long tasks; keep planner work off the
+  input handler with `scheduler.postTask` or a microtask.
+- Sentry: tag releases with the git SHA so Loom errors are traceable by tier.
+- Re-verify the 210 KB per-route budget and the Loom chunk budget; print both in the
+  PR body.
+
+---
+
+## 7. Phase 5: admin, content, and documentation (PR 15)
+
+- `content/pages/home.json` gains the Home v3 scene copy so Lusik can edit it in the
+  Studio (`public/studio/config.yml` updated accordingly; the generator validates).
+- Armenian keyboard helper on every name input: a small on-screen Armenian letter
+  picker for parents typing on English keyboards, with `hy` strings marked
+  `TODO_LUSIK_REVIEW`.
+- `CLAUDE.md`: new sections for the Loom, the design bus, the lead-time engine,
+  milestones, reviews, and the coupon mechanism; remove the studio section; refresh
+  the status banner. Keep it accurate; it is what the next session reads.
+- `print/README.md` cross-links `/welcome` and the coupon steps.
+
+---
+
+## 8. PR list, order, and size
+
+| PR | Title | Phase | Depends on | Size | Risk | Flag / rollback |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Remove the Embroidery Studio, add ProductHero, design bus, visual baseline | 0 | none | M | Low | Revert. **Done 2026-09-09**, see 0.5 |
+| 2 | Loom core + alphabet blanket rig + PDP stage | 1 | 1 | XL | Medium | `CONFIG.LOOM.ENABLED`. **Done 2026-09-09**, see 0.5 |
+| 3 | Bib rigs (name bib, Hye Em Yes) | 1 | 2 | L | Low | `CONFIG.LOOM.PRODUCTS` |
+| 4 | Set rigs (days, Anushig, Bari Akhorzhak) | 1 | 3 | L | Low | `CONFIG.LOOM.PRODUCTS` |
+| 5 | Full alphabet crib blanket rig + placeholders | 1 | 2 | L | Low | `CONFIG.LOOM.PRODUCTS` |
+| 6 | Home v3 | 2 | 2 | L | Medium | `CONFIG.HOME_V3` |
+| 7 | Shop and category cards with posters and turntables | 2 | 2 | M | Low | `CONFIG.LOOM.CARDS` |
+| 8 | Fitting room PDP, cart thumbnails, `/welcome`, 404 | 2 | 2 | M | Medium | `CONFIG.LOOM.FITTING_ROOM` |
+| 9 | Lead-time engine + copy alignment | 3 | none | M | Low | `CONFIG.LEAD_TIMES.ENGINE`. **Done 2026-09-09**, see 0.5 |
+| 10 | Order milestones + guest order link | 3 | none | L | Medium | `CONFIG.ORDER_TRACKER`. **Done 2026-09-09**, see 0.5 |
+| 11 | Gifts, saved design pages, share | 3 | 2 | M | Low | `CONFIG.GIFTS_V2` |
+| 12 | Reviews + Made-for wall | 3 | 10 | M | Low | `CONFIG.REVIEWS` |
+| 13 | Coupons always work (bundle as line-item pricing) | 3 | none | S | Medium | Revert (drift tests guard). **Done 2026-09-09**, see 0.5 |
+| 14 | Performance pass + Lighthouse gates | 4 | 6, 7, 8 | M | Low | Per-item |
+| 15 | Studio content fields, Armenian keyboard, CLAUDE.md refresh | 5 | all | M | Low | Per-item |
+
+Sizes: S under a day, M one to two days, L two to four days, XL a week of focused
+work for one session. PRs 9, 10, and 13 do not depend on the Loom and can be
+interleaved when the owner wants visible commerce wins early.
+
+---
+
+## 9. Decisions the owner should make (short answers are fine)
+
+1. Old `/embroidery` links: redirect to `/shop` (recommended) or plain 404.
+2. Phones: put the 3D stage at the top of the classic product page (recommended
+   first), or also inside the photo-led immersive sheet as a "3D" segment.
+3. Confirm the brochure lead times become the website's lead times (PR 9).
+4. Reviews: OK to email customers two weeks after delivery asking for a review and a
+   photo, with a consent checkbox (PR 12).
+5. Coupons: OK to change how the multi-piece discount is applied so promotion codes
+   always work (PR 13).
+6. Lighthouse: OK to make the scores blocking on PRs (PR 14).
+7. Which product should the first 3D rig be if not the alphabet blanket. (Plan
+   assumes the alphabet blanket, since it has the live name and year inputs.)
+
+---
+
+## 10. Appendices
+
+### A. Definition of done, per PR
+
+- Typecheck, unit, e2e (both projects), visual suite, build with budgets, Lighthouse:
+  all green, numbers pasted into the PR body.
+- No new console errors on `/`, `/shop`, a PDP, `/cart`, `/checkout`.
+- Reduced motion checked once by hand (Chrome DevTools rendering panel).
+- Keyboard-only walkthrough of any new interaction.
+- Flag documented in `CONFIG` with a two-line comment (what it does, how to roll back).
+- `CLAUDE.md` touched only if the architecture changed; otherwise leave it for PR 15.
+
+### B. Glyph chart format and example
+
+```ts
+// stitch/glyphs.ts
+export const CAPS_HY: Record<string, string[]> = {
+  "Ա": [
+    ".............",
+    "....XXXX.....",
+    "...X....X....",
+    "...X....X....",
+    "...X....X....",
+    "...X....X....",
+    "...X....X....",
+    "...X....X....",
+    "...X....X....",
+    "...X....X....",
+    "...X....X.X..",
+    "...X....XX.X.",
+    "...X....X..X.",
+    "...X....XXXX.",
+    ".............",
+  ],
+  // ...
+};
+```
+
+Every chart is 13 columns by 15 rows. Charts are authored by hand against the
+photos; do not auto-trace a font, the stitched letterforms have their own
+proportions (compare `abc-blanket/08.jpg`).
+
+### C. CONFIG additions (sketch)
+
+```js
+LOOM: {
+  ENABLED: true,
+  PRODUCTS: ["blanket-alphabet"],          // rigs that are switched on
+  CARDS: false,                            // posters/turntables on shop cards (PR 7)
+  FITTING_ROOM: false,                     // pose chips + compare slider (PR 8)
+  IDLE_LOAD_MS: 1500,                      // wait after load before fetching the engine
+  TIER_OVERRIDE: null,                     // "high" | "mid" | "low" | null
+  CHUNK_BUDGET_KB: 230,                    // mirrored in scripts/check-bundle-budget.mjs
+},
+HOME_V3: false,
+LEAD_TIMES: {
+  ENGINE: true,
+  WEEKS: { "blanket-alphabet": [4, 6], "blanket-full-alphabet": [10, 12],
+           "bib-days-of-week": [5, 6], "bib-single": [2, 3], "bib-hy-em": [2, 3],
+           "bib-anushig-pair": [3, 4], "bib-bari-akhorzhak-set": [3, 4] },
+  QUEUE_DAYS_PER_OPEN_ORDER: 2, QUEUE_BUFFER_CAP_DAYS: 21,
+},
+ORDER_TRACKER: false,
+GIFTS_V2: false,
+REVIEWS: false,
+```
+
+### D. Data model additions
+
+`order_milestones` (Appendix in PR 10 above), `reviews` (PR 12), and three new
+`orders` columns: `stitching_emailed_at timestamptz`, `gift_hide_prices boolean
+default false`, `review_emailed_at timestamptz`. All additive; `schema.sql` stays
+idempotent (`IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`).
+
+### E. Photo reference index
+
+| Product | Folder under `public/img/` | Best references |
+| --- | --- | --- |
+| Armenian Alphabet Blanket | `abc-blanket/` | `03` (name + year layout), `07` (weave), `08` (letter macro), `12` (full navy), `14` (English), root `hero-olen-bib.jpg`, `date-detail.jpg` |
+| Full Alphabet Crib Blanket | `full-alphabet/` | `12`, `55` (whole grid), `33`, `38` (backing, edge), `41` to `44` (macros), `cover` (stack) |
+| Days of the Week | `days-bib/` | `02` (stack), `14` (fan), `05` to `13` (cascades by color) |
+| Custom Name Bib | root | `hero-olen-bib.jpg`, `bib-romeo.jpg`, `bib-examples/03`, `04` |
+| Hye Em Yes | `hye-em-bib/` | `cover`, `03` |
+| Anushig pair | `anushig-bib/` | `01`, `03`, `04` |
+| Bari Akhorzhak | `bari-akhorzhak-set/` | `cover` (with cap), `07`, `24` (inset panel), `25`, `26` |
+| Caps | `hero/06-blue-baby-hat.jpg` | brim and rib |
+
+Many older photos carry a red or orange camera date stamp in a corner; never use those
+for posters or comparisons.
+
+### F. Things that look like problems but are intentional
+
+- The brochure's lead times differ from the site's until PR 9 lands.
+- The coupon sheet prints a DRAFT strip until real codes exist in Stripe.
+- `TODO_LUSIK` and `TODO_LUSIK_REVIEW` markers stay; they are addressed to the owner.
+- Placeholder products stay placeholders; do not flip a product to live.
+
+---
+
+## 11. The ten-million-dollar layer (added 2026-09-09)
+
+The owner asked what a team with a ten-million-dollar budget for coding, planning,
+storyboarding, and color theory would add, and how the site should degrade when
+bandwidth, RAM, storage, or screen size are constrained. This section answers both.
+It sits on top of Phases 0 to 5; it does not replace them. Everything here follows
+the same "nothing can break" protocol and ships behind flags.
+
+Two kinds of work appear below. **Claude work** is what the executing session can
+build. **Human work** is what a budget buys that code cannot: a photo and video
+shoot, physical texture capture of the actual pieces, a native Armenian linguist,
+and usability sessions with real families. Human work is listed so the owner can
+commission it; the code is designed so each human asset drops into a slot that
+already has a fallback.
+
+### 11.1 The capability ladder (fallbacks for slow networks, low RAM, low storage, small screens)
+
+One decision, made once per session in `src/lib/capability.ts`, drives every asset
+choice on the site. It never guesses from the user agent; it reads real signals and
+re-evaluates when they change.
+
+Signals read (each optional; missing signals default to the middle tier):
+
+- Network: `navigator.connection.effectiveType` (`slow-2g`, `2g`, `3g`, `4g`),
+  `downlink`, `rtt`, `saveData`, and the `prefers-reduced-data` media query. Also a
+  live measurement: the transfer time of the first product image, which corrects the
+  estimate on networks that lie.
+- Memory and CPU: `navigator.deviceMemory`, `navigator.hardwareConcurrency`, and
+  `performance.memory` where present.
+- Storage: `navigator.storage.estimate()` for quota and usage, plus a try/catch
+  around every `localStorage` write.
+- Screen: viewport width and height, `devicePixelRatio`, `screen.colorDepth`,
+  `prefers-contrast`, `forced-colors` (Windows high contrast), `prefers-reduced-motion`,
+  `hover: none` (touch), orientation, and the visual viewport when the keyboard is up.
+- GPU: the Loom probe from Phase 1 (WebGL 2 available, renderer string, a 200 ms
+  timed draw).
+- Power: `getBattery()` where it exists; below 15 percent and discharging, drop one
+  tier for animation and 3D.
+
+Three tiers, with an override `?tier=full|lean|core` for testing and a footer
+"Lighter version" toggle that persists the choice:
+
+| Asset class | Full (4G, 4 GB+, desktop or recent phone) | Lean (3G, save-data, 2 to 3 GB RAM, low battery) | Core (2G, under 2 GB RAM, storage nearly full, no WebGL, or JS off) |
+| --- | --- | --- | --- |
+| Photos | AVIF/WebP, responsive `sizes`, DPR up to 2, blur-up placeholder (a 20-byte base64 thumbhash inlined at build time) | AVIF/WebP at DPR 1, decorative photos skipped, blur-up kept | One small JPEG per product, no decorative images, hero is a color block with the poster only on demand |
+| Video (Scene 1 hero, story page) | HLS adaptive stream (Mux or Cloudflare Stream; both work with Netlify), muted autoplay, poster first | No autoplay; poster with a play button; 480p rendition | Poster image only, no video element |
+| 3D (Loom) | High tier: shadows, 2K procedural textures, DPR 2 | Mid tier: 1K textures, DPR 1.5, no shadows, fewer fringe strands; poster stays until interaction | Poster plus the 2D chart preview; never loads the engine |
+| Fonts | Fraunces, DM Sans, Allura, Noto Serif Armenian subsets, `font-display: swap`, `size-adjust` metrics on the fallback stacks so text does not shift | Display face `font-display: optional` (used only if cached), body font swapped | System fonts with the same metrics-matched fallback stack; Armenian glyphs from the system |
+| JavaScript | Full routes, engine on idle | Engine only on explicit tap ("Show it in 3D"), non-critical islands deferred until viewport | Server-rendered pages work without JS: browse, read, call, email. Configurators show a `<noscript>` note and the phone number |
+| Storage | Service worker caches the shell and the current product's posters, capped at 25 MB, evicts oldest first | Cache cap 8 MB, posters not cached | No caching; cart kept only in memory plus a cookie-sized fallback (the product keys and design text, under 2 KB) |
+| Motion | Full choreography | Shorter durations, no parallax, no scroll-driven camera | No motion beyond opacity |
+| Screens | Container-query layouts from 320 px to 5K; 3D DPR capped at 2 even on 5K | Same layouts, fewer columns | Single column, 44 px touch targets, no hover-only affordances |
+
+Rules that make the ladder trustworthy:
+
+- **Measure, do not assume.** `web-vitals` reports LCP, INP, CLS, and the chosen tier
+  to Umami (consent-gated, already in place) so the owner can see the real
+  distribution. If more than ten percent of sessions land in Lean, that is a design
+  input, not a failure.
+- **Never trap a user in a tier.** The footer toggle and the `?tier=` override always
+  work, and the choice is remembered per device.
+- **Test every tier in CI.** Playwright projects `lean-3g` (Chrome's Slow 3G profile,
+  CPU 4x slowdown, viewport 360 by 640, DPR 2) and `core-2g` (offline after first
+  load, JS disabled for the browse tests). Both run the smoke suite. Lighthouse adds
+  a throttled mobile run per PR.
+- **Budgets per tier.** Full: 210 KB first-load JS, LCP under 2.0 s. Lean: 150 KB,
+  LCP under 3.5 s on Slow 3G. Core: 60 KB, LCP under 4 s on 2G, and the page is
+  usable with JS disabled. The bundle-budget script grows a per-tier section.
+- **Offline.** A service worker serves an offline page with the phone number, the
+  email, the Instagram handle, and the 2D design chart so a parent can finish a
+  design on the train and add it to the bag when back online (queued in
+  IndexedDB, flushed on `online`).
+- **Screen constraints specifically.** Foldables and split-screen tablets are covered
+  by container queries, not viewport queries. Landscape phones get a two-column PDP
+  with the stage on the left. Very small screens (320 px) drop the second column
+  everywhere and hide the compare slider. Windows high-contrast mode gets real
+  borders instead of shadows (`forced-colors: active`). Large-print users
+  (`prefers-contrast: more`) get the AAA palette below.
+
+### 11.2 Color theory and the design system
+
+Today the palette is ink `#1A1612`, cream `#F5EFE3`, a pomegranate red, gold, and the
+DMC thread hexes. A funded team would turn that into a system.
+
+- **Derive from the cloth, not from a swatch book.** Sample the real materials: the
+  white waffle cloth, the terry, the six knit body colors, the satin, and the DMC
+  threads in use. Build the palette in OKLCH so lightness steps are perceptually
+  even: `linen-50` to `linen-900` (warm neutrals from the cloth), `ink-*` (from the
+  navy thread, not black), `pomegranate-*`, `gold-*`, and one accent per thread
+  family (rose, sage, delft, lavender, coral). Every token has a light and a dark
+  value.
+- **Two atmospheres.** "Morning at the table" (default: linen ground, ink text,
+  window light) and "Evening at the table" (dark mode: ink ground, warm lamp light,
+  thread colors slightly desaturated so they do not glow). Dark mode follows the
+  system setting and the footer toggle. A subtle time-of-day warmth shift (two
+  percent toward amber after 6 pm local time) is allowed on Full tier only and is
+  off under `prefers-contrast`.
+- **Contrast gates.** Body text AAA (7:1), UI text AA (4.5:1), large display AA, and
+  every thread chip labeled with its DMC number and name so color is never the only
+  signal. A unit test runs the whole token set through a contrast checker in both
+  atmospheres and fails on any regression. Color-blind simulation (protan, deutan,
+  tritan) is part of the visual suite for the thread picker.
+- **Thread truth.** The picker shows each DMC color as it looks on white terry and on
+  the waffle cloth (two tiny rendered chips per color, generated by the poster
+  script), with a note that dye lots vary. This replaces guesswork with the honesty
+  the owner already insists on in print.
+- **Type system.** Fraunces for display with optical size tied to rem, DM Sans for
+  UI, Allura only for signatures, Noto Serif Armenian for Armenian glyphs matched to
+  Fraunces' x-height with `size-adjust`. A modular scale (1.2 on phones, 1.25 on
+  desktop), a baseline grid of 4 px, and measure capped at 68 characters.
+- **Motion language.** One spring for finger-driven things, one ease for content,
+  durations 120/240/400 ms, and a documented "thread draw" reveal (a line draws
+  across, content follows) used sparingly. All documented in `docs/design-system.md`
+  with the tokens in `src/styles/tokens.css` and mirrored in `tailwind.config.mjs`.
+- **Print parity.** The same tokens feed the brochure and coupon sheet in `print/`
+  so the box and the site match.
+
+### 11.3 Premium features worth the money
+
+Each is scoped as a flag and a PR. Ordered by impact on the feeling of "a team built
+this."
+
+1. **Hands at work (human work + Claude work).** A one-day shoot: Lusik's hands
+   stitching a single Ա, thread pulled through the cloth in macro, the kitchen
+   table, the blankets folded, the box being packed. Deliverables: a 20-second hero
+   film, six 4-second loops, and stills. Code: the hero streams via HLS with the
+   capability ladder; the loops become the poster backgrounds on the story page.
+   Until the shoot exists, the Loom's "first stitch" scene plays instead, so nothing
+   waits on the shoot.
+2. **True texture capture (human work + Claude work).** Photograph each fabric on a
+   flatbed scanner or under cross-polarized light at 1200 dpi to produce real
+   albedo, normal, and roughness maps for the waffle weave, terry, knit, satin, and
+   fringe. Code: the Loom's `materials/cloth.ts` gains a "captured" path that
+   streams 512, 1K, and 2K mip levels by tier (KTX2 with Basis compression, about
+   300 KB per fabric at 1K). Procedural textures remain the fallback for Lean and
+   for any fabric not yet captured.
+3. **See it in your nursery (AR).** From any configured design: "View in your room."
+   iPhone gets a USDZ via Quick Look, Android gets a glTF via Scene Viewer, both
+   exported client-side from the live rig (`GLTFExporter`, `USDZExporter`, loaded
+   on demand, roughly 60 KB extra). The exported model is the real design with the
+   real name. Fallback: a "hold up your phone" poster with the blanket at true
+   scale on a ruler.
+4. **The certificate.** Every order ships with a signed PDF "Made for {name}": the
+   stitch chart of their design, the DMC thread numbers, the date, the piece's
+   number in Lusik's ledger, and her signature. A QR on it opens the design page.
+   Generated by a Function with the poster and the chart (no WebGL server-side).
+   Printed at home by the family or included in the box. Ties the box to the site.
+5. **Name meanings and the Armenian keyboard.** As a parent types a name, the page
+   offers the Armenian spelling and a one-line meaning ("Anoush means sweet") from a
+   curated list of a few hundred Armenian names, reviewed by a linguist (human
+   work). Western and Eastern spellings both shown. The on-screen Armenian keyboard
+   from Phase 5 becomes part of this.
+6. **Design together.** A shareable design link where two people edit the same
+   design live (both parents, or a parent and Grandma), with presence dots and a
+   one-tap "I like this one." Realtime through a small WebSocket service (PartyKit
+   or Ably; Netlify Functions cannot hold sockets). Fallback: the link carries the
+   design state in the URL and edits are shared by re-sending the link.
+7. **The alphabet room.** An interactive page for all 38 letters: each letter stitches
+   itself in, plays its pronunciation (recorded by Lusik, human work), shows a word
+   that starts with it, and links to a blanket with that letter. Doubles as SEO
+   content and as the thing families send each other.
+8. **Gift video.** A recipient scanning the QR in the box sees a recorded message
+   from the giver (uploaded at checkout, stored in Blobs, 60-second cap, expires in
+   a year). Fallback: the written gift message.
+9. **Concierge.** A "Talk it through with Lusik" booking (the Calendly link already
+   exists) placed on the PDP for the two blankets, plus a WhatsApp and iMessage
+   deep link next to the phone number.
+10. **Ledger and provenance.** Each piece gets a number in a public "ledger" page
+    (opt-in, first names only): number 214, a blanket for Olen, Buena Park,
+    March 2027. Quiet, credible, and it makes the waiting list visible without a
+    dashboard.
+11. **Page transitions and the thread.** The View Transitions API for route changes
+    (shared-element transition of the product poster into the PDP) with a plain
+    fade fallback in browsers without it, and the "thread draw" reveal on section
+    entry. Off under reduced motion.
+12. **Sound, off by default.** A single soft needle-through-cloth tick when a stitch
+    lands in the live preview, behind a mute toggle that starts muted. Never on Lean.
+13. **Easter egg.** Typing "Lusik" or "Լուսիկ" into any name field stitches a small
+    heart next to the name.
+
+### 11.4 Team and production plan a budget buys
+
+For the owner's planning, the roles and what each hands to the executing session:
+
+- Creative director and art director: the storyboard signed off as frames, a
+  motion reel, and the shot list for the shoot.
+- Photographer and videographer: item 1 above; deliver in ProRes and 4K stills.
+- Materials technician: item 2 above; deliver texture maps and physical
+  measurements of every product (the JSON still has a size `TODO_LUSIK` on the crib
+  blanket).
+- 3D artist: reviews the rigs against the real pieces and the captured textures;
+  provides the crib rail and tabletop props as small glTF files (under 200 KB each).
+- Armenian linguist (Western and Eastern): the name list, the `hyw` strings staged
+  in `translations.js`, and a review of every Armenian string on the site and in the
+  brochure.
+- Accessibility specialist: a WCAG 2.2 AA audit with AAA for text, screen reader
+  walkthroughs of the configurator and the 3D stage, and the high-contrast pass.
+- Performance engineer: owns the capability ladder budgets and the device lab (a
+  real low-end Android on a throttled network, an older iPhone, a 4K desktop).
+- Researcher: eight sessions with Armenian-American families ordering a real gift,
+  before Home v3 and after; findings feed copy and the chooser in
+  `HelpDecidingSection`.
+- Copywriter: keeps the sons' voice; every new string reviewed against the rules
+  (no em dashes, no prices in print, colors vary, honest lead times).
+
+### 11.5 Additional PRs
+
+| PR | Title | Depends on | Size | Flag |
+| --- | --- | --- | --- | --- |
+| 16 | Capability ladder: signals, tiers, override, RUM reporting, CI tier projects | 1 | L | `CONFIG.TIERS` |
+| 17 | Design tokens in OKLCH, two atmospheres, contrast tests, thread-truth chips | 1 | L | `CONFIG.THEME_V2`. **Contrast half done 2026-09-09**, see 0.5 |
+| 18 | Service worker, offline page, queued cart, storage-aware caching | 16 | M | `CONFIG.PWA_V2` |
+| 19 | Hero film pipeline (HLS, poster ladder) with Loom fallback | 6, 16 | M | `CONFIG.HERO_FILM` |
+| 20 | Captured textures path with KTX2 streaming by tier | 2, 16 | L | `CONFIG.LOOM.CAPTURED_TEXTURES` |
+| 21 | AR export (USDZ, glTF) from the live rig | 2 | M | `CONFIG.LOOM.AR` |
+| 22 | Certificate PDF + design QR | 11 | M | `CONFIG.CERTIFICATE` |
+| 23 | Name meanings + Armenian keyboard + linguist review markers | 15 | M | `CONFIG.NAMES` |
+| 24 | Design together (realtime) with URL-state fallback | 11 | L | `CONFIG.COLLAB` |
+| 25 | The alphabet room | 2 | M | `CONFIG.ALPHABET_ROOM` |
+| 26 | Gift video | 11 | M | `CONFIG.GIFT_VIDEO` |
+| 27 | Ledger page, concierge links, view transitions, sound toggle, easter egg | 8 | M | per item |
+
+PR 16 should land right after PR 1; every later PR then reads the tier instead of
+inventing its own checks. PR 17 can run in parallel with the Loom work.
+
+### 11.6 What "premium" must never cost
+
+- A slower first paint for anyone. The Full tier is a reward for capable devices,
+  not the default that others fall short of.
+- The owner's rules: no prices in print, no em dashes in customer copy, colors vary
+  on every product, honest lead times with no explanation attached.
+- Any change to pricing, auth, or the cart shape outside PR 13.

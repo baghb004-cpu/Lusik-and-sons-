@@ -34,16 +34,38 @@ import { CribBlanketCard } from "./CribBlanketCard.jsx";
 import { ProductPlaceholderView } from "./ProductPlaceholderView.jsx";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ImmersiveBuySheet } from "./ImmersiveBuySheet";
-import { StageHero } from "./StageHero.jsx";
+import { ProductHero } from "./ProductHero.jsx";
 import { getProductPhotos, BIB_CUSTOMER_EXAMPLES } from "../../lib/productPhotos";
 import { CONFIG } from "../../data/config.js";
 import { useIsMobile } from "../../lib/useIsMobile";
 import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
+import { ReviewList } from "../ReviewList.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
 import { useSite } from "../../state/SiteProvider.jsx";
 import { inventoryKeyForCatalog } from "../../lib/inventory";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
+
+// The two configurators need JavaScript. With scripts off (the ladder's
+// "core" path, exercised by the core-2g Playwright project) the page still
+// renders the product, the price and this note, so nobody hits a dead end.
+function NoScriptNote() {
+  const t = useT();
+  const c = CONFIG.TEXT_US || {};
+  return (
+    <noscript>
+      <div className="max-w-5xl mx-auto px-6 lg:px-12 pt-6" data-noscript-note="">
+        <p className="text-sm leading-relaxed" style={{ color: "var(--text-primary)" }}>
+          {t("productHero.noscriptLead")}
+          <a href={`tel:${c.phone_e164 || ""}`} className="underline">{c.phone_display || ""}</a>
+          {t("productHero.noscriptOr")}
+          <a href={`mailto:${c.email || ""}`} className="underline">{c.email || ""}</a>
+          {t("productHero.noscriptTail")}
+        </p>
+      </div>
+    </noscript>
+  );
+}
 
 export function ProductView({
   category,
@@ -126,18 +148,21 @@ export function ProductView({
   if (product.key === "blanket-alphabet") {
     return (
       <div className="fade-in">
-        <StageHero
+        <ProductHero
           productKey="blanket-alphabet"
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={productData?.price != null ? `$${productData.price}` : null}
           inline={immersive}
         />
+        <NoScriptNote />
         {!immersive && (
           <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-8 lg:pt-10">
             <Breadcrumbs trail={trail} />
           </div>
         )}
         <ProductShowcase
+          leadTimeKey={product.key}
           product={productData}
           onAdd={onAdd}
           onBuyNow={onBuyNow}
@@ -164,8 +189,9 @@ export function ProductView({
     if (immersive) {
       return (
         <>
-          <StageHero
+          <ProductHero
             productKey="bib-single"
+            image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
             title={loc(product, "name", lang)}
             price={customProductData?.price != null ? `$${customProductData.price}` : null}
             inline
@@ -185,11 +211,13 @@ export function ProductView({
 
     return (
       <div className="fade-in">
-        <StageHero
+        <ProductHero
           productKey="bib-single"
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={customProductData?.price != null ? `$${customProductData.price}` : null}
         />
+        <NoScriptNote />
         <div className="max-w-5xl mx-auto px-6 lg:px-12 py-8 lg:py-12">
         <Breadcrumbs trail={trail} />
         <CustomProductCard
@@ -208,7 +236,7 @@ export function ProductView({
             the configurator above. */}
         <section className="mt-16 lg:mt-24 pt-12 lg:pt-16" style={{ borderTop: "1px solid var(--border-default)" }}>
           <div className="max-w-3xl mb-8 lg:mb-10">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>
               {t("bib.othersEyebrow")}
             </p>
             <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl mb-3 leading-tight break-words" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
@@ -238,8 +266,9 @@ export function ProductView({
   if (spec?.buy?.kind === "cribBlanket") {
     return (
       <>
-        <StageHero
+        <ProductHero
           productKey={product.key}
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={(spec?.price ?? product.priceFrom) != null ? `$${spec?.price ?? product.priceFrom}` : null}
           inline={immersive}
@@ -261,8 +290,9 @@ export function ProductView({
   if (spec?.buy?.kind === "bibSet") {
     return (
       <>
-        <StageHero
+        <ProductHero
           productKey={product.key}
+          image={getProductPhotos(product)[0] ?? product.coverImage ?? BIB_CUSTOMER_EXAMPLES[0]}
           title={loc(product, "name", lang)}
           price={(spec?.price ?? product.priceFrom) != null ? `$${spec?.price ?? product.priceFrom}` : null}
           inline={immersive}
@@ -328,6 +358,9 @@ export function ProductView({
         onBack={() => onNavigateCategory(category.slug)}
       >
         {renderSurface(true)}
+        {product.status === "live" && (
+          <ReviewList productKey={product.trustedKey ?? product.key} className="px-6 mt-10" />
+        )}
         <StillHaveQuestionsCard className="mt-10 mb-4" />
       </ImmersiveBuySheet>
     );
@@ -340,6 +373,15 @@ export function ProductView({
     // sheet, so no extra padding there.
     <div className="pb-[340px] lg:pb-0">
       {renderSurface(false)}
+      {/* What customers wrote after a fortnight with the piece. Keyed by
+          the TRUSTED key, because that is what order_items carries and
+          what a review is stored against — the catalog key would find
+          nothing. Renders nothing at all until a review is approved: a
+          product page saying "no reviews yet" advertises that nobody has
+          bought this, and most orders here are gifts nobody reviews. */}
+      {product.status === "live" && (
+        <ReviewList productKey={product.trustedKey ?? product.key} className="max-w-7xl mx-auto px-6 lg:px-12 mt-12 lg:mt-16" />
+      )}
       {/* The "delivery and pickup details" disclosure lives INSIDE each
           product's PurchaseCard / MobilePurchaseBar (Apple-style). This is
           the last thing on the page — it should rest just above the sheet. */}

@@ -217,6 +217,86 @@ function _initDb() {
   // can tell "we don't recognize that ZIP" (404) apart from "lookup
   // unavailable" (network/5xx — show nothing, never a scary warning).
   const _zipCache = new Map();
+  // Public queue snapshot for the lead-time engine (src/lib/leadTime.js).
+  // Unauthenticated; fail-soft — a zero buffer just means the page quotes
+  // the product's own build time.
+  const getLeadTime = async () => {
+    try {
+      // call() wraps every response as { error, data } — unwrap it the way
+      // getInventory does, and normalize so success and failure share a shape.
+      const { data } = await call("/lead-time", { method: "GET", auth: false });
+      return {
+        openOrders: Number(data?.openOrders) || 0,
+        queueDays: Number(data?.queueDays) || 0,
+      };
+    } catch {
+      return { openOrders: 0, queueDays: 0 };
+    }
+  };
+
+  // Order timeline. Signed-in customers pass no token (the Function
+  // checks ownership); a guest passes the signed token from their email.
+  // ---- reviews ----
+  // The public reads are unauthenticated and never throw upward: they
+  // decorate a product page, and a page must not fail over its
+  // testimonials.
+  const getReviews = async (productKey) => {
+    try {
+      const { data } = await call(`/reviews?product=${encodeURIComponent(productKey || "")}`, { method: "GET", auth: false });
+      return Array.isArray(data?.reviews) ? data.reviews : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const getReviewWall = async () => {
+    try {
+      const { data } = await call("/reviews?wall=1", { method: "GET", auth: false });
+      return Array.isArray(data?.reviews) ? data.reviews : [];
+    } catch {
+      return [];
+    }
+  };
+
+  /** The order behind a review link, or null for a bad or spent token. */
+  const getReviewInvite = async (orderId, token) => {
+    const q = new URLSearchParams({ id: String(orderId || ""), t: String(token || "") });
+    const { data } = await call(`/review-submit?${q}`, { method: "GET", auth: false });
+    return data ?? null;
+  };
+
+  const submitReview = async (payload) => {
+    const { error, data } = await call("/review-submit", { method: "POST", auth: false, body: payload });
+    if (error) throw new Error(error);
+    return data;
+  };
+
+  const adminListReviews = async () => {
+    const { data } = await call("/admin-reviews", { method: "GET" });
+    return Array.isArray(data?.reviews) ? data.reviews : [];
+  };
+
+  const adminSetReviewStatus = async (id, status) => {
+    const { error, data } = await call("/admin-reviews", { method: "PUT", body: { id, status } });
+    if (error) throw new Error(error);
+    return data;
+  };
+
+  const getOrderMilestones = async (orderId, token = null) => {
+    const q = new URLSearchParams({ order_id: String(orderId || "") });
+    if (token) q.set("token", String(token));
+    const { data } = await call(`/order-milestones?${q}`, { method: "GET", auth: !token });
+    return data ?? null;
+  };
+
+  const adminAddOrderMilestone = async ({ orderId, milestone, note }) => {
+    const { data } = await call("/admin-order-milestone", {
+      method: "POST",
+      body: { order_id: orderId, milestone, note: note || undefined },
+    });
+    return data ?? null;
+  };
+
   const lookupZip = async (zip) => {
     if (!/^\d{5}$/.test(zip)) return { place: null, notFound: false };
     if (_zipCache.has(zip)) return _zipCache.get(zip);
@@ -268,6 +348,15 @@ function _initDb() {
 
   return {
     getInventory,
+    getLeadTime,
+    getReviews,
+    getReviewWall,
+    getReviewInvite,
+    submitReview,
+    adminListReviews,
+    adminSetReviewStatus,
+    getOrderMilestones,
+    adminAddOrderMilestone,
     lookupZip,
     joinWaitlist, sendChat,
     getProfile, updateProfile, uploadAvatar,

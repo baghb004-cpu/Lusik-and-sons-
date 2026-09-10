@@ -10,7 +10,8 @@
 // order metadata — never in the price, which the server controls.
 // ============================================================
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
@@ -22,6 +23,13 @@ import { ArrowRight, Plus } from "../icons.jsx";
 import { useInViewport } from "../../lib/useInViewport";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
+import { CONFIG } from "../../data/config.js";
+import { publishDesign } from "../../lib/designBus";
+
+// Never a static import: three.js would land in this route's first-load JS
+// for a feature most visitors never trigger, and the bundle gate fails the
+// build when it does.
+const LoomStage = dynamic(() => import("../../loom/index").then((m) => m.LoomStage), { ssr: false });
 
 function cleanText(text) {
   if (!text) return "";
@@ -44,6 +52,22 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
   // swap and reports it here; the order records the colorway by name.
   const [body, setBody] = useState(colorways[0] ?? null);
   const [name, setName] = useState("");
+
+  // ── The 3D stage ────────────────────────────────────────
+  const hasStage = (CONFIG.LOOM?.PRODUCTS ?? []).includes(spec.key);
+  const trimmedName = name.trim().slice(0, nameMax);
+  // Memoised: LoomStage re-plans the whole alphabet whenever this identity
+  // changes, and that is four thousand stitches — a fresh object each
+  // render would re-plan on every keystroke of any field on the page.
+  const loomDesign = useMemo(
+    () => ({ swatch: body?.swatch ?? null, name: trimmedName }),
+    [body, trimmedName],
+  );
+
+  useEffect(() => {
+    if (!hasStage) return;
+    publishDesign({ product: spec.key, ...loomDesign });
+  }, [hasStage, spec.key, loomDesign]);
 
   const lastAddTsRef = useRef(0);
   const [adding, setAdding] = useState(false);
@@ -96,6 +120,24 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         <div className="min-w-0 w-full">
+          {/* The blanket itself, in 3D, above the photographs. Not in the
+              immersive sheet: there the photos ARE the backdrop. */}
+          {hasStage && !immersive && (
+            <div
+              className="aspect-[4/3] gallery-frame overflow-hidden mb-4"
+              style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}
+            >
+              <LoomStage
+                productKey={spec.key}
+                label={t("cribBlanket.previewAlt", {
+                  color: body?.label ?? "",
+                  name: trimmedName,
+                })}
+                design={loomDesign}
+                poster={product.coverImage ?? undefined}
+              />
+            </div>
+          )}
           <ProductImageGallery images={product.images} alt={productName} colorways={colorways} appleColorRow photosHidden={immersive} onColorwayChange={setBody} />
         </div>
 
@@ -195,7 +237,7 @@ export function CribBlanketCard({ product, spec, trail, onAddCustom, onBuyNow, o
             </span>
           </div>
 
-          <PurchaseCard className={immersive ? "" : "hidden lg:block"}>
+          <PurchaseCard productKey={product?.key} className={immersive ? "" : "hidden lg:block"}>
             <button
               ref={addBtnRef}
               onClick={(e) => fire(e, onAddCustom)}

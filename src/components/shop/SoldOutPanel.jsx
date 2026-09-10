@@ -30,7 +30,7 @@ export function SoldOutPanel({ name, productKey, className = "" }) {
     >
       <p
         className="text-[0.6rem] tracking-[0.3em] uppercase mb-2"
-        style={{ color: "var(--accent)", fontWeight: 600 }}
+        style={{ color: "var(--accent-text)", fontWeight: 600 }}
       >
         {t("soldOut.eyebrow")}
       </p>

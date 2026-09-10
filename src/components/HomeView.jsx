@@ -29,6 +29,7 @@
 // ============================================================
 
 import React, { useEffect, useState } from "react";
+import { TierToggle } from "./TierToggle.jsx";
 import Image from "next/image";
 import { useT, useLang } from "../i18n/LangContext.jsx";
 import { loc } from "../i18n/localize.js";
@@ -44,11 +45,13 @@ import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Plus, Heart, Instagram, 
 import { RecentlyViewedStrip } from "./RecentlyViewedStrip.jsx";
 import { getRecentlyViewed } from "../lib/recentActivity.js";
 import { AlphabetMarquee } from "./Theater.jsx";
+import { FromTheJournalScene, HowOrderingWorksScene, SevenPiecesScene } from "./home/HomeScenes.jsx";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import { useTilt3D } from "../lib/useTilt3D";
 // FAQ copy is CMS-managed (Content Studio /studio → "Site Content"), compiled
 // from content/pages/faq.json by scripts/gen-pages.mjs. Static at build time.
 import { CMS_PAGES } from "../data/pagesData.generated.js";
+import { CONFIG } from "../data/config.js";
 import {
   PHOTO_BIB_PILE,
   PHOTO_BIB_ROMEO,
@@ -69,7 +72,7 @@ function accentLetterTriads(text) {
   // (never RegExp.test on a /g regex: its lastIndex makes it stateful).
   return text.split(LETTER_TRIADS).map((part, i) =>
     part === "Ա, Բ, Գ" || part === "A, B, C" ? (
-      <span key={i} style={{ fontWeight: 500, color: "var(--accent)" }}>{part}</span>
+      <span key={i} style={{ fontWeight: 500, color: "var(--accent-on-ink)" }}>{part}</span>
     ) : (
       part
     )
@@ -123,11 +126,11 @@ function ExploreCard({ variant, title, blurb, Icon, go, onPrefetch }) {
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}
         aria-label={`${title} — ${blurb}`}
       >
-        <Icon size={26} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+        <Icon size={26} strokeWidth={1.5} style={{ color: "var(--accent-text)" }} />
         <div>
           <p className="font-display text-xl leading-tight mb-1" style={{ fontWeight: 400, color: "var(--text-primary)" }}>{title}</p>
           <p className="text-sm opacity-70 leading-relaxed">{blurb}</p>
-          <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5 mt-3" style={{ color: "var(--accent)", fontWeight: 500 }}>
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase flex items-center gap-1.5 mt-3" style={{ color: "var(--accent-text)", fontWeight: 500 }}>
             Open <ArrowRight size={12} strokeWidth={1.75} />
           </p>
         </div>
@@ -145,7 +148,7 @@ function ExploreCard({ variant, title, blurb, Icon, go, onPrefetch }) {
       style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
       aria-label={`${title} — ${blurb}`}
     >
-      <Icon size={24} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+      <Icon size={24} strokeWidth={1.5} style={{ color: "var(--accent-text)" }} />
       {/* Title reserves two lines so 1- and 2-line titles align the
           same across the whole row (no more random heights). */}
       <div>
@@ -165,6 +168,7 @@ export function HomeView({
   onNavigateCategory,
   onNavigateProduct,
   onNavigateJournal,
+  onNavigateJournalPost,
   // Section-page routing. When `pageSlug` is set, HomeView renders ONLY that
   // promoted section (Our Story / Workshop / FAQ / Contact / Shipping /
   // Newsletter) under a big "‹ For You" back header instead of the home
@@ -280,10 +284,10 @@ export function HomeView({
             {/* Body copy. Mobile drops the "Southern California" clause
                 (the hero eyebrow above already carries it) via bodyShort;
                 desktop keeps the full body unchanged. */}
-            <p className="lg:hidden text-base leading-relaxed mb-10 max-w-md" style={{ color: "#3D332A" }}>
+            <p className="lg:hidden text-base leading-relaxed mb-10 max-w-md" style={{ color: "var(--text-secondary)" }}>
               {t("hero.bodyShort")}
             </p>
-            <p className="hidden lg:block text-lg leading-relaxed mb-10 max-w-md" style={{ color: "#3D332A" }}>
+            <p className="hidden lg:block text-lg leading-relaxed mb-10 max-w-md" style={{ color: "var(--text-secondary)" }}>
               {t("hero.body")}
             </p>
             <div className="flex items-center gap-6">
@@ -351,11 +355,19 @@ export function HomeView({
             className="flex-shrink-0 overflow-hidden rounded-xl"
             style={{ width: 72, height: 72, background: "var(--bg-subtle, #F5EFE3)" }}
           >
+            {/* `priority` is measured, not decorative. On a phone the hero
+                section above is hidden (`simplified`), so this card is the
+                first thing on the page and this 72px thumbnail is the
+                page's LCP element — Lighthouse measured it at 4.8s with
+                39% of that spent in Load Delay purely because it was
+                lazy. Preloading it is the whole fix. It costs desktop one
+                small preload of an image in a `lg:hidden` section. */}
             <Image
               src={featuredPick.product.coverImage ?? featuredPick.product.images?.[0] ?? product.gallery[0]}
               alt={featuredPick.product.name}
               width={72}
               height={72}
+              priority
               className="w-full h-full object-cover"
             />
           </div>
@@ -438,6 +450,30 @@ export function HomeView({
         </div>
       </section>
 
+      {/* ============================================================
+          HOME v3 — the storyboarded scenes (CONFIG.HOME_V3)
+          ============================================================
+          Every live piece, how an order actually goes, and the journal.
+          They sit AFTER the Explore cards on purpose: the cards are how
+          a returning visitor gets where they were going, and the story
+          is for someone who is still deciding. Turning the flag off puts
+          the previous home page back exactly. */}
+      {CONFIG.HOME_V3 !== false && (
+        <>
+          <SevenPiecesScene
+            onNavigateProduct={onNavigateProduct}
+            onNavigateShop={onNavigateShop}
+            onPrefetch={onPrefetch}
+          />
+          <HowOrderingWorksScene />
+          <FromTheJournalScene
+            onNavigateJournal={onNavigateJournal}
+            onNavigateJournalPost={onNavigateJournalPost}
+            onPrefetch={onPrefetch}
+          />
+        </>
+      )}
+
       {/* The loom band — all thirty-eight letters drifting by at whisper
           opacity (Theater.jsx; pure CSS motion, still under reduced motion).
           The curve lays the band back into the page in real perspective. */}
@@ -474,7 +510,7 @@ export function HomeView({
               : { className: "flex items-center gap-3" };
             return (
               <Wrapper key={i} {...wrapperProps}>
-                <item.Icon size={20} strokeWidth={1.25} style={{ color: "var(--accent)" }} />
+                <item.Icon size={20} strokeWidth={1.25} style={{ color: "var(--accent-text)" }} />
                 <div>
                   <p
                     className="text-sm flex items-center gap-1.5"
@@ -485,7 +521,7 @@ export function HomeView({
                       <ArrowRight
                         size={12}
                         strokeWidth={1.75}
-                        style={{ color: "var(--accent)" }}
+                        style={{ color: "var(--accent-text)" }}
                         aria-hidden="true"
                       />
                     )}
@@ -522,10 +558,15 @@ export function HomeView({
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)", boxShadow: "0 8px 20px -12px rgba(26,22,18,0.22)" }}
               aria-label={`${label} policy`}
             >
-              <Icon size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+              <Icon size={20} strokeWidth={1.5} style={{ color: "var(--accent-text)" }} />
               <p className="text-sm mt-2 leading-tight" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{label}</p>
             </button>
           ))}
+        </div>
+        {/* Capability ladder: the mobile home has no footer, so the
+            "lighter version" choice lives in this strip instead. */}
+        <div className="mt-6 rounded-2xl p-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-soft)" }}>
+          <TierToggle />
         </div>
         <p className="text-[0.7rem] opacity-45 text-center mt-8 leading-relaxed">
           © {new Date().getFullYear()} Lusik &amp; Sons · Made in Southern California
@@ -551,7 +592,7 @@ export function HomeView({
           builds trust by showing real outcomes from past orders. */}
       <section className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">
         <div className="text-center mb-10 max-w-2xl mx-auto">
-          <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)" }}>From Lusik's workshop</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)" }}>From Lusik's workshop</p>
           <h2 className="font-display text-3xl lg:text-4xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
             Past blankets, <em style={{ fontWeight: 400 }}>real families</em>.
           </h2>
@@ -590,7 +631,7 @@ export function HomeView({
             </div>
           </div>
           <div className="lg:col-span-6 lg:order-1 min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--accent)" }}>{CMS_PAGES.story.eyebrow}</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: "var(--accent-on-ink)" }}>{CMS_PAGES.story.eyebrow}</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-8 leading-tight" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
               {CMS_PAGES.story.heading}
             </h2>
@@ -599,7 +640,7 @@ export function HomeView({
                 <p key={i}>{accentLetterTriads(para)}</p>
               ))}
             </div>
-            <div className="mt-10 pt-8" style={{ borderTop: "1px solid rgba(245,239,227,0.15)" }}>
+            <div className="mt-10 pt-8" style={{ borderTop: "1px solid var(--border-on-ink)" }}>
               <p className="font-display text-2xl italic" style={{ fontWeight: 300 }}>{CMS_PAGES.story.signature}</p>
               <p className="text-sm opacity-70 mt-1">{CMS_PAGES.story.signatureSub}</p>
             </div>
@@ -664,7 +705,7 @@ export function HomeView({
       <section id="contact" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>Get in Touch</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent-text)" }}>Get in Touch</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Four ways to reach Lusik.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
               Check out directly on this site, give us a call, send a message on Instagram, or write an email — for custom commissions, family-name requests, bulk gift orders, or simply to ask Lusik a question. She or one of her sons writes back, usually within a day.
@@ -678,7 +719,7 @@ export function HomeView({
               { Icon: Mail, label: "Write Lusik directly", detail: "hello@lusikandsons.com", action: () => window.open("mailto:hello@lusikandsons.com") },
             ].map((c, i) => (
               <button key={i} onClick={c.action} className="w-full flex items-center gap-5 p-5 group hover:bg-[rgba(26,22,18,0.04)]" style={{ borderTop: i === 0 ? "1px solid rgba(26,22,18,0.1)" : "none", borderBottom: "1px solid rgba(26,22,18,0.1)" }}>
-                <c.Icon size={22} strokeWidth={1.25} style={{ color: "var(--accent)" }} />
+                <c.Icon size={22} strokeWidth={1.25} style={{ color: "var(--accent-text)" }} />
                 <div className="flex-1 text-left">
                   <p className="font-display text-xl" style={{ fontWeight: 400 }}>{c.label}</p>
                   <p className="text-sm opacity-70">{c.detail}</p>
@@ -693,7 +734,7 @@ export function HomeView({
         <div className="mt-20 lg:mt-24">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
             <div className="min-w-0">
-              <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>By Post</p>
+              <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent-text)" }}>By Post</p>
               <h3 className="font-display text-3xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>
                 Send a <em style={{ fontWeight: 400 }}>letter</em>.
               </h3>
@@ -706,10 +747,10 @@ export function HomeView({
             </div>
             <div className="p-6 lg:p-8" style={{ border: "1px solid rgba(26,22,18,0.15)", background: "rgba(255,255,255,0.35)" }}>
               <div className="flex items-start gap-3 mb-6">
-                <MapPin size={20} strokeWidth={1.25} style={{ color: "var(--accent)", marginTop: "4px", flexShrink: 0 }} />
+                <MapPin size={20} strokeWidth={1.25} style={{ color: "var(--accent-text)", marginTop: "4px", flexShrink: 0 }} />
                 <div>
                   <p className="font-display text-xl lg:text-2xl leading-tight" style={{ fontWeight: 500 }}>
-                    Lusik <span style={{ color: "var(--accent)" }}>&</span> Sons
+                    Lusik <span style={{ color: "var(--accent-text)" }}>&</span> Sons
                   </p>
                   <p className="text-sm opacity-70 mt-0.5 mb-2">c/o The UPS Store</p>
                   <p className="text-base leading-relaxed">
@@ -750,7 +791,7 @@ export function HomeView({
       <section id="shipping" className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28 border-t" style={{ borderColor: "rgba(26,22,18,0.1)" }}>
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
           <div className="min-w-0">
-            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>Shipping & Tracking</p>
+            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent-text)" }}>Shipping & Tracking</p>
             <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>How your piece gets home.</h2>
             <p className="text-base lg:text-lg opacity-80 leading-relaxed">
               Find the carrier office closest to you, or follow a piece already on its way. Direct links to USPS, UPS, and FedEx — no account required, no extra clicks.
@@ -785,7 +826,7 @@ export function HomeView({
       {pageSlug === "newsletter" && (
       <section className="py-20 lg:py-28" style={{ background: "rgba(176,136,66,0.08)" }}>
         <div className="max-w-3xl mx-auto px-6 lg:px-12 text-center">
-          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent)" }}>Stay Connected</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ color: "var(--accent-text)" }}>Stay Connected</p>
           <h2 className="font-display text-4xl lg:text-5xl mb-6" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>The occasional note.</h2>
           <p className="text-base lg:text-lg opacity-80 leading-relaxed mb-10 max-w-xl mx-auto">
             When Lusik adds a new alphabet, a seasonal piece, or one of the placeholders finally goes live — we'll write you a short note. About one email a month. Never more, never anything we wouldn't send to our own mother.

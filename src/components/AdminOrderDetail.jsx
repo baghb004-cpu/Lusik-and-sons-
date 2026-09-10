@@ -23,6 +23,8 @@
 // ============================================================
 
 import React, { useEffect, useRef, useState } from "react";
+import { MILESTONE_STEPS } from "../lib/milestones.js";
+import { OrderTimeline } from "./OrderTimeline.jsx";
 import { db } from "../lib/db.js";
 import { useToast } from "./ToastProvider.jsx";
 import { Skeleton } from "./Skeleton.jsx";
@@ -76,6 +78,44 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
+
+  // ---- Customer-facing timeline ("while she stitches") ----
+  // Separate from fulfillment_status on purpose: the pipeline status is
+  // Lusik's internal workflow, while a milestone is a note to the
+  // customer that something happened. Marking one is append-only, so a
+  // second tap adds a second row rather than editing history.
+  const [milestones, setMilestones] = useState([]);
+  const [milestoneNote, setMilestoneNote] = useState("");
+  const [savingMilestone, setSavingMilestone] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!orderId) return undefined;
+    db.getOrderMilestones(orderId)
+      .then((d) => { if (alive && d?.milestones) setMilestones(d.milestones); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [orderId]);
+
+  const markMilestone = async (key) => {
+    setSavingMilestone(key);
+    try {
+      const res = await db.adminAddOrderMilestone({ orderId, milestone: key, note: milestoneNote });
+      if (res?.milestone) {
+        setMilestones((prev) => [...prev, {
+          milestone: res.milestone.milestone,
+          note: res.milestone.note ?? null,
+          photoKey: res.milestone.photo_key ?? null,
+          at: res.milestone.created_at,
+        }]);
+        setMilestoneNote("");
+      }
+    } catch {
+      /* the panel just does not advance; nothing is lost */
+    } finally {
+      setSavingMilestone(null);
+    }
+  };
 
   // One-click pipeline advance. Used by the step buttons. The
   // backend handles confirmed_at + shipped_at stamping + the
@@ -189,21 +229,21 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
       </div>
 
       {/* HEADER */}
-      <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>Order</p>
+      <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>Order</p>
       <h1 className="font-display text-3xl lg:text-4xl mb-1" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>{order.order_number}</h1>
       <p className="text-sm opacity-70">{orderDate}</p>
       <div className="mt-3 flex items-center gap-3 flex-wrap text-[0.65rem] tracking-[0.2em] uppercase">
         <span style={{ color: accent, fontWeight: 600 }}>{STATUS_LABEL[status] ?? status}</span>
         <span className="opacity-50">·</span>
         <span style={{ fontWeight: 500 }}>${(order.total_cents / 100).toFixed(2)}</span>
-        {order.gift?.is_gift && <span className="px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "var(--accent)", fontWeight: 500 }}>Gift</span>}
+        {order.gift?.is_gift && <span className="px-2 py-0.5" style={{ background: "rgba(176,136,66,0.15)", color: "var(--accent-text)", fontWeight: 500 }}>Gift</span>}
         {order.status === "refunded" && <span className="px-2 py-0.5" style={{ background: "rgba(139,44,44,0.10)", color: "#8B2C2C", fontWeight: 500 }}>Refunded</span>}
         {order.status === "partially_refunded" && <span className="px-2 py-0.5" style={{ background: "rgba(139,44,44,0.10)", color: "#8B2C2C", fontWeight: 500 }}>Partial refund</span>}
       </div>
 
       {/* PIPELINE STEPS — the Domino's-tracker control surface */}
       <section className="lg-panel lg-panel-gold mt-8 mb-10 p-5">
-        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent)", fontWeight: 600 }}>Status</p>
+        <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "var(--accent-text)", fontWeight: 600 }}>Status</p>
         <ol className="flex items-center gap-1 sm:gap-2 mb-4 overflow-x-auto pb-1">
           {STAGES.map((s, i) => {
             const done   = i < stageIndex;
@@ -263,6 +303,38 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
           </label>
         </div>
 
+        {/* Customer timeline. One tap per step; the note is optional and
+            rides along with whichever step you tap next. Marking
+            "Stitching" also sends the customer a one-time note. */}
+        <div className="mt-6 pt-5" style={{ borderTop: "1px solid var(--border-soft)" }}>
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase opacity-70 mb-3">What the customer sees</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {MILESTONE_STEPS.map((step) => (
+              <button
+                key={step.key}
+                type="button"
+                onClick={() => markMilestone(step.key)}
+                disabled={savingMilestone !== null}
+                className="lg-pill px-3 py-1.5 text-[0.6rem] tracking-[0.15em] uppercase"
+                style={{ fontWeight: 500 }}
+                data-testid={`admin-milestone-${step.key}`}
+              >
+                {savingMilestone === step.key ? "Saving…" : step.label}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={milestoneNote}
+            onChange={(e) => setMilestoneNote(e.target.value)}
+            placeholder="Optional note for the customer (goes with the next step you tap)"
+            maxLength={500}
+            className="w-full px-3 py-2 text-sm mb-4"
+            style={{ background: "var(--bg-page)", border: "1px solid var(--border-default)" }}
+          />
+          {milestones.length > 0 && <OrderTimeline rows={milestones} />}
+        </div>
+
         {order.confirmed_at && (
           <p className="text-[0.65rem] opacity-55 mt-3">
             Confirmed {new Date(order.confirmed_at).toLocaleString()}
@@ -288,7 +360,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
           rows={3}
           maxLength={1000}
           placeholder="e.g. Running a little behind this week — finishing your blanket on Friday."
-          className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(61,90,61,0.35)] resize-y"
+          className="w-full px-3 py-2 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(61,90,61,0.35)] resize-y"
           style={{ border: "1px solid rgba(61,90,61,0.35)" }}
           data-testid="admin-message-input"
         />
@@ -318,7 +390,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
       {/* GIFT OPTIONS — show prominently because they affect packing */}
       {order.gift?.is_gift && (
         <section className="lg-panel lg-panel-gold mb-8 p-4">
-          <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-2" style={{ color: "var(--accent)" }}>This is a gift</p>
+          <p className="text-[0.6rem] tracking-[0.25em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>This is a gift</p>
           {order.gift.message && (
             <p className="text-sm leading-relaxed italic mb-2" style={{ background: "var(--bg-surface)", padding: "0.5rem 0.75rem", border: "1px solid var(--border-default)" }}>
               "{order.gift.message}"
@@ -359,7 +431,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
                   </dl>
                 )}
                 {it.custom_image_url && /^https?:\/\//i.test(it.custom_image_url) && (
-                  <a href={it.custom_image_url} target="_blank" rel="noopener noreferrer" className="text-xs underline mt-2 inline-block" style={{ color: "var(--accent)" }}>
+                  <a href={it.custom_image_url} target="_blank" rel="noopener noreferrer" className="text-xs underline mt-2 inline-block" style={{ color: "var(--accent-text)" }}>
                     Customer reference image →
                   </a>
                 )}
@@ -376,7 +448,7 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
           <label className="block">
             <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Carrier</span>
             <select value={carrier ?? ""} onChange={(e) => setCarrier(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+              className="w-full px-3 py-2 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
               style={{ border: "1px solid rgba(26,22,18,0.2)" }}>
               {ADMIN_CARRIER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -384,20 +456,20 @@ export function AdminOrderDetail({ orderId, onBack, onViewSite, onSignOut }) {
           <label className="block">
             <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Tracking number</span>
             <input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="e.g. 9400 1234 …"
-              className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+              className="w-full px-3 py-2 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
               style={{ border: "1px solid rgba(26,22,18,0.2)" }} />
           </label>
           <label className="block">
             <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Estimated ship date</span>
             <input type="date" value={shipDate} onChange={(e) => setShipDate(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
+              className="w-full px-3 py-2 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)]"
               style={{ border: "1px solid rgba(26,22,18,0.2)" }} />
           </label>
         </div>
         <label className="block mt-4">
           <span className="text-[0.6rem] tracking-[0.25em] uppercase opacity-70 block mb-1.5">Internal notes <span className="normal-case tracking-normal opacity-70">(only you see these)</span></span>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-            className="w-full px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] resize-y"
+            className="w-full px-3 py-2 text-sm bg-[var(--bg-surface)] outline-none focus:ring-2 focus:ring-[rgba(176,136,66,0.4)] resize-y"
             style={{ border: "1px solid rgba(26,22,18,0.2)" }} />
         </label>
 

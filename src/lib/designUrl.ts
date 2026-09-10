@@ -89,6 +89,24 @@ export function encodeDesignToUrl(state: DesignPickerState): string | null {
 // worst-case JSON.parse cost.
 const MAX_ENCODED_LENGTH = 4096;
 
+/**
+ * Standard base64 into something that can be a PATH segment.
+ *
+ * `btoa` emits `+`, `/` and `=`. A `/` ends the segment, so a shared
+ * design would arrive truncated — and truncated base64 still decodes to
+ * SOMETHING often enough that the failure looks like a wrong design
+ * rather than a broken link.
+ */
+export function toUrlSafe(encoded: string): string {
+  return encoded.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** The inverse. Padding is restored because atob wants it. */
+export function fromUrlSafe(segment: string): string {
+  const b64 = segment.replace(/-/g, "+").replace(/_/g, "/");
+  return b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+}
+
 export function decodeDesignFromUrl(encoded: string | null | undefined): DesignCompact | null {
   if (!encoded || typeof encoded !== "string") return null;
   if (encoded.length > MAX_ENCODED_LENGTH) return null;

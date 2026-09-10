@@ -77,7 +77,12 @@
     --text-on-ink:    #F5EFE3;  /* text on dark ink (Pay button, etc.) */
 
     --border-default: rgba(26,22,18,0.10);
-    --border-strong:  rgba(26,22,18,0.20);
+    /* Interactive boundaries — input fields, unselected swatches, the
+       quantity stepper. WCAG 1.4.11 wants 3:1 for a boundary that is the
+       only thing identifying a control, and a white field on a cream page
+       is 1.1:1 on its own, so the border IS that boundary. Was 0.20 alpha
+       (1.5:1). Decorative rules stay on --border-default. */
+    --border-strong:  rgba(26,22,18,0.50);
     --border-soft:    rgba(26,22,18,0.06);
 
     --ink:            #1A1612;  /* primary dark — buttons, headings */
@@ -89,10 +94,34 @@
        gold (~5:1). Keep --accent for borders, icons, fills, and any gold
        text sitting on ink/dark surfaces (where the brighter gold passes). */
     --accent-text:    #826027;
+    /* Gold for TEXT sitting on an --ink panel. An ink panel INVERTS with the
+       theme (--ink is dark in light mode, cream in dark mode), so the gold on
+       top has to invert too, exactly like --text-on-ink. In light mode the ink
+       panel is dark, so the bright gold passes (5.5:1). Using --accent here
+       instead is the trap: in dark mode it puts the bright gold on cream at
+       2.0:1. Same pairing rule as --text-on-ink — reach for it whenever the
+       background is var(--ink). */
+    --accent-on-ink:  #B08842;
+    /* Text ON a gold fill (the cart badge). The gold is a mid tone in BOTH
+       themes, so the readable text on it is ink in both — cream on gold is
+       2.8:1. Not the same thing as --text-on-ink, which inverts. */
+    --text-on-accent: #1A1612;
+    /* Hairline rule ON an --ink panel. Inverts for the same reason. */
+    --border-on-ink:  rgba(245,239,227,0.15);
 
     --success:        #3D5A3D;
     --error:          #8B2C2C;
     --error-soft:     rgba(139,44,44,0.06);
+
+    /* Type goes through a token for the same reason colour does: there
+       is one right answer and it should be written once. The Armenian
+       faces are here because Fraunces, DM Sans and Allura have NO
+       Armenian coverage — see the header of fonts.css. They carry a
+       unicode-range, so Latin never touches them and an English-speaking
+       visitor never downloads them. */
+    --font-display: 'Fraunces', 'Noto Serif Armenian', Georgia, serif;
+    --font-body:    'DM Sans', 'Noto Sans Armenian', system-ui, -apple-system, sans-serif;
+    --font-script:  'Allura', cursive;
 
     color-scheme: light;
   }
@@ -113,7 +142,7 @@
     --text-on-ink:    #1A1612;
 
     --border-default: rgba(245,239,227,0.10);
-    --border-strong:  rgba(245,239,227,0.18);
+    --border-strong:  rgba(245,239,227,0.40);  /* 3.5:1 — same rule as light */
     --border-soft:    rgba(245,239,227,0.05);
 
     --ink:            #F5EFE3;  /* invert: ink in dark = cream */
@@ -121,6 +150,9 @@
     --accent-soft:    rgba(201,166,120,0.14);
     --accent-strong:  rgba(201,166,120,0.36);
     --accent-text:    #C9A678;  /* on dark surfaces the bright gold already passes */
+    --accent-on-ink:  #826027;  /* the ink panel is CREAM here, so the deep gold is the readable one */
+    --text-on-accent: #1A1612;  /* gold stays a mid tone in dark, so ink still wins */
+    --border-on-ink:  rgba(26,22,18,0.15);
 
     --success:        #6FA86F;
     --error:          #D17474;
@@ -154,14 +186,14 @@
     position: relative;
   }
   #root { overflow-x: hidden; width: 100%; max-width: 100vw; }
-  body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); }
-  .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
+  body { font-family: var(--font-body); background: var(--bg-page); color: var(--text-primary); }
+  .font-display { font-family: var(--font-display); font-optical-sizing: auto; }
   /* Apple-style large mobile page titles. Leads with the native system
      font so iOS/iPadOS render SF Pro Display (the authentic Apple title
      face) and falls back to the brand sans (DM Sans) elsewhere. Applied
      only to the lg:hidden mobile page titles; desktop typography keeps
      the Fraunces serif via .font-display. */
-  .font-mobile-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "DM Sans", system-ui, sans-serif; }
+  .font-mobile-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-body); }
   .gold-line { background: linear-gradient(90deg, transparent, var(--accent), transparent); height: 1px; }
   .fade-in { animation: fadeIn 0.7s ease-out; }
   .slide-up { animation: slideUp 0.6s ease-out; }
@@ -308,8 +340,12 @@
     margin-top: 0;
     min-width: 640px;
     max-width: 90vw;
-    background: #F5EFE3;
-    border: 1px solid rgba(26,22,18,0.08);
+    /* Reads from the token, not a literal cream: the items inside use
+       var(--text-primary), which inverts to cream in dark mode. A hardcoded
+       background here made the whole mega-menu cream-on-cream — every
+       product name in it was invisible in dark mode. */
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     box-shadow: 0 16px 40px rgba(26,22,18,0.12), 0 4px 8px rgba(26,22,18,0.06);
     padding: 32px 36px;
     opacity: 0;
@@ -340,7 +376,9 @@
     font-size: 0.7rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(26,22,18,0.5);
+    /* Was rgba(26,22,18,0.5) — 3.3:1 on cream, under AA for 11px text, and
+       stuck at ink in dark mode. --text-muted is 5.3:1 and follows the theme. */
+    color: var(--text-muted);
     margin-bottom: 12px;
   }
   .shop-menu-item {
@@ -352,7 +390,9 @@
     transition: color 120ms ease, padding-left 120ms ease;
   }
   .shop-menu-item:hover {
-    color: var(--accent);
+    /* Hovering must not make the link harder to read: the bright gold is
+       2.8:1 on this panel, the deep gold 5.0:1. */
+    color: var(--accent-text);
     padding-left: 4px;
   }
   .shop-menu-item.placeholder {
@@ -527,8 +567,10 @@
     right: max(20px, env(safe-area-inset-right));
     bottom: calc(58px + 32px + max(20px, env(safe-area-inset-bottom)));
     width: min(340px, calc(100vw - 40px));
-    background: #F5EFE3;
-    border: 1px solid rgba(26,22,18,0.12);
+    /* Token, not a literal: the panel's copy inherits var(--text-primary),
+       which is cream in dark mode. Same trap the mega-menu fell into. */
+    background: var(--bg-page);
+    border: 1px solid var(--border-default);
     box-shadow: 0 16px 48px rgba(26,22,18,0.22), 0 4px 12px rgba(26,22,18,0.08);
     z-index: 41;
     transform-origin: bottom right;
@@ -545,8 +587,8 @@
     right: max(20px, env(safe-area-inset-right));
     bottom: calc(58px + 18px + max(20px, env(safe-area-inset-bottom)));
     width: min(280px, calc(100vw - 40px));
-    background: #F5EFE3;
-    border: 1px solid rgba(26,22,18,0.12);
+    background: var(--bg-page);
+    border: 1px solid var(--border-default);
     box-shadow: 0 12px 36px rgba(26,22,18,0.2), 0 3px 10px rgba(26,22,18,0.08);
     z-index: 41;
     transform-origin: bottom right;
@@ -560,9 +602,9 @@
     right: 22px;
     width: 12px;
     height: 12px;
-    background: #F5EFE3;
-    border-right: 1px solid rgba(26,22,18,0.12);
-    border-bottom: 1px solid rgba(26,22,18,0.12);
+    background: var(--bg-page);
+    border-right: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
     transform: rotate(45deg);
   }
   @keyframes textus-proactive-in {
@@ -1552,7 +1594,7 @@
     padding: 0 4px;
     border-radius: 9px;
     background: var(--accent);
-    color: var(--text-on-ink);
+    color: var(--text-on-accent);
     font-size: 0.6rem;
     font-weight: 600;
     line-height: 16px;
@@ -1664,7 +1706,7 @@
     border: 2px solid transparent;
     background: var(--bg-subtle, rgba(26, 22, 18, 0.05));
     color: var(--text-primary);
-    font-family: "DM Sans", sans-serif;
+    font-family: var(--font-body);
     font-size: 0.95rem;
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -2112,7 +2154,7 @@
   white-space: nowrap;
 }
 .alpha-marquee-track > span {
-  font-family: var(--font-display, "Fraunces", Georgia, serif);
+  font-family: var(--font-display);
   font-size: clamp(56px, 9vw, 104px);
   line-height: 1.3;
   letter-spacing: 0.18em;
@@ -2230,4 +2272,53 @@
      motion too. Only the decorative extras stand down. */
   .t3d-glare::after { display: none; }
   .t3d-pop { transform: none; }
+}
+
+/* ============================================================
+   CAPABILITY LADDER — html[data-tier] (SITE_OVERHAUL_HANDOFF.md 11.1)
+   ============================================================
+   src/lib/capability.ts stamps <html data-tier="full|lean|core">.
+   Nothing here touches layout: lean drops the decorative motion (the
+   theater rise-ins, the alphabet marquee, the specular glare and shine,
+   the stagger fade) and core additionally collapses every remaining
+   animation and transition to an instant cut. The prefers-reduced-motion
+   rules above keep working on their own; this is the same courtesy for
+   slow networks, low memory and dying batteries. */
+html[data-tier="lean"] .vt-rise,
+html[data-tier="core"] .vt-rise {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+}
+html[data-tier="lean"] .stagger-reveal,
+html[data-tier="core"] .stagger-reveal {
+  animation: none !important;
+}
+html[data-tier="lean"] .alpha-marquee,
+html[data-tier="lean"] .alpha-marquee *,
+html[data-tier="core"] .alpha-marquee,
+html[data-tier="core"] .alpha-marquee * {
+  animation: none !important;
+}
+html[data-tier="lean"] .alpha-marquee-curve,
+html[data-tier="core"] .alpha-marquee-curve {
+  transform: none;
+}
+html[data-tier="lean"] .t3d-glare::after,
+html[data-tier="lean"] .lg-shine::after,
+html[data-tier="core"] .t3d-glare::after,
+html[data-tier="core"] .lg-shine::after {
+  display: none;
+}
+html[data-tier="lean"] .t3d-pop,
+html[data-tier="core"] .t3d-pop {
+  transform: none;
+}
+html[data-tier="core"] { scroll-behavior: auto; }
+html[data-tier="core"] *,
+html[data-tier="core"] *::before,
+html[data-tier="core"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

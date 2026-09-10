@@ -62,7 +62,7 @@ export function MobilePageHeader({ title, subtitle, user, onAvatarTap, onBack })
         {subtitle && (
           <p
             className="text-xs tracking-[0.2em] uppercase mb-1"
-            style={{ color: "var(--accent)" }}
+            style={{ color: "var(--accent-text)" }}
           >
             {subtitle}
           </p>

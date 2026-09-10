@@ -28,6 +28,8 @@ import { CATALOG } from "../../data/catalog.js";
 import { JOURNAL_POSTS } from "../../data/journalPosts.js";
 import { Breadcrumbs } from "./Breadcrumbs.jsx";
 import { HelpDecidingSection } from "./HelpDecidingSection.jsx";
+import { ProductChooser } from "./ProductChooser.jsx";
+import { HowOrderingWorksScene } from "../home/HomeScenes.jsx";
 import { ArrowRight, Heart, Home, Sparkles } from "../icons.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
@@ -59,7 +61,7 @@ const FEATURED_PIECES = [
     slug: "full-alphabet-crib-blanket",
     eyebrow: "The heirloom",
     name: "The Full Alphabet Crib Blanket",
-    tagline: "Every letter of the Armenian alphabet, all thirty-six.",
+    tagline: "Every letter of the Armenian alphabet, all thirty-eight.",
     // Placeholder priced at $245, sold by commission — surface
     // the commission framing rather than a clickable "From" price.
     price: "By direct order · $245",
@@ -138,9 +140,15 @@ function CategoryCard({ category, onTap, onPrefetch }) {
         style={{ flex: "0 0 68%", borderRadius: 12, overflow: "hidden" }}
       >
         {image ? (
+          /* alt="" on purpose. The button around this card already
+             carries aria-label="Browse {label}" AND prints {label} as
+             visible text underneath, so a described image made a screen
+             reader say the category name three times over. Lighthouse
+             calls this `image-redundant-alt`; the picture is decoration
+             here, and the control it sits in is what is named. */
           <img
             src={image}
-            alt={label}
+            alt=""
             loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }}
           />
@@ -656,45 +664,6 @@ function DesktopCategoryCard({ category, index, onTap, onPrefetch }) {
   );
 }
 
-/* The Embroidery Studio banner — the doorway from the shop into the
-   live-3D studio (/embroidery/, the static loadout app). Deliberately
-   styled in the studio's own dark-stage language so the transition
-   reads as "stepping backstage." A real <a> — the studio is a static
-   page outside the Next router. */
-function StudioBanner() {
-  const t = useT();
-  return (
-    <section className="max-w-6xl mx-auto px-6 lg:px-12 pb-16 lg:pb-24">
-      <a
-        href="/embroidery/"
-        className="block overflow-hidden"
-        style={{
-          borderRadius: 24,
-          background: "radial-gradient(ellipse 90% 130% at 50% 0%, #232838 0%, #14161c 62%)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <div className="px-8 py-10 lg:px-14 lg:py-14 text-center">
-          <p className="text-[0.6rem] tracking-[0.3em] uppercase mb-3" style={{ color: "#d4a94f" }}>
-            {t("shop.studioEyebrow")}
-          </p>
-          <h2 className="font-display text-2xl lg:text-4xl mb-3 leading-tight" style={{ color: "#eceef4", fontWeight: 400, letterSpacing: "-0.01em" }}>
-            {t("shop.studioTitle")}
-          </h2>
-          <p className="text-sm lg:text-base mx-auto max-w-xl leading-relaxed mb-7" style={{ color: "#9aa1b0" }}>
-            {t("shop.studioBody")}
-          </p>
-          <span
-            className="inline-block px-7 py-3 text-sm tracking-wide"
-            style={{ background: "#d4a94f", color: "#161207", borderRadius: 999, fontWeight: 600 }}
-          >
-            {t("shop.studioCta")} →
-          </span>
-        </div>
-      </a>
-    </section>
-  );
-}
 
 export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigateProduct, onNavigateJournalPost, onNavigateJournal, onPrefetch }) {
   const t = useT();
@@ -911,6 +880,15 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
           </div>
         </section>
 
+        {/* Three questions, one recommendation. Above the contact block
+            on purpose: someone who can be helped by answering three
+            questions should not have to phone first. */}
+        <ProductChooser
+          className="mb-10"
+          onNavigateProduct={onNavigateProduct}
+          onPrefetch={onPrefetch}
+        />
+
         {/* "Need help deciding?" — the Specialist-contact block:
             placeholder photo, reassurance line, and one-tap Text /
             Call / Email circles. (Video call held until we pick a
@@ -948,7 +926,17 @@ export function ShopIndexView({ onNavigateHome, onNavigateCategory, onNavigatePr
         </div>
       </div>
 
-      <StudioBanner />
+      {/* Desktop gets the same three questions, and the ordering strip
+          that used to be the studio banner's slot. Both are shared with
+          the home page rather than written twice — a customer who read
+          the promise there should not find a different one here. */}
+      <div className="hidden lg:block">
+        <div className="max-w-6xl mx-auto px-6 lg:px-12 pb-16">
+          <ProductChooser onNavigateProduct={onNavigateProduct} onPrefetch={onPrefetch} />
+        </div>
+        <HowOrderingWorksScene />
+      </div>
+
     </div>
   );
 }

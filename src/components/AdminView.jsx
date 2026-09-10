@@ -18,6 +18,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { db } from "../lib/db.js";
 import { Skeleton } from "./Skeleton.jsx";
 import { AdminOrderRow } from "./AdminOrderRow.jsx";
+import { AdminReviewsPanel } from "./AdminReviewsPanel.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import { ADMIN_FILTERS } from "./adminStatusLabels.js";
 
@@ -221,7 +222,7 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
 
       <div className="flex items-end justify-between mb-6 flex-wrap gap-4">
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent)" }}>Admin</p>
+          <p className="text-xs tracking-[0.3em] uppercase mb-2" style={{ color: "var(--accent-text)" }}>Admin</p>
           <h1 className="font-display text-4xl lg:text-5xl" style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Orders.</h1>
         </div>
         <div className="flex gap-1.5 items-center flex-wrap">
@@ -275,13 +276,18 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
         })}
       </div>
 
+      {/* Reviews waiting to be read. review-submit is a public write,
+          and it is only safe to leave public because nothing it writes
+          appears anywhere until it has been through here. */}
+      <AdminReviewsPanel />
+
       {/* Waitlists panel — one row per product with at least one signup.
           Only renders when there's something to show; stays out of the
           way otherwise so Lusik's main view is still orders. */}
       {Array.isArray(waitlists) && waitlists.length > 0 && (
         <div className="lg-panel lg-panel-gold mb-8 p-5">
           <div className="flex items-baseline justify-between mb-3">
-            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent)", fontWeight: 600 }}>Waitlists</p>
+            <p className="text-[0.6rem] tracking-[0.3em] uppercase" style={{ color: "var(--accent-text)", fontWeight: 600 }}>Waitlists</p>
             <p className="text-[0.65rem] opacity-70 italic">Click Notify when a product goes live.</p>
           </div>
           <div className="space-y-2">

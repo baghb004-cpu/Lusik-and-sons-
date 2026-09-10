@@ -7,7 +7,17 @@
 #      no extra install needed)
 #   3. Installs Playwright's Chromium binary (cached)
 #   4. Runs the E2E smoke tests against a production Next build
-#      (playwright.config.mjs webServer: next build && next start)
+#      (playwright.config.mjs webServer: next build && next start).
+#      This includes tests/e2e/contrast.spec.mjs, which walks every
+#      visible text node on ten routes in both themes and fails on a
+#      WCAG AA miss; the token-level half of that gate rides along in
+#      the unit job. See docs/design-system.md.
+#   5. Runs axe over fifteen routes on both viewports and fails on any
+#      serious or critical violation. It is its own job rather than
+#      part of step 4 because thirty scans add about eight minutes,
+#      and a reviewer should not wait for them in series.
+#   6. Runs the visual-regression baselines (tests/visual) the same way
+#      and uploads the diff images when a page changed unexpectedly
 #
 # If either step fails the workflow fails, which blocks merging
 # the PR (assuming branch protection is configured to require
@@ -67,5 +77,57 @@ jobs:
         if: failure()
         with:
           name: playwright-traces
+          path: test-results/
+          retention-days: 7
+
+  a11y:
+    name: Accessibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:a11y
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: a11y-traces
+          path: test-results/
+          retention-days: 7
+
+  visual:
+    name: Visual baselines
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:visual
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: visual-diffs
           path: test-results/
           retention-days: 7

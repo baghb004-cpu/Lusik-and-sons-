@@ -29,6 +29,7 @@ const ADMIN_FUNCTIONS = [
   { name: "admin-order-photo",     path: "../../admin-order-photo.mjs",     method: "POST" },
   { name: "admin-waitlist",        path: "../../admin-waitlist.mjs",        method: "GET" },
   { name: "admin-waitlist-notify", path: "../../admin-waitlist-notify.mjs", method: "POST" },
+  { name: "admin-order-milestone", path: "../../admin-order-milestone.mjs", method: "POST" },
 ];
 
 const savedEnv = {};
