@@ -52,10 +52,13 @@ async function loadStitchModules(page) {
 
   await page.evaluate(async () => {
     const mod = await import("/__loomtest/rasterize.js");
-    try {
-      await document.fonts.load('600 40px "Fraunces"');
-      await document.fonts.ready;
-    } catch { /* falls back to the serif stack; the test still asserts ink */ }
+    // The real thing the shipped code waits for, asked for by name in
+    // both scripts — the family is split into subset files by
+    // unicode-range, so a load with no text argument fetches the Latin
+    // one and leaves the Armenian one on the server.
+    try { await mod.loadStitchFont(); } catch { /* asserted below */ }
+    try { await document.fonts.load('600 40px "Fraunces"', "ANI"); } catch { /* only used by the comparison test */ }
+    try { await document.fonts.ready; } catch { /* nothing to wait for */ }
     window.__loomRaster = mod;
   });
 }
@@ -210,5 +213,80 @@ test.describe("Loom glyph rasteriser", () => {
     expect(out.empty).toBeNull();
     // Word gaps on the Hye Em Yes bib are laid out, never stitched.
     expect(out.lowerSpace).toBeNull();
+  });
+});
+
+// ── the face the charts actually come from ─────────────────
+// Two separate failures live here, and neither is visible by reading the
+// rasteriser.
+//
+// The first is coverage: Fraunces has NO Armenian glyphs — its
+// unicode-ranges stop at latin-ext — so for the whole of this shop's
+// alphabet the browser substituted whatever the device had. Different
+// letterforms on a Mac, on Windows and on Android; empty boxes on a
+// machine with no Armenian font at all.
+//
+// The second is weight. Fraunces is a high-contrast display cut. A chart
+// keeps a cell whose average coverage clears 0.35 over a 13x15 grid, and
+// its hairlines never get there: "A" charted as a bare diagonal with no
+// crossbar and no left leg, and the digits came out in fragments. Every
+// existing test above passed the whole time — the glyph had plenty of
+// ink, it just was not the letter any more.
+
+test.describe("Loom charting face", () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(!["desktop-chromium", "mobile-chromium"].includes(testInfo.project.name),
+      "the throttled tier projects do not exercise the engine");
+  });
+
+  test("letters with a horizontal stroke keep it", async ({ page }) => {
+    await page.goto("/");
+    await loadStitchModules(page);
+
+    const runs = await page.evaluate(({ chars }) => {
+      const { chartForChar } = window.__loomRaster;
+      const widest = (rows) => Math.max(...rows.map((row) =>
+        Math.max(0, ...row.split(".").map((run) => run.length))));
+      const out = {};
+      for (const ch of chars) {
+        const chart = chartForChar(ch);
+        out[ch] = chart ? widest(chart.rows) : 0;
+      }
+      return out;
+      // "A" crossbar, "E"/"Z"/"2" bars, "H" bar, "T" arm. Under the
+      // pinned face each of these runs 5 cells or more; under Fraunces
+      // the widest run in an "A" is three, which is the stem, not a bar.
+    }, { chars: ["A", "E", "H", "T", "Z", "2"] });
+
+    for (const [ch, run] of Object.entries(runs)) {
+      expect(run, `"${ch}" has no horizontal stroke wider than ${run} cells — the chart is a skeleton, not a letter`)
+        .toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  test("the shipped stack charts from the pinned face, not the display face", async ({ page }) => {
+    await page.goto("/");
+    await loadStitchModules(page);
+
+    const same = await page.evaluate(({ chars }) => {
+      const { chartForChar, STITCH_FONT_STACK } = window.__loomRaster;
+      const rows = (ch, fontFamily) => (chartForChar(ch, fontFamily ? { fontFamily } : {})?.rows ?? []).join("|");
+      const out = { stack: STITCH_FONT_STACK, matchesPinned: [], matchesFraunces: [] };
+      for (const ch of chars) {
+        const shipped = rows(ch);
+        if (shipped === rows(ch, '"Noto Serif Armenian", Georgia, serif')) out.matchesPinned.push(ch);
+        if (shipped === rows(ch, '"Fraunces", Georgia, serif')) out.matchesFraunces.push(ch);
+      }
+      return out;
+    }, { chars: ["A", "N", "2", "Ա", "Բ"] });
+
+    expect(same.matchesPinned, `the default stack (${same.stack}) did not chart these the way the pinned face does`)
+      .toEqual(["A", "N", "2", "Ա", "Բ"]);
+    // Armenian is allowed to coincide — Fraunces has none, so both stacks
+    // reach the same next face for it. Latin coinciding would mean the
+    // display cut is back in front.
+    expect(same.matchesFraunces.filter((ch) => /[A-Z0-9]/.test(ch)),
+      "Latin charts came out identical to Fraunces, so the display face is charting stitches again")
+      .toEqual([]);
   });
 });

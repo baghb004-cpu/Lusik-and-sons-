@@ -22,6 +22,7 @@ import { createBariRig, type BariDesign } from "./bariAkhorzhak";
 import { createCribBlanketRig, type CribBlanketDesign } from "./cribBlanket";
 import { ANUSHIG_PAIR, DAYS_OF_WEEK } from "../../data/setBibs.js";
 import { planDesignFor } from "../design";
+import { clearChartCache, loadStitchFont } from "../stitch/rasterize.js";
 import type { BibDesign, HyeEmYesDesign, LoomDesign } from "../types";
 
 /** Every design shape a rig can be handed. */
@@ -74,16 +75,38 @@ function isBlanketDesign(design: AnyDesign): design is LoomDesign {
 export function createRigFor(productKey: string, opts: RigOptions): MountedRig | null {
   if (productKey === "blanket-classic") {
     const rig = createBlanketRig({ textureSize: opts.textureSize, clothColor: opts.clothColor });
+    let last: LoomDesign | null = null;
+    let restitch: ((total: number) => void) | undefined;
+    let disposed = false;
+
+    const plan = (design: LoomDesign) => {
+      const planned = planDesignFor(design).stitches;
+      rig.setStitches(planned);
+      return planned.length;
+    };
+
+    // Every other rig already did this; this one did not, and it is the
+    // product the whole shop is named for. A canvas draws in the fallback
+    // face without waiting and without complaining, and chartForChar
+    // CACHES what it drew — so an alphabet charted before the webfont
+    // arrived stayed in the fallback for the life of the page. Re-plan
+    // once the real face lands.
+    loadStitchFont().then(() => {
+      if (disposed || !last) return;
+      clearChartCache();
+      restitch?.(plan(last));
+    }).catch(() => { /* the fallback face still draws the alphabet */ });
+
     return {
       group: rig.group,
       apply: (design) => {
         if (!isBlanketDesign(design)) return 0;
-        const planned = planDesignFor(design).stitches;
-        rig.setStitches(planned);
-        return planned.length;
+        last = design;
+        return plan(design);
       },
       setRevealed: rig.setRevealed,
-      dispose: rig.dispose,
+      onRestitch: (cb) => { restitch = cb; },
+      dispose: () => { disposed = true; rig.dispose(); },
     };
   }
 

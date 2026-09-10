@@ -63,6 +63,58 @@ function surface(w, h) {
 }
 
 /**
+ * The font stack every stitch chart is drawn from.
+ *
+ * NOT the site's display face, and deliberately so. A chart keeps a cell
+ * whose average coverage clears the threshold over a 13x15 grid, and
+ * Fraunces is a high-contrast display serif: at that resolution its
+ * hairlines never reach the threshold. "A" charted as a bare diagonal
+ * with no crossbar and no left leg; the digits came out in fragments.
+ * Noto Serif Armenian is even enough in weight to survive the grid.
+ *
+ * It is also the only face here with Armenian coverage. Fraunces has
+ * none at all, so before it was self-hosted the shape of every Armenian
+ * letter this shop stitches came from whatever the visitor's operating
+ * system fell back to: one letterform on a Mac, another on Windows,
+ * another on Android, and on a machine with no Armenian font, empty
+ * boxes charted as stitches. The letters are the product. They cannot be
+ * a property of the customer's laptop.
+ *
+ * One family for both scripts also means a child's Latin name and the
+ * Armenian alphabet beside it are worked in the same hand.
+ *
+ * A canvas cannot read a CSS custom property, so this names the family
+ * outright. The @font-face rules it needs are in src/styles/fonts.css.
+ */
+export const STITCH_FONT_STACK = '"Noto Serif Armenian", Georgia, serif';
+
+/**
+ * Wait for the real charting face to arrive, then resolve.
+ *
+ * A canvas does not wait for a webfont: it draws in the fallback and
+ * says nothing. So every rig plans once immediately and re-plans when
+ * this resolves.
+ *
+ * Both scripts are asked for by name because the family is split into
+ * subset files by unicode-range, and `fonts.load()` with no text argument
+ * probes the string "BESbswy" — which would fetch the Latin file and
+ * leave the Armenian one, the one this shop is actually built on, still
+ * on the server. Loading Fraunces here, which is what these rigs used to
+ * do, waits for a face that draws none of the stitches.
+ *
+ * @returns {Promise<void>}
+ */
+export function loadStitchFont() {
+  const fonts = typeof document !== "undefined" ? document.fonts : undefined;
+  if (!fonts?.load) return Promise.resolve();
+  const font = `600 48px ${STITCH_FONT_STACK}`;
+  return Promise.all([
+    fonts.load(font, "\u0531\u0532\u0533"),
+    fonts.load(font, "AN 12"),
+  ]).then(() => undefined);
+}
+
+/**
  * @typedef {object} RasterOptions
  * @property {number} [w] chart width in cells
  * @property {number} [h] chart height in cells
@@ -92,7 +144,7 @@ function surface(w, h) {
 export function chartForChar(char, opts = {}) {
   const w = opts.w ?? CAPITAL_W;
   const h = opts.h ?? CAPITAL_H;
-  const family = opts.fontFamily ?? '"Fraunces", Georgia, serif';
+  const family = opts.fontFamily ?? STITCH_FONT_STACK;
   const weight = opts.fontWeight ?? 600;
   const key = `${char}|${w}x${h}|${weight} ${family}|${opts.threshold ?? ""}`;
   const hit = cache.get(key);
@@ -250,7 +302,7 @@ export function lowercaseChartForChar(char, opts = {}) {
   const w = opts.w ?? LOWER_W;
   const h = opts.h ?? LOWER_H;
   const baseline = opts.baseline ?? LOWER_BASELINE;
-  const family = opts.fontFamily ?? '"Fraunces", Georgia, serif';
+  const family = opts.fontFamily ?? STITCH_FONT_STACK;
   const weight = opts.fontWeight ?? 600;
   const key = `lower|${char}|${w}x${h}@${baseline}|${weight} ${family}|${opts.threshold ?? ""}`;
   const hit = cache.get(key);

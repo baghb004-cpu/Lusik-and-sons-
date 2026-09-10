@@ -20,7 +20,7 @@ import { Group } from "three";
 import { createStitchMesh, type PlannedStitch, type StitchMeshHandle } from "../stitch/mesh";
 import { CAP_HEIGHT, CAP_R, createKnitCap } from "./knitCap";
 import { planCapFlag, planHyeEmYes } from "../design";
-import { clearChartCache } from "../stitch/rasterize.js";
+import { clearChartCache, loadStitchFont } from "../stitch/rasterize.js";
 import { createBibBody, faceZ, HALF_W, SURFACE_Y, TOP, BOTTOM, type BibBody } from "./bibBody";
 import type { HyeEmYesDesign } from "../types";
 
@@ -191,9 +191,8 @@ export function createHyeEmYesRig(opts: HyeEmYesRigOptions = {}): HyeEmYesRig {
   // A quarter of the cap's width, as in the photograph: a small flag
   // pinned to the brim, not a banner wrapped round it.
   flagCount = cap.stitchCuff(planCapFlag().stitches, 0.5);
-  const fonts = typeof document !== "undefined" ? document.fonts : undefined;
   let disposed = false;
-  fonts?.load?.('600 48px "Fraunces"').then(() => {
+  loadStitchFont().then(() => {
     if (disposed) return;
     // The rasteriser caches by character AND caches the one font size the
     // lowercase alphabet is drawn at; both have to go, or the real face is

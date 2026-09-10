@@ -20,7 +20,7 @@ import {
 import { clothMaps } from "../materials/cloth";
 import { createStitchMesh, type StitchMeshHandle } from "../stitch/mesh";
 import { planCribBlanket, planStitchedLines } from "../design";
-import { clearChartCache } from "../stitch/rasterize.js";
+import { clearChartCache, loadStitchFont } from "../stitch/rasterize.js";
 
 export interface CribBlanketDesign {
   /** The colourway swatch, as the product JSON stores it. */
@@ -222,9 +222,8 @@ export function createCribBlanketRig(opts: CribBlanketRigOptions = {}): CribBlan
 
   restitch();
 
-  const fonts = typeof document !== "undefined" ? document.fonts : undefined;
   let disposed = false;
-  fonts?.load?.('600 48px "Fraunces"').then(() => {
+  loadStitchFont().then(() => {
     if (disposed) return;
     clearChartCache();
     onRestitch?.(restitch());

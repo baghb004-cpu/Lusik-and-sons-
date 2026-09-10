@@ -21,7 +21,7 @@ import { Group } from "three";
 import { BARI_AKHORZHAK, pieceColors } from "../../data/setBibs.js";
 import { boundsOf } from "./arrange.js";
 import { planBlessing, planCapName } from "../design";
-import { clearChartCache } from "../stitch/rasterize.js";
+import { clearChartCache, loadStitchFont } from "../stitch/rasterize.js";
 import { createStitchedBib } from "./stitchedBib";
 import { createBurpCloth, BURP_HALF_D, BURP_HALF_W } from "./burpCloth";
 import { CAP_R, createKnitCap } from "./knitCap";
@@ -191,9 +191,8 @@ export function createBariRig(opts: BariRigOptions = {}): BariRig {
   restitch();
   refit();
 
-  const fonts = typeof document !== "undefined" ? document.fonts : undefined;
   let disposed = false;
-  fonts?.load?.('600 48px "Fraunces"').then(() => {
+  loadStitchFont().then(() => {
     if (disposed) return;
     clearChartCache();
     restitch();

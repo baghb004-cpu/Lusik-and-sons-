@@ -65,7 +65,7 @@ const PRODUCTS = [
 function bibHarness(product) {
   const { design } = product;
   return `<!doctype html><meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Allura&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fonts.css">
 <style>html,body{margin:0;background:transparent}canvas{display:block}</style>
 <canvas id="c" width="${product.width}" height="${product.height}"></canvas>
 <script type="importmap">{"imports":{"three":"/three/three.module.js"}}</script>
@@ -83,7 +83,7 @@ window.__done = (async () => {
   // satisfies the query. The only honest test is to measure — a real
   // script face and the generic fallback do not produce the same advance
   // width for the same string.
-  try { await document.fonts.load('400 48px "Allura"'); await document.fonts.ready; } catch {}
+  try { await document.fonts.load('400 48px "Allura"', "Anahit"); await document.fonts.ready; } catch {}
   ${FONT_GUARD}
   __requireFont("Allura", "Anahit");
 
@@ -172,7 +172,7 @@ function harness(product) {
   if (product.rig === "bib") return bibHarness(product);
   const { design } = product;
   return `<!doctype html><meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fonts.css">
 <style>html,body{margin:0;background:transparent}canvas{display:block}</style>
 <canvas id="c" width="${product.width}" height="${product.height}"></canvas>
 <script type="importmap">{"imports":{"three":"/three/three.module.js"}}</script>
@@ -184,12 +184,21 @@ window.__done = (async () => {
   const { createBlanketRig } = await import("/rigs/alphabetBlanket.js");
   const { makeChartResolver } = await import("/stitch/rasterize.js");
   const { planDesign } = await import("/stitch/planner.js");
-  try { await document.fonts.load('600 40px "Fraunces"'); await document.fonts.ready; } catch {}
+  try {
+    await document.fonts.load('600 40px "Noto Serif Armenian"', "ANI 2026");
+    await document.fonts.load('600 40px "Noto Serif Armenian"', "\u0531\u0532\u0533");
+    await document.fonts.ready;
+  } catch {}
   ${FONT_GUARD}
-  // The letters are rasterised from the display face. A fallback serif
-  // still draws correct Armenian, but it is not the site's typeface, and
-  // a poster baked in the wrong one would not match the live stage.
-  __requireFont("Fraunces", "\u0531\u0532\u0533");
+  // One face draws every stitch on this poster, Latin and Armenian alike
+  // — see STITCH_FONT_STACK. Both scripts are checked because they live
+  // in different subset files and either can be missing on its own.
+  //
+  // This used to require "Fraunces" measured on Armenian text, which is a
+  // check that can never pass: Fraunces has no Armenian coverage, so the
+  // measurement always matched the fallback and the run always failed.
+  __requireFont("Noto Serif Armenian", "ANI 2026");
+  __requireFont("Noto Serif Armenian", "\u0531\u0532\u0533");
 
   const W = 13, H = 15;
   const chartFor = makeChartResolver({});
@@ -250,11 +259,35 @@ async function main() {
 
   const jsRoot = join(WORK, "js", "loom");
   const pages = new Map();
+  // The site self-hosts its faces, so the harness serves the repo's own
+  // fonts.css and woff2 files. Nothing here touches the network: a
+  // generator that needs the internet is one that fails differently on
+  // every machine, and its font guard would then report a missing
+  // typeface when the real problem was a missing route.
+  const FONTS_CSS = join(ROOT, "src", "styles", "fonts.css");
+  const FONTS_DIR = join(ROOT, "public", "fonts");
+
   const server = createServer((req, res) => {
     const path = decodeURIComponent(req.url.split("?")[0]);
     if (pages.has(path)) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       res.end(pages.get(path));
+      return;
+    }
+    if (path === "/fonts.css") {
+      res.writeHead(200, { "content-type": "text/css; charset=utf-8" });
+      res.end(readFileSync(FONTS_CSS));
+      return;
+    }
+    if (path.startsWith("/fonts/")) {
+      // basename only — the harness is local, but a served directory
+      // still has no business honouring "..".
+      const name = path.slice("/fonts/".length);
+      if (name.includes("/") || name.includes("..")) { res.writeHead(400); res.end(); return; }
+      try {
+        res.writeHead(200, { "content-type": "font/woff2" });
+        res.end(readFileSync(join(FONTS_DIR, name)));
+      } catch { res.writeHead(404); res.end(); }
       return;
     }
     // src/loom imports TypeScript modules without an extension (the repo's

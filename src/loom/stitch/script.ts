@@ -36,6 +36,17 @@ export interface ScriptDecalOptions {
   fontWeight?: number | string;
 }
 
+/**
+ * The face the machine-embroidered name is drawn in.
+ *
+ * Allura is the script, and it is Latin-only — an Armenian name typed
+ * into this bib used to fall through to whatever the device resolved
+ * `cursive` to. There is no Armenian formal-script webfont to pair with
+ * Allura, so the serif takes those letters: a real Armenian letterform in
+ * the wrong style beats a correct style drawing empty boxes.
+ */
+export const SCRIPT_FONT_STACK = '"Allura", "Noto Serif Armenian", cursive';
+
 function surface(w: number, h: number): CanvasRenderingContext2D {
   const canvas = document.createElement("canvas");
   canvas.width = w;
@@ -70,7 +81,7 @@ function fitText(
 
 export function scriptDecal({
   text, color, width = 1024, height = 512,
-  fontFamily = '"Allura", cursive', fontWeight = 400,
+  fontFamily = SCRIPT_FONT_STACK, fontWeight = 400,
 }: ScriptDecalOptions): ScriptDecal {
   const ctx = surface(width, height);
   ctx.clearRect(0, 0, width, height);

@@ -13,7 +13,7 @@
 
 import { Group, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
 import { createBibBody, faceZ, HALF_W, SURFACE_Y, type BibBody } from "./bibBody";
-import { scriptDecal, type ScriptDecal } from "../stitch/script";
+import { SCRIPT_FONT_STACK, scriptDecal, type ScriptDecal } from "../stitch/script";
 import type { BibDesign } from "../types";
 
 export interface BibRigOptions {
@@ -95,7 +95,13 @@ export function createBibRig(opts: BibRigOptions = {}): BibRig {
     // exists, which is exactly what happened while developing this.
     const fonts = typeof document !== "undefined" ? document.fonts : undefined;
     if (!fonts?.load) return;
-    fonts.load('400 48px "Allura"').then(() => {
+    Promise.all([
+      fonts.load(`400 48px ${SCRIPT_FONT_STACK}`, "BESbswy"),
+      // No text argument means the probe string "BESbswy", which is Latin
+      // — so an Armenian name used to wait on a file that has none of its
+      // letters in it and redraw before its own face arrived.
+      fonts.load(`400 48px ${SCRIPT_FONT_STACK}`, "\u0531\u0532\u0533"),
+    ]).then(() => {
       if (disposed || lastDesign !== design) return;
       draw(design);
     }).catch(() => { /* no Allura: the fallback face still reads as a name */ });

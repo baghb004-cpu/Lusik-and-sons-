@@ -20,7 +20,7 @@
 import { Group } from "three";
 import { pieceColors } from "../../data/setBibs.js";
 import { fitScale, gridPlacements } from "./arrange.js";
-import { clearChartCache } from "../stitch/rasterize.js";
+import { clearChartCache, loadStitchFont } from "../stitch/rasterize.js";
 import { createStitchedBib, type StitchedBib } from "./stitchedBib";
 import { BOTTOM, HALF_W, TOP } from "./bibBody";
 import type { MOTIFS } from "../stitch/chart.js";
@@ -164,9 +164,8 @@ export function createBibSetRig(opts: BibSetRigOptions): BibSetRig {
 
   // The letterforms come from a webfont, so the whole set is planned once
   // in the fallback face and again when the real one lands.
-  const fonts = typeof document !== "undefined" ? document.fonts : undefined;
   let disposed = false;
-  fonts?.load?.('600 48px "Fraunces"').then(() => {
+  loadStitchFont().then(() => {
     if (disposed) return;
     clearChartCache();
     for (const bib of bibs) bib.restitch();

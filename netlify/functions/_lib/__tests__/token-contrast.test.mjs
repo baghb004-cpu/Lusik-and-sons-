@@ -95,10 +95,17 @@ for (const [name, set] of Object.entries(ATMOSPHERES)) {
   });
 }
 
-test("both atmospheres define the same token names", () => {
-  const l = Object.keys(ATMOSPHERES.light).sort();
-  const d = Object.keys(ATMOSPHERES.dark).sort();
-  const missingInDark = l.filter((k) => !d.includes(k) && k !== "color-scheme");
+test("both atmospheres define the same colour tokens", () => {
+  // Only the COLOUR tokens. --font-display and friends live in the same
+  // :root block because that is where the tokens are, but a typeface is
+  // not a property of the atmosphere: the Armenian face has to be
+  // reachable in dark mode and in light mode alike, and repeating the
+  // stack under [data-theme="dark"] would only create a second copy to
+  // forget to update.
+  const isColour = (name) => !name.startsWith("--font-") && name !== "color-scheme";
+  const l = Object.keys(ATMOSPHERES.light).filter(isColour).sort();
+  const d = Object.keys(ATMOSPHERES.dark);
+  const missingInDark = l.filter((k) => !d.includes(k));
   // A token defined only in light silently keeps its light value in dark —
   // which is how the mega-menu ended up cream-on-cream.
   assert.deepEqual(missingInDark, [], `tokens missing a dark value: ${missingInDark.join(", ")}`);
