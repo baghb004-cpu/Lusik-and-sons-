@@ -448,7 +448,7 @@ export const TRANSLATIONS = {
       newestTagline: "Two Armenian meal blessings, one matched set.",
       featured: [
         { eyebrow: "Lusik's signature", name: "The Armenian Alphabet Blanket", tagline: "Ա Բ Գ, hand cross-stitched corner to corner.", price: "From $65" },
-        { eyebrow: "The heirloom", name: "The Full Alphabet Crib Blanket", tagline: "Every letter of the Armenian alphabet, all thirty-six.", price: "By direct order · $245" },
+        { eyebrow: "The heirloom", name: "The Full Alphabet Crib Blanket", tagline: "Every letter of the Armenian alphabet, all thirty-eight.", price: "By direct order · $245" },
         { eyebrow: "For every day", name: "The Custom Name Bib", tagline: "Your child's name, in Armenian or English.", price: "From $22" },
       ],
       difference: [
