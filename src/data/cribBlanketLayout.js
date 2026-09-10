@@ -34,11 +34,11 @@ export const CRIB_ROWS = 7;
 /**
  * The modern Armenian alphabet, Ա to Ֆ, in order. Thirty-eight letters.
  *
- * The product description says "every letter from Ա to Ք", which is the
- * thirty-six of the classical alphabet; Օ and Ֆ were added later. The
- * photographs appear to include them, and thirty-eight letters is exactly
- * what fills this grid once the four corner squares are spoken for. Worth
- * Lusik confirming which she works.
+ * Confirmed September 2026: the blanket carries all thirty-eight,
+ * including Օ and Ֆ, which the classical Ա to Ք count of thirty-six
+ * leaves out. Thirty-eight is also exactly what fills this grid once the
+ * four corner squares are spoken for. The product copy was corrected to
+ * match at the same time.
  */
 export const ARMENIAN_ALPHABET = Object.freeze(
   Array.from({ length: 38 }, (_, i) => String.fromCodePoint(0x0531 + i)),
