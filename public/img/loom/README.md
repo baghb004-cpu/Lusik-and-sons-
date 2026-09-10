@@ -26,3 +26,13 @@ cannot run the 3D.
 The blanket is guarded the same way. A fallback serif still draws correct
 Armenian letterforms, but it is not the site's typeface, and a poster
 should match the stage it stands in for.
+
+## What does NOT get a generated poster
+
+The Hye Em Yes bib. It is photo-led — there are five photographs of the
+real piece, including the one this rig was modelled from — and its stage
+uses the product's own cover photograph as its poster. A photograph of the
+actual hand-stitched bib is both a better fallback and a better LCP image
+than a render of it, and it exists today rather than after someone runs a
+script on another machine. Generated posters are for pieces whose fallback
+is not a photograph.

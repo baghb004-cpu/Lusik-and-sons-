@@ -551,7 +551,11 @@ rendering projects. Later PRs (photos, video, 3D, fonts, storage) read
 as the customer types. It is the centrepiece of `SITE_OVERHAUL_HANDOFF.md`
 Phase 1. Live on the Armenian Alphabet Blanket's configurator; dials in
 `CONFIG.LOOM` (`ENABLED` is a kill switch, `PRODUCTS` lists which product
-keys mount a stage).
+keys mount a stage). Live on the Armenian Alphabet Blanket, the Custom
+Name Bib, and the Hye Em Yes bib (both its SKUs — the cap is a property of
+the design, not a second rig). The Hye Em Yes stage is desktop-only: on
+phones that product opens in the immersive sheet, where the photographs
+are the backdrop.
 
 **Reaching it.** Only ever through `next/dynamic` — `src/loom/index.ts` is
 the single entry point. A static import folds three.js into that route's
@@ -583,6 +587,31 @@ and the woven motifs comes from `src/data/blanketLayout.js`, used by both
 `BlanketLayoutPreview` and the Loom. Two renderers each deciding would
 drift, and the customer would configure against one arrangement and be
 shown another. Change placement there, never in a renderer.
+
+**Placement is shared, and so is the cloth.** Which cell holds which
+letter, the name, the year and the woven motifs comes from
+`src/data/blanketLayout.js`, used by both `BlanketLayoutPreview` and the
+Loom; the bib's outline comes from `src/loom/rigs/bibBody.ts`, used by
+both bib rigs. Two renderers each deciding would drift, and the customer
+would configure against one arrangement and be shown another.
+
+**Capitals and lowercase are charted differently.** Capitals share a band,
+so each is centred in its own 13x15 cube. Lowercase does not: հ rises, ղ
+drops, ա sits between, and centring each in its own box makes a word bob
+instead of sit on a line. `lowercaseChartForChar` draws every letter in a
+family at ONE measured size against a fixed baseline row (`LOWER_*` in
+`chart.js`) and trims only sideways, so letters keep their own widths and
+the planner spaces them proportionally. Anything worked ON a piece sits at
+that rig's surface constant, which must clear the extrusion's depth plus
+bevel — below it the stitching is inside the cloth and simply invisible.
+
+**A rig can restitch itself.** The letterforms come out of a webfont, so a
+piece is planned once in the fallback face and again when the real one
+lands. `MountedRig.onRestitch` reports the new stitch total; without it
+the stage's reveal keeps counting toward the old one and the piece stays
+half-worked. For the same reason the reveal is driven by elapsed clock
+time, never by accumulated frame deltas — those are clamped, so on a
+software renderer a 1.4 second stitch-in used to take about thirty.
 
 **Colour is pinned.** sRGB out, tone mapping off. The DMC hexes appear in
 the 2D preview, the cart thumbnail and the printed brochure; a filmic

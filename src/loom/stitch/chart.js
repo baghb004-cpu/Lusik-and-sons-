@@ -26,6 +26,35 @@
 export const CAPITAL_W = 13;
 export const CAPITAL_H = 15;
 
+// ── Lowercase ────────────────────────────────────────────────
+// Lowercase Armenian cannot use the capital box. Capitals all occupy the
+// same band, so centring each one in its own cube lines them up; every
+// letter on the alphabet blanket is worked that way. Lowercase does not
+// work like that. հ, լ and թ rise above the x-height; ղ, ք, փ, ց and ջ
+// drop below the baseline; ա and ո sit entirely between. Centring each
+// glyph in its own box would put every one of those in the middle of the
+// band, and the word would read as a row of letters bobbing up and down
+// instead of a word sitting on a line.
+//
+// So a lowercase chart is a TALLER box with a fixed baseline row, and
+// every glyph is drawn against that shared baseline rather than centred.
+// LOWER_BASELINE is the row the letters sit ON: rows above it hold the
+// x-height and the ascenders, the rows below it hold the descenders.
+// Because all lowercase charts share one height and one baseline row,
+// the planner can go on centring the BOX vertically in a slot and the
+// letters still line up — the alignment lives in the chart, not the
+// layout.
+//
+// The box is deliberately generous on width and each glyph is trimmed
+// back to its own ink (trimChartX), so ի does not occupy the same width
+// as ղ. Generous matters: the size is chosen to fit the box VERTICALLY,
+// so a wide letter can still overrun it sideways and be clipped. ա came
+// out exactly 13 cells wide against a 13-cell box, which is what a
+// clipped letter looks like from the outside.
+export const LOWER_W = 20;
+export const LOWER_H = 19;
+export const LOWER_BASELINE = 13;
+
 export const SYMBOLS = Object.freeze({
   EMPTY: ".",
   FULL: "X",
@@ -167,6 +196,42 @@ export function centerChart(chart, opts = {}) {
 }
 
 /**
+ * Crop a chart to the columns that actually carry ink, leaving the rows
+ * untouched.
+ *
+ * Vertical position is meaning in a lowercase chart — it is what puts the
+ * letter on the baseline — so only the horizontal axis may be trimmed.
+ * That is the whole difference between this and centerChart, and it is
+ * why they are two functions rather than one with a flag.
+ *
+ * An empty chart trims to a single empty column rather than to nothing:
+ * a zero-width chart would make the planner's spacing arithmetic divide
+ * a slot into infinitely many characters.
+ *
+ * @param {Chart} chart
+ * @param {object} [opts]
+ * @param {number} [opts.pad] blank columns to keep on each side
+ * @returns {Chart}
+ */
+export function trimChartX(chart, opts = {}) {
+  const pad = Math.max(0, opts.pad ?? 0);
+  const cells = chartCells(chart);
+  if (cells.length === 0) {
+    return parseChart(chart.rows.map(() => SYMBOLS.EMPTY));
+  }
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (const c of cells) {
+    if (c.x < minX) minX = c.x;
+    if (c.x > maxX) maxX = c.x;
+  }
+  const w = maxX - minX + 1 + pad * 2;
+  const grid = Array.from({ length: chart.h }, () => Array.from({ length: w }, () => SYMBOLS.EMPTY));
+  for (const c of cells) grid[c.y][c.x - minX + pad] = c.sym;
+  return parseChart(grid.map((row) => row.join("")));
+}
+
+/**
  * The isometric box backstitched around every letter on the alphabet
  * blanket: a front face plus the top and right faces suggested by two
  * short offsets. Drawn in backstitch, so it is edges, not filled cells.
@@ -193,6 +258,90 @@ export const CUBE_OUTLINE = parseChart([
 ]);
 
 /** Small motifs the sets and bibs use. Hand-authored for the same reason. */
+/**
+ * The Armenian flag Lusik cross-stitches on the brim of the Hye Em Yes
+ * cap. Reference: public/img/hye-em-bib/02.jpg.
+ *
+ * Four charts rather than one, because a chart cell says WHAT to work
+ * there and not in which colour, and this motif is three colours plus a
+ * pole. The caller stitches all four into the same origin; the bands
+ * are cut so that, column by column, each one sits directly under the
+ * last — the flag waves as a whole rather than as three loose ribbons.
+ *
+ * The pole runs the full height and past the bottom band, which is what
+ * the photo shows: the flag is flying, not floating.
+ */
+export const ARMENIAN_FLAG = Object.freeze({
+  pole: parseChart([
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+    "X............",
+  ]),
+  red: parseChart([
+    ".XX.......XXX",
+    ".XXXX...XXXXX",
+    ".XXXXXXXXXXXX",
+    "...XXXXXXX...",
+    ".....XXX.....",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+  ]),
+  blue: parseChart([
+    ".............",
+    ".............",
+    ".............",
+    ".XX.......XXX",
+    ".XXXX...XXXXX",
+    ".XXXXXXXXXXXX",
+    "...XXXXXXX...",
+    ".....XXX.....",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+  ]),
+  orange: parseChart([
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".XX.......XXX",
+    ".XXXX...XXXXX",
+    ".XXXXXXXXXXXX",
+    "...XXXXXXX...",
+    ".....XXX.....",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+  ]),
+});
+
 export const MOTIFS = Object.freeze({
   heart: parseChart([
     ".XX...XX.",

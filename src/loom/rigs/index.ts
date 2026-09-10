@@ -16,8 +16,12 @@
 import type { Group } from "three";
 import { createBlanketRig } from "./alphabetBlanket";
 import { createBibRig } from "./bib";
+import { createHyeEmYesRig } from "./hyeEmYes";
 import { planDesignFor } from "../design";
-import type { BibDesign, LoomDesign } from "../types";
+import type { BibDesign, HyeEmYesDesign, LoomDesign } from "../types";
+
+/** Every design shape a rig can be handed. */
+export type AnyDesign = LoomDesign | BibDesign | HyeEmYesDesign;
 
 export interface MountedRig {
   group: Group;
@@ -25,8 +29,21 @@ export interface MountedRig {
    * Apply a design and return how many stitches can be revealed.
    * 0 means the piece has nothing to work in progressively.
    */
-  apply: (design: LoomDesign | BibDesign) => number;
+  apply: (design: AnyDesign) => number;
   setRevealed?: (count: number) => void;
+  /**
+   * Register a callback for when the rig re-plans on its own, reporting
+   * the new stitch total.
+   *
+   * A rig can restitch without the design changing: the letterforms come
+   * out of the webfont, so the piece is planned once in the fallback face
+   * and again when the real one arrives. The stage is animating that
+   * stitch list in, and if it is still holding the OLD total the reveal
+   * stops partway and the rest of the piece never appears — which is
+   * exactly how the Hye Em Yes bib first rendered, showing a fragment of
+   * each letter and looking, convincingly, like a broken chart.
+   */
+  onRestitch?: (cb: (total: number) => void) => void;
   dispose: () => void;
 }
 
@@ -35,8 +52,17 @@ export interface RigOptions {
   clothColor?: string;
 }
 
-function isBibDesign(design: LoomDesign | BibDesign): design is BibDesign {
+function isBibDesign(design: AnyDesign): design is BibDesign {
   return typeof (design as BibDesign).name === "string";
+}
+
+/**
+ * A blanket design is the one with letters to work into cubes. Checking
+ * for what a rig NEEDS, rather than for what the others are, is what keeps
+ * a new design shape from silently falling into the wrong branch.
+ */
+function isBlanketDesign(design: AnyDesign): design is LoomDesign {
+  return Array.isArray((design as LoomDesign).letters);
 }
 
 /** Null when the product has no rig yet — the stage stays on its poster. */
@@ -46,7 +72,7 @@ export function createRigFor(productKey: string, opts: RigOptions): MountedRig |
     return {
       group: rig.group,
       apply: (design) => {
-        if (isBibDesign(design)) return 0;
+        if (!isBlanketDesign(design)) return 0;
         const planned = planDesignFor(design).stitches;
         rig.setStitches(planned);
         return planned.length;
@@ -68,6 +94,24 @@ export function createRigFor(productKey: string, opts: RigOptions): MountedRig |
         // how the piece is made.
         return 0;
       },
+      dispose: rig.dispose,
+    };
+  }
+
+  // Both SKUs are the same piece; the "-with-cap" key is what the server
+  // charges the higher price against, and the cap is a property of the
+  // design rather than of the rig.
+  if (productKey === "bib-hy-em" || productKey === "bib-hy-em-with-cap") {
+    const rig = createHyeEmYesRig({ textureSize: opts.textureSize, clothColor: opts.clothColor });
+    return {
+      group: rig.group,
+      apply: (design) => rig.setDesign({
+        // Nothing else on this product is chosen, so anything that is not
+        // an explicit yes is the bib on its own.
+        withCap: (design as HyeEmYesDesign).withCap === true,
+      }),
+      setRevealed: rig.setRevealed,
+      onRestitch: rig.onRestitch,
       dispose: rig.dispose,
     };
   }

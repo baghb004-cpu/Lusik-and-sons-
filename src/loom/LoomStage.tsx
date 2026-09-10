@@ -21,7 +21,7 @@ import { CONFIG } from "../data/config.js";
 import { getGpuSignal, getTier } from "../lib/capability";
 import { LOOM_BUILD_TAG } from "./buildTag";
 import { readLoomOverride, resolveLoomTier, LOOM_SETTINGS } from "./tier.js";
-import type { BibDesign, LoomDesign } from "./types";
+import type { BibDesign, HyeEmYesDesign, LoomDesign } from "./types";
 
 export type { LoomDesign } from "./types";
 
@@ -43,7 +43,7 @@ export interface LoomStageProps {
   /** Text alternative — describes the DESIGN, not the widget. */
   label: string;
   /** The design. Changing it restitches; planning happens in the engine chunk. */
-  design: LoomDesign | BibDesign;
+  design: LoomDesign | BibDesign | HyeEmYesDesign;
   /** Body colour of the cloth. */
   clothColor?: string;
   className?: string;
@@ -58,7 +58,9 @@ export function LoomStage({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<{ dispose: () => void } | null>(null);
   // Stitch-in animation state. `shown` is fractional; the mesh floors it.
-  const revealRef = useRef({ shown: 0, total: 0, animating: false });
+  // `startedAt` is what makes STITCH_IN_MS a duration rather than a wish —
+  // see the frame loop.
+  const revealRef = useRef({ shown: 0, total: 0, animating: false, startedAt: 0 });
   const applyRef = useRef<((d: LoomStageProps["design"]) => void) | null>(null);
   const [phase, setPhase] = useState<Phase>("poster");
   const [armed, setArmed] = useState(false);
@@ -164,6 +166,10 @@ export function LoomStage({
 
         const applyDesign = (d: LoomStageProps["design"]) => {
           const total = rig.apply(d);
+          // How many stitches the piece is made of. A dataset attribute
+          // rather than state, for the same reason as loomStitching below,
+          // and it is what an e2e test can assert grows as a name is typed.
+          host.dataset.loomStitches = String(total);
           // Work the piece in rather than popping it into existence. The
           // planner already ordered the stitches the way a person works
           // them — across each row, outlines last — so replaying that
@@ -171,11 +177,11 @@ export function LoomStage({
           // there. A rig reporting 0 (the machine-embroidered bib) has
           // nothing to work in.
           if (reduced() || total === 0 || !rig.setRevealed) {
-            revealRef.current = { shown: total, total, animating: false };
+            revealRef.current = { shown: total, total, animating: false, startedAt: 0 };
             host.dataset.loomStitching = "false";
           } else {
             rig.setRevealed(0);
-            revealRef.current = { shown: 0, total, animating: true };
+            revealRef.current = { shown: 0, total, animating: true, startedAt: performance.now() };
             // A plain dataset write rather than React state: this flips
             // twice per restitch and a re-render of the whole PDP for it
             // would be absurd. It exists so a test can assert the piece
@@ -194,6 +200,24 @@ export function LoomStage({
         applyDesign(design);
         applyRef.current = applyDesign;
 
+        // A rig may restitch itself without the design changing — the
+        // letterforms come from a webfont, so the piece is planned once in
+        // the fallback face and again when the real one lands. The reveal
+        // is counting toward a total that just changed underneath it.
+        rig.onRestitch?.((newTotal) => {
+          const reveal = revealRef.current;
+          reveal.total = newTotal;
+          host.dataset.loomStitches = String(newTotal);
+          // Already finished working the piece in: show the new plan
+          // whole rather than replaying the animation, which would look
+          // like the bib unstitching itself a second after it settled.
+          if (!reveal.animating) {
+            reveal.shown = newTotal;
+            rig.setRevealed?.(newTotal);
+          }
+          renderer.invalidate();
+        });
+
         let last = performance.now();
         const frame = () => {
           const now = performance.now();
@@ -205,10 +229,23 @@ export function LoomStage({
             // A fixed DURATION rather than a fixed rate: a six-letter
             // blanket and a full alphabet should both finish in about the
             // same beat, or the big one would crawl.
-            const perSecond = reveal.total / (CONFIG.LOOM?.STITCH_IN_MS ?? 1400) * 1000;
-            reveal.shown = Math.min(reveal.total, reveal.shown + perSecond * dt);
+            //
+            // Measured against the CLOCK, not against accumulated frame
+            // deltas. Those deltas are clamped to 50 ms so a backgrounded
+            // tab does not resume with one enormous jump — which means a
+            // renderer managing four frames a second advances the reveal
+            // at a fifth of real time. On a software renderer (the `mid`
+            // tier, and every CI machine) a 1.4 second stitch-in then took
+            // half a minute, and the piece simply sat there with a third
+            // of its stitches, looking like a broken chart rather than a
+            // slow animation. Elapsed time cannot drift like that.
+            const ms = Math.max(1, CONFIG.LOOM?.STITCH_IN_MS ?? 1400);
+            const progress = Math.min(1, (now - reveal.startedAt) / ms);
+            reveal.shown = reveal.total * progress;
             rig.setRevealed(reveal.shown);
-            if (reveal.shown >= reveal.total) {
+            if (progress >= 1) {
+              reveal.shown = reveal.total;
+              rig.setRevealed(reveal.total);
               reveal.animating = false;
               host.dataset.loomStitching = "false";
             }

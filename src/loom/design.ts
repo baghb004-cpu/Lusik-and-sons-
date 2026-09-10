@@ -13,10 +13,16 @@
 // ============================================================
 
 import { buildLayoutCells, GRID } from "../data/blanketLayout.js";
-import { CAPITAL_H, CAPITAL_W, CUBE_OUTLINE } from "./stitch/chart.js";
-import { planDesign } from "./stitch/planner.js";
-import { makeChartResolver } from "./stitch/rasterize.js";
+import { ARMENIAN_FLAG_COLORS, HYE_EM_YES_WORDS } from "../data/hyeEmYes.js";
+import {
+  ARMENIAN_FLAG, CAPITAL_H, CAPITAL_W, CUBE_OUTLINE, LOWER_H, chartCells,
+} from "./stitch/chart.js";
+import { measureLine, planDesign, planLine } from "./stitch/planner.js";
+import { lowercaseChartForChar, makeChartResolver } from "./stitch/rasterize.js";
 import type { LoomDesign } from "./types";
+
+/** A planned stitch, as the planner emits and the stitch mesh consumes. */
+interface Stitch { x: number; y: number; sym: string; color: string; order: number }
 
 /**
  * Turn the configurator's state into every stitch on the cloth.
@@ -75,4 +81,87 @@ export function planDesignFor(design: LoomDesign) {
   });
 
   return planDesign({ lines, chartFor, fixed });
+}
+
+// ============================================================
+// HYE EM YES
+// ============================================================
+// Three words, one line, three colours: red հայ, blue եմ, orange ես.
+// Reference: public/img/hye-em-bib/cover.jpg and 02.jpg.
+//
+// Nothing here is personalised. The words are the product and the flag
+// is the design, so this plans the same stitches every time and the rig
+// only re-plans when the webfont arrives with better letterforms.
+
+/** Cells between letters inside a word, and between words. */
+const LETTER_GAP = 1;
+const WORD_GAP = 5;
+
+/**
+ * The flag on the cap's brim, as stitches. Four charts sharing one
+ * origin — see ARMENIAN_FLAG for why it is four and not one.
+ */
+export function planCapFlag() {
+  const parts: [keyof typeof ARMENIAN_FLAG, string][] = [
+    ["pole", ARMENIAN_FLAG_COLORS.pole],
+    ["red", ARMENIAN_FLAG_COLORS.red],
+    ["blue", ARMENIAN_FLAG_COLORS.blue],
+    ["orange", ARMENIAN_FLAG_COLORS.orange],
+  ];
+  const stitches: Stitch[] = [];
+  for (const [part, color] of parts) {
+    for (const cell of chartCells(ARMENIAN_FLAG[part])) {
+      stitches.push({ x: cell.x, y: cell.y, sym: cell.sym, color, order: 0 });
+    }
+  }
+  // Working order: down the pole, then the bands top to bottom, which is
+  // what planDesign's row-major ordering already gives.
+  return planDesign({ lines: [], chartFor: () => null, fixed: stitches });
+}
+
+/**
+ * The bib's line of lettering, as stitches on a shared baseline.
+ *
+ * Each word is planned into its own slot so it can carry its own thread,
+ * and the slots are placed from the measured widths rather than from a
+ * guess: the letterforms come out of the font, so their widths are only
+ * known once the font is.
+ */
+export function planHyeEmYes() {
+  const chartFor = (char: string) => lowercaseChartForChar(char);
+
+  const widths = HYE_EM_YES_WORDS.map((word) =>
+    measureLine({ text: word.text, chartFor, gap: LETTER_GAP }));
+  const total = widths.reduce((sum, w) => sum + w, 0) + WORD_GAP * (HYE_EM_YES_WORDS.length - 1);
+
+  const stitches: Stitch[] = [];
+  let x = 0;
+  // A zero total means the font could draw none of it — no Armenian in
+  // the fallback face, most likely, and the webfont has not landed yet.
+  // The loop below then simply produces nothing, and the rig keeps its
+  // poster rather than showing a bare bib. Re-planning after the font
+  // loads is the rig's job.
+  HYE_EM_YES_WORDS.forEach((word, i) => {
+    const w = widths[i];
+    if (w > 0) {
+      const line = planLine({
+        text: word.text,
+        // The slot IS the word: it was measured from these same charts,
+        // so nothing can be dropped and "center" and "left" agree.
+        slot: { x, y: 0, w, h: LOWER_H },
+        chartFor,
+        color: word.color,
+        gap: LETTER_GAP,
+        align: "left",
+      });
+      stitches.push(...line.stitches);
+    }
+    x += w + WORD_GAP;
+  });
+
+  return {
+    ...planDesign({ lines: [], chartFor: () => null, fixed: stitches }),
+    width: Math.max(0, total),
+    height: LOWER_H,
+  };
 }

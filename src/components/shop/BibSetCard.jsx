@@ -24,7 +24,8 @@
 // gallery — that selector was intentionally removed.
 // ============================================================
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { ProductImageGallery } from "../ProductImageGallery.jsx";
 import { ProductVariationNote } from "../ProductVariationNote.jsx";
 import { ExpandableText } from "../ExpandableText.jsx";
@@ -38,6 +39,13 @@ import { foundingPriceForKey } from "../../lib/launchPromo.js";
 import { FoundingPriceBadge } from "../FoundingPriceBadge.jsx";
 import { useT, useLang } from "../../i18n/LangContext.jsx";
 import { loc } from "../../i18n/localize.js";
+import { CONFIG } from "../../data/config.js";
+import { publishDesign } from "../../lib/designBus";
+
+// Never a static import: three.js would land in this route's first-load JS
+// for a feature most visitors never trigger, and the bundle gate fails the
+// build when it does.
+const LoomStage = dynamic(() => import("../../loom/index").then((m) => m.LoomStage), { ssr: false });
 
 // Strip any "⚠️ TODO_LUSIK: ..." trailer before showing a detail
 // value to a customer (defense-in-depth; live copy shouldn't carry one).
@@ -71,6 +79,24 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   const foundingPrice = foundingPriceForKey(currentKey, currentPrice);
   const effectivePrice = foundingPrice ?? currentPrice;
   const capNameMax = cap?.nameMax ?? 12;
+
+  // ── The 3D stage ────────────────────────────────────────
+  // Only for products with a rig. Everything else keeps the photo gallery
+  // it has always had — a stage with no rig would be an empty frame.
+  const loomKey = capSelected && cap ? cap.withKey : spec.key;
+  const hasStage = (CONFIG.LOOM?.PRODUCTS ?? []).includes(loomKey);
+  // Memoised: LoomStage re-plans the piece whenever this identity changes,
+  // and a fresh object each render would restitch on every keystroke of
+  // any field on the page.
+  const loomDesign = useMemo(() => ({ withCap: capSelected }), [capSelected]);
+
+  // Publish on the design bus as well as passing the prop. The prop is what
+  // draws the piece; the bus is the documented channel other viewers listen
+  // on, and it is what arms a stage the customer has not touched yet.
+  useEffect(() => {
+    if (!hasStage) return;
+    publishDesign({ product: loomKey, withCap: capSelected });
+  }, [hasStage, loomKey, capSelected]);
 
   // Double-tap guard — same shape as CustomProductCard / ProductShowcase.
   const lastAddTsRef = useRef(0);
@@ -139,6 +165,32 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
         {/* GALLERY — Apple color row (name left, circles right) sits tight
             under the slideshow and drives both the photo and the order. */}
         <div className="min-w-0 w-full">
+          {/* The piece itself, in 3D, above the photographs. Not in the
+              immersive sheet: there the photos ARE the backdrop and the
+              gallery runs photosHidden, so a stage would sit over them. */}
+          {hasStage && !immersive && (
+            <div
+              /* 4/3 to match the stage's own box: a square frame would
+                 letterbox the poster and leave a band of dead colour
+                 under the piece while the engine loads. */
+              className="aspect-[4/3] gallery-frame overflow-hidden mb-4"
+              style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}
+            >
+              <LoomStage
+                productKey={loomKey}
+                label={t("bibSet.previewAlt", {
+                  cap: capSelected ? t("bibSet.previewAltCap") : "",
+                })}
+                design={loomDesign}
+                /* The cover photograph is the fallback. Nothing on this
+                   product is personalised, so a still of the real piece is
+                   an honest stand-in for a visitor whose device cannot run
+                   the engine — unlike the configurator products, where the
+                   live 2D preview is the better fallback. */
+                poster={product.coverImage ?? undefined}
+              />
+            </div>
+          )}
           <ProductImageGallery
             images={product.images}
             alt={productName}

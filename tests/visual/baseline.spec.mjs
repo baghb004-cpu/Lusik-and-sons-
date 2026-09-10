@@ -53,6 +53,7 @@ const PAGES = [
   ["pdp-full-alphabet-blanket", "/shop/blankets/full-alphabet-crib-blanket"],
   ["pdp-days-of-the-week", "/shop/bibs/days-of-the-week-bib-set"],
   ["pdp-custom-name-bib", "/shop/bibs/baby-bib"],
+  ["pdp-hye-em-yes", "/shop/bibs/hy-em-armenian-bib"],
   ["journal-post", "/journal/armenian-alphabet-gift"],
   ["story", "/story"],
 ];

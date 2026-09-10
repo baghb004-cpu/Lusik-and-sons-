@@ -1,22 +1,18 @@
 // ============================================================
-// RIG — the terry bib
+// RIG — the Custom Name Bib
 // ============================================================
-// A bib is not a rectangle, and modelling it as one would make the whole
-// engine look like a mock-up. The real piece (public/img/days-bib/02.jpg,
-// hye-em-bib/cover.jpg) is a rounded body, a little wider at the bottom,
-// with a neck opening at the top and a satin binding running all the way
-// round including the neck.
+// The cloth comes from bibBody.ts, shared with the Hye Em Yes bib. What
+// belongs to THIS product is the work on it: one name, machine satin
+// stitched in a single thread colour, across the belly of the bib.
 //
-// Built from a Shape with a hole rather than a mesh file: it stays a few
-// hundred bytes of code instead of a download, and the proportions are
-// readable and adjustable here rather than locked in a binary.
+// Machine embroidery is drawn as a decal rather than planned as stitches
+// on purpose. The Custom Name Bib really is done by machine — that is
+// what makes it survive a hundred and fifty wash cycles a year — and a
+// grid of hand crosses would be a picture of a different product.
 // ============================================================
 
-import {
-  DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path,
-  PlaneGeometry, Shape, TorusGeometry,
-} from "three";
-import { clothMaps } from "../materials/cloth";
+import { Group, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { createBibBody, faceZ, HALF_W, SURFACE_Y, type BibBody } from "./bibBody";
 import { scriptDecal, type ScriptDecal } from "../stitch/script";
 import type { BibDesign } from "../types";
 
@@ -37,81 +33,9 @@ export interface BibRig {
   dispose: () => void;
 }
 
-/** Half-width at the widest point. The bib is about 1.6 units across. */
-const HALF_W = 0.8;
-const TOP = 0.9;
-const BOTTOM = -1.0;
-const NECK_R = 0.26;
-
-function bibShape(): Shape {
-  const shape = new Shape();
-  // Start at the top-left of the shoulder and run clockwise.
-  shape.moveTo(-HALF_W * 0.72, TOP);
-  shape.quadraticCurveTo(-HALF_W, TOP * 0.55, -HALF_W, 0.1);
-  // The body flares slightly toward the bottom, then rounds off.
-  shape.quadraticCurveTo(-HALF_W * 1.02, BOTTOM * 0.55, -HALF_W * 0.62, BOTTOM * 0.92);
-  shape.quadraticCurveTo(0, BOTTOM * 1.12, HALF_W * 0.62, BOTTOM * 0.92);
-  shape.quadraticCurveTo(HALF_W * 1.02, BOTTOM * 0.55, HALF_W, 0.1);
-  shape.quadraticCurveTo(HALF_W, TOP * 0.55, HALF_W * 0.72, TOP);
-  // The shoulders dip toward the neck.
-  shape.quadraticCurveTo(HALF_W * 0.4, TOP * 1.02, 0, TOP * 0.98);
-  shape.quadraticCurveTo(-HALF_W * 0.4, TOP * 1.02, -HALF_W * 0.72, TOP);
-
-  // The neck opening.
-  const neck = new Path();
-  neck.absarc(0, TOP * 0.62, NECK_R, 0, Math.PI * 2, true);
-  shape.holes.push(neck);
-  return shape;
-}
-
 export function createBibRig(opts: BibRigOptions = {}): BibRig {
-  const {
-    clothColor = "#FFFFFF",
-    trimColor = "#DFE7F2",
-    textureSize = 1024,
-  } = opts;
-
-  const group = new Group();
-  const shape = bibShape();
-
-  const geometry = new ExtrudeGeometry(shape, {
-    depth: 0.045,
-    bevelEnabled: true,
-    bevelThickness: 0.012,
-    bevelSize: 0.012,
-    bevelSegments: 2,
-    curveSegments: 24,
-  });
-  // Extrude builds along +z; lay it flat with the face up.
-  geometry.rotateX(-Math.PI / 2);
-  geometry.computeVertexNormals();
-
-  const terry = clothMaps({ weave: "terry", color: clothColor, size: textureSize, repeat: 4 });
-  const bodyMaterial = new MeshStandardMaterial({
-    map: terry.map,
-    normalMap: terry.normalMap,
-    roughnessMap: terry.roughnessMap,
-    roughness: 0.95,
-    metalness: 0,
-    side: DoubleSide,
-  });
-  const body = new Mesh(geometry, bodyMaterial);
-  body.receiveShadow = true;
-  group.add(body);
-
-  // Satin binding around the neck. The outer edge binding is suggested by
-  // the bevel; the neck ring is the piece the eye actually checks.
-  const satin = clothMaps({ weave: "satin", color: trimColor, size: 256, repeat: 2 });
-  const trimMaterial = new MeshStandardMaterial({
-    map: satin.map,
-    normalMap: satin.normalMap,
-    roughness: 0.28,
-    metalness: 0.03,
-  });
-  const neckTrim = new Mesh(new TorusGeometry(NECK_R, 0.022, 8, 48), trimMaterial);
-  neckTrim.rotation.x = Math.PI / 2;
-  neckTrim.position.set(0, 0.03, -TOP * 0.62);
-  group.add(neckTrim);
+  const body: BibBody = createBibBody(opts);
+  const group = body.group;
 
   // The embroidered name sits on its own thin plane just above the terry,
   // so it can be swapped without touching the body.
@@ -139,7 +63,8 @@ export function createBibRig(opts: BibRigOptions = {}): BibRig {
   const panelGeo = new PlaneGeometry(HALF_W * 1.42, 0.4);
   panelGeo.rotateX(-Math.PI / 2);
   const namePlane = new Mesh(panelGeo, nameMaterial);
-  namePlane.position.set(0, 0.06, 0.12);
+  // Shape y -0.38 is where the photographs put the lettering.
+  namePlane.position.set(0, SURFACE_Y, faceZ(-0.38));
   group.add(namePlane);
 
   let lastDesign: BibDesign | null = null;
@@ -178,20 +103,16 @@ export function createBibRig(opts: BibRigOptions = {}): BibRig {
 
   const dispose = () => {
     disposed = true;
-    geometry.dispose();
-    bodyMaterial.dispose();
-    neckTrim.geometry.dispose();
-    trimMaterial.dispose();
     panelGeo.dispose();
     nameMaterial.dispose();
     decal?.map.dispose();
     decal?.normalMap.dispose();
-    group.clear();
+    body.dispose();
   };
 
   return {
     group,
-    extent: { width: HALF_W * 2, height: TOP - BOTTOM },
+    extent: body.extent,
     setDesign,
     dispose,
   };

@@ -16,6 +16,7 @@
 import { test, expect } from "@playwright/test";
 
 const PDP = "/shop/blankets/armenian-alphabet-blanket";
+const HYE_EM = "/shop/bibs/hy-em-armenian-bib";
 
 test.describe("Loom stage", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -132,6 +133,90 @@ test.describe("Loom stage", () => {
       const after = await canvas.screenshot();
       return Buffer.compare(before, after) === 0 ? "unchanged" : "changed";
     }, { timeout: 20_000 }).toBe("changed");
+  });
+
+  // ── The Hye Em Yes bib ─────────────────────────────────
+  // The one product whose 3D piece nobody configures: the words and the
+  // three flag colours ARE the design, and the only choice is the cap.
+  // Its failure modes are its own — a piece planned from a webfont, and
+  // a rig that has to fit a cap into a frame the camera sized for a bib.
+
+  // On phones this product opens in the immersive pill sheet, where the
+  // photographs ARE the backdrop and the gallery runs photosHidden — so
+  // the stage is deliberately not mounted there. Putting a "3D" segment
+  // into the sheet's backdrop is its own piece of work (owner decision 2
+  // in SITE_OVERHAUL_HANDOFF.md); until then, skipping is the honest
+  // thing rather than asserting a weaker condition on mobile.
+  const desktopOnly = ({}, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop-chromium",
+      "the Hye Em Yes stage is desktop-only until the immersive sheet gains a 3D segment");
+  };
+
+  test("the Hye Em Yes bib stitches its three words in", async ({ page }, testInfo) => {
+    desktopOnly({}, testInfo);
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto(HYE_EM);
+
+    const stage = page.locator("[data-loom]").first();
+    await expect(stage).toBeAttached();
+    await stage.scrollIntoViewIfNeeded();
+
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") {
+      test.info().annotations.push({ type: "loom", description: "engine did not run on this machine" });
+      return;
+    }
+
+    // The whole sentence, not a fragment of it. This is the assertion the
+    // rig failed for most of its development: the piece was planned twice
+    // (once in the fallback face, once when the display font landed) and
+    // the reveal was left counting toward the first plan's total, so it
+    // stopped a third of the way through and sat there.
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+
+    const stitches = Number(await stage.getAttribute("data-loom-stitches"));
+    // Three Armenian words at this chart size are hundreds of crosses. A
+    // handful would mean the font drew nothing and the piece is a few
+    // stray marks; zero would mean it drew nothing at all.
+    expect(stitches, "the piece has almost no stitches — did the glyphs rasterise?")
+      .toBeGreaterThan(120);
+  });
+
+  test("adding the cap restitches the piece", async ({ page }, testInfo) => {
+    desktopOnly({}, testInfo);
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto(HYE_EM);
+
+    const stage = page.locator("[data-loom]").first();
+    await stage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+
+    const before = await stage.getAttribute("aria-label");
+    await page.getByRole("button", { name: /Add the matching cap/i }).click();
+
+    // The text alternative describes the PIECE, so adding the cap has to
+    // change it — a blind customer is told what they are buying by this
+    // string and by nothing else.
+    await expect
+      .poll(() => stage.getAttribute("aria-label"), { timeout: 15_000 })
+      .not.toBe(before);
+    expect(await stage.getAttribute("aria-label")).toMatch(/cap/i);
+
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") return;
+    // The cap carries its own flag, so the piece gains stitches.
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
   });
 
   test("the stage describes the design, not the widget", async ({ page }) => {

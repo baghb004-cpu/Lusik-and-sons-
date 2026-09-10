@@ -97,7 +97,7 @@ export const CONFIG = {
     // CustomProductCard passes CUSTOM_PRODUCTS.bib.key, which is "bib".
     // Getting it wrong is silent — the stage simply never arms — so
     // loom-rigs.test.mjs asserts every key here has a rig.
-    PRODUCTS: ["blanket-classic", "bib"],
+    PRODUCTS: ["blanket-classic", "bib", "bib-hy-em", "bib-hy-em-with-cap"],
     QUERY_PARAM: "loom",
     // Wait this long after the last keystroke before the camera drifts
     // back from the slot being edited to the resting pose.

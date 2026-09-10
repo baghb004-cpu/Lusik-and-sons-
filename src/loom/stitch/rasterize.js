@@ -24,7 +24,10 @@
 // in Node; this file only supplies the pixels.
 // ============================================================
 
-import { CAPITAL_H, CAPITAL_W, centerChart, chartFromSampler } from "./chart.js";
+import {
+  CAPITAL_H, CAPITAL_W, LOWER_BASELINE, LOWER_H, LOWER_W,
+  centerChart, chartFromSampler, trimChartX,
+} from "./chart.js";
 
 /** @typedef {import("./chart.js").Chart} Chart */
 
@@ -71,6 +74,7 @@ function surface(w, h) {
  *   (10px sans-serif). Every chart then came out blank. That bug is why this is
  *   two fields and why there is a browser test below asserting real ink.
  * @property {number} [threshold] coverage at or above which a cell becomes a stitch
+ * @property {number} [baseline] lowercase only: the chart row the letters sit on
  */
 
 /**
@@ -153,6 +157,153 @@ export function chartForChar(char, opts = {}) {
   return chart;
 }
 
+// ============================================================
+// LOWERCASE
+// ============================================================
+// Capitals get one treatment because they all occupy the same band:
+// draw the glyph as large as its box allows, then centre it. Lowercase
+// cannot be done that way twice over.
+//
+// First, the size has to be shared. Fitting each glyph to its own box
+// would draw ա as tall as հ, and a word would come out with its letters
+// all the same height — which is the one thing lowercase is not. So the
+// size is measured ONCE per font from a probe carrying the extremes of
+// the script, and every letter is then drawn at that size.
+//
+// Second, the vertical position has to be shared. centerChart is exactly
+// wrong here: it would lift ք out of its descender and drop հ out of its
+// ascender, and the word would bob. Each glyph is drawn against the
+// chart's fixed baseline row instead, and only the horizontal axis is
+// trimmed.
+//
+// The probe is deliberately explicit. "Հհղ" is a capital, an ascender
+// and a descender: whatever the font does with Armenian, the tallest and
+// deepest things we will draw are in that string, so nothing later
+// overflows the box it was sized for.
+const LOWER_PROBE = "Հհղ";
+
+/** Blank cells kept above the tallest ascender and below the deepest descender. */
+const LOWER_MARGIN = 0.94;
+
+/** @type {Map<string, number>} */
+const sizeCache = new Map();
+
+/**
+ * The one font size every lowercase glyph in a family is drawn at.
+ *
+ * Returns 0 when the probe measures nothing, which means the font has no
+ * Armenian and there is no honest size to pick. Callers treat that the
+ * same as a missing glyph rather than guessing.
+ *
+ * @param {CanvasRenderingContext2D} c
+ * @param {string} family
+ * @param {number|string} weight
+ * @param {number} ascentCells
+ * @param {number} descentCells
+ * @returns {number}
+ */
+function lowercaseSize(c, family, weight, ascentCells, descentCells) {
+  const key = `${weight} ${family}|${ascentCells}/${descentCells}`;
+  const hit = sizeCache.get(key);
+  if (hit !== undefined) return hit;
+
+  // Measure at a nominal size and scale from there. Font metrics are
+  // linear in size, so one measurement is enough.
+  const NOMINAL = 100;
+  c.font = `${weight} ${NOMINAL}px ${family}`;
+  const m = c.measureText(LOWER_PROBE);
+  const ascent = m.actualBoundingBoxAscent;
+  const descent = m.actualBoundingBoxDescent;
+  if (!(ascent > 0)) {
+    sizeCache.set(key, 0);
+    return 0;
+  }
+
+  const ascentBudget = ascentCells * SS * LOWER_MARGIN;
+  const descentBudget = descentCells * SS * LOWER_MARGIN;
+  let scale = ascentBudget / ascent;
+  // A font with no descender in the probe would divide by zero; there is
+  // nothing hanging below the line to constrain, so ascent alone decides.
+  if (descent > 0) scale = Math.min(scale, descentBudget / descent);
+
+  const size = Math.max(4, Math.floor(NOMINAL * scale));
+  sizeCache.set(key, size);
+  return size;
+}
+
+/**
+ * Rasterise one lowercase character into a baseline-aligned chart.
+ *
+ * The returned chart is always LOWER_H tall (so the planner can go on
+ * centring the box in a slot and have the letters still line up) and as
+ * wide as the letter's own ink (so ի does not take the same room as ղ).
+ *
+ * Null means no ink — an unsupported glyph, or whitespace. A space is
+ * the caller's business: word gaps are laid out, not stitched.
+ */
+/**
+ * @param {string} char
+ * @param {RasterOptions} [opts]
+ * @returns {Chart | null}
+ */
+export function lowercaseChartForChar(char, opts = {}) {
+  const w = opts.w ?? LOWER_W;
+  const h = opts.h ?? LOWER_H;
+  const baseline = opts.baseline ?? LOWER_BASELINE;
+  const family = opts.fontFamily ?? '"Fraunces", Georgia, serif';
+  const weight = opts.fontWeight ?? 600;
+  const key = `lower|${char}|${w}x${h}@${baseline}|${weight} ${family}|${opts.threshold ?? ""}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+
+  if (!char || char.trim() === "") return null;
+
+  const pxW = w * SS;
+  const pxH = h * SS;
+  const c = surface(pxW, pxH);
+  if (!c) return null;
+
+  const size = lowercaseSize(c, family, weight, baseline, h - baseline);
+  if (size === 0) return null;
+
+  c.clearRect(0, 0, pxW, pxH);
+  c.fillStyle = "#000";
+  c.textAlign = "center";
+  // "alphabetic" is the whole point: it is the baseline, so every glyph
+  // is positioned by where it SITS rather than by where its middle is.
+  c.textBaseline = "alphabetic";
+  c.font = `${weight} ${size}px ${family}`;
+  c.fillText(char, pxW / 2, baseline * SS);
+
+  let data;
+  try {
+    data = c.getImageData(0, 0, pxW, pxH).data;
+  } catch {
+    return null;
+  }
+
+  const sample = (cx, cy) => {
+    let total = 0;
+    for (let y = 0; y < SS; y += 1) {
+      const row = (cy * SS + y) * pxW;
+      for (let x = 0; x < SS; x += 1) {
+        total += data[(row + cx * SS + x) * 4 + 3];
+      }
+    }
+    return total / (SS * SS * 255);
+  };
+
+  const raw = chartFromSampler(sample, { w, h, threshold: opts.threshold ?? 0.3 });
+  const hasInk = raw.rows.some((row) => row.includes("X"));
+  // Uncached, same as the capital path: the webfont may still be loading
+  // and caching this would cache the fallback face forever.
+  if (!hasInk) return null;
+
+  const chart = trimChartX(raw);
+  cache.set(key, chart);
+  return chart;
+}
+
 /**
  * Build a `chartFor` function for the planner, bound to one font and size.
  * Motif and outline charts are hand-authored and passed in as overrides.
@@ -166,7 +317,14 @@ export function makeChartResolver(overrides = {}, opts = {}) {
   return (char) => overrides[char] ?? chartForChar(char, opts);
 }
 
-/** Drop the cache — call when the display font finishes loading. */
+/**
+ * Drop the caches — call when the display font finishes loading.
+ *
+ * The measured lowercase size goes too. Keeping it would redraw every
+ * letter in the real face at the fallback face's metrics, which is a
+ * subtler wrong than a blank chart and would survive a screenshot.
+ */
 export function clearChartCache() {
   cache.clear();
+  sizeCache.clear();
 }

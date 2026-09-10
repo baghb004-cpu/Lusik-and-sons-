@@ -27,3 +27,12 @@ export interface BibDesign {
   name: string;
   threadColor: string;
 }
+
+/**
+ * The Hye Em Yes bib. Nothing about the lettering is chosen — the three
+ * words and the three flag colours ARE the product — so the only thing
+ * the customer decides is whether the matching cap comes with it.
+ */
+export interface HyeEmYesDesign {
+  withCap: boolean;
+}

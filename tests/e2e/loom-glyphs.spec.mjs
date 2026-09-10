@@ -27,6 +27,8 @@ const read = (p) => readFileSync(resolve(here, "../../src/loom/stitch", p), "utf
 
 // Armenian capitals Ա (U+0531) through Ֆ (U+0556).
 const ARMENIAN = Array.from({ length: 38 }, (_, i) => String.fromCodePoint(0x0531 + i));
+// Armenian lowercase ա (U+0561) through ֆ (U+0586).
+const ARMENIAN_LOWER = Array.from({ length: 38 }, (_, i) => String.fromCodePoint(0x0561 + i));
 const LATIN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const DIGITS = "0123456789".split("");
 
@@ -109,20 +111,104 @@ test.describe("Loom glyph rasteriser", () => {
     expect(bad).toEqual([]);
   });
 
+  // ── lowercase ──────────────────────────────────────────
+  // Lowercase is a different problem from capitals, and its failure looks
+  // different too: not a blank chart but a word whose letters bob, because
+  // each one was centred in its own box instead of set on a shared line.
+
+  test("every Armenian lowercase letter produces real ink", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto("/");
+    await loadStitchModules(page);
+
+    const result = await page.evaluate(({ chars }) => {
+      const { lowercaseChartForChar } = window.__loomRaster;
+      const blank = [];
+      const counts = [];
+      for (const ch of chars) {
+        const chart = lowercaseChartForChar(ch);
+        if (!chart) { blank.push(ch); continue; }
+        const n = chart.rows.reduce((sum, row) => sum + (row.split("X").length - 1), 0);
+        if (n === 0) blank.push(ch);
+        counts.push(n);
+      }
+      return { blank, min: Math.min(...counts) };
+    }, { chars: ARMENIAN_LOWER });
+
+    expect(result.blank, `lowercase letters that rasterised to nothing: ${result.blank.join(" ")}`).toEqual([]);
+    expect(result.min, "a lowercase letter rasterised to almost no stitches").toBeGreaterThan(4);
+  });
+
+  test("lowercase letters sit on one baseline and keep their own widths", async ({ page }) => {
+    await page.goto("/");
+    await loadStitchModules(page);
+
+    const out = await page.evaluate(() => {
+      const { lowercaseChartForChar } = window.__loomRaster;
+      const inspect = (ch) => {
+        const chart = lowercaseChartForChar(ch);
+        if (!chart) return null;
+        let top = Infinity;
+        let bottom = -Infinity;
+        chart.rows.forEach((row, y) => {
+          if (!row.includes("X")) return;
+          if (y < top) top = y;
+          if (y > bottom) bottom = y;
+        });
+        return { w: chart.w, h: chart.h, top, bottom };
+      };
+      return {
+        // ա sits between the lines, հ rises above them, ղ drops below.
+        mid: inspect("ա"),
+        ascender: inspect("հ"),
+        descender: inspect("ղ"),
+        narrow: inspect("ի"),
+        wide: inspect("ղ"),
+      };
+    });
+
+    for (const [name, g] of Object.entries(out)) {
+      expect(g, `${name} produced no chart`).not.toBeNull();
+    }
+
+    // Every chart is the same height: that is what lets the planner centre
+    // the BOX in a slot and still have the letters line up.
+    expect(out.ascender.h).toBe(out.mid.h);
+    expect(out.descender.h).toBe(out.mid.h);
+
+    // The ascender starts higher than the x-height letter, and the
+    // descender ends lower. If either failed, every glyph had been
+    // vertically centred in its own box and the word would bob.
+    expect(out.ascender.top, "հ does not rise above ա").toBeLessThan(out.mid.top);
+    expect(out.descender.bottom, "ղ does not drop below ա").toBeGreaterThan(out.mid.bottom);
+
+    // ...and they share the line they sit ON. ա and հ both rest on the
+    // baseline, so their bottoms agree to within a cell of rounding.
+    expect(Math.abs(out.ascender.bottom - out.mid.bottom),
+      "ա and հ do not share a baseline").toBeLessThanOrEqual(1);
+
+    // Charts are trimmed to their own ink, so a narrow letter is narrower.
+    expect(out.narrow.w, "ի is not narrower than ղ").toBeLessThan(out.wide.w);
+  });
+
   test("an unstitchable character is reported, not silently skipped", async ({ page }) => {
     await page.goto("/");
     await loadStitchModules(page);
 
     const out = await page.evaluate(() => {
       const { chartForChar } = window.__loomRaster;
+      const { lowercaseChartForChar } = window.__loomRaster;
       return {
         space: chartForChar(" "),
         empty: chartForChar(""),
+        lowerSpace: lowercaseChartForChar(" "),
       };
     });
     // The planner treats null as "cannot be stitched" and surfaces it, so a
     // name never quietly loses a letter between the form and the cloth.
     expect(out.space).toBeNull();
     expect(out.empty).toBeNull();
+    // Word gaps on the Hye Em Yes bib are laid out, never stitched.
+    expect(out.lowerSpace).toBeNull();
   });
 });

@@ -598,6 +598,11 @@ export const TRANSLATIONS = {
       capNameHint: "Optional — leave blank and Lusik uses the first initial.",
       includesCap: "Includes the matching cap",
       flagFixed: "Hand cross-stitched in the three colors of the Armenian flag — red, blue, orange. The flag is the design, so the colors are fixed.",
+      // Describes the PIECE, not the widget: this is the text alternative
+      // for the 3D stage, and a screen reader should hear what is on the
+      // cloth rather than that a canvas exists.
+      previewAlt: "Hye Em Yes bib: հայ եմ ես cross-stitched in red, blue and orange{cap}",
+      previewAltCap: ", with the matching cap and its Armenian flag",
     },
 
     // Full Alphabet Crib Blanket (CribBlanketCard).
@@ -1293,6 +1298,8 @@ export const TRANSLATIONS = {
       capNameHint: "Ըստ ցանկության — թողեք դատարկ, և Լուսիկը կօգտագործի առաջին տառը։",
       includesCap: "Ներառում է համապատասխան գլխարկը",
       flagFixed: "Ձեռքով խաչաձև կարված հայկական դրոշի երեք գույներով՝ կարմիր, կապույտ, նարնջագույն։ Դրոշը հենց ձևավորումն է, ուստի գույները հաստատուն են։",
+      previewAlt: "«Հայ եմ ես» թքակալ՝ հայ եմ ես խաչաձև կարված կարմիրով, կապույտով և նարնջագույնով{cap}",
+      previewAltCap: "՝ համապատասխան գլխարկով և հայկական դրոշով",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
