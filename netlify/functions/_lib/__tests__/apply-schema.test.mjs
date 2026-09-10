@@ -87,3 +87,59 @@ test("the tables the site depends on are all created", () => {
     assert.ok(created.includes(table), `schema.sql no longer creates ${table}`);
   }
 });
+
+// The two tests below are the other half of "safe to run on every
+// build". The ones above prove a statement arrives whole and destroys
+// nothing; these prove it can arrive TWICE. Without them an unguarded
+// CREATE or ADD COLUMN passes review, works on the deploy that adds it,
+// and then fails every deploy after — and a failed migration fails the
+// build, so the site stops shipping until someone reads a build log.
+
+test("re-running the schema changes nothing: every CREATE and ADD COLUMN is guarded", () => {
+  for (const statement of splitStatements(schema)) {
+    const code = statement.split("\n").map(withoutComment).join("\n").trim();
+
+    if (/^CREATE\s+(TABLE|(UNIQUE\s+)?INDEX)\b/i.test(code)) {
+      assert.match(
+        code,
+        /IF NOT EXISTS/i,
+        `runs on every deploy, so this fails the second time:\n${statement}`,
+      );
+    }
+    for (const clause of code.match(/ADD COLUMN[^,;]*/gi) ?? []) {
+      assert.match(
+        clause,
+        /^ADD COLUMN IF NOT EXISTS/i,
+        `unguarded ADD COLUMN fails the second deploy: ${clause.trim()}`,
+      );
+    }
+  }
+});
+
+test("every dropped constraint is added straight back", () => {
+  // DROP CONSTRAINT is deliberately allowed — it is how a CHECK
+  // constraint is edited — but only in the drop-then-re-add pair. A drop
+  // left on its own would quietly strip the constraint from production
+  // on the next deploy and every one after it.
+  const code = schema.split("\n").map(withoutComment).join("\n");
+
+  // Order matters, not just presence: a name can be correctly
+  // drop-then-re-added early in the file and then dropped again at the
+  // end. What has to hold is that the LAST thing the schema says about
+  // each constraint is ADD, so the database is left holding it.
+  const mentions = [...code.matchAll(/(DROP|ADD)\s+CONSTRAINT\s+(?:IF\s+EXISTS\s+)?([A-Za-z0-9_]+)/gi)];
+  const last = new Map();
+  for (const m of mentions) last.set(m[2], m[1].toUpperCase());
+
+  assert.ok(
+    mentions.some((m) => m[1].toUpperCase() === "DROP"),
+    "expected the drop-then-re-add pattern to still be in use",
+  );
+  for (const [name, kind] of last) {
+    assert.equal(kind, "ADD", `the schema's last word on constraint ${name} is DROP, so a deploy leaves it off`);
+  }
+  // Without IF EXISTS the very first deploy dies, on the database that
+  // has nothing in it yet — the one case this whole script exists for.
+  const unguarded = [...code.matchAll(/DROP\s+CONSTRAINT\s+(?!IF\s+EXISTS)([A-Za-z0-9_]+)/gi)].map((m) => m[1]);
+  assert.deepEqual(unguarded, [], "DROP CONSTRAINT needs IF EXISTS to survive a fresh database");
+});

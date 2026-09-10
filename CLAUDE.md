@@ -300,7 +300,7 @@ Unlike the previous Supabase-backed setup, everything server-side now lives in t
 
 ```
 netlify/
-├── schema.sql                       # apply once: `netlify db query --file netlify/schema.sql`
+├── schema.sql                       # applied automatically on every deploy (`prenext:build` → `npm run db:migrate`)
 └── functions/
     ├── package.json                 # function-only deps; Netlify CI runs `npm install`
     ├── _lib/
@@ -358,7 +358,10 @@ netlify/
 ### Database — Netlify Database (Neon-backed Postgres)
 
 - One database per Netlify site, provisioned by `netlify database init`. Connection string is injected as `NETLIFY_DATABASE_URL`; `@netlify/neon`'s `neon()` reads it implicitly.
-- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items`, `product_waitlist`, `order_milestones`, `reviews` — defined in `netlify/schema.sql`. **Re-apply the schema after pulling a change that adds one** (`netlify db query --file netlify/schema.sql`).
+- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items`, `product_waitlist`, `order_milestones`, `reviews` — defined in `netlify/schema.sql`.
+- **The schema applies itself on every deploy.** `prenext:build` runs `npm run db:migrate` (`scripts/apply-schema.mjs`), so code and the tables it expects ship together and there is no manual step to forget. It skips silently without a `NETLIFY_DATABASE_URL` (CI, local builds) and fails the build rather than publishing a site whose database is missing tables. This exists because the manual step *was* forgotten: production ran for months on an empty database while the code using it deployed fine.
+- **That makes `schema.sql` load-bearing in a new way: it runs unattended against the real database on every build, deploy previews included.** `apply-schema.test.mjs` enforces what keeps that safe — each statement arrives whole (balanced parens, no stray semicolon, no dollar-quoted body the splitter would cut in half), nothing is destructive, every required table is still created, **every `CREATE`/`ADD COLUMN` is guarded by `IF NOT EXISTS` so the second deploy behaves like the first**, and the schema's last word on any constraint is `ADD`, never `DROP`. Every one of those is verified red by mutation. **If one starts failing, fix the schema or stop running it on every build — do not weaken the test.**
+- **Watch out locally:** `npm run next:build` migrates whatever database is in your environment. A local build with the production URL exported will migrate production.
 - **No Row-Level Security.** Supabase used RLS as the authorization layer because the browser hit the DB directly. On the Netlify stack, every query runs inside a Function; the Function checks the Identity JWT and filters by `user_id` itself. Postgres just trusts the Function.
 
 ### File storage — Netlify Blobs
@@ -590,7 +593,7 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
 1. Connect the GitHub repo to a Netlify site.
 2. Site → Identity → Enable (decide email-confirmation policy).
 3. From a local checkout: `netlify link`, then `netlify database init`.
-4. Apply schema: `netlify db query --file netlify/schema.sql`.
+4. Apply schema: nothing to do — the first deploy applies it (`prenext:build` → `npm run db:migrate`). `netlify db query --file netlify/schema.sql` still works if you want it applied before deploying.
 5. Set env vars in Site → Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
 6. In Stripe, add a webhook at `https://<site>.netlify.app/api/stripe-webhook`. Subscribe to **all three** of `checkout.session.completed`, `charge.refunded`, `checkout.session.expired`. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 7. (Recommended) Sign up at resend.com, set `RESEND_API_KEY` + `ADMIN_NOTIFICATION_EMAIL` (optionally verify the domain + set `RESEND_FROM_EMAIL`).
@@ -783,7 +786,7 @@ form anywhere else on the site. A review can only exist against an order.
 - **Moderation.** `AdminReviewsPanel` (top of `/admin`) can set `status` and
   nothing else — `admin-reviews` refuses edits to the words and refuses to grant
   photo consent.
-- **Setup:** apply the schema (`netlify db query --file netlify/schema.sql`).
+- **Setup:** nothing — the `reviews` table lands with the deploy that carries this code.
   The signing key is `ORDER_LINK_SECRET`, falling back to `REMINDER_SECRET`
   (already required), so links work without new configuration — set
   `ORDER_LINK_SECRET` only to separate the two key roles. With neither set,

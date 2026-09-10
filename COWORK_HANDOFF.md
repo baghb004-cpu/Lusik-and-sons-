@@ -70,13 +70,17 @@ mistake in a box that took six weeks.
 These are blocking real functionality. Worth walking through together.
 
 1. **Approve and merge PR #280.** Nothing ships until then.
-2. **Apply the database schema:** `netlify db query --file netlify/schema.sql`.
-   Three tables arrived in this branch (`order_milestones`, `product_waitlist`,
-   `reviews`) plus new columns on `orders`. It is idempotent. Until it runs, the
-   order follow-along page and every review link will 404 in production.
-3. **Confirm the crib blanket's alphabet.** The copy says "Ա to Ք" — thirty-six
-   letters. The photographs look like they include Օ and Ֆ, which would make it
-   thirty-eight. The 3D rig follows the photographs. One word settles it.
+2. ~~Apply the database schema by hand~~ — **done, and no longer a manual step.**
+   The schema now applies itself on every deploy (`prenext:build` →
+   `npm run db:migrate`), which is how this branch's three new tables
+   (`order_milestones`, `product_waitlist`, `reviews`) will land. Worth knowing
+   *why* it was added: the manual step had never actually been run, so production
+   was serving accounts, carts and orders against an empty database. Watch the
+   first deploy's build log for the `[schema]` lines to confirm it applied.
+3. ~~Confirm the crib blanket's alphabet~~ — **settled: thirty-eight letters.**
+   The photographs were right and the copy was wrong; the FAQ, the blankets
+   category, the shop index card and the product copy all say thirty-eight now,
+   matching what the 3D rig already rendered.
 4. **Confirm the coupon codes** from the Stripe dashboard, then set
    `CODES_CONFIRMED = true` in `print/coupons/coupons.html` (line 41, currently
    `false`) and re-render. `print/README.md` has the steps.
@@ -163,11 +167,20 @@ npm run test:unit       # 343 Node tests, no browser needed
 npm run test:e2e        # Playwright, 4 projects (excludes the axe suite)
 npm run test:a11y       # axe on 15 routes x 2 viewports
 npm run test:visual     # pixel baselines — read the warning below
-npm run next:build      # ends with the bundle-budget gate
+npm run next:build      # MIGRATES THE DB (see below), then builds; ends with the bundle-budget gate
 ```
 
 CI runs five jobs on every push: Unit, E2E, Accessibility, Visual baselines, and
 Lighthouse. **Tests and Lighthouse both block merging.**
+
+**`npm run next:build` now touches the database.** `prenext:build` runs
+`npm run db:migrate`, which applies `netlify/schema.sql` whenever a
+`NETLIFY_DATABASE_URL` (or `DATABASE_URL`) is in the environment and skips
+silently when there is not. That is what makes deploys self-migrating — and it
+also means **a local build with the production URL exported in your shell will
+migrate production.** The schema is additive and idempotent, and
+`apply-schema.test.mjs` holds it that way, so the blast radius is small; just
+know it is happening.
 
 Three things that catch people out:
 
