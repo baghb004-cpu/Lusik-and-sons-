@@ -170,6 +170,16 @@ export function LoomStage({
         // find a piece that never got stitched. The IntersectionObserver
         // below keeps this current.
         let visible = true;
+        // The stitch-in plays ONCE, when the piece first appears.
+        //
+        // Replaying it on every design change means typing a name
+        // unstitches the whole piece and works it back in per keystroke:
+        // four letters, four full restarts, the entire alphabet blanket
+        // vanishing and redrawing each time. The handoff plan is explicit
+        // that unchanged stitches must not flicker, and this is the
+        // cheapest way to honour it — the letters themselves changing IS
+        // the feedback a customer is looking for while they type.
+        let workedInOnce = false;
 
         const applyDesign = (d: LoomStageProps["design"]) => {
           const total = rig.apply(d);
@@ -186,11 +196,12 @@ export function LoomStage({
           // looking at, which is the case that bit: changing a colourway
           // with the stage scrolled away armed an animation that no frame
           // ever advanced.
-          if (reduced() || total === 0 || !rig.setRevealed || !visible) {
+          if (reduced() || total === 0 || !rig.setRevealed || !visible || workedInOnce) {
             revealRef.current = { shown: total, total, animating: false, startedAt: 0 };
             host.dataset.loomStitching = "false";
           } else {
             rig.setRevealed(0);
+            workedInOnce = true;
             revealRef.current = { shown: 0, total, animating: true, startedAt: performance.now() };
             // A plain dataset write rather than React state: this flips
             // twice per restitch and a re-render of the whole PDP for it

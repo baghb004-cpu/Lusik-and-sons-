@@ -663,6 +663,13 @@ the planner spaces them proportionally. Anything worked ON a piece sits at
 that rig's surface constant, which must clear the extrusion's depth plus
 bevel — below it the stitching is inside the cloth and simply invisible.
 
+**The stitch-in plays once, when the piece first appears.** Replaying it
+on a design change unstitches the whole piece and works it back in on
+every keystroke — four letters, four restarts of an entire alphabet
+blanket. The letters changing is the feedback a customer wants while
+typing; the animation is for arrival. `tests/e2e/loom-stage.spec.mjs`
+counts the restarts.
+
 **A rig can restitch itself.** The letterforms come out of a webfont, so a
 piece is planned once in the fallback face and again when the real one
 lands. `MountedRig.onRestitch` reports the new stitch total; without it

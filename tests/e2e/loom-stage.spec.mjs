@@ -375,6 +375,58 @@ test.describe("Loom stage", () => {
       .toBe("false");
   });
 
+  test("typing does not unstitch the piece and work it in again", async ({ page }, testInfo) => {
+    desktopOnly({}, testInfo);
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto(CRIB);
+
+    const stage = page.locator("[data-loom]").first();
+    await stage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") {
+      test.info().annotations.push({ type: "loom", description: "engine did not run on this machine" });
+      return;
+    }
+    // Let the piece finish being worked in the first time.
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+
+    // Record every flip from here on.
+    await page.evaluate(() => {
+      window.__revealRestarts = 0;
+      const el = document.querySelector("[data-loom]");
+      new MutationObserver(() => {
+        if (el.dataset.loomStitching === "true") window.__revealRestarts += 1;
+      }).observe(el, { attributes: true, attributeFilter: ["data-loom-stitching"] });
+    });
+
+    const before = Number(await stage.getAttribute("data-loom-stitches"));
+    const input = page.getByLabel(/Optional name/i);
+    await input.click();
+    for (const ch of "ANNA") {
+      await page.keyboard.type(ch);
+      await page.waitForTimeout(180);
+    }
+
+    // The design reached the piece...
+    await expect
+      .poll(async () => Number(await stage.getAttribute("data-loom-stitches")), { timeout: 20_000 })
+      .toBeGreaterThan(before);
+
+    // ...and it did NOT vanish and redraw four times on the way. Replaying
+    // the stitch-in per keystroke means the whole alphabet unstitches
+    // every time a letter is typed, which is what this did before the
+    // reveal was made a once-per-mount thing.
+    await page.waitForTimeout(1500);
+    const restarts = await page.evaluate(() => window.__revealRestarts);
+    expect(restarts, "the piece was worked in again while the customer typed").toBe(0);
+  });
+
   test("the stage describes the design, not the widget", async ({ page }) => {
     await page.route("**/.netlify/functions/**", (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
