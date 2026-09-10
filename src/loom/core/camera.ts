@@ -25,18 +25,38 @@ export interface Pose {
   /** Vertical angle from straight up, radians. */
   polar: number;
   fov?: number;
+  /**
+   * Aim at the piece's stitching rather than at `target`, when the rig
+   * can say where that is.
+   *
+   * A close-up needs this. The blanket's design lives on two diagonals
+   * with a bare middle, so a close-up aimed at the origin frames empty
+   * cloth — which is exactly what the retuned `detail` pose did the
+   * first time it was rendered: a perfect, well-lit photograph of
+   * nothing.
+   */
+  focus?: "stitching";
 }
 
 export const POSES: Record<string, Pose> = {
   // Three-quarter top view on the table — the default, and what the
   // product photos look like.
   flat: { target: [0, 0, 0], distance: 3.2, azimuth: 0, polar: 0.62, fov: 35 },
-  // Lower and closer, so the weave and the fringe read.
-  detail: { target: [0, 0, 0], distance: 2.4, azimuth: 0.25, polar: 1.15, fov: 32 },
-  // Straight down: the whole layout at once, like a chart.
+  // Close in, so the weave and the individual crosses read. Kept at a
+  // similar angle to `flat` rather than dropped to table level: a polar
+  // near the horizon foreshortens a large flat piece into a blank plane
+  // with its stitching squashed onto the far edge, which is what this
+  // pose used to do (polar 1.15) and what it looked like every time
+  // anyone actually rendered it.
+  detail: { target: [0, 0, 0], distance: 1.55, azimuth: 0.4, polar: 0.58, fov: 32, focus: "stitching" },
+  // Straight down: the whole layout at once, like a chart. The most
+  // legible view of a blanket by some distance.
   chart: { target: [0, 0, 0], distance: 4.0, azimuth: 0, polar: 0.08, fov: 35 },
-  // Corner lifted to show the satin backing.
-  back: { target: [0, 0, 0], distance: 3.2, azimuth: -0.9, polar: 1.28, fov: 35 },
+  // NOTE: there is no "backing" pose, and there cannot be one from the
+  // camera alone. The orbit clamps polar below MAX_POLAR so the camera
+  // never goes under the table, and the satin backing is a plane on the
+  // underside — so a pose aimed at it can only ever show the piece's
+  // edge. Showing the backing means a rig that lifts a corner.
 };
 
 const MIN_POLAR = 0.05;

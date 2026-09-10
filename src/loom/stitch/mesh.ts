@@ -58,6 +58,8 @@ export interface StitchMeshHandle {
    * scaled to zero. Drives the stitch-in animation.
    */
   setRevealed: (count: number) => void;
+  /** Where the first worked stitch sits, in this mesh's own space. */
+  firstStitchPosition: () => [number, number, number] | null;
   dispose: () => void;
 }
 
@@ -158,5 +160,20 @@ export function createStitchMesh(capacity: number, opts: StitchMeshOptions): Sti
     armB.dispose();
   };
 
-  return { meshes: [armA, armB], setStitches, setRevealed, dispose };
+  /**
+   * Where the first stitch sits, in the mesh's own space, or null when
+   * nothing is worked yet.
+   *
+   * The FIRST one rather than the centroid: the planner orders stitches
+   * the way a person works them, so the first one is the start of the
+   * first letter and is guaranteed to be on stitching. A centroid is
+   * not — two symmetric diagonals average to the bare middle of the
+   * piece.
+   */
+  const firstStitchPosition = (): [number, number, number] | null => {
+    const s = current[0];
+    return s ? [s.x * cell, 0, s.y * cell] : null;
+  };
+
+  return { meshes: [armA, armB], setStitches, setRevealed, firstStitchPosition, dispose };
 }

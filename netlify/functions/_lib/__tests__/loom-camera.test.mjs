@@ -40,7 +40,20 @@ const POSES = poses();
 const HALF_PI = Math.PI / 2;
 
 test("the pose table parsed", () => {
-  assert.ok(Object.keys(POSES).length >= 4, `only found ${Object.keys(POSES).join(", ")}`);
+  // A parser guard, not a product requirement: if the regex above stops
+  // matching the source, every other test in this file passes vacuously.
+  assert.ok(Object.keys(POSES).length >= 3, `only found ${Object.keys(POSES).join(", ")}`);
+});
+
+test("there is no pose claiming to show the backing", () => {
+  // There was one, and it could never have worked. The orbit clamps the
+  // camera above the table (see MAX_POLAR) and the satin backing is a
+  // plane on the underside, so the pose rendered a blank slab edge. It
+  // was never rendered until the pose chips gave anyone a way to press
+  // it. Showing the backing needs a rig that lifts a corner, not a
+  // camera angle.
+  assert.equal(POSES.back, undefined,
+    "a `back` pose is in the table again — the camera cannot get under the cloth, so this can only show the piece's edge");
 });
 
 test("no pose puts the camera under the table", () => {

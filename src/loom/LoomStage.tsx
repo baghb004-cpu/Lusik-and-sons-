@@ -46,13 +46,26 @@ export interface LoomStageProps {
   design: LoomDesign | BibDesign | HyeEmYesDesign;
   /** Body colour of the cloth. */
   clothColor?: string;
+  /**
+   * Named camera pose (a key of POSES). Changing it eases the camera
+   * there. Ignored until the engine is live, and harmless when it never
+   * is — the fallback has no camera.
+   */
+  pose?: string;
+  /**
+   * Told when the stage changes what it is showing. The page needs this
+   * to decide whether controls that only drive a live camera — the pose
+   * chips — are worth rendering at all. A chip that does nothing is
+   * worse than no chip.
+   */
+  onPhaseChange?: (phase: "poster" | "loading" | "live" | "failed") => void;
   className?: string;
 }
 
 type Phase = "poster" | "loading" | "live" | "failed";
 
 export function LoomStage({
-  productKey, poster, fallback, label, design, clothColor, className,
+  productKey, poster, fallback, label, design, clothColor, pose, onPhaseChange, className,
 }: LoomStageProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -62,6 +75,10 @@ export function LoomStage({
   // see the frame loop.
   const revealRef = useRef({ shown: 0, total: 0, animating: false, startedAt: 0 });
   const applyRef = useRef<((d: LoomStageProps["design"]) => void) | null>(null);
+  // Set once the engine is running. A pose asked for before then is
+  // remembered in `pose` and applied when the orbit exists, so a chip
+  // pressed during the load is not silently dropped.
+  const poseRef = useRef<((name: string) => void) | null>(null);
   const [phase, setPhase] = useState<Phase>("poster");
   const [armed, setArmed] = useState(false);
 
@@ -163,6 +180,23 @@ export function LoomStage({
 
         const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
         const orbit = createOrbit(camera, POSES.flat, { reducedMotion: reduced });
+        // Named poses, driven from the page. An unknown name is ignored
+        // rather than throwing: the chips and the camera module can drift,
+        // and a bad chip should cost nothing.
+        poseRef.current = (name: string) => {
+          const next = POSES[name];
+          if (!next) return;
+          // A pose that asks to follow the stitching is aimed at the
+          // piece rather than at the origin. Read at press time, not at
+          // mount: the design changes, and a close-up frozen on where
+          // the first stitch USED to be is a close-up of bare cloth.
+          const aimed = next.focus === "stitching"
+            ? { ...next, target: rig.focusPoint?.() ?? next.target }
+            : next;
+          orbit.goTo(aimed);
+          renderer.invalidate();
+        };
+        if (pose) poseRef.current(pose);
 
         // Whether the stage is on screen. The renderer stops drawing when
         // it is not, so a reveal started off screen has no frames to run
@@ -339,6 +373,7 @@ export function LoomStage({
 
         engineRef.current = {
           dispose: () => {
+            poseRef.current = null;
             host.removeEventListener("pointerdown", onDown);
             host.removeEventListener("pointermove", onMove);
             host.removeEventListener("pointerup", endDrag);
@@ -361,8 +396,12 @@ export function LoomStage({
       engineRef.current?.dispose();
       engineRef.current = null;
     };
-    // `stitches` deliberately omitted: a design change restitches through
-    // the effect below rather than tearing the whole engine down.
+    // `design` and `pose` are deliberately omitted: both are applied
+    // through their own effects below rather than by tearing the whole
+    // engine down and rebuilding it on a canvas whose context was just
+    // force-lost. (That is a real bug this repo has already had once: a
+    // key that changed when a cap was added dropped the stage to its
+    // poster permanently.)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, armed, productKey, clothColor]);
 
@@ -371,9 +410,16 @@ export function LoomStage({
     applyRef.current?.(design);
   }, [design]);
 
+  // ---- move the camera on a pose change ----
+  useEffect(() => {
+    if (pose) poseRef.current?.(pose);
+  }, [pose]);
+
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") setArmed(true);
   }, []);
+
+  useEffect(() => { onPhaseChange?.(phase); }, [phase, onPhaseChange]);
 
   const crossfade = phase === "live";
 

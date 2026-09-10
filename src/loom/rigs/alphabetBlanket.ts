@@ -32,6 +32,8 @@ export interface BlanketRig {
   extent: { width: number; height: number };
   setStitches: (stitches: PlannedStitch[]) => void;
   setRevealed: (count: number) => void;
+  /** World point on the piece's stitching, for a close-up pose. */
+  focusPoint: () => [number, number, number] | null;
   dispose: () => void;
 }
 
@@ -107,6 +109,18 @@ export function createBlanketRig(opts: BlanketRigOptions = {}): BlanketRig {
     extent: { width, height },
     setStitches: stitches.setStitches,
     setRevealed: stitches.setRevealed,
+    // In WORLD space: the stitch meshes sit a little above the cloth and
+    // the whole group is offset to centre the piece on the origin, and a
+    // camera target is a world point.
+    focusPoint: () => {
+      const local = stitches.firstStitchPosition();
+      if (!local) return null;
+      return [
+        group.position.x + local[0],
+        group.position.y + cell * 0.1,
+        group.position.z + local[2],
+      ];
+    },
     dispose,
   };
 }

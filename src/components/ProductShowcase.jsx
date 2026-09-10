@@ -37,6 +37,8 @@ import { BlanketLayoutPreview } from "./BlanketLayoutPreview.jsx";
 const LoomStage = dynamic(() => import("../loom/index").then((m) => m.LoomStage), { ssr: false });
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
 import { ProductVariationNote } from "./ProductVariationNote.jsx";
+import { PoseChips } from "./shop/PoseChips.jsx";
+import { CompareSlider } from "./shop/CompareSlider.jsx";
 import { SoldOutPanel } from "./shop/SoldOutPanel.jsx";
 import { PurchaseCard } from "./shop/PurchaseCard.jsx";
 import { MobilePurchaseBar } from "./shop/MobilePurchaseBar.jsx";
@@ -451,6 +453,16 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
   // selection — see the `onClick` handlers on each picker button.
   const isMobile = useIsMobile();
   const [openSection, setOpenSection] = useState("alphabet"); // "alphabet" | "layout" | "colors" | null
+
+  // ---- the fitting room ----
+  // Which camera the stage is looking through, and whether the stage is
+  // actually live. The chips only render in the live case: on a device
+  // that falls back to the 2D preview there is no camera to point, and a
+  // chip that does nothing reads as a broken page rather than a lighter
+  // one.
+  const [pose, setPose] = useState("flat");
+  const [stageLive, setStageLive] = useState(false);
+  const onStagePhase = useCallback((phase) => setStageLive(phase === "live"), []);
   // null = all sections collapsed (after all selections made)
   // Default opens alphabet first since it's step 1.
 
@@ -540,10 +552,21 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   current configuration: alphabet, layout, colors, optional text.
                   Wrapped in a square frame matching the photo gallery's
                   aspect-ratio so the layout doesn't jump when toggling modes. */}
-              <div className="aspect-[4/5] gallery-frame overflow-hidden mb-4 flex items-center justify-center p-6 lg:p-8" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}>
+              <CompareSlider
+                className="mb-4"
+                /* The photograph currently chosen in the gallery, so the
+                   comparison follows what the customer was just looking
+                   at rather than always the first shot. */
+                photo={product.gallery?.[activeImg] ?? product.gallery?.[0] ?? null}
+                photoIndex={product.gallery?.[activeImg] ? activeImg : 0}
+                controls={stageLive ? <PoseChips value={pose} onChange={setPose} /> : null}
+              >
+              <div className="aspect-[4/5] gallery-frame overflow-hidden flex items-center justify-center p-6 lg:p-8" style={{ background: "rgba(26,22,18,0.04)", border: "1px solid rgba(26,22,18,0.08)" }}>
                 <div className="w-full max-w-[420px]">
                   <LoomStage
                     productKey="blanket-classic"
+                    pose={pose}
+                    onPhaseChange={onStagePhase}
                     label={t("pdp.previewAlt", {
                       alphabet: alphabet.label,
                       line1: customLine1 || "",
@@ -571,9 +594,16 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                   />
                 </div>
               </div>
-              <p className="text-[0.65rem] opacity-70 italic text-center leading-relaxed">
+              </CompareSlider>
+              <p className="text-[0.65rem] opacity-70 italic text-center leading-relaxed mb-4">
                 {t("pdp.livePreviewCaption")}
               </p>
+              {/* The honesty about colour, directly under the thing it is
+                  about rather than in the column beside it. A note saying
+                  a rendered colour is not the colour in your hands belongs
+                  next to the render, not four scrolls away next to the
+                  price. */}
+              <ProductVariationNote className="mb-2" />
             </>
           ) : (
             <>
@@ -690,10 +720,6 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
           </p>
 
           <p className="text-base leading-relaxed mb-8 opacity-85">{product.description}</p>
-
-          {/* Photos shown are examples of past work — each handmade piece may
-              vary a little from the samples. */}
-          <ProductVariationNote className="mb-8" />
 
           <CollapsibleSection
             title={t("pdp.step1")}

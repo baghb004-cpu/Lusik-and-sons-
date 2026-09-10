@@ -669,6 +669,23 @@ export const TRANSLATIONS = {
       closing: "Follow along on Instagram. New pieces and new colors show up there first.",
     },
 
+    // The fitting room on the product page: camera poses, and the wipe
+    // between the render and a photograph of a finished piece.
+    pose: {
+      groupLabel: "How to look at the piece",
+      flat: "On the table",
+      detail: "Close up",
+      chart: "From above",
+    },
+    compare: {
+      toggle: "Compare with a photo",
+      sliderLabel: "Drag to compare",
+      valueText: "{percent}% render, the rest a photograph",
+      renderBadge: "Your design",
+      photoBadge: "A finished piece",
+      caption: "On the left is the design you have configured, drawn from the real stitch chart. On the right is a photograph of a piece Lusik finished. Thread and cloth colors on a screen are never exactly the colors in your hands.",
+    },
+
     // Home v3 scenes (src/components/home/HomeScenes.jsx).
     home: {
       piecesEyebrow: "Everything Lusik makes",
@@ -1479,6 +1496,22 @@ export const TRANSLATIONS = {
       photoSubject: "Լուսանկար ձեր պատրաստած գործից",
 
       closing: "Հետևեք Instagram-ում։ Նոր գործերն ու նոր գույներն այնտեղ են հայտնվում առաջինը։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    pose: {
+      groupLabel: "Ինչպես դիտել գործը",
+      flat: "Սեղանին",
+      detail: "Մոտիկից",
+      chart: "Վերևից",
+    },
+    compare: {
+      toggle: "Համեմատել լուսանկարի հետ",
+      sliderLabel: "Քաշեք համեմատելու համար",
+      valueText: "{percent}% պատկեր, մնացածը՝ լուսանկար",
+      renderBadge: "Ձեր ձևավորումը",
+      photoBadge: "Պատրաստի գործ",
+      caption: "Ձախում ձեր ընտրած ձևավորումն է՝ գծված իրական ասեղնագործության սխեմայից։ Աջում Լուսիկի ավարտած գործի լուսանկարն է։ Թելի և կտորի գույներն էկրանին երբեք ճիշտ նույնը չեն, ինչ ձեր ձեռքերում։",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.

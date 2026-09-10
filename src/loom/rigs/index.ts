@@ -50,6 +50,12 @@ export interface MountedRig {
    * each letter and looking, convincingly, like a broken chart.
    */
   onRestitch?: (cb: (total: number) => void) => void;
+  /**
+   * A world point on the piece's stitching, for a pose that asks to be
+   * aimed there. Optional: a rig that cannot say falls back to the
+   * pose's own target, which is the piece's centre.
+   */
+  focusPoint?: () => [number, number, number] | null;
   dispose: () => void;
 }
 
@@ -106,6 +112,7 @@ export function createRigFor(productKey: string, opts: RigOptions): MountedRig |
       },
       setRevealed: rig.setRevealed,
       onRestitch: (cb) => { restitch = cb; },
+      focusPoint: rig.focusPoint,
       dispose: () => { disposed = true; rig.dispose(); },
     };
   }
