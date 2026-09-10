@@ -15,7 +15,7 @@
 import { buildLayoutCells, GRID } from "../data/blanketLayout.js";
 import { ARMENIAN_FLAG_COLORS, HYE_EM_YES_WORDS } from "../data/hyeEmYes.js";
 import {
-  ARMENIAN_FLAG, CAPITAL_H, CAPITAL_W, CUBE_OUTLINE, LOWER_H, chartCells,
+  ARMENIAN_FLAG, CAPITAL_H, CAPITAL_W, CUBE_OUTLINE, LOWER_H, MOTIFS, chartCells,
 } from "./stitch/chart.js";
 import { measureLine, planDesign, planLine } from "./stitch/planner.js";
 import { lowercaseChartForChar, makeChartResolver } from "./stitch/rasterize.js";
@@ -163,5 +163,95 @@ export function planHyeEmYes() {
     ...planDesign({ lines: [], chartFor: () => null, fixed: stitches }),
     width: Math.max(0, total),
     height: LOWER_H,
+  };
+}
+
+// ============================================================
+// STITCHED LINES — the general case
+// ============================================================
+// The Hye Em Yes bib is one line in three colours; the set bibs are one
+// or two lines in one colour, sometimes with a small motif worked between
+// them. Same machinery, so it lives here rather than in each rig.
+
+export interface StitchedLinesResult {
+  stitches: Stitch[];
+  /** Bounding size of the worked area, in chart cells. */
+  width: number;
+  height: number;
+  /** Characters the font could not draw, so a rig can refuse to render. */
+  unknown: string[];
+}
+
+/** Blank rows between one line and the next. */
+const LINE_GAP = 4;
+/** Blank rows above and below a motif sitting between two lines. */
+const MOTIF_GAP = 2;
+
+/**
+ * Plan one or more lines of lowercase Armenian, centred on each other.
+ *
+ * Each line is measured with the same charts the planner will use — the
+ * letterforms come out of the font, so their widths are only known once
+ * the font is — and then placed, rather than laid into a slot of a guessed
+ * width. Nothing is ever dropped, because the slot IS the line.
+ *
+ * A motif goes between the first two lines, which is where the
+ * photographs put it (public/img/anushig-bib/cover.jpg).
+ */
+export function planStitchedLines({
+  lines, color, motif = null,
+}: {
+  lines: string[];
+  color: string;
+  motif?: keyof typeof MOTIFS | null;
+}): StitchedLinesResult {
+  const chartFor = (char: string) => lowercaseChartForChar(char);
+  const unknown: string[] = [];
+
+  const measured = (lines ?? [])
+    .map((text) => ({ text, w: measureLine({ text, chartFor, gap: LETTER_GAP }) }))
+    .filter((line) => line.w > 0);
+  if (measured.length === 0) return { stitches: [], width: 0, height: 0, unknown };
+
+  const motifChart = motif ? MOTIFS[motif] : null;
+  const width = Math.max(...measured.map((l) => l.w), motifChart?.w ?? 0);
+
+  const stitches: Stitch[] = [];
+  let y = 0;
+  measured.forEach((line, i) => {
+    const result = planLine({
+      text: line.text,
+      // Centred by giving the line the full width of the block and letting
+      // the planner centre inside it.
+      slot: { x: 0, y, w: width, h: LOWER_H },
+      chartFor,
+      color,
+      gap: LETTER_GAP,
+      align: "center",
+    });
+    stitches.push(...result.stitches);
+    for (const u of result.unknown) if (!unknown.includes(u)) unknown.push(u);
+    y += LOWER_H;
+
+    // The motif sits between the first pair of lines only. On a one-line
+    // piece there is no "between", and stitching it under the line would
+    // be inventing a decoration the real bib does not have.
+    if (motifChart && i === 0 && measured.length > 1) {
+      y += MOTIF_GAP;
+      const originX = Math.floor((width - motifChart.w) / 2);
+      for (const cell of chartCells(motifChart)) {
+        stitches.push({ x: originX + cell.x, y: y + cell.y, sym: cell.sym, color, order: 0 });
+      }
+      y += motifChart.h + MOTIF_GAP;
+    } else if (i < measured.length - 1) {
+      y += LINE_GAP;
+    }
+  });
+
+  return {
+    ...planDesign({ lines: [], chartFor: () => null, fixed: stitches }),
+    width,
+    height: y,
+    unknown,
   };
 }

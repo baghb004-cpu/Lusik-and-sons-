@@ -20,7 +20,7 @@
 // ============================================================
 
 import {
-  DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path, Shape,
+  Color, DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path, Shape,
 } from "three";
 import { clothMaps } from "../materials/cloth";
 
@@ -72,6 +72,12 @@ export interface BibBodyOptions {
 export interface BibBody {
   group: Group;
   extent: { width: number; height: number };
+  /**
+   * Re-tint the cloth. Cheap, because the weave is a shared white texture
+   * and the colour lives on the material — which is what lets a
+   * seven-piece set change colourway without rebuilding seven bibs.
+   */
+  setClothColor: (hex: string) => void;
   dispose: () => void;
 }
 
@@ -193,11 +199,17 @@ export function createBibBody(opts: BibBodyOptions = {}): BibBody {
   geometry.rotateX(-Math.PI / 2);
   geometry.computeVertexNormals();
 
-  const terry = clothMaps({ weave: "terry", color: clothColor, size: textureSize, repeat: 4 });
+  // The weave is generated WHITE and the colour applied by the material,
+  // not baked into the canvas. clothMaps caches per colour, so a
+  // seven-bib set in seven pastels would otherwise generate seven
+  // 1024-square texture sets — three maps each, tens of megabytes — for
+  // seven pieces that differ only in tint.
+  const terry = clothMaps({ weave: "terry", color: "#FFFFFF", size: textureSize, repeat: 4 });
   const bodyMaterial = new MeshStandardMaterial({
     map: terry.map,
     normalMap: terry.normalMap,
     roughnessMap: terry.roughnessMap,
+    color: new Color(clothColor),
     roughness: 0.95,
     metalness: 0,
     side: DoubleSide,
@@ -219,10 +231,11 @@ export function createBibBody(opts: BibBodyOptions = {}): BibBody {
   });
   bindingGeo.rotateX(-Math.PI / 2);
   bindingGeo.computeVertexNormals();
-  const satin = clothMaps({ weave: "satin", color: trimColor, size: Math.max(256, textureSize / 4), repeat: 3 });
+  const satin = clothMaps({ weave: "satin", color: "#FFFFFF", size: Math.max(256, textureSize / 4), repeat: 3 });
   const trimMaterial = new MeshStandardMaterial({
     map: satin.map,
     normalMap: satin.normalMap,
+    color: new Color(trimColor),
     roughness: 0.3,
     metalness: 0.03,
     side: DoubleSide,
@@ -242,6 +255,7 @@ export function createBibBody(opts: BibBodyOptions = {}): BibBody {
   return {
     group,
     extent: { width: HALF_W * 2, height: TOP - BOTTOM },
+    setClothColor: (hex: string) => { bodyMaterial.color.set(hex); },
     dispose,
   };
 }

@@ -164,6 +164,13 @@ export function LoomStage({
         const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
         const orbit = createOrbit(camera, POSES.flat, { reducedMotion: reduced });
 
+        // Whether the stage is on screen. The renderer stops drawing when
+        // it is not, so a reveal started off screen has no frames to run
+        // in: it would sit at zero, and the customer scrolling back would
+        // find a piece that never got stitched. The IntersectionObserver
+        // below keeps this current.
+        let visible = true;
+
         const applyDesign = (d: LoomStageProps["design"]) => {
           const total = rig.apply(d);
           // How many stitches the piece is made of. A dataset attribute
@@ -175,8 +182,11 @@ export function LoomStage({
           // them — across each row, outlines last — so replaying that
           // order reads as stitching. Under reduced motion it is just
           // there. A rig reporting 0 (the machine-embroidered bib) has
-          // nothing to work in.
-          if (reduced() || total === 0 || !rig.setRevealed) {
+          // nothing to work in — and neither has a stage nobody is
+          // looking at, which is the case that bit: changing a colourway
+          // with the stage scrolled away armed an animation that no frame
+          // ever advanced.
+          if (reduced() || total === 0 || !rig.setRevealed || !visible) {
             revealRef.current = { shown: total, total, animating: false, startedAt: 0 };
             host.dataset.loomStitching = "false";
           } else {
@@ -294,6 +304,7 @@ export function LoomStage({
         // that should cost nothing.
         const io = new IntersectionObserver(
           ([entry]) => {
+            visible = entry.isIntersecting;
             renderer.setVisible(entry.isIntersecting);
             // Scrolling away mid-stitch would freeze the piece half-worked:
             // the loop stops, so the reveal stops, and scrolling back finds

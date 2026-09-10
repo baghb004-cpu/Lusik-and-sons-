@@ -603,6 +603,7 @@ export const TRANSLATIONS = {
       // cloth rather than that a canvas exists.
       previewAlt: "Hye Em Yes bib: հայ եմ ես cross-stitched in red, blue and orange{cap}",
       previewAltCap: ", with the matching cap and its Armenian flag",
+      previewAltSet: "{name}, hand cross-stitched, shown in {color}",
     },
 
     // Full Alphabet Crib Blanket (CribBlanketCard).
@@ -1300,6 +1301,7 @@ export const TRANSLATIONS = {
       flagFixed: "Ձեռքով խաչաձև կարված հայկական դրոշի երեք գույներով՝ կարմիր, կապույտ, նարնջագույն։ Դրոշը հենց ձևավորումն է, ուստի գույները հաստատուն են։",
       previewAlt: "«Հայ եմ ես» թքակալ՝ հայ եմ ես խաչաձև կարված կարմիրով, կապույտով և նարնջագույնով{cap}",
       previewAltCap: "՝ համապատասխան գլխարկով և հայկական դրոշով",
+      previewAltSet: "{name}՝ ձեռքով խաչաձև կարված, ցուցադրված {color} գույնով",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.

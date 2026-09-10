@@ -17,11 +17,13 @@ import type { Group } from "three";
 import { createBlanketRig } from "./alphabetBlanket";
 import { createBibRig } from "./bib";
 import { createHyeEmYesRig } from "./hyeEmYes";
+import { createBibSetRig, type BibSetDesign } from "./bibSet";
+import { ANUSHIG_PAIR, DAYS_OF_WEEK } from "../../data/setBibs.js";
 import { planDesignFor } from "../design";
 import type { BibDesign, HyeEmYesDesign, LoomDesign } from "../types";
 
 /** Every design shape a rig can be handed. */
-export type AnyDesign = LoomDesign | BibDesign | HyeEmYesDesign;
+export type AnyDesign = LoomDesign | BibDesign | HyeEmYesDesign | BibSetDesign;
 
 export interface MountedRig {
   group: Group;
@@ -116,5 +118,42 @@ export function createRigFor(productKey: string, opts: RigOptions): MountedRig |
     };
   }
 
+  // ── The sets ──────────────────────────────────────────
+  // Seven day bibs and the Mama-and-Papa pair are the same rig: hand
+  // cross-stitched bibs laid out and shrunk to fit the frame. What
+  // differs is the words, the arrangement, and whether a motif goes
+  // between the lines.
+  if (productKey === "bib-days-of-week") {
+    return mountSet(createBibSetRig({
+      pieces: [...DAYS_OF_WEEK],
+      // Three, three and one — how the seven are photographed together.
+      perRow: 3,
+      textureSize: opts.textureSize,
+      textWidth: 0.78,
+    }));
+  }
+
+  if (productKey === "bib-anushig-pair") {
+    return mountSet(createBibSetRig({
+      pieces: [...ANUSHIG_PAIR],
+      perRow: 2,
+      // A small motif worked between the two lines, as the photograph shows.
+      motif: "heart",
+      textureSize: opts.textureSize,
+      textWidth: 0.74,
+    }));
+  }
+
   return null;
+}
+
+/** A set rig already has the shape the stage wants; this only narrows the design. */
+function mountSet(rig: ReturnType<typeof createBibSetRig>): MountedRig {
+  return {
+    group: rig.group,
+    apply: (design) => rig.apply(design as BibSetDesign),
+    setRevealed: rig.setRevealed,
+    onRestitch: rig.onRestitch,
+    dispose: rig.dispose,
+  };
 }

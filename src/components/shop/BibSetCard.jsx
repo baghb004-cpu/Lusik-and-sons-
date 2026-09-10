@@ -88,15 +88,24 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   // Memoised: LoomStage re-plans the piece whenever this identity changes,
   // and a fresh object each render would restitch on every keystroke of
   // any field on the page.
-  const loomDesign = useMemo(() => ({ withCap: capSelected }), [capSelected]);
+  //
+  // One object for every set product. `withCap` is the Hye Em Yes bib's
+  // only choice; `swatch` is the colourway the other sets are worked in,
+  // passed through as the JSON stores it so the rig can read it the same
+  // way the gallery's colour row does. A rig ignores the half that is not
+  // about it.
+  const loomDesign = useMemo(
+    () => ({ withCap: capSelected, swatch: colorway?.swatch ?? null }),
+    [capSelected, colorway],
+  );
 
   // Publish on the design bus as well as passing the prop. The prop is what
   // draws the piece; the bus is the documented channel other viewers listen
   // on, and it is what arms a stage the customer has not touched yet.
   useEffect(() => {
     if (!hasStage) return;
-    publishDesign({ product: loomKey, withCap: capSelected });
-  }, [hasStage, loomKey, capSelected]);
+    publishDesign({ product: loomKey, withCap: capSelected, swatch: colorway?.swatch ?? null });
+  }, [hasStage, loomKey, capSelected, colorway]);
 
   // Double-tap guard — same shape as CustomProductCard / ProductShowcase.
   const lastAddTsRef = useRef(0);
@@ -178,9 +187,15 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
             >
               <LoomStage
                 productKey={loomKey}
-                label={t("bibSet.previewAlt", {
-                  cap: capSelected ? t("bibSet.previewAltCap") : "",
-                })}
+                /* Describes the PIECE, not the widget. The Hye Em Yes bib
+                   has words of its own; the sets are described by what
+                   they are and the colourway they are worked in. */
+                label={spec.key === "bib-hy-em"
+                  ? t("bibSet.previewAlt", { cap: capSelected ? t("bibSet.previewAltCap") : "" })
+                  : t("bibSet.previewAltSet", {
+                      name: productName,
+                      color: colorway?.label ?? "",
+                    })}
                 design={loomDesign}
                 /* The cover photograph is the fallback. Nothing on this
                    product is personalised, so a still of the real piece is

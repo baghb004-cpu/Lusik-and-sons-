@@ -17,6 +17,7 @@ import { test, expect } from "@playwright/test";
 
 const PDP = "/shop/blankets/armenian-alphabet-blanket";
 const HYE_EM = "/shop/bibs/hy-em-armenian-bib";
+const DAYS = "/shop/bibs/days-of-the-week-bib-set";
 
 test.describe("Loom stage", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -214,6 +215,83 @@ test.describe("Loom stage", () => {
 
     if ((await stage.getAttribute("data-loom-phase")) !== "live") return;
     // The cap carries its own flag, so the piece gains stitches.
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+  });
+
+  // ── The sets ───────────────────────────────────────────
+  // A set has a failure the single pieces cannot have: it lays several
+  // bibs out and shrinks them into a frame the camera sized for one. Too
+  // big and the front row goes through the bottom edge, which is how the
+  // seven-bib set first rendered, with Sunday cut in half.
+
+  test("the seven-bib set stitches all seven days", async ({ page }, testInfo) => {
+    desktopOnly({}, testInfo);
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto(DAYS);
+
+    const stage = page.locator("[data-loom]").first();
+    await expect(stage).toBeAttached();
+    await stage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") {
+      test.info().annotations.push({ type: "loom", description: "engine did not run on this machine" });
+      return;
+    }
+
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+
+    // Seven Armenian day names is far more work than one word. A count in
+    // the low hundreds would mean bibs are rendering blank.
+    const stitches = Number(await stage.getAttribute("data-loom-stitches"));
+    expect(stitches, "the set is nearly empty — are the day names rasterising?")
+      .toBeGreaterThan(1200);
+  });
+
+  test("changing the colourway restitches the set", async ({ page }, testInfo) => {
+    desktopOnly({}, testInfo);
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto(DAYS);
+
+    const stage = page.locator("[data-loom]").first();
+    await stage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+
+    const before = await stage.getAttribute("aria-label");
+    // The gallery's colour row is how a colourway is chosen on these
+    // products; picking a different one has to reach the piece.
+    const swatches = page.getByRole("radio");
+    const count = await swatches.count();
+    test.skip(count < 2, "this product has only one colourway");
+    await swatches.nth(1).click();
+
+    // The text alternative names the colourway, so a blind customer is
+    // told what changed.
+    await expect
+      .poll(() => stage.getAttribute("aria-label"), { timeout: 15_000 })
+      .not.toBe(before);
+
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") return;
+    // ...and the piece is left FINISHED, not mid-stitch.
+    //
+    // That is the regression test, not a formality. Clicking a swatch
+    // scrolls the colour row into view and the stage out of it, and the
+    // renderer stops drawing when the stage is off screen — so a reveal
+    // armed at that moment had no frames to advance it and sat at zero
+    // forever. Scrolling back found a set of blank bibs. The stage now
+    // applies a design whole when nobody is looking at it; remove that
+    // and this assertion hangs on "true" until it times out.
     await expect
       .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
       .toBe("false");
