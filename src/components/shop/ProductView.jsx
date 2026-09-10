@@ -39,6 +39,7 @@ import { getProductPhotos, BIB_CUSTOMER_EXAMPLES } from "../../lib/productPhotos
 import { CONFIG } from "../../data/config.js";
 import { useIsMobile } from "../../lib/useIsMobile";
 import { StillHaveQuestionsCard } from "./HelpDecidingSection.jsx";
+import { ReviewList } from "../ReviewList.jsx";
 import { recordProductView } from "../../lib/recentActivity.js";
 import { useSite } from "../../state/SiteProvider.jsx";
 import { inventoryKeyForCatalog } from "../../lib/inventory";
@@ -357,6 +358,9 @@ export function ProductView({
         onBack={() => onNavigateCategory(category.slug)}
       >
         {renderSurface(true)}
+        {product.status === "live" && (
+          <ReviewList productKey={product.trustedKey ?? product.key} className="px-6 mt-10" />
+        )}
         <StillHaveQuestionsCard className="mt-10 mb-4" />
       </ImmersiveBuySheet>
     );
@@ -369,6 +373,15 @@ export function ProductView({
     // sheet, so no extra padding there.
     <div className="pb-[340px] lg:pb-0">
       {renderSurface(false)}
+      {/* What customers wrote after a fortnight with the piece. Keyed by
+          the TRUSTED key, because that is what order_items carries and
+          what a review is stored against — the catalog key would find
+          nothing. Renders nothing at all until a review is approved: a
+          product page saying "no reviews yet" advertises that nobody has
+          bought this, and most orders here are gifts nobody reviews. */}
+      {product.status === "live" && (
+        <ReviewList productKey={product.trustedKey ?? product.key} className="max-w-7xl mx-auto px-6 lg:px-12 mt-12 lg:mt-16" />
+      )}
       {/* The "delivery and pickup details" disclosure lives INSIDE each
           product's PurchaseCard / MobilePurchaseBar (Apple-style). This is
           the last thing on the page — it should rest just above the sheet. */}

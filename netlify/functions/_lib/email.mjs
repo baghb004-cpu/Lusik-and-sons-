@@ -1164,6 +1164,101 @@ export async function sendWaitlistAvailableEmail({ to, productName, productUrl }
 }
 
 // ============================================================
+// sendReviewRequest — "how is it holding up?"
+// ============================================================
+// Sent a fortnight after a piece shipped, once per order, from the
+// scheduled review-request job.
+//
+// Fourteen days rather than the day it lands: a hand cross-stitched
+// blanket is not judged on arrival, it is judged after a fortnight of
+// being slept under and washed once. It also puts the ask far enough
+// from the money that it does not read as part of the transaction.
+//
+// No incentive, no discount for a review, and no star rating baked into
+// the links. A review that was paid for is not a review, and a link that
+// pre-selects five stars is a leading question.
+// ============================================================
+export async function sendReviewRequest({ order, reviewUrl }) {
+  const to = order.customer_email;
+  if (!to) {
+    console.warn("[email] customer email missing on review request; skipping");
+    return false;
+  }
+  if (!reviewUrl) {
+    console.warn("[email] no review URL (no signing secret configured); skipping");
+    return false;
+  }
+
+  const { accent, ink, cream, muted } = PALETTE;
+  const url = baseUrl();
+  const ship = order.shipping_address ?? {};
+  const first = typeof ship.name === "string" && ship.name.trim() ? ship.name.trim().split(" ")[0] : null;
+  const greeting = first ? `Hi ${esc(first)},` : "Hi there,";
+  const orderNumber = order.order_number ?? order.id;
+
+  const subject = "How is it holding up?";
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:${cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${ink};line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:36px 24px;">
+
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:${accent};font-weight:600;margin-bottom:14px;">From Lusik &amp; Sons</div>
+
+    <h1 style="font-size:28px;font-weight:500;margin:0 0 18px 0;letter-spacing:-0.01em;line-height:1.25;">
+      How is it holding up?
+    </h1>
+
+    <p style="font-size:16px;margin:0 0 18px 0;">${greeting}</p>
+
+    <p style="font-size:16px;margin:0 0 22px 0;">
+      Your piece went out a couple of weeks ago, which is about long enough to have been slept under and washed once. Lusik would like to know how it is doing.
+    </p>
+
+    <div style="margin:24px 0 28px 0;">
+      <a href="${esc(reviewUrl)}" style="display:inline-block;padding:14px 26px;background:${ink};color:${cream};text-decoration:none;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;">
+        Tell her how it is &rarr;
+      </a>
+    </div>
+
+    <p style="font-size:14px;color:${muted};margin:0 0 22px 0;">
+      A sentence is plenty. If you would like to send a photograph of it in use, there is a place for that too, and nothing appears anywhere on the site unless you say it may.
+    </p>
+
+    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E1D2;font-size:12px;color:${muted};line-height:1.6;">
+      Order ${esc(String(orderNumber))}<br>
+      <em>Made by hand in Southern California.</em><br>
+      Lusik &amp; Sons &middot; <a href="${url}" style="color:${muted};text-decoration:underline;">lusikandsons.com</a>
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:${muted};line-height:1.6;">
+      This is the only email we send about a review. If you would rather not, just ignore it.
+    </div>
+
+  </div>
+</body></html>`;
+
+  const text = [
+    "LUSIK & SONS",
+    "How is it holding up?",
+    "",
+    first ? `Hi ${first},` : "Hi there,",
+    "",
+    "Your piece went out a couple of weeks ago, which is about long enough to have been slept under and washed once. Lusik would like to know how it is doing.",
+    "",
+    `Tell her how it is: ${reviewUrl}`,
+    "",
+    "A sentence is plenty. If you would like to send a photograph of it in use, there is a place for that too, and nothing appears anywhere on the site unless you say it may.",
+    "",
+    `Order ${orderNumber}`,
+    `Lusik & Sons · ${url}`,
+    "",
+    "This is the only email we send about a review. If you would rather not, just ignore it.",
+  ].join("\n");
+
+  return await sendEmail({ to, subject, html, text });
+}
+
+// ============================================================
 // sendCartAbandonmentRecovery — "we held your spot" email
 // ============================================================
 // Sent by the stripe-webhook when a checkout.session.expired

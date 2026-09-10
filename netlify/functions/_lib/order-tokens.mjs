@@ -50,6 +50,32 @@ export function verifyOrderToken(orderId, token) {
   }
 }
 
+// A second capability, with its OWN purpose prefix.
+//
+// The prefix is the whole point: without it, a token minted to let
+// somebody watch their order would also let them post a review on it,
+// and a review link would open the timeline. Two capabilities, two
+// strings, one secret.
+const REVIEW_PURPOSE = "order-review:";
+
+/** Signed review token for one order, or null when no secret is set. */
+export function signReviewToken(orderId) {
+  const key = secret();
+  if (!key || !orderId) return null;
+  return b64url(createHmac("sha256", key).update(REVIEW_PURPOSE + String(orderId)).digest());
+}
+
+/** Constant-time check. False for any missing piece. */
+export function verifyReviewToken(orderId, token) {
+  const expected = signReviewToken(orderId);
+  if (!expected || typeof token !== "string" || token.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+  } catch {
+    return false;
+  }
+}
+
 // The steps in the order Lusik works them. The UI renders this list even
 // for steps that have not happened yet, so a customer can see what is
 // still ahead. Keep in lockstep with the CHECK constraint in schema.sql.

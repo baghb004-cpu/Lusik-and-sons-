@@ -18,6 +18,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { db } from "../lib/db.js";
 import { Skeleton } from "./Skeleton.jsx";
 import { AdminOrderRow } from "./AdminOrderRow.jsx";
+import { AdminReviewsPanel } from "./AdminReviewsPanel.jsx";
 import { useToast } from "./ToastProvider.jsx";
 import { ADMIN_FILTERS } from "./adminStatusLabels.js";
 
@@ -274,6 +275,11 @@ export function AdminView({ user, onBack, onOpenOrder, onSignOut }) {
           );
         })}
       </div>
+
+      {/* Reviews waiting to be read. review-submit is a public write,
+          and it is only safe to leave public because nothing it writes
+          appears anywhere until it has been through here. */}
+      <AdminReviewsPanel />
 
       {/* Waitlists panel — one row per product with at least one signup.
           Only renders when there's something to show; stays out of the

@@ -236,6 +236,52 @@ function _initDb() {
 
   // Order timeline. Signed-in customers pass no token (the Function
   // checks ownership); a guest passes the signed token from their email.
+  // ---- reviews ----
+  // The public reads are unauthenticated and never throw upward: they
+  // decorate a product page, and a page must not fail over its
+  // testimonials.
+  const getReviews = async (productKey) => {
+    try {
+      const { data } = await call(`/reviews?product=${encodeURIComponent(productKey || "")}`, { method: "GET", auth: false });
+      return Array.isArray(data?.reviews) ? data.reviews : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const getReviewWall = async () => {
+    try {
+      const { data } = await call("/reviews?wall=1", { method: "GET", auth: false });
+      return Array.isArray(data?.reviews) ? data.reviews : [];
+    } catch {
+      return [];
+    }
+  };
+
+  /** The order behind a review link, or null for a bad or spent token. */
+  const getReviewInvite = async (orderId, token) => {
+    const q = new URLSearchParams({ id: String(orderId || ""), t: String(token || "") });
+    const { data } = await call(`/review-submit?${q}`, { method: "GET", auth: false });
+    return data ?? null;
+  };
+
+  const submitReview = async (payload) => {
+    const { error, data } = await call("/review-submit", { method: "POST", auth: false, body: payload });
+    if (error) throw new Error(error);
+    return data;
+  };
+
+  const adminListReviews = async () => {
+    const { data } = await call("/admin-reviews", { method: "GET" });
+    return Array.isArray(data?.reviews) ? data.reviews : [];
+  };
+
+  const adminSetReviewStatus = async (id, status) => {
+    const { error, data } = await call("/admin-reviews", { method: "PUT", body: { id, status } });
+    if (error) throw new Error(error);
+    return data;
+  };
+
   const getOrderMilestones = async (orderId, token = null) => {
     const q = new URLSearchParams({ order_id: String(orderId || "") });
     if (token) q.set("token", String(token));
@@ -303,6 +349,12 @@ function _initDb() {
   return {
     getInventory,
     getLeadTime,
+    getReviews,
+    getReviewWall,
+    getReviewInvite,
+    submitReview,
+    adminListReviews,
+    adminSetReviewStatus,
     getOrderMilestones,
     adminAddOrderMilestone,
     lookupZip,

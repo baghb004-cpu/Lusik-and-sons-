@@ -310,3 +310,50 @@ CREATE INDEX IF NOT EXISTS order_milestones_order_idx
 -- Dedupe gate for the one-time "Lusik started on your piece" email, the
 -- same shape as finished_photo_emailed_at and shipped_at above.
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stitching_emailed_at TIMESTAMPTZ;
+
+-- ============================================================
+-- reviews
+-- ============================================================
+-- One review per order, written from a signed link in the
+-- post-delivery email. Nothing here is public until Lusik approves it:
+-- `status` starts at 'pending' and the public read filters on
+-- 'approved'.
+--
+-- `photo_consent` is separate from `status` on purpose. Somebody can be
+-- happy for their words to appear and not their photograph of their
+-- child, and the two must never be conflated: the "Made for" wall reads
+-- consent, the product page reads status.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS reviews (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id       UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_key    TEXT NOT NULL,
+  rating         INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  body           TEXT,
+  display_name   TEXT,                              -- what the customer chose to be called; may be blank
+  photo_key      TEXT,                              -- Netlify Blob key, review-photos store
+  photo_consent  BOOLEAN NOT NULL DEFAULT false,    -- may the photo appear on the site
+  status         TEXT NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending','approved','hidden')),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  reviewed_at    TIMESTAMPTZ,                       -- when Lusik approved or hid it
+  -- One review per order. A second submission from the same link updates
+  -- the first rather than stacking, so a customer can change their mind.
+  UNIQUE (order_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_public
+  ON reviews (product_key, created_at DESC)
+  WHERE status = 'approved';
+
+CREATE INDEX IF NOT EXISTS idx_reviews_wall
+  ON reviews (created_at DESC)
+  WHERE status = 'approved' AND photo_consent = true AND photo_key IS NOT NULL;
+
+-- The post-delivery ask, stamped once so the scheduled job never emails
+-- the same order twice. Mirrors gift_reminder_sent_at.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS review_request_sent_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_orders_review_request_pending
+  ON orders (shipped_at)
+  WHERE review_request_sent_at IS NULL AND shipped_at IS NOT NULL;

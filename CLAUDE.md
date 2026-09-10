@@ -45,13 +45,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Overhaul (Sept 2026):** `SITE_OVERHAUL_HANDOFF.md` is the phase-by-phase plan
 > for the site overhaul (real-time 3D product engine, storyboarded pages, lead-time
-> engine, order milestones, the premium layer). Done so far: **PR 1** (Embroidery
-> Studio gone, photo hero, `designBus`, visual-regression suite), **PR 16** (the
-> capability ladder), **PR 9** (lead-time engine), **PR 13** (coupons that always
-> work), **PR 10** (order milestones), **PR 17's contrast half** (see the colour
-> token rule under Conventions), and **PR 2 — the Loom**, the real-time 3D product
-> engine (see "The Loom" below). The document's progress log says what is next and
-> records what each piece cost in bugs.
+> engine, order milestones, the premium layer). **Phases 1 to 3 are done.** That
+> covers: **PR 1** (Embroidery Studio gone, photo hero, `designBus`,
+> visual-regression suite), **PR 16** (the capability ladder), **PRs 2 to 5 — the
+> Loom**, the real-time 3D product engine with a rig for every live product (see
+> "The Loom" below), **PRs 6 to 8** (Home v3's scenes, the shop chooser, "Try a
+> name", `/welcome` and the stitched 404, the fitting room, cart thumbnails of the
+> configured design), **PR 9** (lead-time engine), **PR 10** (order milestones),
+> **PR 11** (shared designs, the gift card preview and the gift receipt), **PR 12**
+> (reviews and the "Made for" wall), **PR 13** (coupons that always work), and
+> **PR 17's contrast half** (see the colour token rule under Conventions). What is
+> left is Phase 4 onward: PR 14 (performance), PR 15 (admin/content/docs), PR 18
+> (offline) and the premium layer, plus Home v3's parked "first stitch" scene. The
+> document's progress log says what is next and records what each piece cost in
+> bugs.
 
 ## What this is
 
@@ -311,7 +318,9 @@ netlify/
     │   ├── scheduled.mjs            # scheduled-function auth (Netlify scheduler / SCHEDULED_FN_SECRET)
     │   ├── origin.mjs               # request-origin checks
     │   ├── image-sniff.mjs          # magic-byte sniffing for uploaded images
-    │   └── inventory.mjs            # shared inventory/cap logic
+    │   ├── inventory.mjs            # shared inventory/cap logic
+    │   ├── lead-time-queue.mjs      # queue-aware ship-by dates (mirrors CONFIG.LEAD_TIMES)
+    │   └── order-tokens.mjs         # HMAC capability tokens — PURPOSE-PREFIXED (`order-view:` vs `order-review:`), one secret
     ├── profile.mjs                  # GET/PUT /profile
     ├── addresses.mjs                # GET/POST/DEL /addresses
     ├── saved-cart.mjs               # GET/PUT /saved-cart
@@ -330,6 +339,14 @@ netlify/
     ├── admin-waitlist-notify.mjs    # POST — "it's available" emails (admin, capped)
     ├── inventory.mjs                # GET — public availability snapshot per product group
     ├── zip-lookup.mjs               # GET ?zip= → { city, state } (first-party, for checkout confirmation)
+    ├── lead-time.mjs                # GET — queue-aware ship-by estimate per product
+    ├── order-milestones.mjs         # GET ?id=&t= — token-gated follow-along (items + gift message, NEVER a price)
+    ├── admin-order-milestone.mjs    # POST — advance an order's milestone (admin)
+    ├── reviews.mjs                  # GET — approved reviews, per product or for the photo wall (public)
+    ├── review-submit.mjs            # GET/POST ?id=&t= — token-gated; always writes status `pending`
+    ├── review-photo-get.mjs         # GET ?key=... — serves a review photo only while approved AND consented
+    ├── admin-reviews.mjs            # GET/PUT — moderation queue; can write `status` and nothing else
+    ├── review-request.mjs           # scheduled daily — "how is it holding up?" email 14 days after delivery
     ├── chat.mjs                     # POST — Anthropic API proxy for ChatAssistant (key server-side, usage-capped)
     ├── gift-reminder.mjs            # scheduled daily — one-year gift reminder emails
     ├── unsubscribe-gift-reminder.mjs# GET — HMAC-signed unsubscribe, no sign-in
@@ -341,7 +358,7 @@ netlify/
 ### Database — Netlify Database (Neon-backed Postgres)
 
 - One database per Netlify site, provisioned by `netlify database init`. Connection string is injected as `NETLIFY_DATABASE_URL`; `@netlify/neon`'s `neon()` reads it implicitly.
-- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items` — defined in `netlify/schema.sql`.
+- Tables: `profiles`, `addresses`, `saved_carts`, `orders`, `order_items`, `product_waitlist`, `order_milestones`, `reviews` — defined in `netlify/schema.sql`. **Re-apply the schema after pulling a change that adds one** (`netlify db query --file netlify/schema.sql`).
 - **No Row-Level Security.** Supabase used RLS as the authorization layer because the browser hit the DB directly. On the Netlify stack, every query runs inside a Function; the Function checks the Identity JWT and filters by `user_id` itself. Postgres just trusts the Function.
 
 ### File storage — Netlify Blobs
@@ -725,6 +742,41 @@ driven by the frame loop, remember it stops when the stage is not visible
 - Checkbox at checkout (default off) → `orders.gift_reminder_opt_in`.
 - `netlify/functions/gift-reminder.mjs` — scheduled function (daily 09:00 UTC). Finds ~11-month-old opted-in orders, claims each atomically (`UPDATE … SET sent_at = now() WHERE … AND sent_at IS NULL RETURNING id`), sends via Resend.
 - `netlify/functions/unsubscribe-gift-reminder.mjs` — HMAC-signed unsubscribe URL, verified with `timingSafeEqual`, no sign-in needed.
+
+### Reviews and the "Made for" wall (Sept 2026)
+
+Customers are invited to review a piece **fourteen days after it is delivered**,
+by an emailed capability link — there is no account, no login, and no review
+form anywhere else on the site. A review can only exist against an order.
+
+- **The token carries a purpose.** `_lib/order-tokens.mjs` signs
+  `order-view:<id>` for the follow-along page and `order-review:<id>` for the
+  review page, from **one** secret (`ORDER_LINK_SECRET`). Drop the prefixes and
+  a forwarded tracking link becomes a review link for somebody else's order — a
+  unit test collapses the two purposes and is verified red.
+- **Everything lands as `pending`.** `review-submit` writes `status: 'pending'`
+  on insert *and* on re-submit (`ON CONFLICT (order_id) DO UPDATE`), so an
+  approved review can never be edited into something else afterwards. The
+  product key is read from `order_items`, never the request body.
+- **Two separate yeses for a photograph.** The customer ticks consent, and Lusik
+  approves the review. `review-photo-get` re-checks **both on every request**, so
+  withdrawing either takes the picture down without editing a page or deleting a
+  file. In `ReviewForm` the **file picker does not render until consent is
+  given** — a picker that reads a photo of somebody's child and then asks
+  permission has already read it.
+- **Where they appear.** `ReviewList` under a live product, keyed by the product's
+  **trusted** key (that is what `order_items` stores; the catalog slug finds
+  nothing), wired into **both** PDP branches — the classic page and the mobile
+  immersive sheet. `MadeForWall` at the top of `/gallery`. Both render nothing
+  when there is nothing: "no reviews yet" advertises that nobody has bought this.
+- **Moderation.** `AdminReviewsPanel` (top of `/admin`) can set `status` and
+  nothing else — `admin-reviews` refuses edits to the words and refuses to grant
+  photo consent.
+- **Setup:** apply the schema (`netlify db query --file netlify/schema.sql`).
+  The signing key is `ORDER_LINK_SECRET`, falling back to `REMINDER_SECRET`
+  (already required), so links work without new configuration — set
+  `ORDER_LINK_SECRET` only to separate the two key roles. With neither set,
+  every capability link 404s.
 
 ### Product waitlist (placeholder catalog → real notification)
 - `waitlist.mjs` — public POST, IP-keyed daily rate limit (20/day), strict `productKey` regex, upserts into `product_waitlist`.
