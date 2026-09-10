@@ -140,9 +140,15 @@ function CategoryCard({ category, onTap, onPrefetch }) {
         style={{ flex: "0 0 68%", borderRadius: 12, overflow: "hidden" }}
       >
         {image ? (
+          /* alt="" on purpose. The button around this card already
+             carries aria-label="Browse {label}" AND prints {label} as
+             visible text underneath, so a described image made a screen
+             reader say the category name three times over. Lighthouse
+             calls this `image-redundant-alt`; the picture is decoration
+             here, and the control it sits in is what is named. */
           <img
             src={image}
-            alt={label}
+            alt=""
             loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }}
           />

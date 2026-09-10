@@ -568,6 +568,17 @@ Two layers, both run by `npm test`, and CI runs both on every push and PR (`.git
    `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it to SEE what moved — just don't
    commit the resulting PNGs.
 
+6. **Accessibility gate** (`tests/e2e/a11y.spec.mjs`, `npm run test:a11y`) — axe
+   on fifteen routes, on both viewports; **serious and critical violations fail
+   the build**, lower tiers are logged but not enforced. `color-contrast` is
+   disabled in axe on purpose: the contrast suite above is the stricter, reasoned
+   owner of that question, and two checkers disagreeing means arguing with a tool
+   instead of reading a page. Both viewports matter — the one real defect it
+   found was mobile-only (the immersive sheet's photo strip was a scroll region
+   no keyboard could reach, so on a phone the whole photo set of every photo-led
+   product was pointer-only). Runs as its own CI job so it does not lengthen the
+   e2e one.
+
 5. **Capability-ladder tiers** (`tests/e2e/tiers.spec.mjs`) — run only by the
    `lean-3g` and `core-2g` projects in `playwright.config.mjs` (part of
    `npm run test:e2e`): the throttled phone gets a usable page with the decorative

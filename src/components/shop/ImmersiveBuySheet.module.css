@@ -51,6 +51,14 @@
   scrollbar-width: none;
 }
 .gallery::-webkit-scrollbar { display: none; }
+/* The strip is a tab stop (see the note in the TSX). A tab stop that
+   shows nothing when it is focused is a trap with extra steps, so draw
+   the ring INSIDE — the element is inset:0 over the whole viewport and an
+   outline drawn outside it would be off-screen. */
+.gallery:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
 
 .slide {
   position: relative;

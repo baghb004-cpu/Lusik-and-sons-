@@ -355,11 +355,19 @@ export function HomeView({
             className="flex-shrink-0 overflow-hidden rounded-xl"
             style={{ width: 72, height: 72, background: "var(--bg-subtle, #F5EFE3)" }}
           >
+            {/* `priority` is measured, not decorative. On a phone the hero
+                section above is hidden (`simplified`), so this card is the
+                first thing on the page and this 72px thumbnail is the
+                page's LCP element — Lighthouse measured it at 4.8s with
+                39% of that spent in Load Delay purely because it was
+                lazy. Preloading it is the whole fix. It costs desktop one
+                small preload of an image in a `lg:hidden` section. */}
             <Image
               src={featuredPick.product.coverImage ?? featuredPick.product.images?.[0] ?? product.gallery[0]}
               alt={featuredPick.product.name}
               width={72}
               height={72}
+              priority
               className="w-full h-full object-cover"
             />
           </div>
