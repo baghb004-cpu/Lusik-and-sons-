@@ -56,6 +56,11 @@ const PAGES = [
   ["pdp-hye-em-yes", "/shop/bibs/hy-em-armenian-bib"],
   ["journal-post", "/journal/armenian-alphabet-gift"],
   ["story", "/story"],
+  // The page a printed card sends people to, and the page a mistyped
+  // URL lands on. Both are content-only and both are easy to break by
+  // accident, since nothing else on the site links to either.
+  ["welcome", "/welcome"],
+  ["not-found", "/no-such-page"],
 ];
 
 test.beforeEach(async ({ context, page }) => {

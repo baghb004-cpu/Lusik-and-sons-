@@ -80,3 +80,18 @@ preflight rejects. Add a weight by cutting another instance and declaring it in
 `brochure/fonts/faces.css`. Keep the copy rules when editing: no em dashes, no
 prices, colors-vary note on every product, lead time on every product, and no
 explanation of why the lead times are what they are.
+
+## Where the QR codes point
+
+The site QR on the brochure points at `lusikandsons.com`, the home page.
+There is now also a **`/welcome`** page built for exactly this moment:
+someone standing there with the card, wanting to know how to order, why
+the colour on the card is not exactly the colour that arrives, how long a
+piece takes, what to do with a coupon code, and how to look after a piece
+once it is theirs. It is written in this brochure's voice, with no em
+dashes, and its lead times are read from the same board the site and the
+confirmation emails use, so it cannot drift from the printed numbers.
+
+If the brochure is ever reprinted, point the site QR at
+`lusikandsons.com/welcome` instead. Until then the page stands on its own
+and is listed in the sitemap.

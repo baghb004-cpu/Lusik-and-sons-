@@ -36,6 +36,10 @@ add("/contact", "0.7", "monthly");
 add("/shipping", "0.7", "monthly");
 add("/newsletter", "0.5", "monthly");
 add("/gallery", "0.6", "monthly");
+// Where the printed card lands. Listed because a QR is not the only
+// way anyone reaches it: people type a URL they half remember, and a
+// page that answers "how do I order one of these" should be findable.
+add("/welcome", "0.6", "monthly");
 add("/privacy", "0.3", "yearly");
 add("/returns", "0.3", "yearly");
 

@@ -628,6 +628,47 @@ export const TRANSLATIONS = {
       hint: "Up to {n} letters, Armenian or English.",
     },
 
+    // The /welcome page — where the printed card lands. Written in the
+    // card's voice, which means no em dashes: the print piece was set
+    // without them on purpose.
+    welcome: {
+      eyebrow: "Welcome",
+      title: "Thank you for taking a card.",
+      lede: "Every piece here is cross stitched by hand by Lusik, in her workshop in Buena Park, California. Nothing is printed on, and no two pieces come out quite the same.",
+
+      orderEyebrow: "Ordering",
+      orderTitle: "Three ways to order",
+      orderBody: "Call her, order from this website, or send a message on Instagram. All three reach the same person.",
+      orderOnline: "Order on this website",
+
+      colorsEyebrow: "Colors",
+      colorsTitle: "Colors may vary",
+      colorsBody: "Thread and cloth are bought in small lots and the photographs were taken in daylight, so the color that arrives may not match the color on your screen or on the card. Every piece is worked by hand, so no two are identical. That is the nature of the thing.",
+
+      timeEyebrow: "Timing",
+      timeTitle: "How long a piece takes",
+      timeBibs: "Bibs",
+      timeBlanket: "The alphabet blanket",
+      timeCrib: "The full alphabet crib blanket",
+      timeBody: "If you need a piece by a particular date, call before you order and ask.",
+
+      codeEyebrow: "Coupons",
+      codeTitle: "If you have a code",
+      codeBody: "Type it into the promo box at checkout. It comes off on top of the multi piece savings, so both apply.",
+      codeCta: "Start with the shop",
+
+      careEyebrow: "Care",
+      careTitle: "Looking after a piece",
+      careBody: "Professional dry cleaning is what keeps hand stitching, crochet edging and a satin backing looking the way they left the workshop. A washing machine, a dryer or bleach will wear a handmade textile down quickly, and one wrong setting cannot be undone.",
+
+      photoEyebrow: "After it arrives",
+      photoTitle: "Send her a photo",
+      photoBody: "Lusik keeps every photograph customers send of a piece in use. If you would like to send one, write to her.",
+      photoSubject: "A photo of the piece you made",
+
+      closing: "Follow along on Instagram. New pieces and new colors show up there first.",
+    },
+
     // Home v3 scenes (src/components/home/HomeScenes.jsx).
     home: {
       piecesEyebrow: "Everything Lusik makes",
@@ -1399,6 +1440,45 @@ export const TRANSLATIONS = {
       inputAria: "Մուտքագրեք անուն՝ {name}-ի վրա տեսնելու համար",
       goAria: "Բացել {name}-ը {value} անունով",
       hint: "Մինչև {n} տառ՝ հայերեն կամ անգլերեն։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    welcome: {
+      eyebrow: "Բարի գալուստ",
+      title: "Շնորհակալություն, որ վերցրեցիք քարտը։",
+      lede: "Այստեղ ամեն գործ ձեռքով խաչասեղմ ասեղնագործված է Լուսիկի կողմից՝ Բուենա Պարքի (Կալիֆոռնիա) իր արհեստանոցում։ Ոչինչ տպագրված չէ, և ոչ մի երկու գործ միանգամայն նույնը չեն ստացվում։",
+
+      orderEyebrow: "Պատվեր",
+      orderTitle: "Պատվիրելու երեք ձև",
+      orderBody: "Զանգահարեք, պատվիրեք այս կայքից կամ գրեք Instagram-ով։ Երեքն էլ հասնում են նույն մարդուն։",
+      orderOnline: "Պատվիրել այս կայքից",
+
+      colorsEyebrow: "Գույներ",
+      colorsTitle: "Գույները կարող են տարբերվել",
+      colorsBody: "Թելն ու կտորը գնվում են փոքր խմբաքանակներով, իսկ լուսանկարներն արվել են ցերեկային լույսի տակ, ուստի ստացվող գույնը կարող է չհամընկնել ձեր էկրանի կամ քարտի գույնի հետ։ Ամեն գործ ձեռքով է արվում, ուստի երկուսը նույնական չեն։",
+
+      timeEyebrow: "Ժամկետ",
+      timeTitle: "Որքան է տևում մի գործը",
+      timeBibs: "Թքակալներ",
+      timeBlanket: "Այբուբենի ծածկոցը",
+      timeCrib: "Ամբողջ այբուբենի օրորոցի ծածկոցը",
+      timeBody: "Եթե գործը պետք է որոշակի ամսաթվին, զանգահարեք նախքան պատվիրելը և հարցրեք։",
+
+      codeEyebrow: "Կուպոններ",
+      codeTitle: "Եթե ունեք կոդ",
+      codeBody: "Մուտքագրեք այն վճարման էջի կուպոնի դաշտում։ Այն կիրառվում է բազմաթիվ գործերի զեղչի վրայից, ուստի երկուսն էլ գործում են։",
+      codeCta: "Սկսել խանութից",
+
+      careEyebrow: "Խնամք",
+      careTitle: "Ինչպես խնամել գործը",
+      careBody: "Մասնագիտական չոր մաքրումն է պահում ասեղնագործությունը, կեռասեղի եզրն ու ատլասե աստառը այնպես, ինչպես դուրս են եկել արհեստանոցից։ Լվացքի մեքենան, չորանոցը կամ սպիտակեցնողը արագ մաշում են ձեռագործ գործվածքը, և մեկ սխալ ռեժիմը հետ չի շտկվում։",
+
+      photoEyebrow: "Երբ հասնի",
+      photoTitle: "Ուղարկեք լուսանկար",
+      photoBody: "Լուսիկը պահում է հաճախորդների ուղարկած ամեն լուսանկարը։ Եթե ցանկանում եք ուղարկել, գրեք նրան։",
+      photoSubject: "Լուսանկար ձեր պատրաստած գործից",
+
+      closing: "Հետևեք Instagram-ում։ Նոր գործերն ու նոր գույներն այնտեղ են հայտնվում առաջինը։",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.

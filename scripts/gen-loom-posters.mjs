@@ -52,6 +52,29 @@ const PRODUCTS = [
     },
   },
   {
+    // The 404. A small stitched swatch rather than a whole blanket: the
+    // page is a wrong turn, not a product, and Ա followed by a question
+    // mark is the shop asking which letter you meant.
+    key: "not-found",
+    file: "not-found.webp",
+    width: 900,
+    height: 520,
+    clothColor: "#F7F3EA",
+    // Two cubes by one: exactly the two glyphs, so the piece is a swatch
+    // with nothing empty in it. An odd column count would leave the pair
+    // off-centre, since a two-glyph run cannot sit in the middle of three.
+    cols: 2,
+    rows: 1,
+    distance: 2.35,
+    design: {
+      alphabet: "\u0531?",
+      line1: "",
+      line2: "",
+      blockColor: "#2B4C73",
+      lineColor: "#8B2C2C",
+    },
+  },
+  {
     key: "bib-single",
     file: "name-bib.webp",
     width: 1000,
@@ -204,11 +227,17 @@ window.__done = (async () => {
   const chartFor = makeChartResolver({});
   const lines = [];
   const alphabet = ${JSON.stringify(design.alphabet)};
+  // Cubes across and down. The real blanket is seven by seven; a poster
+  // that is not a whole blanket (the 404 swatch) says its own size.
+  const COLS = ${product.cols ?? 7}, ROWS = ${product.rows ?? 7};
+  const startCol = Math.max(0, Math.round((COLS - alphabet.length) / 2));
   for (let i = 0; i < alphabet.length; i++) {
-    lines.push({ text: alphabet[i], slot: { x: i*W, y: 0, w: W, h: H }, color: ${JSON.stringify(design.blockColor)} });
+    lines.push({ text: alphabet[i], slot: { x: (startCol + i)*W, y: 0, w: W, h: H }, color: ${JSON.stringify(design.blockColor)} });
   }
-  lines.push({ text: ${JSON.stringify(design.line1)}, slot: { x: 0, y: H*3, w: W*alphabet.length, h: H }, color: ${JSON.stringify(design.lineColor)} });
-  lines.push({ text: ${JSON.stringify(design.line2)}, slot: { x: 0, y: H*5, w: W*alphabet.length, h: H }, color: ${JSON.stringify(design.lineColor)} });
+  // Clamped so a short piece does not place its lines off the bottom.
+  const row1 = Math.min(3, ROWS - 1), row2 = Math.min(5, ROWS - 1);
+  lines.push({ text: ${JSON.stringify(design.line1)}, slot: { x: 0, y: H*row1, w: W*COLS, h: H }, color: ${JSON.stringify(design.lineColor)} });
+  lines.push({ text: ${JSON.stringify(design.line2)}, slot: { x: 0, y: H*row2, w: W*COLS, h: H }, color: ${JSON.stringify(design.lineColor)} });
   const planned = planDesign({ lines, chartFor });
   if (planned.unknown.length) throw new Error("unstitchable characters in poster design: " + planned.unknown.join(","));
 
@@ -218,14 +247,14 @@ window.__done = (async () => {
   const handle = createRenderer({ canvas, tier: "high" });
   const { scene } = createScene(false);
   const camera = createCamera(${product.width} / ${product.height});
-  const rig = createBlanketRig({ textureSize: 1024, clothColor: ${JSON.stringify(product.clothColor)} });
+  const rig = createBlanketRig({ textureSize: 1024, clothColor: ${JSON.stringify(product.clothColor)}, cols: COLS*W, rows: ROWS*H });
   scene.add(rig.group);
   rig.setStitches(planned.stitches);
 
   // The rig centres itself on the origin, so POSES.flat aims correctly.
   // A poster wants the cloth a little larger in frame than the stage does,
   // since it has no surrounding UI.
-  const pose = { ...POSES.flat, distance: 2.9 };
+  const pose = { ...POSES.flat, distance: ${product.distance ?? 2.9} };
   const orbit = createOrbit(camera, pose, { reducedMotion: () => true });
   orbit.goTo(pose, true);
 

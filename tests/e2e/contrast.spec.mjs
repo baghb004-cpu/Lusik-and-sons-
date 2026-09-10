@@ -37,6 +37,10 @@ const ROUTES = [
   "/", "/shop", "/shop/blankets/armenian-alphabet-blanket",
   "/shop/blankets/full-alphabet-crib-blanket",
   "/cart", "/checkout", "/story", "/journal", "/faq", "/privacy",
+  // The category grid carries the "Try a name" field, and /welcome is a
+  // page of its own that nothing links to, so nobody would notice it
+  // going cream-on-cream in dark mode.
+  "/shop/bibs", "/welcome",
 ];
 
 // A seeded bag so /cart and /checkout render their real content —

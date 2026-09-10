@@ -123,6 +123,7 @@ test("the lead-time copy never explains WHY a piece takes as long as it does", (
     "content/products/hy-em-armenian-bib.json",
     "src/data/config.js",
     "src/data/policies.js",
+    "src/i18n/translations.js",
   ];
   for (const rel of files) {
     const text = readFileSync(new URL(`../../../../${rel}`, import.meta.url), "utf8");

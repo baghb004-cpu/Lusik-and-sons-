@@ -25,6 +25,20 @@ export default function NotFound() {
         color: "var(--text-primary)",
       }}
     >
+      {/* A swatch the Loom actually stitched: Ա followed by a question
+          mark, which is the shop asking which letter you meant. Generated
+          by `npm run gen:loom-posters`, so it cannot drift from what the
+          engine draws. Decorative, hence the empty alt — the heading
+          below says what happened. Sized so nothing shifts as it loads. */}
+      <img
+        src="/img/loom/not-found.webp"
+        alt=""
+        aria-hidden="true"
+        width={900}
+        height={520}
+        decoding="async"
+        style={{ width: "min(22rem, 100%)", height: "auto", marginBottom: "1.75rem" }}
+      />
       <p
         style={{
           fontSize: "0.7rem",
