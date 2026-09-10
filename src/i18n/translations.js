@@ -608,6 +608,9 @@ export const TRANSLATIONS = {
 
     // Full Alphabet Crib Blanket (CribBlanketCard).
     cribBlanket: {
+      // Describes the PIECE: the whole alphabet, the colour it is worked
+      // in, and the name in the free square when there is one.
+      previewAlt: "Full Alphabet Crib Blanket: the Armenian alphabet from Ա to Ֆ hand-knit in {color}{name}",
       bodyColorLabel: "Body color",
       nameLabel: "Optional name (set into a free square)",
       namePlaceholder: "e.g. Anna",
@@ -1306,6 +1309,7 @@ export const TRANSLATIONS = {
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
     cribBlanket: {
+      previewAlt: "Ամբողջ այբուբենի օրորոցի ծածկոց՝ հայկական այբուբենը Ա-ից Ֆ ձեռքով հյուսված {color} գույնով{name}",
       bodyColorLabel: "Հիմնական գույնը",
       nameLabel: "Ըստ ցանկության անուն (տեղադրվում է ազատ վանդակում)",
       namePlaceholder: "օր.՝ Աննա",

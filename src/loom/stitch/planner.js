@@ -212,7 +212,7 @@ export function orderStitches(stitches) {
  * Plan a whole design: the fixed alphabet cubes plus the customer's lines.
  *
  * @param {object} input
- * @param {{ text: string, slot: {x:number,y:number,w:number,h:number}, color: string, align?: "center"|"left" }[]} input.lines
+ * @param {{ text: string, slot: {x:number,y:number,w:number,h:number}, color: string, gap?: number, align?: "center"|"left" }[]} input.lines
  * @param {(char: string) => Chart | null} input.chartFor
  * @param {Stitch[]} [input.fixed]  stitches that are part of the product, not the personalisation
  * @returns {{ stitches: Stitch[], dropped: number, unknown: string[] }}

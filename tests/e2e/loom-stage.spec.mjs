@@ -19,6 +19,7 @@ const PDP = "/shop/blankets/armenian-alphabet-blanket";
 const HYE_EM = "/shop/bibs/hy-em-armenian-bib";
 const DAYS = "/shop/bibs/days-of-the-week-bib-set";
 const BARI = "/shop/bibs/bari-akhorzhak-bib-burp-cloth-set";
+const CRIB = "/shop/blankets/full-alphabet-crib-blanket";
 
 test.describe("Loom stage", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -331,6 +332,44 @@ test.describe("Loom stage", () => {
     await expect
       .poll(async () => Number(await stage.getAttribute("data-loom-stitches")), { timeout: 30_000 })
       .toBeGreaterThan(twoPieces);
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+  });
+
+  test("the crib blanket works the whole alphabet, and a name into the free square", async ({ page }, testInfo) => {
+    desktopOnly({}, testInfo);
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto(CRIB);
+
+    const stage = page.locator("[data-loom]").first();
+    await expect(stage).toBeAttached();
+    await stage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") {
+      test.info().annotations.push({ type: "loom", description: "engine did not run on this machine" });
+      return;
+    }
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+
+    // Thirty-eight letters, four motifs and a stitched grid is thousands
+    // of crosses. Anything in the hundreds means squares are coming out
+    // empty — the failure this product cannot ship with, since carrying
+    // the whole alphabet is the entire point of it.
+    const plain = Number(await stage.getAttribute("data-loom-stitches"));
+    expect(plain, "the alphabet did not rasterise").toBeGreaterThan(2500);
+
+    // A name goes into the free square, and it must not cost a letter.
+    await page.getByLabel(/Optional name/i).fill("ԱՆԻ");
+    await expect
+      .poll(async () => Number(await stage.getAttribute("data-loom-stitches")), { timeout: 30_000 })
+      .toBeGreaterThan(plain);
     await expect
       .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
       .toBe("false");

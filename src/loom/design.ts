@@ -13,6 +13,7 @@
 // ============================================================
 
 import { buildLayoutCells, GRID } from "../data/blanketLayout.js";
+import { CRIB_COLS, cribCells } from "../data/cribBlanketLayout.js";
 import { ARMENIAN_FLAG_COLORS, HYE_EM_YES_WORDS } from "../data/hyeEmYes.js";
 import {
   ARMENIAN_FLAG, CAPITAL_H, CAPITAL_W, CUBE_OUTLINE, LOWER_H, MOTIFS, STRAWBERRY,
@@ -319,4 +320,105 @@ export function planCapName({ name, color }: { name: string; color: string }) {
   const text = String(name ?? "").trim();
   if (text.length === 0) return { stitches: [] as Stitch[], width: 0, height: 0, unknown: [] };
   return planStitchedLines({ lines: [text], color });
+}
+
+// ============================================================
+// THE FULL ALPHABET CRIB BLANKET
+// ============================================================
+// Forty-two squares outlined in the same thread as their contents, the
+// alphabet in reading order between four corner motifs. References:
+// public/img/full-alphabet/12.jpg and 55.jpg — see
+// src/data/cribBlanketLayout.js for what goes where and why.
+
+/** The free square's rect in chart cells, or null when no name was given. */
+export type CribSquare = { x: number; y: number; w: number; h: number } | null;
+
+/** One square, in chart cells. Capitals are worked at their own size. */
+const CRIB_CELL_W = CAPITAL_W + 3;
+const CRIB_CELL_H = CAPITAL_H + 3;
+
+/**
+ * The lines between the squares.
+ *
+ * Worked as part of the piece rather than drawn into the cloth texture:
+ * on the real blanket they are the same thread as the letters and change
+ * colour with them, and a customer switching to lavender would otherwise
+ * get lavender letters inside a pink grid.
+ */
+function cribGrid(cols: number, rows: number, color: string): Stitch[] {
+  const out: Stitch[] = [];
+  const w = cols * CRIB_CELL_W;
+  const h = rows * CRIB_CELL_H;
+  for (let r = 0; r <= rows; r += 1) {
+    const y = Math.min(r * CRIB_CELL_H, h - 1);
+    for (let x = 0; x < w; x += 1) out.push({ x, y, sym: "X", color, order: 0 });
+  }
+  for (let c = 0; c <= cols; c += 1) {
+    const x = Math.min(c * CRIB_CELL_W, w - 1);
+    for (let y = 0; y < h; y += 1) out.push({ x, y, sym: "X", color, order: 0 });
+  }
+  return out;
+}
+
+/** A hand-authored motif, centred in its square. */
+function motifStitches(name: string, originX: number, originY: number, color: string): Stitch[] {
+  const chart = (MOTIFS as Record<string, { w: number; h: number; rows: string[] }>)[name];
+  if (!chart) return [];
+  const dx = originX + Math.floor((CRIB_CELL_W - chart.w) / 2);
+  const dy = originY + Math.floor((CRIB_CELL_H - chart.h) / 2);
+  return chartCells(chart).map((cell) => ({
+    x: dx + cell.x, y: dy + cell.y, sym: cell.sym, color, order: 0,
+  }));
+}
+
+/**
+ * Plan the whole blanket.
+ *
+ * The customer chooses a colour and, optionally, a name for the free
+ * square. Everything else is the product.
+ */
+export function planCribBlanket({ color, name = "" }: { color: string; name?: string }) {
+  const trimmed = String(name ?? "").trim();
+  const cells = cribCells({ hasName: trimmed.length > 0 });
+  const cols = CRIB_COLS;
+  const rows = Math.ceil(cells.length / cols);
+
+  const chartFor = makeChartResolver({});
+  const fixed: Stitch[] = cribGrid(cols, rows, color);
+  const lines: Parameters<typeof planDesign>[0]["lines"] = [];
+  /** Where the free square is, for the rig to work a name into. */
+  let nameSquare: CribSquare = null;
+
+  cells.forEach((cell, i) => {
+    const originX = (i % cols) * CRIB_CELL_W;
+    const originY = Math.floor(i / cols) * CRIB_CELL_H;
+    if (cell.kind === "motif") {
+      fixed.push(...motifStitches(cell.motif, originX, originY, color));
+      return;
+    }
+    if (cell.kind === "letter") {
+      lines.push({
+        text: cell.glyph,
+        slot: { x: originX, y: originY, w: CRIB_CELL_W, h: CRIB_CELL_H },
+        color,
+      });
+      return;
+    }
+    // The name's square is only reported, not planned. A capital is
+    // thirteen cells wide and the square is sixteen, so planning it here
+    // would fit exactly one letter and the planner would truncate the
+    // rest — silently turning a name into an initial. The rig works it in
+    // its own scaled group instead, which is how every other piece of
+    // lettering in the engine is sized to its cloth.
+    nameSquare = { x: originX, y: originY, w: CRIB_CELL_W, h: CRIB_CELL_H };
+  });
+
+  return {
+    ...planDesign({ lines, chartFor, fixed }),
+    cols,
+    rows,
+    cellW: CRIB_CELL_W,
+    cellH: CRIB_CELL_H,
+    nameSquare: nameSquare as CribSquare,
+  };
 }

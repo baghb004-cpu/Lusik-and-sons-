@@ -19,12 +19,14 @@ import { createBibRig } from "./bib";
 import { createHyeEmYesRig } from "./hyeEmYes";
 import { createBibSetRig, type BibSetDesign } from "./bibSet";
 import { createBariRig, type BariDesign } from "./bariAkhorzhak";
+import { createCribBlanketRig, type CribBlanketDesign } from "./cribBlanket";
 import { ANUSHIG_PAIR, DAYS_OF_WEEK } from "../../data/setBibs.js";
 import { planDesignFor } from "../design";
 import type { BibDesign, HyeEmYesDesign, LoomDesign } from "../types";
 
 /** Every design shape a rig can be handed. */
-export type AnyDesign = LoomDesign | BibDesign | HyeEmYesDesign | BibSetDesign | BariDesign;
+export type AnyDesign =
+  | LoomDesign | BibDesign | HyeEmYesDesign | BibSetDesign | BariDesign | CribBlanketDesign;
 
 export interface MountedRig {
   group: Group;
@@ -152,6 +154,17 @@ export function createRigFor(productKey: string, opts: RigOptions): MountedRig |
     return {
       group: rig.group,
       apply: (design) => rig.apply(design as BariDesign),
+      setRevealed: rig.setRevealed,
+      onRestitch: rig.onRestitch,
+      dispose: rig.dispose,
+    };
+  }
+
+  if (productKey === "blanket-full-alphabet") {
+    const rig = createCribBlanketRig({ textureSize: opts.textureSize, clothColor: opts.clothColor });
+    return {
+      group: rig.group,
+      apply: (design) => rig.apply(design as CribBlanketDesign),
       setRevealed: rig.setRevealed,
       onRestitch: rig.onRestitch,
       dispose: rig.dispose,

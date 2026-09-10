@@ -551,11 +551,21 @@ rendering projects. Later PRs (photos, video, 3D, fonts, storage) read
 as the customer types. It is the centrepiece of `SITE_OVERHAUL_HANDOFF.md`
 Phase 1. Live on the Armenian Alphabet Blanket's configurator; dials in
 `CONFIG.LOOM` (`ENABLED` is a kill switch, `PRODUCTS` lists which product
-keys mount a stage). Live on the Armenian Alphabet Blanket, the Custom
-Name Bib, the Hye Em Yes bib, the Days-of-the-Week and Anushig sets, and
-the Bari Akhorzhak set. The set stages are desktop-only: on phones those
-products open in the immersive sheet, where the photographs are the
+keys mount a stage). **Every live product has a rig**: the Armenian
+Alphabet Blanket, the Custom Name Bib, the Hye Em Yes bib, the
+Days-of-the-Week and Anushig sets, the Bari Akhorzhak set, and the Full
+Alphabet Crib Blanket. The photo-led products' stages are desktop-only:
+on phones they open in the immersive sheet, where the photographs are the
 backdrop.
+
+**What a piece says is data, checked against the page that sells it.**
+The Armenian on the sets lives in `src/data/setBibs.js`, the flag colours
+in `hyeEmYes.js`, the alphabet grid in `cribBlanketLayout.js` — all plain
+JS, all with drift tests comparing them to the product JSON. A wrong
+Armenian word is not a red build; it is a hand-stitched mistake in a box.
+Never transcribe stitched Armenian off a photograph: the crib blanket's
+letters come from the Unicode block and the render is then compared to
+the photograph.
 
 **Pass the RIG key to `LoomStage`, never the SKU key.** Adding a cap
 switches a product's SKU to its `-with-cap` variant, and `LoomStage`
