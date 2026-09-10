@@ -18,7 +18,7 @@ import Image from "next/image";
 import { CONFIG } from "../data/config.js";
 import { db } from "../lib/db.js";
 import { track } from "../lib/analytics.js";
-import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign } from "../lib/designUrl";
+import { encodeDesignToUrl, decodeDesignFromUrl, resolveDesign, toUrlSafe } from "../lib/designUrl";
 import { readTryName } from "../lib/tryName.js";
 import { galleryRotationStyle } from "../lib/galleryRotation";
 import { useIsMobile } from "../lib/useIsMobile";
@@ -385,9 +385,18 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
       toast({ kind: "error", message: "Couldn't build a share link — please try again." });
       return;
     }
-    const url = new URL(window.location.href);
-    url.searchParams.set("d", encoded);
-    url.hash = "blanket";
+    // Shared links land on /design/<blob>, which shows the piece large
+    // and read-only with a way through to the configurator. Somebody who
+    // has just been sent a blanket wants to see it, not to arrive in the
+    // middle of a seven-step picker with somebody else's choices in it.
+    //
+    // The design still travels in the link rather than in a database:
+    // saved designs live behind their owner's login and their ids are
+    // short, so a lookup endpoint would be an enumerable read of other
+    // people's children's names. The `?d=` form the configurator has
+    // always accepted still works, so every link shared before this
+    // keeps opening.
+    const url = new URL(`/design/${toUrlSafe(encoded)}`, window.location.origin);
     const shareUrl = url.toString();
 
     // Try the native share sheet first — better UX on mobile.
@@ -519,6 +528,7 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
             `top-24` (~96px) clears the sticky nav (~80px) with breathing
             room. `max-h-[calc(100vh-7rem)]` + `overflow-y-auto` is a safety
             net for short laptop screens. */}
+        <div>
         <div className="lg:sticky lg:top-24 lg:self-start pdp-sticky-col lg:overflow-y-auto">
           {/* View toggle — "Your design" (live SVG preview) | "Real photos".
               Hidden in immersive mode: the real photos are the full-screen
@@ -602,15 +612,6 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
                 </div>
               </div>
               </CompareSlider>
-              <p className="text-[0.65rem] opacity-70 italic text-center leading-relaxed mb-4">
-                {t("pdp.livePreviewCaption")}
-              </p>
-              {/* The honesty about colour, directly under the thing it is
-                  about rather than in the column beside it. A note saying
-                  a rendered colour is not the colour in your hands belongs
-                  next to the render, not four scrolls away next to the
-                  price. */}
-              <ProductVariationNote className="mb-2" />
             </>
           ) : (
             <>
@@ -712,6 +713,28 @@ export function ProductShowcase({ product, onAdd, onBuyNow, onCartFeedback, user
               )}
             </>
           )}
+        </div>
+
+        {/* The prose under the picture, and OUTSIDE the sticky column on
+            purpose.
+
+            That column is capped at the viewport height with
+            `overflow-y-auto` (a safety net for short laptops), and the
+            preview frame alone is taller than the cap on a 720-pixel
+            screen — so anything placed after it inside the column lands
+            in an internal scroll area a customer has no reason to
+            discover. The colour note is the one thing on this page that
+            must not be missable: it is what says a rendered thread colour
+            is not the colour that arrives. Out here it is always in the
+            flow, still directly beneath the preview. */}
+        {(immersive || leftPaneMode === "preview") && (
+          <>
+            <p className="text-[0.65rem] opacity-70 italic text-center leading-relaxed mb-4 mt-4">
+              {t("pdp.livePreviewCaption")}
+            </p>
+            <ProductVariationNote className="mb-2" />
+          </>
+        )}
         </div>
 
         <div>

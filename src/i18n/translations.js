@@ -686,6 +686,30 @@ export const TRANSLATIONS = {
       caption: "On the left is the design you have configured, drawn from the real stitch chart. On the right is a photograph of a piece Lusik finished. Thread and cloth colors on a screen are never exactly the colors in your hands.",
     },
 
+    // The /design/<encoded> page: a design somebody sent you.
+    designShare: {
+      eyebrow: "Someone sent you this",
+      title: "A blanket, worked by hand",
+      titleFor: "A blanket for {name}",
+      lede: "Every letter here is cross-stitched by hand by Lusik, one at a time, on waffle cloth with a satin backing. Nothing about it is printed.",
+      alphabet: "Alphabet",
+      layout: "Arrangement",
+      threads: "Threads",
+      year: "Second line",
+      openCta: "Open this design",
+      copyLink: "Copy the link",
+      copied: "Copied",
+      registryEyebrow: "Baby registry",
+      registryBody: "Most universal registries take a pasted link. Copy this one into yours and the design comes with it.",
+      registryCopy: "Copy for a registry",
+      questions: "Questions about this piece, or want it changed? Lusik answers herself.",
+      mailSubject: "About a blanket design someone shared with me",
+      colorsNote: "Screens and thread do not agree. The colors above are as close as a screen gets; {product} that arrives is dyed thread on cloth, and no two pieces come out identical.",
+      brokenTitle: "That link did not come through whole",
+      brokenBody: "A shared design carries the whole design in its link, so a link that lost its last few characters cannot be put back together. Ask whoever sent it to send it again, or start one of your own.",
+      brokenCta: "Design a blanket",
+    },
+
     // Home v3 scenes (src/components/home/HomeScenes.jsx).
     home: {
       piecesEyebrow: "Everything Lusik makes",
@@ -1512,6 +1536,30 @@ export const TRANSLATIONS = {
       renderBadge: "Ձեր ձևավորումը",
       photoBadge: "Պատրաստի գործ",
       caption: "Ձախում ձեր ընտրած ձևավորումն է՝ գծված իրական ասեղնագործության սխեմայից։ Աջում Լուսիկի ավարտած գործի լուսանկարն է։ Թելի և կտորի գույներն էկրանին երբեք ճիշտ նույնը չեն, ինչ ձեր ձեռքերում։",
+    },
+
+    // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.
+    designShare: {
+      eyebrow: "Ինչ-որ մեկը սա ուղարկել է ձեզ",
+      title: "Ձեռքով գործված ծածկոց",
+      titleFor: "Ծածկոց {name}-ի համար",
+      lede: "Այստեղ ամեն տառ ձեռքով խաչասեղմ ասեղնագործված է Լուսիկի կողմից՝ մեկ առ մեկ, վաֆլե կտորի վրա՝ ատլասե աստառով։ Ոչինչ տպագրված չէ։",
+      alphabet: "Այբուբեն",
+      layout: "Դասավորություն",
+      threads: "Թելեր",
+      year: "Երկրորդ տող",
+      openCta: "Բացել այս ձևավորումը",
+      copyLink: "Պատճենել հղումը",
+      copied: "Պատճենվեց",
+      registryEyebrow: "Մանկական ցանկ",
+      registryBody: "Ցանկերի մեծ մասն ընդունում է տեղադրված հղում։ Պատճենեք սա ձեր ցանկի մեջ, և ձևավորումը կգա դրա հետ։",
+      registryCopy: "Պատճենել ցանկի համար",
+      questions: "Հարցե՞ր ունեք այս գործի մասին, կամ ուզում եք փոխել։ Լուսիկն ինքն է պատասխանում։",
+      mailSubject: "Ինձ ուղարկված ծածկոցի ձևավորման մասին",
+      colorsNote: "Էկրանն ու թելը չեն համընկնում։ Վերևի գույներն այնքան մոտ են, որքան էկրանը կարող է. հասնող {product}-ը ներկված թել է կտորի վրա, և ոչ մի երկու գործ նույնական չեն։",
+      brokenTitle: "Այդ հղումն ամբողջությամբ չի հասել",
+      brokenBody: "Համօգտագործված ձևավորումն ամբողջ ձևավորումը կրում է իր հղման մեջ, ուստի վերջին նիշերը կորցրած հղումը հնարավոր չէ վերականգնել։ Խնդրեք ուղարկողին նորից ուղարկել, կամ սկսեք ձերը։",
+      brokenCta: "Ձևավորել ծածկոց",
     },
 
     // ⚠️ TODO_LUSIK_REVIEW: auto-translated, awaiting a native speaker.

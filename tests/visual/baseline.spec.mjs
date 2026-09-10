@@ -115,6 +115,25 @@ async function settle(page) {
     ])
   );
   await page.evaluate(() => document.fonts?.ready);
+  // Un-stick everything before the capture.
+  //
+  // A full-page screenshot is not a photograph of a tall window: Chromium
+  // resizes the capture surface to the whole document, and a
+  // `position: sticky` element then paints where it is STUCK rather than
+  // where it sits in the flow. The product page's left column is
+  // `lg:sticky`, so the bottom of it — the compare control, the caption
+  // and the colour note — fell off the baseline entirely while being
+  // present, visible and correctly positioned in the DOM. A suite that
+  // cannot see a third of a column is not guarding it.
+  //
+  // Computed position rather than a class name: Tailwind's `lg:sticky`
+  // only applies above a breakpoint, and other sticky things (the nav,
+  // the buy card) come and go with the design.
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll("*")) {
+      if (getComputedStyle(el).position === "sticky") el.style.position = "static";
+    }
+  });
   // The stylesheet must have applied; otherwise a broken server would write
   // unstyled baselines in --update-snapshots mode without anyone noticing.
   await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg-page").trim()), { timeout: 10_000 }).not.toBe("");
