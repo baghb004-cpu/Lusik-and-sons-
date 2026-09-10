@@ -83,7 +83,13 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   // ── The 3D stage ────────────────────────────────────────
   // Only for products with a rig. Everything else keeps the photo gallery
   // it has always had — a stage with no rig would be an empty frame.
-  const loomKey = capSelected && cap ? cap.withKey : spec.key;
+  // The RIG key, which is the product — not the SKU key, which changes to
+  // the "-with-cap" variant the moment the cap is added. LoomStage tears
+  // the engine down and rebuilds it when productKey changes, and a second
+  // WebGLRenderer cannot take the canvas back after the first one has
+  // force-lost its context: adding the cap dropped the stage to its poster
+  // and left it there. The cap is a property of the design.
+  const loomKey = spec.key;
   const hasStage = (CONFIG.LOOM?.PRODUCTS ?? []).includes(loomKey);
   // Memoised: LoomStage re-plans the piece whenever this identity changes,
   // and a fresh object each render would restitch on every keystroke of
@@ -95,8 +101,14 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   // way the gallery's colour row does. A rig ignores the half that is not
   // about it.
   const loomDesign = useMemo(
-    () => ({ withCap: capSelected, swatch: colorway?.swatch ?? null }),
-    [capSelected, colorway],
+    () => ({
+      withCap: capSelected,
+      swatch: colorway?.swatch ?? null,
+      // The Bari cap carries the baby's name or initial; trimmed so a
+      // half-typed trailing space does not restitch the cuff.
+      capName: capSelected ? capName.trim().slice(0, capNameMax) : "",
+    }),
+    [capSelected, colorway, capName, capNameMax],
   );
 
   // Publish on the design bus as well as passing the prop. The prop is what
@@ -104,8 +116,8 @@ export function BibSetCard({ product, spec, trail, onAddCustom, onBuyNow, onCart
   // on, and it is what arms a stage the customer has not touched yet.
   useEffect(() => {
     if (!hasStage) return;
-    publishDesign({ product: loomKey, withCap: capSelected, swatch: colorway?.swatch ?? null });
-  }, [hasStage, loomKey, capSelected, colorway]);
+    publishDesign({ product: loomKey, ...loomDesign });
+  }, [hasStage, loomKey, loomDesign]);
 
   // Double-tap guard — same shape as CustomProductCard / ProductShowcase.
   const lastAddTsRef = useRef(0);

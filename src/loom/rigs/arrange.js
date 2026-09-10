@@ -110,3 +110,41 @@ export function fitScale(extent, target) {
   if (!(extent.width > 0) || !(extent.depth > 0)) return 1;
   return Math.min(target.width / extent.width, target.depth / extent.depth);
 }
+
+/**
+ * The footprint of a hand-placed arrangement — pieces at chosen spots and
+ * angles rather than on a grid, the way the Bari Akhorzhak set is
+ * photographed.
+ *
+ * Measured rather than guessed. Writing the extent out by hand next to the
+ * placements is how that set first rendered with the bib off the right
+ * edge and the burp cloth off the bottom: the two numbers were edited
+ * independently and stopped agreeing.
+ *
+ * A rotated rectangle is measured by its axis-aligned bounding box, which
+ * is what actually has to fit on screen.
+ *
+ * @param {{ x: number, z: number, width: number, depth: number, rotY?: number }[]} pieces
+ * @returns {{ width: number, depth: number, centerX: number, centerZ: number }}
+ */
+export function boundsOf(pieces) {
+  let minX = Infinity; let maxX = -Infinity; let minZ = Infinity; let maxZ = -Infinity;
+  for (const piece of pieces ?? []) {
+    const rot = piece.rotY ?? 0;
+    const c = Math.abs(Math.cos(rot));
+    const sn = Math.abs(Math.sin(rot));
+    const halfW = (piece.width * c + piece.depth * sn) / 2;
+    const halfD = (piece.width * sn + piece.depth * c) / 2;
+    if (piece.x - halfW < minX) minX = piece.x - halfW;
+    if (piece.x + halfW > maxX) maxX = piece.x + halfW;
+    if (piece.z - halfD < minZ) minZ = piece.z - halfD;
+    if (piece.z + halfD > maxZ) maxZ = piece.z + halfD;
+  }
+  if (!Number.isFinite(minX)) return { width: 0, depth: 0, centerX: 0, centerZ: 0 };
+  return {
+    width: maxX - minX,
+    depth: maxZ - minZ,
+    centerX: (minX + maxX) / 2,
+    centerZ: (minZ + maxZ) / 2,
+  };
+}

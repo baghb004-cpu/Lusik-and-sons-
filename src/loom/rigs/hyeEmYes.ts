@@ -16,12 +16,9 @@
 // bib is no longer the whole product.
 // ============================================================
 
-import {
-  BackSide, CylinderGeometry, Group, LatheGeometry, Mesh, MeshStandardMaterial,
-  Vector2,
-} from "three";
-import { clothMaps } from "../materials/cloth";
+import { Group } from "three";
 import { createStitchMesh, type PlannedStitch, type StitchMeshHandle } from "../stitch/mesh";
+import { CAP_HEIGHT, CAP_R, createKnitCap } from "./knitCap";
 import { planCapFlag, planHyeEmYes } from "../design";
 import { clearChartCache } from "../stitch/rasterize.js";
 import { createBibBody, faceZ, HALF_W, SURFACE_Y, TOP, BOTTOM, type BibBody } from "./bibBody";
@@ -56,14 +53,6 @@ const TEXT_Y = -0.36;
 /** Cell size the stitches are planned at; the group is then scaled to fit. */
 const CELL = 0.02;
 
-// ── The cap's dimensions ────────────────────────────────────
-// Up here rather than beside its builder because the framing arithmetic
-// below needs them, and a rig that cannot say how big it is cannot fit
-// itself into the frame.
-const CAP_R = 0.42;
-const CAP_HEIGHT = 0.62;
-/** The turned-up cuff, deep enough to carry the flag as the photo does. */
-const CUFF_H = 0.22;
 /** How far behind the bib's shoulders the cap stands. */
 const CAP_STANDOFF = CAP_R * 0.72;
 
@@ -89,9 +78,8 @@ const WITH_CAP_SCALE = BIB_DEPTH / WITH_CAP_DEPTH;
 const WITH_CAP_SHIFT =
   (BIB_NEAR_Z + BIB_FAR_Z) / 2 - ((CAP_NEAR_Z + BIB_FAR_Z) / 2) * WITH_CAP_SCALE;
 
-/** The cap's stitches never outnumber the flag chart; the bib's never outnumber the words. */
+/** The bib's stitches never outnumber the three words. */
 const TEXT_CAPACITY = 1200;
-const FLAG_CAPACITY = 300;
 
 /**
  * Fit a planned stitch list into a box.
@@ -145,8 +133,14 @@ export function createHyeEmYesRig(opts: HyeEmYesRigOptions = {}): HyeEmYesRig {
   group.add(textPivot);
 
   // ---- the cap ----
-  const cap = buildCap(opts);
+  // Shared with the Bari Akhorzhak set, which stitches a name on the same
+  // cuff instead of a flag.
+  const cap = createKnitCap({ clothColor: opts.clothColor, textureSize: opts.textureSize });
   cap.group.visible = false;
+  // Standing behind the bib's shoulders, tipped back, as it is propped in
+  // the photograph.
+  cap.group.position.set(0, 0.02, -(TOP + CAP_STANDOFF));
+  cap.group.rotation.x = -0.22;
   group.add(cap.group);
 
   let textCount = 0;
@@ -187,14 +181,16 @@ export function createHyeEmYesRig(opts: HyeEmYesRigOptions = {}): HyeEmYesRig {
    */
   const setRevealed = (count: number) => {
     textStitches.setRevealed(count);
-    cap.stitches.setRevealed(count - textCount);
+    cap.setRevealed(count - textCount);
   };
 
   // First plan, then a second one once the font is in. `document.fonts`
   // is absent in the poster generator's early frames and in tests, so the
   // first plan has to stand on its own.
   stitchText();
-  flagCount = cap.stitchFlag();
+  // A quarter of the cap's width, as in the photograph: a small flag
+  // pinned to the brim, not a banner wrapped round it.
+  flagCount = cap.stitchCuff(planCapFlag().stitches, 0.5);
   const fonts = typeof document !== "undefined" ? document.fonts : undefined;
   let disposed = false;
   fonts?.load?.('600 48px "Fraunces"').then(() => {
@@ -232,120 +228,4 @@ export function createHyeEmYesRig(opts: HyeEmYesRigOptions = {}): HyeEmYesRig {
     onRestitch: (cb) => { onRestitch = cb; },
     dispose,
   };
-}
-
-// ============================================================
-// The cap
-// ============================================================
-// A knit beanie photographed standing on its cuff behind the bib
-// (hye-em-bib/02.jpg). A lathe rather than a sphere: a beanie's profile
-// has a straight side and a rounded crown, and a hemisphere reads as a
-// bowl.
-
-
-function capProfile(): Vector2[] {
-  const points: Vector2[] = [];
-  // From the bottom of the cuff up over the crown. The last point sits on
-  // the axis so the lathe closes rather than leaving a hole at the top.
-  points.push(new Vector2(CAP_R, 0));
-  points.push(new Vector2(CAP_R * 0.99, CAP_HEIGHT * 0.42));
-  points.push(new Vector2(CAP_R * 0.94, CAP_HEIGHT * 0.66));
-  points.push(new Vector2(CAP_R * 0.78, CAP_HEIGHT * 0.85));
-  points.push(new Vector2(CAP_R * 0.46, CAP_HEIGHT * 0.97));
-  points.push(new Vector2(0, CAP_HEIGHT));
-  return points;
-}
-
-function buildCap(opts: HyeEmYesRigOptions) {
-  const { clothColor = "#FFFFFF", textureSize = 1024 } = opts;
-  const group = new Group();
-
-  const knit = clothMaps({
-    weave: "terry",
-    color: clothColor,
-    size: Math.max(256, textureSize / 2),
-    repeat: 3,
-  });
-  const material = new MeshStandardMaterial({
-    map: knit.map,
-    normalMap: knit.normalMap,
-    roughnessMap: knit.roughnessMap,
-    roughness: 0.92,
-    metalness: 0,
-  });
-
-  const crownGeo = new LatheGeometry(capProfile(), 40);
-  const crown = new Mesh(crownGeo, material);
-  group.add(crown);
-
-  // The turned-up cuff: a short open cylinder standing clearly proud of
-  // the crown. Proud enough to SEE — at 4% it read as one smooth dome,
-  // and a beanie without a visible brim is a helmet.
-  const cuffGeo = new CylinderGeometry(CAP_R * 1.1, CAP_R * 1.12, CUFF_H, 40, 1, true);
-  // Its own material: a folded double thickness of knit catches light
-  // differently from the single layer above it, and that difference is
-  // most of what makes the fold read.
-  const cuffMaterial = new MeshStandardMaterial({
-    map: knit.map,
-    normalMap: knit.normalMap,
-    roughnessMap: knit.roughnessMap,
-    roughness: 0.82,
-    metalness: 0,
-  });
-  const cuff = new Mesh(cuffGeo, cuffMaterial);
-  cuff.position.y = CUFF_H / 2;
-  group.add(cuff);
-  // The cuff is open-ended, so its inside faces away from the camera and
-  // would be culled, leaving a see-through band. A back-side copy closes it.
-  const cuffInner = new Mesh(cuffGeo, new MeshStandardMaterial({
-    map: knit.map, normalMap: knit.normalMap, roughness: 0.95, metalness: 0, side: BackSide,
-  }));
-  cuffInner.position.y = CUFF_H / 2;
-  group.add(cuffInner);
-
-  // The flag, stitched on the front of the cuff.
-  const flagPivot = new Group();
-  const flagInner = new Group();
-  const stitches: StitchMeshHandle = createStitchMesh(FLAG_CAPACITY, { cell: CELL });
-  for (const mesh of stitches.meshes) flagInner.add(mesh);
-  flagPivot.add(flagInner);
-  // Stand the stitch plane up to face the camera: rotating +90° about X
-  // maps a chart row (increasing z) onto decreasing world y, so the flag
-  // reads the right way up rather than mirrored top to bottom.
-  flagPivot.rotation.x = Math.PI / 2;
-  flagPivot.position.set(
-    0,
-    CUFF_H * 0.5,
-    // Just proud of the cuff's front face, so the thread sits ON the knit.
-    CAP_R * 1.06,
-  );
-  group.add(flagPivot);
-
-  const stitchFlag = () => {
-    const planned = planCapFlag();
-    // A quarter of the cap's width, as in the photograph: a small flag
-    // pinned to the brim, not a banner wrapped round it.
-    const fit = fitStitches(planned.stitches, CAP_R * 0.5);
-    flagPivot.scale.setScalar(fit.scale);
-    flagInner.position.set(fit.offsetX, 0, fit.offsetZ);
-    stitches.setStitches(planned.stitches);
-    return planned.stitches.length;
-  };
-
-  // Stand the cap behind the bib's shoulders, tipped back a little, the
-  // way it is propped in the photograph.
-  group.position.set(0, 0.02, -(TOP + CAP_STANDOFF));
-  group.rotation.x = -0.22;
-
-  const dispose = () => {
-    stitches.dispose();
-    crownGeo.dispose();
-    cuffGeo.dispose();
-    material.dispose();
-    cuffMaterial.dispose();
-    (cuffInner.material as MeshStandardMaterial).dispose();
-    group.clear();
-  };
-
-  return { group, stitches, stitchFlag, dispose };
 }

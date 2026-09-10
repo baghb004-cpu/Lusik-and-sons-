@@ -101,6 +101,7 @@ export const CONFIG = {
       "blanket-classic", "bib",
       "bib-hy-em", "bib-hy-em-with-cap",
       "bib-days-of-week", "bib-anushig-pair",
+      "bib-bari-akhorzhak-set", "bib-bari-akhorzhak-set-with-cap",
     ],
     QUERY_PARAM: "loom",
     // Wait this long after the last keystroke before the camera drifts

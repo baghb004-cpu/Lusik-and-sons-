@@ -18,12 +18,13 @@ import { createBlanketRig } from "./alphabetBlanket";
 import { createBibRig } from "./bib";
 import { createHyeEmYesRig } from "./hyeEmYes";
 import { createBibSetRig, type BibSetDesign } from "./bibSet";
+import { createBariRig, type BariDesign } from "./bariAkhorzhak";
 import { ANUSHIG_PAIR, DAYS_OF_WEEK } from "../../data/setBibs.js";
 import { planDesignFor } from "../design";
 import type { BibDesign, HyeEmYesDesign, LoomDesign } from "../types";
 
 /** Every design shape a rig can be handed. */
-export type AnyDesign = LoomDesign | BibDesign | HyeEmYesDesign | BibSetDesign;
+export type AnyDesign = LoomDesign | BibDesign | HyeEmYesDesign | BibSetDesign | BariDesign;
 
 export interface MountedRig {
   group: Group;
@@ -142,6 +143,19 @@ export function createRigFor(productKey: string, opts: RigOptions): MountedRig |
       textureSize: opts.textureSize,
       textWidth: 0.74,
     }));
+  }
+
+  // Both SKUs are the same three pieces; the cap is a property of the
+  // design, and the "-with-cap" key is what the server charges against.
+  if (productKey === "bib-bari-akhorzhak-set" || productKey === "bib-bari-akhorzhak-set-with-cap") {
+    const rig = createBariRig({ textureSize: opts.textureSize });
+    return {
+      group: rig.group,
+      apply: (design) => rig.apply(design as BariDesign),
+      setRevealed: rig.setRevealed,
+      onRestitch: rig.onRestitch,
+      dispose: rig.dispose,
+    };
   }
 
   return null;

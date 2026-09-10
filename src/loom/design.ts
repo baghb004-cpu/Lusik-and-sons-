@@ -15,7 +15,8 @@
 import { buildLayoutCells, GRID } from "../data/blanketLayout.js";
 import { ARMENIAN_FLAG_COLORS, HYE_EM_YES_WORDS } from "../data/hyeEmYes.js";
 import {
-  ARMENIAN_FLAG, CAPITAL_H, CAPITAL_W, CUBE_OUTLINE, LOWER_H, MOTIFS, chartCells,
+  ARMENIAN_FLAG, CAPITAL_H, CAPITAL_W, CUBE_OUTLINE, LOWER_H, MOTIFS, STRAWBERRY,
+  chartCells,
 } from "./stitch/chart.js";
 import { measureLine, planDesign, planLine } from "./stitch/planner.js";
 import { lowercaseChartForChar, makeChartResolver } from "./stitch/rasterize.js";
@@ -254,4 +255,68 @@ export function planStitchedLines({
     height: y,
     unknown,
   };
+}
+
+// ============================================================
+// THE BARI AKHORZHAK SET
+// ============================================================
+
+/**
+ * The strawberry worked between the words of the blessing: a red body
+ * under a green crown, two charts sharing one origin.
+ *
+ * The product's own copy says the motif varies by piece — a bottle, a
+ * strawberry, a grape, a carrot — so this is one of Lusik's, not the
+ * only one. It is the one in the photograph the rig was modelled from.
+ */
+export function planStrawberry(x = 0, y = 0): Stitch[] {
+  const out: Stitch[] = [];
+  const parts: [keyof typeof STRAWBERRY, string][] = [
+    ["leaves", "#4E7A3A"],
+    ["body", "#C4243B"],
+  ];
+  for (const [part, color] of parts) {
+    for (const cell of chartCells(STRAWBERRY[part])) {
+      out.push({ x: x + cell.x, y: y + cell.y, sym: cell.sym, color, order: 0 });
+    }
+  }
+  return out;
+}
+
+/**
+ * One piece of the Bari Akhorzhak set: two lines with the berry between
+ * them, the way both the bib and the burp cloth are worked.
+ */
+export function planBlessing({ lines, color }: { lines: string[]; color: string }) {
+  const words = planStitchedLines({ lines, color });
+  if (words.stitches.length === 0) return words;
+
+  // The berry sits between the two lines, a little right of centre, as
+  // the photograph has it — dead centre reads as a bullet point.
+  const rows = words.stitches.map((s) => s.y);
+  const midY = Math.round((Math.min(...rows) + Math.max(...rows)) / 2) - 6;
+  const berry = planStrawberry(Math.round(words.width * 0.52), midY);
+
+  return {
+    ...planDesign({ lines: [], chartFor: () => null, fixed: [...words.stitches, ...berry] }),
+    width: words.width,
+    height: words.height,
+    unknown: words.unknown,
+  };
+}
+
+/**
+ * The name or initial on the cap. Uppercase Armenian or Latin, worked
+ * small on the cuff — public/img/bari-akhorzhak-set/cover.jpg shows three
+ * initials with a little motif beside them.
+ *
+ * Empty means a plain cap, which is a real state: the customer may add
+ * the cap and leave the name blank, and the copy says Lusik then uses the
+ * first initial. A stage that invented one would be showing a piece the
+ * order does not describe.
+ */
+export function planCapName({ name, color }: { name: string; color: string }) {
+  const text = String(name ?? "").trim();
+  if (text.length === 0) return { stitches: [] as Stitch[], width: 0, height: 0, unknown: [] };
+  return planStitchedLines({ lines: [text], color });
 }

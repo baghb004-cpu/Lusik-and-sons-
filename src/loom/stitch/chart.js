@@ -342,6 +342,50 @@ export const ARMENIAN_FLAG = Object.freeze({
   ]),
 });
 
+/**
+ * The strawberry Lusik works between the words of the Bari Akhorzhak
+ * blessing. Reference: public/img/bari-akhorzhak-set/cover.jpg, where the
+ * same berry appears on the bib and again on the burp cloth.
+ *
+ * Two charts, sharing an origin, for the same reason ARMENIAN_FLAG is
+ * four: a chart cell says what to work there, not in which colour, and a
+ * strawberry is a red body under a green crown. The product's own copy
+ * says the motif varies by piece — a bottle, a strawberry, a grape, a
+ * carrot — so this is one of Lusik's, not the only one.
+ */
+export const STRAWBERRY = Object.freeze({
+  leaves: parseChart([
+    ".....X.....",
+    "..X..X..X..",
+    ".XXXXXXXXX.",
+    "..XXXXXXX..",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+  ]),
+  body: parseChart([
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "..XXXXXXX..",
+    ".XXXXXXXXX.",
+    "XXXXXXXXXXX",
+    "XXXXXXXXXXX",
+    ".XXXXXXXXX.",
+    ".XXXXXXXXX.",
+    "..XXXXXXX..",
+    "...XXXXX...",
+    "....XXX....",
+  ]),
+});
+
 export const MOTIFS = Object.freeze({
   heart: parseChart([
     ".XX...XX.",

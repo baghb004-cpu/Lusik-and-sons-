@@ -552,10 +552,23 @@ as the customer types. It is the centrepiece of `SITE_OVERHAUL_HANDOFF.md`
 Phase 1. Live on the Armenian Alphabet Blanket's configurator; dials in
 `CONFIG.LOOM` (`ENABLED` is a kill switch, `PRODUCTS` lists which product
 keys mount a stage). Live on the Armenian Alphabet Blanket, the Custom
-Name Bib, and the Hye Em Yes bib (both its SKUs — the cap is a property of
-the design, not a second rig). The Hye Em Yes stage is desktop-only: on
-phones that product opens in the immersive sheet, where the photographs
-are the backdrop.
+Name Bib, the Hye Em Yes bib, the Days-of-the-Week and Anushig sets, and
+the Bari Akhorzhak set. The set stages are desktop-only: on phones those
+products open in the immersive sheet, where the photographs are the
+backdrop.
+
+**Pass the RIG key to `LoomStage`, never the SKU key.** Adding a cap
+switches a product's SKU to its `-with-cap` variant, and `LoomStage`
+rebuilds the engine whenever `productKey` changes — a second
+`WebGLRenderer` cannot take the canvas back after the first has
+force-lost its context, so the stage drops to its poster and stays
+there. A cap is a property of the design (`withCap`), not a second rig.
+
+**A set fits itself into the frame; the camera does not move.** The pose
+frames one bib, so `rigs/arrange.js` lays a set out, measures it, and
+shrinks it. The measurement is tighter than a single bib because the near
+row projects larger, and multi-piece arrangements lean away from the
+camera. Never hand-write an extent beside the placements — they drift.
 
 **Reaching it.** Only ever through `next/dynamic` — `src/loom/index.ts` is
 the single entry point. A static import folds three.js into that route's

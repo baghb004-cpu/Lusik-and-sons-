@@ -18,6 +18,7 @@ import { test, expect } from "@playwright/test";
 const PDP = "/shop/blankets/armenian-alphabet-blanket";
 const HYE_EM = "/shop/bibs/hy-em-armenian-bib";
 const DAYS = "/shop/bibs/days-of-the-week-bib-set";
+const BARI = "/shop/bibs/bari-akhorzhak-bib-burp-cloth-set";
 
 test.describe("Loom stage", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -292,6 +293,44 @@ test.describe("Loom stage", () => {
     // forever. Scrolling back found a set of blank bibs. The stage now
     // applies a design whole when nobody is looking at it; remove that
     // and this assertion hangs on "true" until it times out.
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+  });
+
+  test("the Bari Akhorzhak set gains stitches when the cap is named", async ({ page }, testInfo) => {
+    desktopOnly({}, testInfo);
+    test.setTimeout(120_000);
+    await page.route("**/.netlify/functions/**", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto(BARI);
+
+    const stage = page.locator("[data-loom]").first();
+    await expect(stage).toBeAttached();
+    await stage.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => stage.getAttribute("data-loom-phase"), { timeout: 60_000 })
+      .toMatch(/^(live|failed|poster)$/);
+    if ((await stage.getAttribute("data-loom-phase")) !== "live") {
+      test.info().annotations.push({ type: "loom", description: "engine did not run on this machine" });
+      return;
+    }
+    await expect
+      .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
+      .toBe("false");
+
+    // Two pieces, each carrying two words and a berry.
+    const twoPieces = Number(await stage.getAttribute("data-loom-stitches"));
+    expect(twoPieces, "the blessing did not rasterise").toBeGreaterThan(300);
+
+    // The cap is an add-on and its name is stitched on the cuff, so both
+    // steps have to reach the piece.
+    await page.getByRole("button", { name: /Add the matching cap/i }).click();
+    await page.getByLabel(/Name or initial on the cap/i).fill("ԱՆԻ");
+
+    await expect
+      .poll(async () => Number(await stage.getAttribute("data-loom-stitches")), { timeout: 30_000 })
+      .toBeGreaterThan(twoPieces);
     await expect
       .poll(() => stage.getAttribute("data-loom-stitching"), { timeout: 60_000 })
       .toBe("false");

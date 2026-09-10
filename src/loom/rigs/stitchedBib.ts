@@ -13,7 +13,7 @@
 // ============================================================
 
 import { Group } from "three";
-import { createStitchMesh, type StitchMeshHandle } from "../stitch/mesh";
+import { createStitchMesh, type PlannedStitch, type StitchMeshHandle } from "../stitch/mesh";
 import { planStitchedLines } from "../design";
 import { MOTIFS } from "../stitch/chart.js";
 import { createBibBody, faceZ, HALF_W, SURFACE_Y, TOP, BOTTOM, type BibBody } from "./bibBody";
@@ -33,6 +33,13 @@ export interface StitchedBibOptions {
   textWidth?: number;
   /** Height up the bib the block of lettering is centred on, in shape space. */
   textY?: number;
+  /**
+   * Plan the work differently. The Bari Akhorzhak bib carries a
+   * two-colour strawberry between its lines, which a single-colour motif
+   * chart cannot express, so that piece supplies its own planner rather
+   * than this module growing a special case for one product.
+   */
+  planWith?: (color: string) => { stitches: PlannedStitch[] };
 }
 
 export interface StitchedBib {
@@ -64,6 +71,7 @@ export function createStitchedBib(opts: StitchedBibOptions): StitchedBib {
     textureSize = 1024,
     textWidth = 0.66,
     textY = -0.34,
+    planWith = null,
   } = opts;
 
   const body: BibBody = createBibBody({ clothColor, trimColor, textureSize });
@@ -85,7 +93,9 @@ export function createStitchedBib(opts: StitchedBibOptions): StitchedBib {
   let threadColor = initialThread;
 
   const restitch = (): number => {
-    const planned = planStitchedLines({ lines, color: threadColor, motif });
+    const planned = planWith
+      ? planWith(threadColor)
+      : planStitchedLines({ lines, color: threadColor, motif });
     if (planned.stitches.length === 0) {
       count = 0;
       stitches.setStitches([]);
