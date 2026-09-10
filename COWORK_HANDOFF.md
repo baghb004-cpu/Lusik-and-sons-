@@ -184,6 +184,14 @@ know it is happening.
 
 Three things that catch people out:
 
+- **A red Visual job is not always a stale baseline.** It has twice been
+  `page.goto: Timeout 60000ms exceeded` on the days-of-the-week product page
+  (22 photographs, and the worst Lighthouse score on the site at 0.48),
+  failing before a single pixel was compared. Download the `visual-diffs`
+  artifact and read `error-context.md` **before** concluding the baselines
+  need re-adopting — a timeout and a real diff look identical from the check
+  name, and the timeout has already been raised once from 30s to 60s. Raising
+  it again would mask it; the fix is the performance work in PR 14.
 - **Visual baselines are drawn by CI, never locally.** A pixel baseline belongs to
   the browser that drew it, and a local Chromium differs in *text metrics*, not
   just antialiasing — paragraphs wrap differently and the page height moves.
