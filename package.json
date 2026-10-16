@@ -41,7 +41,7 @@
     "@netlify/neon": "^0.1.0",
     "@sentry/react": "^10.73.0",
     "framer-motion": "^13.2.0",
-    "next": "^15.5.25",
+    "next": "^15.5.27",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "stripe": "^22.6.1",
